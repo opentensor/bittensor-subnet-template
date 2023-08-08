@@ -22,9 +22,8 @@ cargo build --release
 4. #### Run a Local Subtensor Node:
 Once the build process is complete, you can run a local Subtensor node with:
 ```
-./target/release/subtensor --dev --tmp
+./target/release/subtensor --tmp
 ```
-`--dev` ensures you are running a development node.
 `--tmp` creates a temporary node (meaning it won't persist data across runs).
 
 5. #### Interacting with Your Node:
