@@ -39,8 +39,7 @@ def parse_config():
     # TODO(developer): Adds your custom validator arguments to the parser.
     parser.add_argument('--custom', default='my_custom_value', help='Adds a custom value to the parser.')
     # Adds override arguments for network and netuid.
-    parser.add_argument( '--netuid', type = int, default = template.NETUID, help = "The chain subnet uid." )
-    parser.add_argument( '--chain_endpoint', type = str, default = template.CHAIN_ENDPOINT, help="The chain endpoint to connect with." )
+    parser.add_argument( '--netuid', type = int, default = 1, help = "The chain subnet uid." )
     # Adds subtensor specific arguments i.e. --subtensor.chain_endpoint ... --subtensor.network ...
     bt.subtensor.add_args(parser)
     # Adds logging specific arguments i.e. --logging.debug ..., --logging.trace .. or --logging.logging_dir ...
@@ -70,7 +69,7 @@ if not os.path.exists(config.full_path): os.makedirs(config.full_path, exist_ok=
 
 # Set up logging with the provided configuration and directory.
 bt.logging(config=config, logging_dir=config.full_path)
-bt.logging.info(f"Running validator for subnet: {config.netuid} on network: {config.chain_endpoint} with config:")
+bt.logging.info(f"Running validator for subnet: {config.netuid} on network: {config.subtensor.chain_endpoint} with config:")
 # Log the configuration for reference.
 bt.logging.info(config)
 
@@ -79,24 +78,25 @@ bt.logging.info(config)
 bt.logging.info("Setting up bittensor objects.")
 
 # The wallet holds the cryptographic key pairs for the validator.
-wallet = bt.wallet(config=config).create_if_non_existent()
+wallet = bt.wallet( config = config )
 
 # The subtensor is our connection to the Bittensor blockchain.
-subtensor = bt.subtensor(config=config)
+subtensor = bt.subtensor( config = config )
 
 # Dendrite is the RPC client; it lets us send messages to other nodes (axons) in the network.
-dendrite = bt.dendrite(wallet=wallet)
+dendrite = bt.dendrite( wallet = wallet )
 
 # The metagraph holds the state of the network, letting us know about other miners.
-metagraph = subtensor.metagraph(config.netuid)
+metagraph = subtensor.metagraph( config.netuid )
 
 # Step 5: Connect the validator to the network
-bt.logging.info(f"Registering the validator on subnet: {config.netuid}")
-# This step makes our validator known to the network.
-subtensor.register(wallet = wallet, netuid=config.netuid)
-# Get our unique id (uid) on the network.
-my_subnet_uid = metagraph.hotkeys.index( wallet.hotkey.ss58_address )
-bt.logging.info(f"Registered with uid: {my_subnet_uid}")
+if wallet.hotkey.ss58_address not in metagraph.hotkeys:
+    bt.logging.error(f"\nYour validator: {wallet} if not registered to chain connection: {subtensor} \nRun btcli register and try again.")
+    exit()
+else:
+    # Each miner gets a unique identity (UID) in the network for differentiation.
+    my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
+    bt.logging.info(f"Running validator on uid: {my_subnet_uid}")
 
 # Step 6: Set up initial scoring weights for validation
 bt.logging.info("Building validation weights.")

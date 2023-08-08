@@ -39,8 +39,7 @@ def parse_config():
     # TODO(developer): Adds your custom miner arguments to the parser.
     parser.add_argument('--custom', default='my_custom_value', help='Adds a custom value to the parser.')
     # Adds override arguments for network and netuid.
-    parser.add_argument( '--netuid', type = int, default = template.NETUID, help = "The chain subnet uid." )
-    parser.add_argument( '--chain_endpoint', type = str, default = template.CHAIN_ENDPOINT, help="The chain endpoint to connect with." )
+    parser.add_argument( '--netuid', type = int, default = 1, help = "The chain subnet uid." )
     # Adds subtensor specific arguments i.e. --subtensor.chain_endpoint ... --subtensor.network ...
     bt.subtensor.add_args(parser)
     # Adds logging specific arguments i.e. --logging.debug ..., --logging.trace .. or --logging.logging_dir ...
@@ -71,34 +70,37 @@ config.full_path = os.path.expanduser(
 if not os.path.exists(config.full_path): os.makedirs(config.full_path, exist_ok=True)
 # Activating Bittensor's logging with the set configurations.
 bt.logging(config=config, logging_dir=config.full_path)
-bt.logging.info(f"Running miner for subnet: {config.netuid} on network: {config.chain_endpoint} with config:")
+bt.logging.info(f"Running miner for subnet: {config.netuid} on network: {config.subtensor.chain_endpoint} with config:")
 # This logs the active configuration to the specified logging directory for review.
 bt.logging.info(config)
 
 # Step 4: Initialize Bittensor miner objects
 # These classes are vital to interact and function within the Bittensor network.
 bt.logging.info("Setting up bittensor objects.")
+
 # Wallet holds cryptographic information, ensuring secure transactions and communication.
-wallet = bt.wallet(config=config).create_if_non_existent()
+wallet = bt.wallet( config = config )
+bt.logging.info(f"Wallet: {wallet}")
+
 # subtensor manages the blockchain connection, facilitating interaction with the Bittensor blockchain.
-subtensor = bt.subtensor(config=config)
-# axon handles request processing, allowing validators to send this process requests.
-axon = bt.axon(wallet=wallet)
+subtensor = bt.subtensor( config = config )
+bt.logging.info(f"Subtensor: {subtensor}")
+
 # metagraph provides the network's current state, holding state about other participants in a subnet.
 metagraph = subtensor.metagraph(config.netuid)
+bt.logging.info(f"Metagraph: {metagraph}")
 
-# Step 5: Integrate the miner with the network
-# This ensures that our miner becomes a recognized entity on the network.
-bt.logging.info(f"Registering the miner on subnet: {config.netuid}")
-subtensor.register(wallet=wallet, netuid=config.netuid)
-# Each miner gets a unique identity (UID) in the network for differentiation.
-my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
-bt.logging.info(f"Registered with uid: {my_subnet_uid}")
+if wallet.hotkey.ss58_address not in metagraph.hotkeys:
+    bt.logging.error(f"\nYour validator: {wallet} if not registered to chain connection: {subtensor} \nRun btcli register and try again. ")
+    exit()
+else:
+    # Each miner gets a unique identity (UID) in the network for differentiation.
+    my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
+    bt.logging.info(f"Running miner on uid: {my_subnet_uid}")
 
-# Step 6: Set up miner functionalities
+# Step 4: Set up miner functionalities
 # The following functions control the miner's response to incoming requests.
 # Each function plays a specific role in this decision process.
-
 # The blacklist function decides if a request should be ignored.
 def blacklist_fn( synapse: template.protocol.Dummy ) -> bool:
     # TODO(developer): Define how miners should blacklist requests.
@@ -126,34 +128,43 @@ def dummy( synapse: template.protocol.Dummy ) -> template.protocol.Dummy:
     synapse.dummy_output = synapse.dummy_input * 2
     return synapse
 
-# Step 8: Link miner functions to the axon.
-# This makes sure the axon knows which functions to use when deciding how to respond.
+# Step 5: Build and link miner functions to the axon.
+# The axon handles request processing, allowing validators to send this process requests.
+axon = bt.axon( wallet = wallet )
+bt.logging.info(f"Axon {axon}")
+
+# Attach determiners which functions are called when servicing a request.
+bt.logging.info(f"Attaching forward function to axon.")
 axon.attach(
-    fn = dummy,
+    forward_fn = dummy,
     blacklist_fn = blacklist_fn,
     priority_fn = priority_fn,
 )
 
-# Step 9: Serve the miner network information on the network
-# We pass netuid and subtensor connection, which determine which chain and which network to serve on.
-# This will update outdated network information if the axon port of external ip have changed.
+# Serve passes the axon information to the network + netuid we are hosting on.
+# This will auto-update if the axon port of external ip have changed.
+bt.logging.info(f"Serving axon {dummy} on network: {config.subtensor.chain_endpoint} with netuid: {config.netuid}")
 axon.serve( netuid = config.netuid, subtensor = subtensor )
 
-# Step 10: Launch the miner
-# This starts the miner's axon, making it active on the network.
+# Start  starts the miner's axon, making it active on the network.
+bt.logging.info(f"Starting axon server on port: {config.axon.port}")
 axon.start()
 
-# Step 10: Keep the miner alive
+# Step 6: Keep the miner alive
 # This loop maintains the miner's operations until intentionally stopped.
+bt.logging.info(f"Starting main loop")
+step = 0
 while True:
     try:
         # TODO(developer): Define any additional operations to be performed by the miner.
         # The miner remains operational with minimal overhead.
+        bt.logging.info(f"{step}")
         time.sleep(1)
+        step += 1
     # If someone intentionally stops the miner, it'll safely terminate operations.
     except KeyboardInterrupt:
         axon.stop()
-        bt.logging.critical('Miner killed by keyboard interrupt.')
+        bt.logging.success('Miner killed by keyboard interrupt.')
         break
     # In case of unforeseen errors, the miner will log the error and continue operations.
     except Exception as e:

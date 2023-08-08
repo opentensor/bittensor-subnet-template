@@ -53,7 +53,6 @@ Before running the template you will need to attain a subnetwork on either Bitte
 - `docs/running_on_testnet.md`
 - `docs/running_on_mainnet.md`
 
-Once you have created your subnetwork you will need to change the NETUID=<your netuid> and CHAIN_ENDPOINT=<wss:test> variables which are set in `template/__init__.py`.
 Once you have done this, you can run the miner and validator with the following commands.
 ```bash
 python -m template.miner # To run the miner

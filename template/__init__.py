@@ -23,19 +23,5 @@ __version__ = "0.0.0"
 version_split = __version__.split(".")
 __spec_version__ = (1000 * int(version_split[0])) + (10 * int(version_split[1])) + (1 * int(version_split[2]))
 
-# TODO(developer): Change this value to the chain your subnet runs on.
-# Global chain endpoint for this module, 'test' points the
-# miner and the validator at the bittensor test network, 'finney
-# points the miner and the validator at the bittensor main network.
-CHAIN_ENDPOINT = None # Must be set.
-# Optional: assert CHAIN_ENDPOINT is not None, "CHAIN_ENDPOINT must be set."
-
-# TODO(developer): Change this value to the netuid of your subnet.
-# Global netid for this module, -1 is a dummy value.
-# This value must be set by you after going through the process
-# of registering a subnetwork on the chain you selected above.
-NETUID = None # Must be set.
-# Optional: assert NETUID is not None, "NETUID must be set."
-
 # Import all submodules.
 from . import protocol
