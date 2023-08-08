@@ -1,28 +1,29 @@
 
 <div align="center">
 
-# **Bittensor Subnet Template.** <!-- omit in toc -->
+# **Bittensor Subnet Template** <!-- omit in toc -->
 [![Discord Chat](https://img.shields.io/discord/308323056592486420.svg)](https://discord.gg/bittensor)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
+
 ---
+
 ### Internet-scale Neural Networks <!-- omit in toc -->
 
 [Discord](https://discord.gg/bittensor) • [Network](https://taostats.io/) • [Research](https://bittensor.com/whitepaper)
 
 </div>
+
 ---
 
 This template contains all the necessary files and functions to define a Bittensor subnet incentive mechanism. You can run this template in three ways,
 on Bittensor's main-network (real TAO), Bittensor's test-network (fake TAO), or with your own staging-network. This repo includes instructions for dong all three.
 
 # Introduction
-Before writing your own incentive mechanism for Bittensor be sure to familiarize yourself with how Bittensor incentive mechanisms work by reading:
-- [Bittensor Incentive Mechanisms](https://docs.bittensor.com/incentive_mechanisms.html)
+Before writing your own incentive mechanism for Bittensor be sure to familiarize yourself with how Bittensor incentive mechanisms work by reading about [Bittensor Incentive Mechanisms](https://bittensor.com/documentation/validating/yuma-consensus)
 
-In a nutshell, Bittensor is composed of multiple self-contained incentive mechanisms through which miners (those producing the value) and validators (those producing consensus) determine together the proper distribution of TAO (the network token, representing value and ownership in the network). This interaction is constructed based on the specific protocol defined in this repository by the subnetwork creator in conjunction with the chain consensus engine (Yuma Consensus) which is defined in subtensor (github.com/opentensor/subtensor) and forces the validators to agree on the same distribution of TAO.
+In a nutshell, Bittensor is composed of multiple self-contained incentive mechanisms through which miners (those producing value) and validators (those producing consensus) determine together the proper distribution of TAO (the network token, representing value and ownership in the network). This interaction is constructed based on the specific protocol defined in this repository by the subnetwork creator in conjunction with the chain consensus engine (Yuma Consensus) which is defined in [subtensor](https://github.com/opentensor/subtensor) and forces the validators to agree on the same distribution of TAO.
 
-This repository is a template for writing such mechanisms, with the needed files preloaded to run a very simple mechanism to reward miners for responding with the multiple of the value sent by vaidators. This template is designed to be simple, merely as a starting point for those who want to write their own mechanism.
-It is split into 4 primary files which you should rewrite. (Note: you can also add additional files if you want to split your code into multiple files, but these 4 are the minimum needed) 
+This repository is a template for writing such mechanisms, with the needed files preloaded to run a very simple mechanism to reward miners for responding with the multiple of the value sent by vaidators. This template is designed to be simple, merely as a starting point for those who want to write their own mechanism. It is split into 4 primary files which you should rewrite. (Note: you can also add additional files if you want to split your code into multiple files, but these 4 are the minimum needed) 
 These files are:
 - `template/__init__.py`: The file which defines the subnet name, protocol version, blockchain-endpoint and subnetwork uid.
 - `template/protocol.py`: The file where the wire-protocol used by miners and validators is defined.
@@ -30,17 +31,20 @@ These files are:
 - `template/validator.py`: This script defines the validator's behavior, i.e., how the validator requests information from miners and determines scores.
 
 </div>
+
 ---
 
 # Installation
 This repository requires python3.8 or higher. To install, simply clone this repository and install the requirements.
 ```bash
-git clone 
-cd bittensor
+git clone https://github.com/opentensor/bittensor-subnet-template.git
+cd bittensor-subnet-template
 python -m pip install -r requirements.txt
+python -m pip install -e .
 ```
 
 </div>
+
 ---
 
 # Running the template
@@ -49,20 +53,22 @@ Before running the template you will need to attain a subnetwork on either Bitte
 - `docs/running_on_testnet.md`
 - `docs/running_on_mainnet.md`
 
-Once you have created your subnetwor you will need to change the NETUID=<your netuid> and CHAIN_ENDPOINT=<wss:test> variables which are set in `template/__init__.py`.
-Once you have done this, you can run the miner and validator with the following commands:
+Once you have created your subnetwork you will need to change the NETUID=<your netuid> and CHAIN_ENDPOINT=<wss:test> variables which are set in `template/__init__.py`.
+Once you have done this, you can run the miner and validator with the following commands.
 ```bash
 python -m template.miner # To run the miner
 python -m template.validator # To run the validator
 ```
 
 </div>
+
 ---
 
 # Updating the template
 The code contains detailed documentation on how to update the template. Please read the documentation in each of the files to understand how to update the template. There are multiple TODOs in each of the files which you should read and update.
 
 </div>
+
 ---
 
 ## License
