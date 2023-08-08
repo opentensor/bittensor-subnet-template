@@ -1,21 +1,20 @@
 # Running on Staging Network
-This tutorial is to take you through running
+This tutorial explains how to run your own subtensor chain locally.
 
 ## Installing and Running Subtensor Locally
 1. #### Prerequisites:
 Ensure you have `Rust` and `Cargo` installed. If not, you can install them using [`Rustup`](https://doc.rust-lang.org/cargo/getting-started/installation.html).
 You will also need `git` to clone the Subtensor repository.
 
-2. #### Clone the Bittensor Repository:
+2. #### Clone the Subtensor Repository:
 ```bash
-git clone https://github.com/opentensor/bittensor.git
-cd bittensor
+git clone https://github.com/opentensor/subtensor.git
+cd subtensor
 ```
 
 3. #### Build Subtensor:
-Navigate to the subtensor directory (if it exists in the repository) and then build it:
+With Rust isntalled build the subtensor chain:
 ```
-cd subtensor
 cargo build --release
 ```
 
