@@ -35,6 +35,7 @@ git clone https://github.com/opentensor/subtensor.git
 5. Build Subtensor
 ```bash
 cd subtensor
+git fetch origin subnets/user-creation; git checkout subnets/user-creation
 cargo build --release
 ```
 
