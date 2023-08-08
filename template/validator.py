@@ -79,15 +79,19 @@ bt.logging.info("Setting up bittensor objects.")
 
 # The wallet holds the cryptographic key pairs for the validator.
 wallet = bt.wallet( config = config )
+bt.logging.info(f"Wallet: {wallet}")
 
 # The subtensor is our connection to the Bittensor blockchain.
 subtensor = bt.subtensor( config = config )
+bt.logging.info(f"Subtensor: {subtensor}")
 
 # Dendrite is the RPC client; it lets us send messages to other nodes (axons) in the network.
 dendrite = bt.dendrite( wallet = wallet )
+bt.logging.info(f"Dendrite: {dendrite}")
 
 # The metagraph holds the state of the network, letting us know about other miners.
 metagraph = subtensor.metagraph( config.netuid )
+bt.logging.info(f"Metagraph: {metagraph}")
 
 # Step 5: Connect the validator to the network
 if wallet.hotkey.ss58_address not in metagraph.hotkeys:
@@ -101,7 +105,8 @@ else:
 # Step 6: Set up initial scoring weights for validation
 bt.logging.info("Building validation weights.")
 alpha = 0.9
-scores = torch.ones((metagraph.n.item(), 1), dtype=torch.float32)
+scores = torch.ones_like(metagraph.S, dtype=torch.float32)
+bt.logging.info(f"Weights: {scores}")
 
 # Step 7: The Main Validation Loop
 bt.logging.info("Starting validator loop.")
@@ -120,7 +125,7 @@ while True:
         )
 
         # Log the results for monitoring purposes.
-        bt.logging.debug(f"Received dummy responses: {responses}")
+        bt.logging.info(f"Received dummy responses: {responses}")
 
         # TODO(developer): Define how the validator scores responses.
         # Adjust the scores based on responses from miners.
@@ -139,7 +144,7 @@ while True:
             scores[i] = alpha * scores[i] + (1 - alpha) * 0
 
         # Periodically update the weights on the Bittensor blockchain.
-        if step % 100 == 0:
+        if (step + 1) % 100 == 0:
             # TODO(developer): Define how the validator normalizes scores before setting weights.
             weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
             bt.logging.info(f"Setting weights: {weights}")
@@ -157,7 +162,7 @@ while True:
         # Resync our local state with the latest state from the blockchain.
         metagraph = subtensor.metagraph(config.netuid)
         # Sleep for a duration equivalent to the block time (i.e., time between successive blocks).
-        time.sleep(bt.__block_time__)
+        time.sleep(bt.__blocktime__)
 
     # If we encounter an unexpected error, log it for debugging.
     except RuntimeError as e:
@@ -166,5 +171,5 @@ while True:
 
     # If the user interrupts the program, gracefully exit.
     except KeyboardInterrupt:
-        bt.logging.critical("Keyboard interrupt detected. Exiting validator.")
+        bt.logging.success("Keyboard interrupt detected. Exiting validator.")
         exit()
