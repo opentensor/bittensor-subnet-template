@@ -61,7 +61,7 @@ config.full_path = os.path.expanduser(
         config.wallet.name,
         config.wallet.hotkey,
         template.NETUID,
-        config.name,
+        'miner',
     )
 )
 # Ensure the directory for logging exists, else create one.

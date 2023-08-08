@@ -59,7 +59,7 @@ config.full_path = os.path.expanduser(
         config.wallet.name,
         config.wallet.hotkey,
         template.NETUID,
-        config.name,
+        'validator',
     )
 )
 # Ensure the logging directory exists.
