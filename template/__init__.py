@@ -39,5 +39,3 @@ NETUID = None # Must be set.
 
 # Import all submodules.
 from . import protocol
-from . import miner
-from . import validator

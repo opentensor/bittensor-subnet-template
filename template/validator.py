@@ -70,7 +70,7 @@ if not os.path.exists(config.full_path): os.makedirs(config.full_path, exist_ok=
 
 # Set up logging with the provided configuration and directory.
 bt.logging(config=config, logging_dir=config.full_path)
-bt.logging.info(f"Running validator in subnet: {config.netuid} on network: {config.chain_endpoint} with config:")
+bt.logging.info(f"Running validator for subnet: {config.netuid} on network: {config.chain_endpoint} with config:")
 # Log the configuration for reference.
 bt.logging.info(config)
 

@@ -71,7 +71,7 @@ config.full_path = os.path.expanduser(
 if not os.path.exists(config.full_path): os.makedirs(config.full_path, exist_ok=True)
 # Activating Bittensor's logging with the set configurations.
 bt.logging(config=config, logging_dir=config.full_path)
-bt.logging.info(f"Running miner in subnet: {config.netuid} on network: {config.chain_endpoint} with config:")
+bt.logging.info(f"Running miner for subnet: {config.netuid} on network: {config.chain_endpoint} with config:")
 # This logs the active configuration to the specified logging directory for review.
 bt.logging.info(config)
 
