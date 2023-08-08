@@ -38,6 +38,9 @@ def parse_config():
     parser = argparse.ArgumentParser()
     # TODO(developer): Adds your custom miner arguments to the parser.
     parser.add_argument('--custom', default='my_custom_value', help='Adds a custom value to the parser.')
+    # Adds override arguments for network and netuid.
+    parser.add_argument( '--netuid', type = int, default = template.NETUID, help = "The chain subnet uid." )
+    parser.add_argument( '--chain_endpoint', type = str, default = template.CHAIN_ENDPOINT, help="The chain endpoint to connect with." )
     # Adds subtensor specific arguments i.e. --subtensor.chain_endpoint ... --subtensor.network ...
     bt.subtensor.add_args(parser)
     # Adds logging specific arguments i.e. --logging.debug ..., --logging.trace .. or --logging.logging_dir ...
@@ -60,7 +63,7 @@ config.full_path = os.path.expanduser(
         config.logging.logging_dir,
         config.wallet.name,
         config.wallet.hotkey,
-        template.NETUID,
+        config.netuid,
         'miner',
     )
 )
@@ -68,6 +71,7 @@ config.full_path = os.path.expanduser(
 if not os.path.exists(config.full_path): os.makedirs(config.full_path, exist_ok=True)
 # Activating Bittensor's logging with the set configurations.
 bt.logging(config=config, logging_dir=config.full_path)
+bt.logging.info(f"Running miner in subnet: {config.netuid} on network: {config.chain_endpoint} with config:")
 # This logs the active configuration to the specified logging directory for review.
 bt.logging.info(config)
 
@@ -81,12 +85,12 @@ subtensor = bt.subtensor(config=config)
 # axon handles request processing, allowing validators to send this process requests.
 axon = bt.axon(wallet=wallet)
 # metagraph provides the network's current state, holding state about other participants in a subnet.
-metagraph = subtensor.metagraph(template.NETUID)
+metagraph = subtensor.metagraph(config.netuid)
 
 # Step 5: Integrate the miner with the network
 # This ensures that our miner becomes a recognized entity on the network.
-bt.logging.info(f"Registering the miner on subnet: {template.NETUID}")
-subtensor.register(wallet=wallet, netuid=template.NETUID)
+bt.logging.info(f"Registering the miner on subnet: {config.netuid}")
+subtensor.register(wallet=wallet, netuid=config.netuid)
 # Each miner gets a unique identity (UID) in the network for differentiation.
 my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
 bt.logging.info(f"Registered with uid: {my_subnet_uid}")
@@ -133,7 +137,7 @@ axon.attach(
 # Step 9: Serve the miner network information on the network
 # We pass netuid and subtensor connection, which determine which chain and which network to serve on.
 # This will update outdated network information if the axon port of external ip have changed.
-axon.serve( netuid = template.NETUID, subtensor = subtensor )
+axon.serve( netuid = config.netuid, subtensor = subtensor )
 
 # Step 10: Launch the miner
 # This starts the miner's axon, making it active on the network.

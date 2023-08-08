@@ -38,6 +38,9 @@ def parse_config():
     parser = argparse.ArgumentParser()
     # TODO(developer): Adds your custom validator arguments to the parser.
     parser.add_argument('--custom', default='my_custom_value', help='Adds a custom value to the parser.')
+    # Adds override arguments for network and netuid.
+    parser.add_argument( '--netuid', type = int, default = template.NETUID, help = "The chain subnet uid." )
+    parser.add_argument( '--chain_endpoint', type = str, default = template.CHAIN_ENDPOINT, help="The chain endpoint to connect with." )
     # Adds subtensor specific arguments i.e. --subtensor.chain_endpoint ... --subtensor.network ...
     bt.subtensor.add_args(parser)
     # Adds logging specific arguments i.e. --logging.debug ..., --logging.trace .. or --logging.logging_dir ...
@@ -58,7 +61,7 @@ config.full_path = os.path.expanduser(
         config.logging.logging_dir,
         config.wallet.name,
         config.wallet.hotkey,
-        template.NETUID,
+        config.netuid,
         'validator',
     )
 )
@@ -67,6 +70,7 @@ if not os.path.exists(config.full_path): os.makedirs(config.full_path, exist_ok=
 
 # Set up logging with the provided configuration and directory.
 bt.logging(config=config, logging_dir=config.full_path)
+bt.logging.info(f"Running validator in subnet: {config.netuid} on network: {config.chain_endpoint} with config:")
 # Log the configuration for reference.
 bt.logging.info(config)
 
@@ -84,12 +88,12 @@ subtensor = bt.subtensor(config=config)
 dendrite = bt.dendrite(wallet=wallet)
 
 # The metagraph holds the state of the network, letting us know about other miners.
-metagraph = subtensor.metagraph(template.NETUID)
+metagraph = subtensor.metagraph(config.netuid)
 
 # Step 5: Connect the validator to the network
-bt.logging.info(f"Registering the validator on subnet: {template.NETUID}")
+bt.logging.info(f"Registering the validator on subnet: {config.netuid}")
 # This step makes our validator known to the network.
-subtensor.register(wallet = wallet, netuid=template.NETUID)
+subtensor.register(wallet = wallet, netuid=config.netuid)
 # Get our unique id (uid) on the network.
 my_subnet_uid = metagraph.hotkeys.index( wallet.hotkey.ss58_address )
 bt.logging.info(f"Registered with uid: {my_subnet_uid}")
@@ -142,7 +146,7 @@ while True:
             # This is a crucial step that updates the incentive mechanism on the Bittensor blockchain.
             # Miners with higher scores (or weights) receive a larger share of TAO rewards on this subnet.
             subtensor.set_weights(
-                netuid = template.NETUID, # Subnet to set weights on.
+                netuid = config.netuid, # Subnet to set weights on.
                 wallet = wallet, # Wallet to sign set weights using hotkey.
                 uids = metagraph.uids, # Uids of the miners to set weights for.
                 weights = weights # Weights to set for the miners.
@@ -151,7 +155,7 @@ while True:
         # End the current step and prepare for the next iteration.
         step += 1
         # Resync our local state with the latest state from the blockchain.
-        metagraph = subtensor.metagraph(template.NETUID)
+        metagraph = subtensor.metagraph(config.netuid)
         # Sleep for a duration equivalent to the block time (i.e., time between successive blocks).
         time.sleep(bt.__block_time__)
 
