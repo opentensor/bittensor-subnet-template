@@ -32,7 +32,7 @@ $ git clone https://github.com/opentensor/subtensor.git
 Ensure you have the nightly toolchain and the WebAssembly (wasm) compilation target.
 ```bash
 # Update to the nightly version of rust
-./subtensor/scripts/init.sh
+$ ./subtensor/scripts/init.sh
 ```
 
 ### 5. Switch to the User-Creation Branch
