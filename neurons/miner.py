@@ -104,31 +104,46 @@ def main( config ):
 
     # Step 4: Set up miner functionalities
     # The following functions control the miner's response to incoming requests.
-    # Each function plays a specific role in this decision process.
     # The blacklist function decides if a request should be ignored.
     def blacklist_fn( synapse: template.protocol.Dummy ) -> bool:
-        # TODO(developer): Define how miners should blacklist requests.
-        caller_uid = metagraph.uids[synapse.dendrite.hotkey.ss58_address] if synapse.dendrite.hotkey.ss58_address in metagraph.hotkeys else -1
-        # Ignore requests from unrecognized entities.
-        if caller_uid == -1: 
+        # TODO(developer): Define how miners should blacklist requests. This Function 
+        # Runs before the synapse data has been deserialized (i.e. before synapse.data is available).
+        # The synapse is instead contructed via the headers of the request. It is important to blacklist
+        # requests before they are deserialized to avoid wasting resources on requests that will be ignored.
+        # Below: Check that the hotkey is a registered entity in the metagraph.
+        if synapse.dendrite.hotkey not in metagraph.hotkeys:
+            # Ignore requests from unrecognized entities.
+            bt.logging.trace(f'Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}')
             return True
-        # Ignore requests from non-validators.
-        if not metagraph.validator_permit[ caller_uid ]:
-            return True
-        # Allow the request to be processed further.
+        # TODO(developer): In practice it would be wise to blacklist requests from entities that 
+        # are not validators, or do not have enough stake. This can be checked via metagraph.S
+        # and metagraph.validator_permit. You can always attain the uid of the sender via a
+        # metagraph.hotkeys.index( synapse.dendrite.hotkey ) call.
+        # Otherwise, allow the request to be processed further.
+        bt.logging.trace(f'Not Blacklisting recognized hotkey {synapse.dendrite.hotkey}')
         return False
 
     # The priority function determines the order in which requests are handled.
     # More valuable or higher-priority requests are processed before others.
     def priority_fn( synapse: template.protocol.Dummy ) -> float:
         # TODO(developer): Define how miners should prioritize requests.
-        prirority = float( metagraph.S[ synapse.dendrite.hotkey.ss58_address ] ) 
+        # Miners may recieve messages from multiple entities at once. This function
+        # determines which request should be processed first. Higher values indicate
+        # that the request should be processed first. Lower values indicate that the
+        # request should be processed later.
+        # Below: simple logic, prioritize requests from entities with more stake.
+        caller_uid = metagraph.hotkeys.index( synapse.dendrite.hotkey ) # Get the caller index.
+        prirority = float( metagraph.S[ caller_uid ] ) # Return the stake as the priority.
+        bt.logging.trace(f'Prioritizing {synapse.dendrite.hotkey} with value: ', prirority)
         return prirority
 
     # This is the core miner function, which decides the miner's response to a valid, high-priority request.
     def dummy( synapse: template.protocol.Dummy ) -> template.protocol.Dummy:
         # TODO(developer): Define how miners should process requests.
-        # Simple logic: return the input value multiplied by 2.
+        # This function runs after the synapse has been deserialized (i.e. after synapse.data is available).
+        # This function runs after the blacklist and priority functions have been called.
+        # Below: simple template logic: return the input value multiplied by 2.
+        # If you change this, your miner will lose emission in the network incentive landscape.
         synapse.dummy_output = synapse.dummy_input * 2
         return synapse
 
@@ -161,10 +176,21 @@ def main( config ):
     while True:
         try:
             # TODO(developer): Define any additional operations to be performed by the miner.
-            # The miner remains operational with minimal overhead.
-            bt.logging.info(f"{step}")
-            time.sleep(1)
+            # Below: Periodically update our knowledge of the network graph.
+            if step % 5 == 0:
+                metagraph = subtensor.metagraph(config.netuid)
+                log =  (f'Step:{step} | '\
+                        f'Block:{metagraph.block.item()} | '\
+                        f'Stake:{metagraph.S[my_subnet_uid]} | '\
+                        f'Rank:{metagraph.R[my_subnet_uid]} | '\
+                        f'Trust:{metagraph.T[my_subnet_uid]} | '\
+                        f'Consensus:{metagraph.C[my_subnet_uid] } | '\
+                        f'Incentive:{metagraph.I[my_subnet_uid]} | '\
+                        f'Emission:{metagraph.E[my_subnet_uid]}')
+                bt.logging.info(log)
             step += 1
+            time.sleep(1)
+
         # If someone intentionally stops the miner, it'll safely terminate operations.
         except KeyboardInterrupt:
             axon.stop()

@@ -62,6 +62,7 @@ python -m neurons/miner.py
     --subtensor.chain_endpoint <your chain url>  # Must be attained by following the instructions in the docs/running_on_*.md files
     --wallet.name <your miner wallet> # Must be created using the bittensor-cli
     --wallet.hotkey <your validator hotkey> # Must be created using the bittensor-cli
+    --logging.debug # Run in debug mode, alternatively --logging.trace for trace mode
 
 # To run the validator
 python -m neurons/validator.py 
@@ -69,6 +70,7 @@ python -m neurons/validator.py
     --subtensor.chain_endpoint <your chain url> # Must be attained by following the instructions in the docs/running_on_*.md files
     --wallet.name <your validator wallet>  # Must be created using the bittensor-cli
     --wallet.hotkey <your validator hotkey> # Must be created using the bittensor-cli
+    --logging.debug # Run in debug mode, alternatively --logging.trace for trace mode
 ```
 
 </div>
