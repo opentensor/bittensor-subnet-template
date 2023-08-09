@@ -15,7 +15,7 @@
 
 ---
 
-This template contains all the necessary files and functions to define a Bittensor subnet incentive mechanism. You can run this template in three ways,
+This template contains all the necessary files and functions to define Bittensor subnet incentive mechanisms. You can run this template in three ways,
 on Bittensor's main-network (real TAO), Bittensor's test-network (fake TAO), or with your own staging-network. This repo includes instructions for dong all three.
 
 # Introduction
