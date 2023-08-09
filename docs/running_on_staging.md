@@ -6,7 +6,7 @@ This tutorial will guide you through setting up a local subtensor chain, creatin
 Begin by installing the required dependencies for running a substrate node.
 ```bash
 # Update your system packages
-$ sudo apt-get update 
+$ sudo apt update 
 
 # Install additional required libraries and tools
 $ sudo apt install --assume-yes make build-essential git clang curl libssl-dev llvm libudev-dev protobuf-compiler
@@ -29,7 +29,7 @@ $ git clone https://github.com/opentensor/subtensor.git
 ```
 
 ### 4. Setup Rust for Substrate Development
-Ensure you have the nightly toolchain and the WebAssembly (wasm) compilation target.
+Ensure you have the nightly toolchain and the WebAssembly (wasm) compilation target. Note that this step will run the subtensor chain on your terminal directly, hence we advise that you run this as a background process using PM2 or other software.
 ```bash
 # Update to the nightly version of rust
 $ ./subtensor/scripts/init.sh
@@ -48,7 +48,7 @@ This command will set up and run a local subtensor network.
 ```bash
 $ ./scripts/localnet.sh
 ```
-*Note: Watch for any build or initialization outputs here.*
+*Note: Watch for any build or initialization outputs here. If building the project for the first time, this step will take while to finish building depending on your hardware.*
 
 ### 7. Clone and Setup Bittensor Revolution
 If you don't already have the Bittensor revolution, follow these steps.
@@ -89,7 +89,7 @@ $ btcli register_subnet --subtensor.chain_endpoint ws://127.0.0.1:9946
 >> Enter password to unlock key: [YOUR_PASSWORD]
 >> Register subnet? [y/n]: y
 ```
-*Note: The local chain will have a default netuid of 1, the seconc registration will have netuid 2 and so on.*
+*Note: The local chain will have a default netuid of 1, the second registration will have netuid 2 and so on.*
 
 ### 10. Register Your Validator and Miner Keys
 Enroll your validator and miner on the network.
