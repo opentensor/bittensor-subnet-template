@@ -35,7 +35,7 @@ import template
 
 # Step 2: Set up the configuration parser
 # This function is responsible for setting up and parsing command-line arguments.
-def get_config()
+def get_config():
 
     parser = argparse.ArgumentParser()
     # TODO(developer): Adds your custom validator arguments to the parser.
@@ -180,6 +180,6 @@ def main( config ):
 # The main function parses the configuration and runs the validator.
 if __name__ == "__main__":
     # Parse the configuration.
-    config = parse_config()
+    config = get_config()
     # Run the main function.
     main( config )
