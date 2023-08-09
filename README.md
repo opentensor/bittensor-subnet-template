@@ -19,16 +19,23 @@ This template contains all the necessary files and functions to define Bittensor
 on Bittensor's main-network (real TAO), Bittensor's test-network (fake TAO), or with your own staging-network. This repo includes instructions for dong all three.
 
 # Introduction
-Before writing your own incentive mechanism for Bittensor be sure to familiarize yourself with how Bittensor incentive mechanisms work by reading about [Bittensor Incentive Mechanisms](https://bittensor.com/documentation/validating/yuma-consensus)
+The Bittensor blockchain hosts multiple self-contained incentive mechanisms 'subnets'. Subnets are playing fields through which miners (those producing value) and validators (those producing consensus) determine together the proper distribution of TAO for the purpose of incentivizing the creation of value, i.e. generating digital commodities, such as intelligence, or data. Each consistes of a wire protocol through which miners and validators interact and their method of interacting with Bittensor's chain consensus engine [Yuma Consensus](https://github.com/opentensor/subtensor) which is designed to drive these actors into agreement about who is creating value.
 
-In a nutshell, Bittensor is composed of multiple self-contained incentive mechanisms through which miners (those producing value) and validators (those producing consensus) determine together the proper distribution of TAO (the network token, representing value and ownership in the network). This interaction is constructed based on the specific protocol defined in this repository by the subnetwork creator in conjunction with the chain consensus engine (Yuma Consensus) which is defined in [subtensor](https://github.com/opentensor/subtensor) and forces the validators to agree on the same distribution of TAO.
-
-This repository is a template for writing such mechanisms, with the needed files preloaded to run a very simple mechanism to reward miners for responding with the multiple of the value sent by vaidators. This template is designed to be simple, merely as a starting point for those who want to write their own mechanism. It is split into 4 primary files which you should rewrite. (Note: you can also add additional files if you want to split your code into multiple files, but these 4 are the minimum needed) 
+This repository is a template for writing such mechanisms, preloaded with all needed files to run a very simple mechanism. The template is designed to be simple (rewards miners for responding with the multiple of the value sent by vaidators) and can act as a starting point for those who want to write their own mechanism. It is split into 3 primary files which you should rewrite. 
 These files are:
-- `template/__init__.py`: The file which defines the subnet name, protocol version, blockchain-endpoint and subnetwork uid.
 - `template/protocol.py`: The file where the wire-protocol used by miners and validators is defined.
-- `template/miner.py`: This script defines the miner's behavior, i.e., how the miner responds to requests from validators.
-- `template/validator.py`: This script defines the validator's behavior, i.e., how the validator requests information from miners and determines scores.
+- `template/miner.py`: This script which defines the miner's behavior, i.e., how the miner responds to requests from validators.
+- `template/validator.py`: This script which defines the validator's behavior, i.e., how the validator requests information from miners and determines scores.
+
+</div>
+
+---
+
+# Running the template
+Before running the template you will need to attain a subnetwork on either Bittensor's main network, test network, or your own staging network. To create subnetworks on each of these subnets follow the instructions in files below:
+- `docs/running_on_staging.md`
+- `docs/running_on_testnet.md`
+- `docs/running_on_mainnet.md`
 
 </div>
 
@@ -47,13 +54,7 @@ python -m pip install -e .
 
 ---
 
-# Running the template
-Before running the template you will need to attain a subnetwork on either Bittensor's main network, test network, or your own staging network. To create subnetworks on each of these subnets follow the instructions in files below:
-- `docs/running_on_staging.md`
-- `docs/running_on_testnet.md`
-- `docs/running_on_mainnet.md`
-
-Once you have done this, you can run the miner and validator with the following commands.
+Once you have installed this repo and attained your subnet, you can run the miner and validator with the following commands.
 ```bash
 python -m template.miner # To run the miner
 python -m template.validator # To run the validator
