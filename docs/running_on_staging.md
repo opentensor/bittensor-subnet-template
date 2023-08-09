@@ -6,7 +6,7 @@ This tutorial will guide you through setting up a local subtensor chain, creatin
 Begin by installing the required dependencies for running a substrate node.
 ```bash
 # Update your system packages
-$ sudo apt-get update 
+$ sudo apt update 
 
 # Install additional required libraries and tools
 $ sudo apt install --assume-yes make build-essential git clang curl libssl-dev llvm libudev-dev protobuf-compiler
@@ -22,20 +22,17 @@ $ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 $ source "$HOME/.cargo/env"
 ```
 
-### 3. Setup Rust for Substrate Development
-Ensure you have the nightly toolchain and the WebAssembly (wasm) compilation target.
-```bash
-# Update to the nightly version of rust
-$ rustup update nightly
-
-# Add wasm compilation target for the nightly toolchain
-$ rustup target add wasm32-unknown-unknown --toolchain nightly
-```
-
-### 4. Clone the Subtensor Repository
+### 3. Clone the Subtensor Repository
 This step fetches the subtensor codebase to your local machine.
 ```bash
 $ git clone https://github.com/opentensor/subtensor.git
+```
+
+### 4. Setup Rust for Substrate Development
+Ensure you have the nightly toolchain and the WebAssembly (wasm) compilation target. Note that this step will run the subtensor chain on your terminal directly, hence we advise that you run this as a background process using PM2 or other software.
+```bash
+# Update to the nightly version of rust
+$ ./subtensor/scripts/init.sh
 ```
 
 ### 5. Switch to the User-Creation Branch
@@ -51,7 +48,7 @@ This command will set up and run a local subtensor network.
 ```bash
 $ ./scripts/localnet.sh
 ```
-*Note: Watch for any build or initialization outputs here.*
+*Note: Watch for any build or initialization outputs here. If building the project for the first time, this step will take while to finish building depending on your hardware.*
 
 ### 7. Clone and Setup Bittensor Revolution
 If you don't already have the Bittensor revolution, follow these steps.
