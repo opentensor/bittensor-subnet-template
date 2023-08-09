@@ -28,14 +28,25 @@ $ btcli new_hotkey --wallet.name validator --wallet.hotkey default
 ```
 
 3. Getting the price of subnetwork creation
-Creating subnetworks on the testnet is competitive and the cost it determined by the rate at which new network are being registered onto the chain. By default you must have at least 100 testnet TAO on your owner wallet to create a subnetwork. However the exact amount will fluctuate based on demand. If you do not have enough TAO, you can request some from the bittensor faucet by solving periodic POWs. The code below shows how to get the current price of creating a subnetwork.
+Creating subnetworks on the testnet is competitive and the cost it determined by the rate at which new network are being registered onto the chain. By default you must have at least 100 testnet TAO on your owner wallet to create a subnetwork. However the exact amount will fluctuate based on demand. The code below shows how to get the current price of creating a subnetwork.
 ```bash
 btcli get_subnet_price --subtensor.network test
 >> Subnetwork price: τ100.00000
 ```
 
+4. (Optional) Getting faucet tokens
+If you dont have enough to create a test subnet you can pull testnet faucet tokens by solving periodic POW challenges. The code below shows how to get faucet tokens.
+This step may take a while to complete depending on your system. Once you have enough TAO to purchase your slot, continue to the next step.
+```bash
+btcli run_faucet --wallet.name owner --subtensor.network test
+>> Balance: τ0.000000000 ➡ τ100.000000000
+>> Balance: τ100.000000000 ➡ τ200.000000000
+...
+```
+
 3. Purchasing a slot
-This creates a subnetwork on the local chain on netuid 1.
+Using the test TAO from the previous step you can register your subnet to the chain. This will create a new subnet on the chain and give you the owner permissions to it. The code below shows how to purchase a slot. 
+*Note: Slots cost TAO, you wont get this TAO back, it is instead recycled back into the mechanism to be later mined.*
 ```bash
 # Run the register subnetwork command on the locally running chain.
 $ btcli register_subnet --subtensor.network test 
