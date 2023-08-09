@@ -22,17 +22,17 @@ $ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 $ source "$HOME/.cargo/env"
 ```
 
-### 3. Setup Rust for Substrate Development
-Ensure you have the nightly toolchain and the WebAssembly (wasm) compilation target.
-```bash
-# Update to the nightly version of rust
-./scripts/init.sh
-```
-
-### 4. Clone the Subtensor Repository
+### 3. Clone the Subtensor Repository
 This step fetches the subtensor codebase to your local machine.
 ```bash
 $ git clone https://github.com/opentensor/subtensor.git
+```
+
+### 4. Setup Rust for Substrate Development
+Ensure you have the nightly toolchain and the WebAssembly (wasm) compilation target.
+```bash
+# Update to the nightly version of rust
+./subtensor/scripts/init.sh
 ```
 
 ### 5. Switch to the User-Creation Branch
