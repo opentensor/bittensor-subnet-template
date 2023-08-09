@@ -81,19 +81,31 @@ $ btcli new_coldkey --wallet.name validator
 $ btcli new_hotkey --wallet.name validator --wallet.hotkey default
 ```
 
-### 9. Create a Subnetwork
-Establish a new subnetwork on the local chain.
+### 9. Mint yourself tokens.
+You will need tokens to initialize the intentive mechanism on the chain as well as registering a network (below). 
+Run the following command to mint yourself tokens on your chain.
 ```bash
-$ btcli register_subnet --subtensor.chain_endpoint ws://127.0.0.1:9946 
->> Enter wallet name (default): owner 
->> Enter password to unlock key: [YOUR_PASSWORD]
->> Register subnet? [y/n]: y
->> ✅ Registered
+# Mint tokens for the owner
+btcli run_faucet --wallet.name owner --subtensor.chain_endpoint ws://127.0.0.1:9946 
+>> Balance: τ0.000000000 ➡ τ100.000000000
+# Mint tokens to your validator.
+btcli run_faucet --wallet.name validator --subtensor.chain_endpoint ws://127.0.0.1:9946 
+>> Balance: τ0.000000000 ➡ τ100.000000000
 ```
-*Note: The local chain will have a default netuid of 1, the second registration will have netuid 2 and so on.*
 
-### 10. Register Your Validator and Miner Keys
-Enroll your validator and miner on the network.
+### 10. Create a Subnetwork
+The commands below establish a new subnetwork on the local chain. The cost will be exactly τ100.000000000 for the first network you create.
+```bash
+$ btcli register_subnet --wallet.name owner --subtensor.chain_endpoint ws://127.0.0.1:9946 
+>> Your balance is: τ200.000000000
+>> Do you want to register a subnet for τ100.000000000? [y/n]: 
+>> Enter password to unlock key: [YOUR_PASSWORD]
+>> ✅ Registered subnetwork with netuid: 1
+```
+*Note: The local chain will now have a default netuid of 1, the second registration will create netuid 2 and so on until you reach the subnet limit of 8. After this point the subnetwork with the least staked TAO will be replaced the incoming one.*
+
+### 11. Register Your Validator and Miner Keys
+Enroll your validator and miner on the network. This gives your two keys unique slots on the subnetwork which has a current limit of 128 slots.
 ```bash
 # Register the miner
 $ btcli register --wallet.name miner --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946
@@ -109,17 +121,32 @@ $ btcli register --wallet.name validator --wallet.hotkey default --subtensor.cha
 >> Continue Registration? [y/n]: y
 >> ⠦ 📡 Submitting POW...
 >> ✅ Registered
-
 ```
 
-### 11. Validate Your Key Registrations
+### 11. Stake to your validator
+This bootstraps the incentives on your new subnet by adding stake into its incentive mechanism.
+```bash
+# Register the miner
+$ btcli stake --wallet.name validator --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946
+>> Stake all Tao from account: 'validator'? [y/n]: y
+>> Stake:
+    τ0.000000000 ➡ τ100.000000000
+```
+
+### 12. Validate Your Key Registrations on your new subnet
 Ensure both the miner and validator keys are successfully registered.
 ```bash
+$ btcli list_subnets --subtensor.chain_endpoint ws://127.0.0.1:9946
+                        Subnets - finney                             
+NETUID  NEURONS  MAX_N   DIFFICULTY  TEMPO  CON_REQ  EMISSION  BURN(τ)  
+   1        2     256.00   10.00 M    1000    None     0.00%    τ1.00000 
+   2      128    
+
 $ btcli overview --wallet.name validator --subtensor.chain_endpoint ws://127.0.0.1:9946
 Subnet: 1                                                                                                                                                                
 COLDKEY  HOTKEY   UID  ACTIVE  STAKE(τ)     RANK    TRUST  CONSENSUS  INCENTIVE  DIVIDENDS  EMISSION(ρ)   VTRUST  VPERMIT  UPDATED  AXON  HOTKEY_SS58                    
-miner    default  0      True   0.00000  0.00000  0.00000    0.00000    0.00000    0.00000            0  0.00000                14  none  5GTFrsEQfvTsh3WjiEVFeKzFTc2xcf…
-1        1        2            τ0.00000  0.00000  0.00000    0.00000    0.00000    0.00000           ρ0  0.00000                                                         
+miner    default  0      True   100.00000  0.00000  0.00000    0.00000    0.00000    0.00000            0  0.00000                14  none  5GTFrsEQfvTsh3WjiEVFeKzFTc2xcf…
+1        1        2            τ100.00000  0.00000  0.00000    0.00000    0.00000    0.00000           ρ0  0.00000                                                         
                                                                           Wallet balance: τ0.0         
 
 $ btcli overview --wallet.name miner --subtensor.chain_endpoint ws://127.0.0.1:9946
@@ -131,11 +158,19 @@ miner    default  1      True   0.00000  0.00000  0.00000    0.00000    0.00000 
 
 ```
 
-### 12. Run Miner and Validator
+### 13. Run Miner and Validator
 Make sure to specify your subnetwork parameters.
 ```bash
 $ python neurons/miner.py --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1:9946 --wallet.name miner --wallet.hotkey default --logging.debug
+>> ... # Run logs.
 $ python neurons/validator.py --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1:9946 --wallet.name validator --wallet.hotkey default --logging.debug
+>> ... # Run logs.
+```
+
+### 14. Verify your incentive mechanism is running
+After a few blocks you validators will set weights this enables the mechanism. Then after the subnet tempo elapses (1000 block ~3hrs ) you should see your incentive mechanism beginning to distribute TAO to your miner.
+```bash
+$ btcli overview --wallet.name miner --subtensor.chain_endpoint ws://127.0.0.1:9946
 ```
 
 ### Ending Your Session

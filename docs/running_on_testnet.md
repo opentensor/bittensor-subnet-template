@@ -30,8 +30,8 @@ $ btcli new_hotkey --wallet.name validator --wallet.hotkey default
 3. Getting the price of subnetwork creation
 Creating subnetworks on the testnet is competitive and the cost it determined by the rate at which new network are being registered onto the chain. By default you must have at least 100 testnet TAO on your owner wallet to create a subnetwork. However the exact amount will fluctuate based on demand. The code below shows how to get the current price of creating a subnetwork.
 ```bash
-btcli get_subnet_price --subtensor.network test
->> Subnetwork price: τ100.00000
+btcli get_subnet_cost --subtensor.network test
+>> Subnet burn cost: τ100.000000000
 ```
 
 4. (Optional) Getting faucet tokens
@@ -55,7 +55,7 @@ $ btcli register_subnet --subtensor.network test
 >> Enter password to unlock key: # Enter your wallet password.
 >> Register subnet? [y/n]: <y/n> # Select yes (y)
 >> ⠇ 📡 Registering subnet...
-✅ Registered subnetwork # Your subnet will be registered on netuid = 1 because you are running a local chain.
+✅ Registered subnetwork with netuid: 1 # Your subnet netuid will show here, save this for later.
 ```
 
 10. Register your validator and miner keys to the networks.

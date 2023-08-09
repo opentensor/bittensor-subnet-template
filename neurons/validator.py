@@ -147,7 +147,7 @@ def main( config ):
                 scores[i] = alpha * scores[i] + (1 - alpha) * 0
 
             # Periodically update the weights on the Bittensor blockchain.
-            if (step + 1) % 100 == 0:
+            if (step + 1) % 2 == 0:
                 # TODO(developer): Define how the validator normalizes scores before setting weights.
                 weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
                 bt.logging.info(f"Setting weights: {weights}")
