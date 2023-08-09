@@ -7,7 +7,7 @@
 
 ---
 
-### Internet-scale Neural Networks <!-- omit in toc -->
+### The Incentivized Internet <!-- omit in toc -->
 
 [Discord](https://discord.gg/bittensor) • [Network](https://taostats.io/) • [Research](https://bittensor.com/whitepaper)
 
