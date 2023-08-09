@@ -135,11 +135,11 @@ miner    default  1      True   0.00000  0.00000  0.00000    0.00000    0.00000 
 Or run the miner and validator directly with the netuid and chain_endpoint arguments.
 ```bash
 # Run the miner with the netuid and chain_endpoint arguments.
-$ python template/miner.py --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1:9946 --wallet.name miner --wallet.hotkey default
+$ python neurons/miner.py --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1:9946 --wallet.name miner --wallet.hotkey default
 >> 2023-08-08 16:58:11.223 |       INFO       | Running miner for subnet: 1 on network: ws://127.0.0.1:9946 with config: ...
 
 # Run the validator with the netuid and chain_endpoint arguments.
-$ python template/validator.py --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1:9946 --wallet.name validator --wallet.hotkey default
+$ python neurons/validator.py --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1:9946 --wallet.name validator --wallet.hotkey default
 >> 2023-08-08 16:58:11.223 |       INFO       | Running validator for subnet: 1 on network: ws://127.0.0.1:9946 with config: ...
 ```
 
