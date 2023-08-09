@@ -91,8 +91,9 @@ $ btcli register_subnet --subtensor.chain_endpoint ws://127.0.0.1:9946
 >> Enter wallet name (default): owner 
 >> Enter password to unlock key: [YOUR_PASSWORD]
 >> Register subnet? [y/n]: y
+>> ✅ Registered
 ```
-*Note: The local chain will have a default netuid of 1, the seconc registration will have netuid 2 and so on.*
+*Note: The local chain will have a default netuid of 1, the second registration will have netuid 2 and so on.*
 
 ### 10. Register Your Validator and Miner Keys
 Enroll your validator and miner on the network.
