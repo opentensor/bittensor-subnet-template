@@ -26,10 +26,7 @@ $ source "$HOME/.cargo/env"
 Ensure you have the nightly toolchain and the WebAssembly (wasm) compilation target.
 ```bash
 # Update to the nightly version of rust
-$ rustup update nightly
-
-# Add wasm compilation target for the nightly toolchain
-$ rustup target add wasm32-unknown-unknown --toolchain nightly
+./scripts/init.sh
 ```
 
 ### 4. Clone the Subtensor Repository
