@@ -153,12 +153,15 @@ def main( config ):
                 bt.logging.info(f"Setting weights: {weights}")
                 # This is a crucial step that updates the incentive mechanism on the Bittensor blockchain.
                 # Miners with higher scores (or weights) receive a larger share of TAO rewards on this subnet.
-                subtensor.set_weights(
+                result = subtensor.set_weights(
                     netuid = config.netuid, # Subnet to set weights on.
                     wallet = wallet, # Wallet to sign set weights using hotkey.
                     uids = metagraph.uids, # Uids of the miners to set weights for.
                     weights = weights # Weights to set for the miners.
+                    wait_for_inclusion = True
                 )
+                if result: bt.logging.success('Successfully set weights.')')
+                else: bt.logging.error('Failed to set weights.') 
 
             # End the current step and prepare for the next iteration.
             step += 1
