@@ -24,8 +24,8 @@ The Bittensor blockchain hosts multiple self-contained incentive mechanisms 'sub
 This repository is a template for writing such mechanisms, preloaded with all needed files to run a very simple mechanism. The template is designed to be simple (rewards miners for responding with the multiple of the value sent by vaidators) and can act as a starting point for those who want to write their own mechanism. It is split into 3 primary files which you should rewrite. 
 These files are:
 - `template/protocol.py`: The file where the wire-protocol used by miners and validators is defined.
-- `neuron/miner.py`: This script which defines the miner's behavior, i.e., how the miner responds to requests from validators.
-- `neuron/validator.py`: This script which defines the validator's behavior, i.e., how the validator requests information from miners and determines scores.
+- `neurons/miner.py`: This script which defines the miner's behavior, i.e., how the miner responds to requests from validators.
+- `neurons/validator.py`: This script which defines the validator's behavior, i.e., how the validator requests information from miners and determines scores.
 
 </div>
 
