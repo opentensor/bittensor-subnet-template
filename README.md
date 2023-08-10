@@ -16,7 +16,7 @@
 ---
 
 This template contains all the necessary files and functions to define Bittensor subnet incentive mechanisms. You can run this template in three ways,
-on Bittensor's main-network (real TAO), Bittensor's test-network (fake TAO), or with your own staging-network. This repo includes instructions for dong all three.
+on Bittensor's main-network (real TAO, to be released), Bittensor's test-network (fake TAO), or with your own staging-network. This repo includes instructions for dong all three.
 
 # Introduction
 The Bittensor blockchain hosts multiple self-contained incentive mechanisms 'subnets'. Subnets are playing fields through which miners (those producing value) and validators (those producing consensus) determine together the proper distribution of TAO for the purpose of incentivizing the creation of value, i.e. generating digital commodities, such as intelligence, or data. Each consistes of a wire protocol through which miners and validators interact and their method of interacting with Bittensor's chain consensus engine [Yuma Consensus](https://github.com/opentensor/subtensor) which is designed to drive these actors into agreement about who is creating value.
@@ -24,8 +24,8 @@ The Bittensor blockchain hosts multiple self-contained incentive mechanisms 'sub
 This repository is a template for writing such mechanisms, preloaded with all needed files to run a very simple mechanism. The template is designed to be simple (rewards miners for responding with the multiple of the value sent by vaidators) and can act as a starting point for those who want to write their own mechanism. It is split into 3 primary files which you should rewrite. 
 These files are:
 - `template/protocol.py`: The file where the wire-protocol used by miners and validators is defined.
-- `template/miner.py`: This script which defines the miner's behavior, i.e., how the miner responds to requests from validators.
-- `template/validator.py`: This script which defines the validator's behavior, i.e., how the validator requests information from miners and determines scores.
+- `neuron/miner.py`: This script which defines the miner's behavior, i.e., how the miner responds to requests from validators.
+- `neuron/validator.py`: This script which defines the validator's behavior, i.e., how the validator requests information from miners and determines scores.
 
 </div>
 
