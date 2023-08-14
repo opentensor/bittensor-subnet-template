@@ -160,7 +160,7 @@ def main( config ):
                     weights = weights # Weights to set for the miners.
                     wait_for_inclusion = True
                 )
-                if result: bt.logging.success('Successfully set weights.')')
+                if result: bt.logging.success('Successfully set weights.')
                 else: bt.logging.error('Failed to set weights.') 
 
             # End the current step and prepare for the next iteration.
