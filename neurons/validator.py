@@ -157,7 +157,7 @@ def main( config ):
                     netuid = config.netuid, # Subnet to set weights on.
                     wallet = wallet, # Wallet to sign set weights using hotkey.
                     uids = metagraph.uids, # Uids of the miners to set weights for.
-                    weights = weights # Weights to set for the miners.
+                    weights = weights, # Weights to set for the miners.
                     wait_for_inclusion = True
                 )
                 if result: bt.logging.success('Successfully set weights.')
