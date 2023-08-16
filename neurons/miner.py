@@ -23,7 +23,6 @@
 # Step 1: Import necessary libraries and modules
 import os
 import time
-import template
 import argparse
 import traceback
 import bittensor as bt
