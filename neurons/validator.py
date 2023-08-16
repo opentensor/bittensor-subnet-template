@@ -50,7 +50,7 @@ def get_config():
     # Adds wallet specific arguments i.e. --wallet.name ..., --wallet.hotkey ./. or --wallet.path ...
     bt.wallet.add_args(parser)
     # Parse the config (will take command-line arguments if provided)
-    # To print help message, run python3 template/miner.py --help
+    # To print help message, run python3 template/validator.py --help
     config =  bt.config(parser)
 
     # Step 3: Set up logging directory
@@ -93,7 +93,7 @@ def main( config ):
     dendrite = bt.dendrite( wallet = wallet )
     bt.logging.info(f"Dendrite: {dendrite}")
 
-    # The metagraph holds the state of the network, letting us know about other miners.
+    # The metagraph holds the state of the network, letting us know about other validators and miners.
     metagraph = subtensor.metagraph( config.netuid )
     bt.logging.info(f"Metagraph: {metagraph}")
 
@@ -101,10 +101,10 @@ def main( config ):
     if wallet.hotkey.ss58_address not in metagraph.hotkeys:
         bt.logging.error(f"\nYour validator: {wallet} if not registered to chain connection: {subtensor} \nRun btcli register and try again.")
         exit()
-    else:
-        # Each miner gets a unique identity (UID) in the network for differentiation.
-        my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
-        bt.logging.info(f"Running validator on uid: {my_subnet_uid}")
+
+    # Each validator gets a unique identity (UID) in the network for differentiation.
+    my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
+    bt.logging.info(f"Running validator on uid: {my_subnet_uid}")
 
     # Step 6: Set up initial scoring weights for validation
     bt.logging.info("Building validation weights.")
@@ -136,10 +136,10 @@ def main( config ):
             # TODO(developer): Define how the validator scores responses.
             # Adjust the scores based on responses from miners.
             for i, resp_i in enumerate(responses):
-                
+
                 # Initialize the score for the current miner's response.
                 score = 0
-                
+
                 # Get the uid of the miner
                 uid = metagraph.axons.index(miner_axons[i])
 
