@@ -116,14 +116,11 @@ def main( config ):
     while True:
         try:
 
-            # Select miner axons from the metagraph.
-            miner_axons = [axon for i, axon in enumerate(metagraph.axons) if not metagraph.validator_permit[i]]
-            bt.logging.info(f'{miner_axons=}')
             # TODO(developer): Define how the validator selects a miner to query, how often, etc.
             # Broadcast a query to all miners on the network.
             responses = dendrite.query(
                 # Send the query to all miners in the network.
-                miner_axons,
+                metagraph.axons,
                 # Construct a dummy query.
                 template.protocol.Dummy( dummy_input = step ), # Construct a dummy query.
                 # All responses have the deserialize function called on them before returning.
@@ -137,21 +134,15 @@ def main( config ):
             # Adjust the scores based on responses from miners.
             for i, resp_i in enumerate(responses):
 
-                # Initialize the score for the current miner's response.
-                score = 0
-
-                # Get the uid of the miner
-                uid = metagraph.axons.index(miner_axons[i])
 
                 # Check if the miner has provided the correct response by doubling the dummy input.
-                # If correct, set their score for this round to 1.
-                if resp_i == step * 2:
-                    score = 1
+                # If correct, set their score for this round to 1. Otherwise, set it to 0.
+                score = template.reward.dummy( step, resp_i )
 
                 # Update the global score of the miner.
                 # This score contributes to the miner's weight in the network.
                 # A higher weight means that the miner has been consistently responding correctly.
-                scores[uid] = config.alpha * scores[uid] + (1 - config.alpha) * score
+                scores[i] = config.alpha * scores[i] + (1 - config.alpha) * score
 
             bt.logging.info(f"Scores: {scores}")
             # Periodically update the weights on the Bittensor blockchain.
