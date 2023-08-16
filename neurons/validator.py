@@ -151,7 +151,7 @@ def main( config ):
                 # Update the global score of the miner.
                 # This score contributes to the miner's weight in the network.
                 # A higher weight means that the miner has been consistently responding correctly.
-                scores[uid] = config.alpha * scores[uid] + (1 - config.alpha) * 0
+                scores[uid] = config.alpha * scores[uid] + (1 - config.alpha) * score
 
             bt.logging.info(f"Scores: {scores}")
             # Periodically update the weights on the Bittensor blockchain.
