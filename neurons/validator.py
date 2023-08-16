@@ -24,7 +24,6 @@
 import os
 import time
 import torch
-import template
 import argparse
 import traceback
 import bittensor as bt
