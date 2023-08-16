@@ -149,7 +149,7 @@ def main( config ):
 
     # Step 6: Build and link miner functions to the axon.
     # The axon handles request processing, allowing validators to send this process requests.
-    axon = bt.axon( wallet = wallet )
+    axon = bt.axon( wallet = wallet, config=config )
     bt.logging.info(f"Axon {axon}")
 
     # Attach determiners which functions are called when servicing a request.
