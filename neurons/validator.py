@@ -144,7 +144,7 @@ def main( config ):
                 # Update the global score of the miner.
                 # This score contributes to the miner's weight in the network.
                 # A higher weight means that the miner has been consistently responding correctly.
-                scores[i] = alpha * scores[i] + (1 - alpha) * 0
+                scores[i] = alpha * scores[i] + (1 - alpha) * score
 
             # Periodically update the weights on the Bittensor blockchain.
             if (step + 1) % 2 == 0:
