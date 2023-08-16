@@ -25,3 +25,4 @@ __spec_version__ = (1000 * int(version_split[0])) + (10 * int(version_split[1]))
 
 # Import all submodules.
 from . import protocol
+from . import reward
