@@ -38,6 +38,7 @@ import template
 def get_config():
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('--alpha', default=0.9, type=float, help='The weight moving average scoring.')
     # TODO(developer): Adds your custom validator arguments to the parser.
     parser.add_argument('--custom', default='my_custom_value', help='Adds a custom value to the parser.')
     # Adds override arguments for network and netuid.
@@ -107,24 +108,26 @@ def main( config ):
 
     # Step 6: Set up initial scoring weights for validation
     bt.logging.info("Building validation weights.")
-    alpha = 0.9
     scores = torch.ones_like(metagraph.S, dtype=torch.float32)
     bt.logging.info(f"Weights: {scores}")
-
     # Step 7: The Main Validation Loop
     bt.logging.info("Starting validator loop.")
     step = 0
     while True:
         try:
+
+            # Select miner axons from the metagraph.
+            miner_axons = [axon for i, axon in enumerate(metagraph.axons) if not metagraph.validator_permit[i]]
+            bt.logging.info(f'{miner_axons=}')
             # TODO(developer): Define how the validator selects a miner to query, how often, etc.
             # Broadcast a query to all miners on the network.
             responses = dendrite.query(
-                # Send the query to all axons in the network.
-                metagraph.axons,
+                # Send the query to all miners in the network.
+                miner_axons,
                 # Construct a dummy query.
                 template.protocol.Dummy( dummy_input = step ), # Construct a dummy query.
                 # All responses have the deserialize function called on them before returning.
-                deserialize = True, 
+                deserialize = True,
             )
 
             # Log the results for monitoring purposes.
@@ -133,8 +136,12 @@ def main( config ):
             # TODO(developer): Define how the validator scores responses.
             # Adjust the scores based on responses from miners.
             for i, resp_i in enumerate(responses):
+                
                 # Initialize the score for the current miner's response.
                 score = 0
+                
+                # Get the uid of the miner
+                uid = metagraph.axons.index(miner_axons[i])
 
                 # Check if the miner has provided the correct response by doubling the dummy input.
                 # If correct, set their score for this round to 1.
@@ -144,10 +151,11 @@ def main( config ):
                 # Update the global score of the miner.
                 # This score contributes to the miner's weight in the network.
                 # A higher weight means that the miner has been consistently responding correctly.
-                scores[i] = alpha * scores[i] + (1 - alpha) * 0
+                scores[uid] = config.alpha * scores[uid] + (1 - config.alpha) * 0
 
+            bt.logging.info(f"Scores: {scores}")
             # Periodically update the weights on the Bittensor blockchain.
-            if (step + 1) % 2 == 0:
+            if (step + 1) % 10 == 0:
                 # TODO(developer): Define how the validator normalizes scores before setting weights.
                 weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
                 bt.logging.info(f"Setting weights: {weights}")
@@ -161,7 +169,7 @@ def main( config ):
                     wait_for_inclusion = True
                 )
                 if result: bt.logging.success('Successfully set weights.')
-                else: bt.logging.error('Failed to set weights.') 
+                else: bt.logging.error('Failed to set weights.')
 
             # End the current step and prepare for the next iteration.
             step += 1
