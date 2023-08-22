@@ -54,7 +54,7 @@ python -m pip install -e .
 
 ---
 
-Once you have installed this repo and attained your subnet, you can run the miner and validator with the following commands.
+Once you have installed this repo and attained your subnet via the instructions in the nested docs (staging, testing, or main) you can run the miner and validator with the following commands.
 ```bash
 # To run the miner
 python -m neurons/miner.py 
