@@ -28,19 +28,19 @@ This step fetches the subtensor codebase to your local machine.
 git clone https://github.com/opentensor/subtensor.git
 ```
 
-### 4. Setup Rust for Substrate Development
-Ensure you have the nightly toolchain and the WebAssembly (wasm) compilation target. Note that this step will run the subtensor chain on your terminal directly, hence we advise that you run this as a background process using PM2 or other software.
-```bash
-# Update to the nightly version of rust
-./subtensor/scripts/init.sh
-```
-
-### 5. Switch to the User-Creation Branch
+### 4. Switch to the User-Creation Branch
 Navigate into the repository and switch to the desired branch.
 ```bash
 cd subtensor
 git fetch origin subnets/user-creation
 git checkout subnets/user-creation
+```
+
+### 5. Setup Rust for Substrate Development
+Ensure you have the nightly toolchain and the WebAssembly (wasm) compilation target. Note that this step will run the subtensor chain on your terminal directly, hence we advise that you run this as a background process using PM2 or other software.
+```bash
+# Update to the nightly version of rust
+./subtensor/scripts/init.sh
 ```
 
 ### 6. Initialize Your Local Subtensor Chain in Development Mode
