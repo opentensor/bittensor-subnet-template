@@ -104,7 +104,7 @@ miner    default  1      True   0.00000  0.00000  0.00000    0.00000    0.00000 
                                                                           Wallet balance: τ0.0   
 ```
 
-10. Edit the default `NETUID=1` and `CHAIN_ENDPOINT=ws://127.0.0.1:9946` arguments in `template/__init__.py` to match your created subnetwork.
+12. Edit the default `NETUID=1` and `CHAIN_ENDPOINT=ws://127.0.0.1:9946` arguments in `template/__init__.py` to match your created subnetwork.
 Or run the miner and validator directly with the netuid and chain_endpoint arguments.
 ```bash
 # Run the miner with the netuid and chain_endpoint arguments.
@@ -116,5 +116,16 @@ python neurons/validator.py --netuid 1 --subtensor.network test --wallet.name va
 >> 2023-08-08 16:58:11.223 |       INFO       | Running validator for subnet: 1 on network: ws://127.0.0.1:9946 with config: ...
 ```
 
-7. Stopping Your Nodes:
+13. Stopping Your Nodes:
 If you want to stop your nodes, you can do so by pressing CTRL + C in the terminal where the nodes are running.
+
+14. Get Emissions Flowing:
+Register to the root network using the `btcli`:
+```bash
+btcli root register --subtensor.network test # ensure on testnet
+```
+
+Then set your weights for the subnet:
+```bash
+btcli root weights --subtensor.network test # ensure on testnet
+```
