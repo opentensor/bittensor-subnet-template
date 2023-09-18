@@ -167,7 +167,7 @@ python neurons/validator.py --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1
 ```
 
 ### 14. Verify your incentive mechanism is running
-After a few blocks you validators will set weights this enables the mechanism. Then after the subnet tempo elapses (1000 block ~3hrs ) you should see your incentive mechanism beginning to distribute TAO to your miner.
+After a few blocks you validators will set weights this enables the mechanism. Then after the subnet tempo elapses (300 block ~1hrs ) you should see your incentive mechanism beginning to distribute TAO to your miner.
 ```bash
 btcli wallet overview --wallet.name miner --subtensor.chain_endpoint ws://127.0.0.1:9946
 ```
