@@ -53,6 +53,11 @@ class Dummy( bt.Synapse ):
     # Required request input, filled by sending dendrite caller.
     dummy_input: int
 
+    # Required request input hash, filled automatically when dendrite creates the request.
+    # This allows for proper data validation and messages are signed with the hashes of the
+    # required body fields. Ensure you have a {field}_hash field for each required field.
+    dummy_input_hash: str = ""
+
     # Optional request output, filled by recieving axon.
     dummy_output: typing.Optional[int] = None
 
