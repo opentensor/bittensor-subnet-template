@@ -21,3 +21,7 @@ You get to play a vital role in helping bootstrap what could one day become one 
 
 By incentivizing developers to create their own markets, Bittensor is set to become a  one-stop-shop for those seeking all the compute requirements for building unstoppable applications on top of an incentivized infrastructure
 
+# Deeper dive
+Check out the Bittensor about page [here](https://bittensor.com/about) for more details about what the bittensor paradigm is and why subnets are revolutionary technology.
+
+Also see our [linktree](https://linktr.ee/opentensor) for more information.

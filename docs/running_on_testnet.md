@@ -33,7 +33,7 @@ btcli wallet new_hotkey --wallet.name validator --wallet.hotkey default
 Creating subnetworks on the testnet is competitive and the cost it determined by the rate at which new network are being registered onto the chain. By default you must have at least 100 testnet TAO on your owner wallet to create a subnetwork. However the exact amount will fluctuate based on demand. The code below shows how to get the current price of creating a subnetwork.
 ```bash
 btcli subnet lock_cost --subtensor.network test
->> Subnet burn cost: τ100.000000000
+>> Subnet lock cost: τ100.000000000
 ```
 
 4. (Optional) Getting faucet tokens
