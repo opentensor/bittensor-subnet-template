@@ -95,14 +95,14 @@ def main( config ):
     bt.logging.info(f"Metagraph: {metagraph}")
 
     if wallet.hotkey.ss58_address not in metagraph.hotkeys:
-        bt.logging.error(f"\nYour validator: {wallet} if not registered to chain connection: {subtensor} \nRun btcli register and try again. ")
+        bt.logging.error(f"\nYour miner: {wallet} is not registered to chain connection: {subtensor} \nRun btcli register and try again. ")
         exit()
-    else:
-        # Each miner gets a unique identity (UID) in the network for differentiation.
-        my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
-        bt.logging.info(f"Running miner on uid: {my_subnet_uid}")
 
-    # Step 4: Set up miner functionalities
+    # Each miner gets a unique identity (UID) in the network for differentiation.
+    my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
+    bt.logging.info(f"Running miner on uid: {my_subnet_uid}")
+
+    # Step 5: Set up miner functionalities
     # The following functions control the miner's response to incoming requests.
     # The blacklist function decides if a request should be ignored.
     def blacklist_fn( synapse: template.protocol.Dummy ) -> typing.Tuple[bool, str]:
@@ -147,9 +147,9 @@ def main( config ):
         synapse.dummy_output = synapse.dummy_input * 2
         return synapse
 
-    # Step 5: Build and link miner functions to the axon.
+    # Step 6: Build and link miner functions to the axon.
     # The axon handles request processing, allowing validators to send this process requests.
-    axon = bt.axon( wallet = wallet )
+    axon = bt.axon( wallet = wallet, config=config )
     bt.logging.info(f"Axon {axon}")
 
     # Attach determiners which functions are called when servicing a request.
@@ -169,7 +169,7 @@ def main( config ):
     bt.logging.info(f"Starting axon server on port: {config.axon.port}")
     axon.start()
 
-    # Step 6: Keep the miner alive
+    # Step 7: Keep the miner alive
     # This loop maintains the miner's operations until intentionally stopped.
     bt.logging.info(f"Starting main loop")
     step = 0

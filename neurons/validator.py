@@ -37,6 +37,7 @@ import template
 def get_config():
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('--alpha', default=0.9, type=float, help='The weight moving average scoring.')
     # TODO(developer): Adds your custom validator arguments to the parser.
     parser.add_argument('--custom', default='my_custom_value', help='Adds a custom value to the parser.')
     # Adds override arguments for network and netuid.
@@ -48,7 +49,7 @@ def get_config():
     # Adds wallet specific arguments i.e. --wallet.name ..., --wallet.hotkey ./. or --wallet.path ...
     bt.wallet.add_args(parser)
     # Parse the config (will take command-line arguments if provided)
-    # To print help message, run python3 template/miner.py --help
+    # To print help message, run python3 template/validator.py --help
     config =  bt.config(parser)
 
     # Step 3: Set up logging directory
@@ -91,7 +92,7 @@ def main( config ):
     dendrite = bt.dendrite( wallet = wallet )
     bt.logging.info(f"Dendrite: {dendrite}")
 
-    # The metagraph holds the state of the network, letting us know about other miners.
+    # The metagraph holds the state of the network, letting us know about other validators and miners.
     metagraph = subtensor.metagraph( config.netuid )
     bt.logging.info(f"Metagraph: {metagraph}")
 
@@ -99,31 +100,30 @@ def main( config ):
     if wallet.hotkey.ss58_address not in metagraph.hotkeys:
         bt.logging.error(f"\nYour validator: {wallet} if not registered to chain connection: {subtensor} \nRun btcli register and try again.")
         exit()
-    else:
-        # Each miner gets a unique identity (UID) in the network for differentiation.
-        my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
-        bt.logging.info(f"Running validator on uid: {my_subnet_uid}")
+
+    # Each validator gets a unique identity (UID) in the network for differentiation.
+    my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
+    bt.logging.info(f"Running validator on uid: {my_subnet_uid}")
 
     # Step 6: Set up initial scoring weights for validation
     bt.logging.info("Building validation weights.")
-    alpha = 0.9
     scores = torch.ones_like(metagraph.S, dtype=torch.float32)
     bt.logging.info(f"Weights: {scores}")
-
     # Step 7: The Main Validation Loop
     bt.logging.info("Starting validator loop.")
     step = 0
     while True:
         try:
+
             # TODO(developer): Define how the validator selects a miner to query, how often, etc.
             # Broadcast a query to all miners on the network.
             responses = dendrite.query(
-                # Send the query to all axons in the network.
+                # Send the query to all miners in the network.
                 metagraph.axons,
                 # Construct a dummy query.
                 template.protocol.Dummy( dummy_input = step ), # Construct a dummy query.
                 # All responses have the deserialize function called on them before returning.
-                deserialize = True, 
+                deserialize = True,
             )
 
             # Log the results for monitoring purposes.
@@ -132,21 +132,20 @@ def main( config ):
             # TODO(developer): Define how the validator scores responses.
             # Adjust the scores based on responses from miners.
             for i, resp_i in enumerate(responses):
-                # Initialize the score for the current miner's response.
-                score = 0
+
 
                 # Check if the miner has provided the correct response by doubling the dummy input.
-                # If correct, set their score for this round to 1.
-                if resp_i == step * 2:
-                    score = 1
+                # If correct, set their score for this round to 1. Otherwise, set it to 0.
+                score = template.reward.dummy( step, resp_i )
 
                 # Update the global score of the miner.
                 # This score contributes to the miner's weight in the network.
                 # A higher weight means that the miner has been consistently responding correctly.
-                scores[i] = alpha * scores[i] + (1 - alpha) * score
+                scores[i] = config.alpha * scores[i] + (1 - config.alpha) * score
 
+            bt.logging.info(f"Scores: {scores}")
             # Periodically update the weights on the Bittensor blockchain.
-            if (step + 1) % 2 == 0:
+            if (step + 1) % 10 == 0:
                 # TODO(developer): Define how the validator normalizes scores before setting weights.
                 weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
                 bt.logging.info(f"Setting weights: {weights}")
@@ -160,7 +159,7 @@ def main( config ):
                     wait_for_inclusion = True
                 )
                 if result: bt.logging.success('Successfully set weights.')
-                else: bt.logging.error('Failed to set weights.') 
+                else: bt.logging.error('Failed to set weights.')
 
             # End the current step and prepare for the next iteration.
             step += 1
