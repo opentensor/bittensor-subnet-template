@@ -1,8 +1,10 @@
-# Bittensor Development Workflow
+# Bittensor Subnet Development Workflow
+
+This is a highly advisable workflow to follow to keep your subtensor project organized and foster ease of contribution.
 
 ## Table of contents
 
-- [Bittensor Development Workflow](#bittensor-development-workflow)
+- [Bittensor Subnet Development Workflow](#bittensor-subnet-development-workflow)
   - [Main Branches](#main-branches)
   - [Development Model](#development-model)
       - [Feature Branches](#feature-branches)
@@ -139,6 +141,8 @@ Continuous Deployment (CD) is a software engineering approach in which software 
 
 - **CircleCI job**: Create jobs in CircleCI to automate the merging of staging into master and release version (needed to release code) and building and testing Bittensor (needed to merge PRs).
 
+> It is highly recommended to set up your own circleci pipeline with your subnet
+
 ## Versioning and Release Notes
 
 Semantic versioning helps keep track of the different versions of the software. When code is merged into master, generate a new version. 
@@ -146,6 +150,8 @@ Semantic versioning helps keep track of the different versions of the software. 
 Release notes provide documentation for each version released to the users, highlighting the new features, improvements, and bug fixes. When merged into master, generate GitHub release and release notes.
 
 ## Pending Tasks
+
+Follow these steps when you are contributing to the bittensor subnet:
 
 - Determine if master and staging are different
 - Determine what is in staging that is not merged yet

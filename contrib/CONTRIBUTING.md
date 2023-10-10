@@ -1,61 +1,27 @@
 # Contributing to Bittensor Subnet Development
 
-The following is a set of guidelines for contributing to Bittensor, which are hosted in the [Opentensor Organization](https://github.com/opentensor) on GitHub. These are mostly guidelines, not rules. Use your best judgment, and feel free to propose changes to this document in a pull request.
+The following is a set of guidelines for contributing to the Bittensor ecosystem. These are **HIGHLY RECOMMENDED** guidelines, but not hard-and-fast rules. Use your best judgment, and feel free to propose changes to this document in a pull request.
 
 ## Table Of Contents
-1. [Getting Started](#getting-started)
-   1. [Good First Issue Label](#good-first-issue-label)
-   1. [Beginner and Help-wanted Issues Label](#beginner-and-help-wanted-issues-label)
 1. [How Can I Contribute?](#how-can-i-contribute)
+   1. [Communication Channels](#communication-channels)
    1. [Code Contribution General Guideline](#code-contribution-general-guidelines)
    1. [Pull Request Philosophy](#pull-request-philosophy)
    1. [Pull Request Process](#pull-request-process)
-   1. [Testing](#testing)
    1. [Addressing Feedback](#addressing-feedback)
    1. [Squashing Commits](#squashing-commits)
    1. [Refactoring](#refactoring)
    1. [Peer Review](#peer-review)
- 1. [Reporting Bugs](#reporting-bugs)
- 1. [Suggesting Features](#suggesting-enhancements)
+ 1. [Suggesting Features](#suggesting-enhancements-and-features)
 
-
-## Getting Started
-New contributors are very welcome and needed.
-Reviewing and testing is highly valued and the most effective way you can contribute as a new contributor. It also will teach you much more about the code and process than opening pull requests. 
-
-Before you start contributing, familiarize yourself with the Bittensor Core build system and tests. Refer to the documentation in the repository on how to build Bittensor core and how to run the unit tests, functional tests.
-
-There are many open issues of varying difficulty waiting to be fixed. If you're looking for somewhere to start contributing, check out the [good first issue](https://github.com/opentensor/bittensor/labels/good%20first%20issue) list or changes that are up for grabs. Some of them might no longer be applicable. So if you are interested, but unsure, you might want to leave a comment on the issue first.
-
-### Good First Issue Label
-The purpose of the good first issue label is to highlight which issues are suitable for a new contributor without a deep understanding of the codebase.
-
-However, good first issues can be solved by anyone. If they remain unsolved for a longer time, a frequent contributor might address them.
-
-You do not need to request permission to start working on an issue. However, you are encouraged to leave a comment if you are planning to work on it. This will help other contributors monitor which issues are actively being addressed and is also an effective way to request assistance if and when you need it.
-
-### Beginner and Help-wanted Issues Label
-You can start by looking through these `beginner` and `help-wanted` issues:
-
-* [Beginner issues](https://github.com/opentensor/bittensor/labels/beginner) - issues which should only require a few lines of code, and a test or two.
-* [Help wanted issues](https://github.com/opentensor/bittensor/labels/help%20wanted) - issues which should be a bit more involved than `beginner` issues.
-
-## Communication Channels
-Most communication about Bittensor development happens on Discord channel.
-Here's the link of Discord community.
-[Bittensor Discord](https://discord.com/channels/799672011265015819/799672011814862902)
-
-And also here.
-[Bittensor Community Discord](https://discord.com/channels/1120750674595024897/1120799375703162950)
 
 ## How Can I Contribute?
+TODO[owner]: Define your desired contribution procedure.
 
-You can contribute to Bittensor in one of three main ways (as well as many others):
-1. [Bug](#reporting-bugs) reporting and fixes
-2. New features and Bittensor [enhancements](#suggesting-enhancements)
-3. [Documentation](https://github.com/opentensor/docs) fixes and updates
+## Communication Channels
+TODO[owner]: Place your communication channels here
 
-> Please follow the Bittensor [style guide](./STYLE.md) regardless of your contribution type. 
+> Please follow the Bittensor Subnet [style guide](./STYLE.md) regardless of your contribution type. 
 
 Here is a high-level summary:
 - Code consistency is crucial; adhere to established programming language conventions.
@@ -74,9 +40,8 @@ Here is a high-level summary:
 
 ### Code Contribution General Guidelines
 
-> Review the Bittensor [style guide](./STYLE.md) and [development workflow](./DEVELOPMENT_WORKFLOW.md) before contributing. 
+> Review the Bittensor Subnet [style guide](./STYLE.md) and [development workflow](./DEVELOPMENT_WORKFLOW.md) before contributing. 
 
-If you're looking to contribute to Bittensor but unsure where to start, please join our community [discord](https://discord.gg/bittensor), a developer-friendly Bittensor town square. Start with [#development](https://discord.com/channels/799672011265015819/799678806159392768) and [#bounties](https://discord.com/channels/799672011265015819/1095684873810890883) to see what issues are currently posted. For a greater understanding of Bittensor's usage and development, check the [Bittensor Documentation](https://bittensor.com/docs).
 
 #### Pull Request Philosophy
 
@@ -84,7 +49,6 @@ Patchsets and enhancements should always be focused. A pull request could add a 
 
 Specifically, pull requests must adhere to the following criteria:
 - Contain fewer than 50 files. PRs with more than 50 files will be closed.
-- Use the specific [template](./.github/pull_request_template.md) appropriate to your contribution.
 - If a PR introduces a new feature, it *must* include corresponding tests.
 - Other PRs (bug fixes, refactoring, etc.) should ideally also have tests, as they provide proof of concept and prevent regression.
 - Categorize your PR properly by using GitHub labels. This aids in the review process by informing reviewers about the type of change at a glance.
@@ -109,10 +73,9 @@ Please follow these steps to have your contribution considered by the maintainer
 1. Read the [development workflow](./DEVELOPMENT_WORKFLOW.md) defined for this repository to understand our workflow.
 2. Ensure your PR meets the criteria stated in the 'Pull Request Philosophy' section.
 3. Include relevant tests for any fixed bugs or new features as stated in the [testing guide](./TESTING.md).
-4. Follow all instructions in [the template](https://github.com/opentensor/bittensor/blob/master/.github/PULL_REQUEST_TEMPLATE/pull_request_template.md) to create the PR.
-5. Ensure your commit messages are clear and concise. Include the issue number if applicable.
-6. If you have multiple commits, rebase them into a single commit using `git rebase -i`.
-7. Explain what your changes do and why you think they should be merged in the PR description consistent with the [style guide](./STYLE.md).
+4. Ensure your commit messages are clear and concise. Include the issue number if applicable.
+5. If you have multiple commits, rebase them into a single commit using `git rebase -i`.
+6. Explain what your changes do and why you think they should be merged in the PR description consistent with the [style guide](./STYLE.md).
 
 *After* creating the PR:
 1. Verify that all [status checks](https://help.github.com/articles/about-status-checks/) are passing after you submit your pull request. 
@@ -136,25 +99,11 @@ After you submit a pull request, it will be reviewed by the maintainers. They ma
 > Note: Be sure to merge the latest from "upstream" before making a pull request:
 
 ```bash
-git remote add upstream https://github.com/opentensor/bittensor.git
+git remote add upstream https://github.com/opentensor/bittensor.git # TODO[owner]: replace with your repo URL
 git fetch upstream
 git merge upstream/<your-branch-name>
 git push origin <your-branch-name>
 ```
-
-#### Testing
-Before making a PR for any code changes, please write adequate testing with unittest and/or pytest if it is warranted.  This is **mandatory** for new features and enhancements. See the [testing guide](./TESTING.md) for more complete information. 
-
-You may also like to view the [/tests](https://github.com/opentensor/bittensor/tree/master/tests) for starter examples.
-
-Here is a quick summary:
-- **Running Tests**: Use `pytest` from the root directory of the Bittensor repository to run all tests. To run a specific test file or a specific test within a file, specify it directly (e.g., `pytest tests/test_wallet.py::test_create_new_coldkey`).
-- **Writing Tests**: When writing tests, cover both the "happy path" and any potential error conditions. Use the `assert` statement to verify the expected behavior of a function.
-- **Mocking**: Use the `unittest.mock` library to mock certain functions or objects when you need to isolate the functionality you're testing. This allows you to control the behavior of these functions or objects during testing.
-- **Test Coverage**: Use the `pytest-cov` plugin to measure your test coverage. Aim for high coverage but also ensure your tests are meaningful and accurately represent the conditions under which your code will run.
-- **Continuous Integration**: Bittensor uses GitHub Actions for continuous integration. Tests are automatically run every time you push changes to the repository. Check the "Actions" tab of the Bittensor GitHub repository to view the results.
-
-Remember, testing is crucial for maintaining code health, catching issues early, and facilitating the addition of new features or refactoring of existing code.
 
 #### Addressing Feedback
 
@@ -184,7 +133,7 @@ The length of time required for peer review is unpredictable and will vary from 
 
 #### Refactoring
 
-Refactoring is a necessary part of any software project's evolution. The following guidelines cover refactoring pull requests for the Bittensor project.
+Refactoring is a necessary part of any software project's evolution. The following guidelines cover refactoring pull requests for the project.
 
 There are three categories of refactoring: code-only moves, code style fixes, and code refactoring. In general, refactoring pull requests should not mix these three kinds of activities in order to make refactoring pull requests easy to review and uncontroversial. In all cases, refactoring PRs must not change the behaviour of code within the pull request (bugs must be preserved as is).
 
@@ -208,28 +157,16 @@ A pull request that changes consensus-critical code is considerably more involve
 
 For a more detailed description of the review process, see the [Code Review Guidelines](CODE_REVIEW_DOCS.md).
 
-### Reporting Bugs
-
-This section guides you through submitting a bug report for Bittensor. Following these guidelines helps maintainers and the community understand your report :pencil:, reproduce the behavior :computer: :computer:, and find related reports :mag_right:.
-
-When you are creating a bug report, please [include as many details as possible](#how-do-i-submit-a-good-bug-report). Fill out [the required template](https://bit.ly/atom-bugfix-pr), the information it asks for helps us resolve issues faster.
-
 > **Note:** If you find a **Closed** issue that seems like it is the same thing that you're experiencing, open a new issue and include a link to the original issue in the body of your new one.
-
-#### Before Submitting A Bug Report
-
-* **Check the [debugging guide](./DEBUGGING.md).** You might be able to find the cause of the problem and fix things yourself. Most importantly, check if you can reproduce the problem in the latest version of Bittensor by updating to the latest Master branch changes.
-* **Check the [Discord Server](https://discord.gg/7wvFuPJZgq)** and ask in [#finney-issues](https://discord.com/channels/799672011265015819/1064247007688007800) or [#subnet-1-issues](https://discord.com/channels/799672011265015819/1096187495667998790).
-* **Determine which repository the problem should be reported in**: if it has to do with your ML model, then it's likely [Bittensor](https://github.com/opentensor/bittensor). If you are having problems with your emissions or Blockchain, then it is in [subtensor](https://github.com/opentensor/subtensor) 
 
 #### How Do I Submit A (Good) Bug Report?
 
-Bugs are tracked as [GitHub issues](https://guides.github.com/features/issues/). You can find Bittensor's issues [here](https://github.com/opentensor/bittensor/issues). After you've determined which repository ([Bittensor](https://github.com/opentensor/bittensor) or [subtensor](https://github.com/opentensor/subtensor)) your bug is related to, create an issue on that repository and provide the following information by filling in [the template](https://bit.ly/atom-bugfix-pr).
+Please track bugs as GitHub issues.
 
 Explain the problem and include additional details to help maintainers reproduce the problem:
 
 * **Use a clear and descriptive title** for the issue to identify the problem.
-* **Describe the exact steps which reproduce the problem** in as many details as possible. For example, start by explaining how you started Bittensor, e.g. which command exactly you used in the terminal, or how you started Bittensor otherwise. When listing steps, **don't just say what you did, but explain how you did it**. For example, if you ran Bittensor with a set of custom configs, explain if you used a config file or command line arguments. 
+* **Describe the exact steps which reproduce the problem** in as many details as possible. For example, start by explaining how you started the application, e.g. which command exactly you used in the terminal, or how you started Bittensor otherwise. When listing steps, **don't just say what you did, but explain how you did it**. For example, if you ran with a set of custom configs, explain if you used a config file or command line arguments. 
 * **Provide specific examples to demonstrate the steps**. Include links to files or GitHub projects, or copy/pasteable snippets, which you use in those examples. If you're providing snippets in the issue, use [Markdown code blocks](https://help.github.com/articles/markdown-basics/#multiple-lines).
 * **Describe the behavior you observed after following the steps** and point out what exactly is the problem with that behavior.
 * **Explain which behavior you expected to see instead and why.**
@@ -240,42 +177,37 @@ Explain the problem and include additional details to help maintainers reproduce
 
 Provide more context by answering these questions:
 
-* **Did the problem start happening recently** (e.g. after updating to a new version of Bittensor) or was this always a problem?
+* **Did the problem start happening recently** (e.g. after updating to a new version) or was this always a problem?
 * If the problem started happening recently, **can you reproduce the problem in an older version of Bittensor?** 
 * **Can you reliably reproduce the issue?** If not, provide details about how often the problem happens and under which conditions it normally happens.
 
 Include details about your configuration and environment:
 
-* **Which version of Bittensor are you using?** You can get the version by checking for `__version__` in [`bittensor/bittensor/__init.py`](https://github.com/opentensor/bittensor/blob/master/bittensor/__init__.py#L30). This is not sufficient.  Also add the commit hash of the branch you are on.
+* **Which version of Bittensor Subnet are you using?**
 * **What commit hash are you on?** You can get the exact commit hash by checking `git log` and pasting the full commit hash.
 * **What's the name and version of the OS you're using**?
-* **Are you running Bittensor in a virtual machine?** If so, which VM software are you using and which operating systems and versions are used for the host and the guest?
-* **Are you running Bittensor in a dockerized container?** If so, have you made sure that your docker container contains your latest changes and is up to date with Master branch?
-* **Are you using [local configuration files](https://opentensor.github.io/getting-started/configuration.html)** `config.yaml` to customize your Bittensor experiment? If so, provide the contents of that config file, preferably in a [code block](https://help.github.com/articles/markdown-basics/#multiple-lines) or with a link to a [gist](https://gist.github.com/).
+* **Are you running Bittensor Subnet in a virtual machine?** If so, which VM software are you using and which operating systems and versions are used for the host and the guest?
+* **Are you running Bittensor Subnet in a dockerized container?** If so, have you made sure that your docker container contains your latest changes and is up to date with Master branch?
 
 ### Suggesting Enhancements and Features
 
-This section guides you through submitting an enhancement suggestion for Bittensor, including completely new features and minor improvements to existing functionality. Following these guidelines helps maintainers and the community understand your suggestion :pencil: and find related suggestions :mag_right:.
+This section guides you through submitting an enhancement suggestion, including completely new features and minor improvements to existing functionality. Following these guidelines helps maintainers and the community understand your suggestion :pencil: and find related suggestions :mag_right:.
 
 When you are creating an enhancement suggestion, please [include as many details as possible](#how-do-i-submit-a-good-enhancement-suggestion). Fill in [the template](https://bit.ly/atom-behavior-pr), including the steps that you imagine you would take if the feature you're requesting existed.
 
 #### Before Submitting An Enhancement Suggestion
 
-* **Check the [debugging guide](./DEBUGGING.md).** for tips — you might discover that the enhancement is already available. Most importantly, check if you're using the latest version of Bittensor by pulling the latest changes from the Master branch and if you can get the desired behavior by changing [Bittensor's config settings](https://opentensor.github.io/getting-started/configuration.html).
-* **Determine which repository the problem should be reported in: if it has to do with your ML model, then it's likely [Bittensor](https://github.com/opentensor/bittensor). If you are having problems with your emissions or Blockchain, then it is in [subtensor](https://github.com/opentensor/subtensor) 
+* **Check the [debugging guide](./DEBUGGING.md).** for tips — you might discover that the enhancement is already available. Most importantly, check if you're using the latest version of the project first.
 
 #### How Submit A (Good) Feature Suggestion
-
-Enhancement suggestions are tracked as [GitHub issues](https://guides.github.com/features/issues/). After you've determined which repository ([Bittensor](https://github.com/opentensor/bittensor) or [subtensor](https://github.com/opentensor/subtensor))  your enhancement suggestion is related to, create an issue on that repository and provide the following information:
 
 * **Use a clear and descriptive title** for the issue to identify the problem.
 * **Provide a step-by-step description of the suggested enhancement** in as many details as possible.
 * **Provide specific examples to demonstrate the steps**. Include copy/pasteable snippets which you use in those examples, as [Markdown code blocks](https://help.github.com/articles/markdown-basics/#multiple-lines).
 * **Describe the current behavior** and **explain which behavior you expected to see instead** and why.
-* **Include screenshots and animated GIFs** which help you demonstrate the steps or point out the part of Bittensor which the suggestion is related to. You can use [this tool](https://www.cockos.com/licecap/) to record GIFs on macOS and Windows, and [this tool](https://github.com/colinkeenan/silentcast) or [this tool](https://github.com/GNOME/byzanz) on Linux.
-* **Explain why this enhancement would be useful** to most Bittensor users.
+* **Include screenshots and animated GIFs** which help you demonstrate the steps or point out the part of the project which the suggestion is related to. You can use [this tool](https://www.cockos.com/licecap/) to record GIFs on macOS and Windows, and [this tool](https://github.com/colinkeenan/silentcast) or [this tool](https://github.com/GNOME/byzanz) on Linux.
+* **Explain why this enhancement would be useful** to most users.
 * **List some other text editors or applications where this enhancement exists.**
-* **Specify which version of Bittensor are you using?** You can get the exact version by checking for `__version__` in [`bittensor/bittensor/__init.py`](https://github.com/opentensor/bittensor/blob/master/bittensor/__init__.py#L30).
 * **Specify the name and version of the OS you're using.**
 
 Thank you for considering contributing to Bittensor! Any help is greatly appreciated along this journey to incentivize open and permissionless intelligence.
