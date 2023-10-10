@@ -21,7 +21,7 @@ import typing
 import bittensor as bt
 
 
-def dummy( query: int, response: int) -> float:
+def dummy(query: int, response: int) -> float:
     """
     Reward the miner response to the dummy request. This method returns a reward
     value for the miner, which is used to update the miner's score.
