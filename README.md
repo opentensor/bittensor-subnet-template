@@ -15,7 +15,17 @@
 
 ---
 
-This template contains all the necessary files and functions to define Bittensor subnet incentive mechanisms. You can run this template in three ways,
+This template contains all the required installation instructions, scripts, and files and functions for building Bittensor subnets and creating custom incentive mechanisms with these subnets. 
+
+Following these instructions you can run your subnet locally or on Bittensor testnet. You can run your subnet either as a subnet owner, as a validator or as a miner. 
+
+## Before you proceed
+
+Before you proceed, see the following recommendations: 
+- Make sure you are aware of the minimum compute requirements for your subnet. See the [Minimum compute](./min_compute.yaml).
+
+
+You can run this template in three ways,
 on Bittensor's main-network (real TAO, to be released), Bittensor's test-network (fake TAO), or with your own staging-network. This repo includes instructions for doing all three.
 
 # Introduction
