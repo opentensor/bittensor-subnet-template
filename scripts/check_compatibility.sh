@@ -53,7 +53,7 @@ check_compatibility() {
         else
             echo -e "${YELLOW}Warning: Specific version not listed, assuming compatibility${NC}"
         fi
-    done < requirements/prod.txt
+    done < requirements.txt
 
     return $all_supported
 }
