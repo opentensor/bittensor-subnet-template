@@ -40,9 +40,9 @@ Each subnet consists of:
 - A wire protocol through which miners and validators interact.
 - The method of interactions of miners and validators with Bittensor's chain consensus engine [Yuma Consensus](https://bittensor.com/documentation/validating/yuma-consensus). The Yuma Consensus is designed to drive these actors, validators and miners, into agreement on who is creating value. 
 
-When you want to write your own custom incentive mechanism, start with this starter template repository. It is preloaded with all the files you need to run a very simple incentive mechanism. This simple incentive mechanism rewards miners for responding with the multiple of the value sent by validators. 
+When you are ready to write your own custom incentive mechanism, start with this starter template repository. It is preloaded with all the files you need to run a very simple incentive mechanism. This simple incentive mechanism rewards miners for responding with the multiple of the value sent by validators. 
 
-This simple starter template is split into three primary files. When you are ready to write your own incentive mechanism, you should edit these files. These files are:
+This simple starter template is split into three primary files. To write your own incentive mechanism, you should edit these files. These files are:
 - `template/protocol.py`: Contains the definition of the wire-protocol used by miners and validators.
 - `neurons/miner.py`: Script that defines the miner's behavior, i.e., how the miner responds to requests from validators.
 - `neurons/validator.py`: This script defines the validator's behavior, i.e., how the validator requests information from the miners and determines the scores.
@@ -52,7 +52,7 @@ This simple starter template is split into three primary files. When you are rea
 ## Installation
 
 ### Before you proceed
-Before you proceeding with the installation, note the following: 
+Before you proceed with the installation of the subnet, note the following: 
 
 - Following these instructions you can run your subnet locally for your development and testing, or on Bittensor testnet. We do **recommend** that you first run your subnet locally and finish your development and testing before running the subnet on Bittensor testnet. 
 - You can also run your subnet either as a subnet owner, or as a validator or as a miner. 
