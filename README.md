@@ -6,14 +6,15 @@
 
 ---
 
-### The Incentivized Internet <!-- omit in toc -->
+## The Incentivized Internet <!-- omit in toc -->
 
 [Discord](https://discord.gg/bittensor) • [Network](https://taostats.io/) • [Research](https://bittensor.com/whitepaper)
 </div>
 
 ---
 - [Quickstarter template](#quickstarter-template)
-  - [Introduction](#introduction)
+- [Introduction](#introduction)
+  - [Example](#example)
 - [Installation](#installation)
   - [Before you proceed](#before-you-proceed)
   - [Install](#install)
@@ -21,6 +22,7 @@
 - [License](#license)
 
 ---
+## Quickstarter template
 
 This template contains all the required installation instructions, scripts, and files and functions for:
 - Building Bittensor subnets.
@@ -28,9 +30,7 @@ This template contains all the required installation instructions, scripts, and 
 
 ---
 
-## Quickstarter template
-
-### Introduction
+## Introduction
 
 **IMPORTANT**: If you are new to Bittensor subnets, read this section before proceeding to [Installation](#installation) section. 
 
@@ -46,6 +46,10 @@ This simple starter template is split into three primary files. To write your ow
 - `template/protocol.py`: Contains the definition of the wire-protocol used by miners and validators.
 - `neurons/miner.py`: Script that defines the miner's behavior, i.e., how the miner responds to requests from validators.
 - `neurons/validator.py`: This script defines the validator's behavior, i.e., how the validator requests information from the miners and determines the scores.
+
+### Example
+
+The Bittensor Subnet 1 for Text Prompting is built using this template. See [Bittensor Text-Prompting](https://github.com/opentensor/text-prompting) for how to configure the files and how to add monitoring and telemetry and support multiple miner types. Also see this Subnet 1 in action on [Taostats](https://taostats.io/subnets/netuid-1/) explorer.
 
 ---
 
