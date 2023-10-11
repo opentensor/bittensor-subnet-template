@@ -8,13 +8,16 @@ This tutorial shows how to use the bittensor `btcli` to create a subnetwork and 
 This clones and installs the template if you dont already have it (if you do, skip this step)
 ```bash
 cd .. # back out of the subtensor repo
-git clone https://github.com/opentensor/bittensor-subnet-template.git # Clone the bittensor-subnet-template repo
+git clone https://github.com/opentensor/bittensor-subnet-template.git # TODO[owner]: Replace this with your custom repo URL
 cd bittensor-subnet-template # Enter the bittensor-subnet-template repo
 python -m pip install -e . # Install the bittensor-subnet-template package
 ```
 
 2. Create wallets for your subnet owner, for your validator and for your miner.
 This creates local coldkey and hotkey pairs for your 3 identities. The owner will create and control the subnet and must have at least 100 TAO on it before it can run step 3. The validator and miner will run the respective validator/miner scripts and be registered to the subnetwork created by the owner.
+
+> Note: Feel free to use existing wallets if desired to register, creating new keys is shown here for reference.
+
 ```bash
 # Create a coldkey for your owner wallet.
 btcli wallet new_coldkey --wallet.name owner
@@ -31,17 +34,17 @@ btcli wallet new_hotkey --wallet.name validator --wallet.hotkey default
 3. Getting the price of subnetwork creation
 Creating subnetworks on mainnet is competitive and the cost it determined by the rate at which new network are being registered onto the chain. By default you must have at least 100 TAO on your owner wallet to create a subnetwork. However the exact amount will fluctuate based on demand. The code below shows how to get the current price of creating a subnetwork.
 ```bash
-btcli subnet lock_cost --subtensor.network finney
+btcli subnet lock_cost 
 >> Subnet lock cost: τ100.000000000
 ```
 
 
 4. Purchasing a slot
 Using your TAO balance, you can register your subnet to the chain. This will create a new subnet on the chain and give you the owner permissions to it. The code below shows how to purchase a slot. 
-*Note: Slots cost TAO to lock, you will get this TAO back when the subnet is disolved.*
+*Note: Slots cost TAO to lock, you will get this TAO back when the subnet is dissolved.*
 ```bash
 # Run the register subnetwork command on the locally running chain.
-btcli subnet create --subtensor.network finney 
+btcli subnet create  
 # Enter the owner wallet name which gives permissions to the coldkey to later define running hyper parameters.
 >> Enter wallet name (default): owner # Enter your owner wallet name
 >> Enter password to unlock key: # Enter your wallet password.
@@ -50,11 +53,14 @@ btcli subnet create --subtensor.network finney
 ✅ Registered subnetwork with netuid: 1 # Your subnet netuid will show here, save this for later.
 ```
 
-5. Register your validator and miner keys to the networks.
+5. (Optional) Register your validator and miner keys to the networks.
+
+> Note: While not enforced, it is recommended for owners to run a validator and miner on the network to display proper use to the community
+
 This registers your validator and miner keys to the network giving them the first 2 slots on the network.
 ```bash
 # Register your miner key to the network.
-btcli subnet register --wallet.name miner --wallet.hotkey default  --subtensor.network finney
+btcli subnet register --wallet.name miner --wallet.hotkey default  
 >> Enter netuid [1] (1): # Enter netuid 1 to specify the network you just created.
 >> Continue Registration?
   hotkey:     ...
@@ -64,7 +70,7 @@ btcli subnet register --wallet.name miner --wallet.hotkey default  --subtensor.n
 >> ✅ Registered
 
 # Register your validator key to the network.
-btcli subnet register --wallet.name validator --wallet.hotkey default --subtensor.network finney
+btcli subnet register --wallet.name validator --wallet.hotkey default 
 >> Enter netuid [1] (1): # Enter netuid 1 to specify the network you just created.
 >> Continue Registration?
   hotkey:     ...
@@ -78,7 +84,7 @@ btcli subnet register --wallet.name validator --wallet.hotkey default --subtenso
 This returns information about your registered keys.
 ```bash
 # Check that your validator key has been registered.
-btcli wallet overview --wallet.name validator --subtensor.network finney
+btcli wallet overview --wallet.name validator 
 Subnet: 1                                                                                                                                                                
 COLDKEY  HOTKEY   UID  ACTIVE  STAKE(τ)     RANK    TRUST  CONSENSUS  INCENTIVE  DIVIDENDS  EMISSION(ρ)   VTRUST  VPERMIT  UPDATED  AXON  HOTKEY_SS58                    
 miner    default  0      True   0.00000  0.00000  0.00000    0.00000    0.00000    0.00000            0  0.00000                14  none  5GTFrsEQfvTsh3WjiEVFeKzFTc2xcf…
@@ -86,7 +92,7 @@ miner    default  0      True   0.00000  0.00000  0.00000    0.00000    0.00000 
                                                                           Wallet balance: τ0.0         
 
 # Check that your miner has been registered.
-btcli wallet overview --wallet.name miner --subtensor.network finney
+btcli wallet overview --wallet.name miner 
 Subnet: 1                                                                                                                                                                
 COLDKEY  HOTKEY   UID  ACTIVE  STAKE(τ)     RANK    TRUST  CONSENSUS  INCENTIVE  DIVIDENDS  EMISSION(ρ)   VTRUST  VPERMIT  UPDATED  AXON  HOTKEY_SS58                    
 miner    default  1      True   0.00000  0.00000  0.00000    0.00000    0.00000    0.00000            0  0.00000                14  none  5GTFrsEQfvTsh3WjiEVFeKzFTc2xcf…
@@ -98,11 +104,11 @@ miner    default  1      True   0.00000  0.00000  0.00000    0.00000    0.00000 
 Or run the miner and validator directly with the netuid and chain_endpoint arguments.
 ```bash
 # Run the miner with the netuid and chain_endpoint arguments.
-python neurons/miner.py --netuid 1 --subtensor.network finney --wallet.name miner --wallet.hotkey default --logging.debug
+python neurons/miner.py --netuid 1  --wallet.name miner --wallet.hotkey default --logging.debug
 >> 2023-08-08 16:58:11.223 |       INFO       | Running miner for subnet: 1 on network: wss://entrypoint-finney.opentensor.ai:443 with config: ...
 
 # Run the validator with the netuid and chain_endpoint arguments.
-python neurons/validator.py --netuid 1 --subtensor.network finney --wallet.name validator --wallet.hotkey default --logging.debug
+python neurons/validator.py --netuid 1  --wallet.name validator --wallet.hotkey default --logging.debug
 >> 2023-08-08 16:58:11.223 |       INFO       | Running validator for subnet: 1 on network: wss://entrypoint-finney.opentensor.ai:443 with config: ...
 ```
 
@@ -112,10 +118,10 @@ If you want to stop your nodes, you can do so by pressing CTRL + C in the termin
 9. Get Emissions Flowing:
 Register to the root network using the `btcli`:
 ```bash
-btcli root register --subtensor.network finney
+btcli root register 
 ```
 
 Then set your weights for the subnet:
 ```bash
-btcli root weights --subtensor.network finney
+btcli root weights 
 ```
