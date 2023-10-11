@@ -23,9 +23,9 @@ This is a highly advisable workflow to follow to keep your subtensor project org
 
 ## Main Branches
 
-Bittensor's codebase consists of two main branches: **master** and **staging**.
+Bittensor's codebase consists of two main branches: **main** and **staging**.
 
-**master**
+**main**
 - This is Bittensor's live production branch, which should only be updated by the core development team. This branch is protected, so refrain from pushing or merging into it unless authorized.
 
 **staging**
@@ -44,7 +44,7 @@ Feature branches are used to develop new features for upcoming or future release
 ### Release Branches
 
 - Branch off from: `staging`
-- Merge back into: `staging` and then `master`
+- Merge back into: `staging` and then `main`
 - Naming convention: `release/<version>/<descriptive-message>/<creator's-name>`
 
 Release branches support the preparation of a new production release, allowing for minor bug fixes and preparation of metadata (version number, configuration, etc). All new features should be merged into `staging` and wait for the next big release.
@@ -53,8 +53,8 @@ Release branches support the preparation of a new production release, allowing f
 
 General workflow:
 
-- Branch off from: `master` or `staging`
-- Merge back into: `staging` then `master`
+- Branch off from: `main` or `staging`
+- Merge back into: `staging` then `main`
 - Naming convention: `hotfix/<version>/<descriptive-message>/<creator's-name>` 
 
 Hotfix branches are meant for quick fixes in the production environment. When a critical bug in a production version must be resolved immediately, a hotfix branch is created.
@@ -94,10 +94,10 @@ So, what you have to keep in mind is:
 
 This involves releasing stable code and generating a new version for bittensor.
 
-1. Switch branch to master: `git checkout master`
-2. Merge release branch into master: `git merge --no-ff release/3.4.0/optional-descriptive-message`
+1. Switch branch to main: `git checkout main`
+2. Merge release branch into main: `git merge --no-ff release/3.4.0/optional-descriptive-message`
 3. Tag changeset: `git tag -a v3.4.0 -m "Releasing v3.4.0: some comment about it"`
-4. Push changes to master: `git push origin master`
+4. Push changes to main: `git push origin main`
 5. Push tags to origin: `git push origin --tags`
 
 To keep the changes made in the __release__ branch, we need to merge those back into `staging`:
@@ -109,19 +109,19 @@ This step may well lead to a merge conflict (probably even, since we have change
 
 
 #### Creating a hotfix branch
-1. Create branch from master: `git checkout -b hotfix/3.3.4/descriptive-message/creator's-name master`
+1. Create branch from main: `git checkout -b hotfix/3.3.4/descriptive-message/creator's-name main`
 2. Update patch version: `./scripts/update_version.sh patch`
 3. Commit file changes with new version: `git commit -a -m "Updated version to 3.3.4"`
 4. Fix the bug and commit the fix: `git commit -m "Fixed critical production issue X"`
 
 #### Finishing a Hotfix Branch
 
-Finishing a hotfix branch involves merging the bugfix into both `master` and `staging`.
+Finishing a hotfix branch involves merging the bugfix into both `main` and `staging`.
 
-1. Switch branch to master: `git checkout master`
-2. Merge hotfix into master: `git merge --no-ff hotfix/3.3.4/optional-descriptive-message`
+1. Switch branch to main: `git checkout main`
+2. Merge hotfix into main: `git merge --no-ff hotfix/3.3.4/optional-descriptive-message`
 3. Tag new version: `git tag -a v3.3.4 -m "Releasing v3.3.4: descriptive comment about the hotfix"`
-4. Push changes to master: `git push origin master`
+4. Push changes to main: `git push origin main`
 5. Push tags to origin: `git push origin --tags`
 6. Switch branch to staging: `git checkout staging`
 7. Merge hotfix into staging: `git merge --no-ff hotfix/3.3.4/descriptive-message/creator's-name`
@@ -139,27 +139,27 @@ Continuous Integration (CI) is a software development practice where members of 
 
 Continuous Deployment (CD) is a software engineering approach in which software functionalities are delivered frequently through automated deployments.
 
-- **CircleCI job**: Create jobs in CircleCI to automate the merging of staging into master and release version (needed to release code) and building and testing Bittensor (needed to merge PRs).
+- **CircleCI job**: Create jobs in CircleCI to automate the merging of staging into main and release version (needed to release code) and building and testing Bittensor (needed to merge PRs).
 
 > It is highly recommended to set up your own circleci pipeline with your subnet
 
 ## Versioning and Release Notes
 
-Semantic versioning helps keep track of the different versions of the software. When code is merged into master, generate a new version. 
+Semantic versioning helps keep track of the different versions of the software. When code is merged into main, generate a new version. 
 
-Release notes provide documentation for each version released to the users, highlighting the new features, improvements, and bug fixes. When merged into master, generate GitHub release and release notes.
+Release notes provide documentation for each version released to the users, highlighting the new features, improvements, and bug fixes. When merged into main, generate GitHub release and release notes.
 
 ## Pending Tasks
 
 Follow these steps when you are contributing to the bittensor subnet:
 
-- Determine if master and staging are different
+- Determine if main and staging are different
 - Determine what is in staging that is not merged yet
     - Document not released developments
     - When merged into staging, generate information about what's merged into staging but not released.
-    - When merged into master, generate GitHub release and release notes.
+    - When merged into main, generate GitHub release and release notes.
 - CircleCI jobs 
-    - Merge staging into master and release version (needed to release code)
+    - Merge staging into main and release version (needed to release code)
     - Build and Test Bittensor (needed to merge PRs)
 
 This document can be improved as the Bittensor project continues to develop and change.
