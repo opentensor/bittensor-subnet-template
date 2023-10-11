@@ -1,4 +1,3 @@
-
 <div align="center">
 
 # **Bittensor Subnet Template** <!-- omit in toc -->
@@ -7,80 +6,76 @@
 
 ---
 
-### The Incentivized Internet <!-- omit in toc -->
+## The Incentivized Internet <!-- omit in toc -->
 
 [Discord](https://discord.gg/bittensor) • [Network](https://taostats.io/) • [Research](https://bittensor.com/whitepaper)
-
 </div>
 
 ---
+- [Quickstarter template](#quickstarter-template)
+- [Introduction](#introduction)
+  - [Example](#example)
+- [Installation](#installation)
+  - [Before you proceed](#before-you-proceed)
+  - [Install](#install)
+- [Writing your own incentive mechanism](#writing-your-own-incentive-mechanism)
+- [License](#license)
 
-This template contains all the necessary files and functions to define Bittensor subnet incentive mechanisms. You can run this template in three ways,
-on Bittensor's main-network (real TAO, to be released), Bittensor's test-network (fake TAO), or with your own staging-network. This repo includes instructions for doing all three.
+---
+## Quickstarter template
 
-# Introduction
-The Bittensor blockchain hosts multiple self-contained incentive mechanisms 'subnets'. Subnets are playing fields through which miners (those producing value) and validators (those producing consensus) determine together the proper distribution of TAO for the purpose of incentivizing the creation of value, i.e. generating digital commodities, such as intelligence, or data. Each consists of a wire protocol through which miners and validators interact and their method of interacting with Bittensor's chain consensus engine [Yuma Consensus](https://bittensor.com/documentation/validating/yuma-consensus) which is designed to drive these actors into agreement about who is creating value.
-
-This repository is a template for writing such mechanisms, preloaded with all needed files to run a very simple mechanism. The template is designed to be simple (rewards miners for responding with the multiple of the value sent by vaidators) and can act as a starting point for those who want to write their own mechanism. It is split into 3 primary files which you should rewrite. 
-These files are:
-- `template/protocol.py`: The file where the wire-protocol used by miners and validators is defined.
-- `neurons/miner.py`: This script which defines the miner's behavior, i.e., how the miner responds to requests from validators.
-- `neurons/validator.py`: This script which defines the validator's behavior, i.e., how the validator requests information from miners and determines scores.
-
-</div>
+This template contains all the required installation instructions, scripts, and files and functions for:
+- Building Bittensor subnets.
+- Creating custom incentive mechanisms and running these mechanisms on the subnets. 
 
 ---
 
-# Running the template
-Before running the template you will need to attain a subnetwork on either Bittensor's main network, test network, or your own staging network. To create subnetworks on each of these subnets follow the instructions in files below:
-- `docs/running_on_staging.md`
-- `docs/running_on_testnet.md`
-- `docs/running_on_mainnet.md`
+## Introduction
 
-</div>
+**IMPORTANT**: If you are new to Bittensor subnets, read this section before proceeding to [Installation](#installation) section. 
 
----
+The Bittensor blockchain hosts multiple self-contained incentive mechanisms called **subnets**. Subnets are playing fields in which miners, those producing value, and validators, those producing consensus, determine together the proper distribution of TAO for the purpose of incentivizing the creation of value, i.e., generating digital commodities, such as intelligence or data. 
 
-# Installation
-This repository requires python3.8 or higher. To install, simply clone this repository and install the requirements.
-```bash
-git clone https://github.com/opentensor/bittensor-subnet-template.git
-cd bittensor-subnet-template
-python -m pip install -r requirements.txt
-python -m pip install -e .
-```
+Each subnet consists of:
+- A wire protocol through which miners and validators interact.
+- The method of interactions of miners and validators with Bittensor's chain consensus engine [Yuma Consensus](https://bittensor.com/documentation/validating/yuma-consensus). The Yuma Consensus is designed to drive these actors, validators and miners, into agreement on who is creating value. 
 
-</div>
+When you are ready to write your own custom incentive mechanism, start with this starter template repository. It is preloaded with all the files you need to run a very simple incentive mechanism. This simple incentive mechanism rewards miners for responding with the multiple of the value sent by validators. 
 
----
+This simple starter template is split into three primary files. To write your own incentive mechanism, you should edit these files. These files are:
+- `template/protocol.py`: Contains the definition of the wire-protocol used by miners and validators.
+- `neurons/miner.py`: Script that defines the miner's behavior, i.e., how the miner responds to requests from validators.
+- `neurons/validator.py`: This script defines the validator's behavior, i.e., how the validator requests information from the miners and determines the scores.
 
-Once you have installed this repo and attained your subnet via the instructions in the nested docs (staging, testing, or main) you can run the miner and validator with the following commands.
-```bash
-# To run the miner
-python -m neurons/miner.py 
-    --netuid <your netuid>  # Must be attained by following the instructions in the docs/running_on_*.md files
-    --subtensor.chain_endpoint <your chain url>  # Must be attained by following the instructions in the docs/running_on_*.md files
-    --wallet.name <your miner wallet> # Must be created using the bittensor-cli
-    --wallet.hotkey <your validator hotkey> # Must be created using the bittensor-cli
-    --logging.debug # Run in debug mode, alternatively --logging.trace for trace mode
+### Example
 
-# To run the validator
-python -m neurons/validator.py 
-    --netuid <your netuid> # Must be attained by following the instructions in the docs/running_on_*.md files
-    --subtensor.chain_endpoint <your chain url> # Must be attained by following the instructions in the docs/running_on_*.md files
-    --wallet.name <your validator wallet>  # Must be created using the bittensor-cli
-    --wallet.hotkey <your validator hotkey> # Must be created using the bittensor-cli
-    --logging.debug # Run in debug mode, alternatively --logging.trace for trace mode
-```
-
-</div>
+The Bittensor Subnet 1 for Text Prompting is built using this template. See [Bittensor Text-Prompting](https://github.com/opentensor/text-prompting) for how to configure the files and how to add monitoring and telemetry and support multiple miner types. Also see this Subnet 1 in action on [Taostats](https://taostats.io/subnets/netuid-1/) explorer.
 
 ---
 
-# Updating the template
-The code contains detailed documentation on how to update the template. Please read the documentation in each of the files to understand how to update the template. There are multiple TODOs in each of the files which you should read and update.
+## Installation
 
-</div>
+### Before you proceed
+Before you proceed with the installation of the subnet, note the following: 
+
+- Following these instructions you can run your subnet locally for your development and testing, or on Bittensor testnet. We do **recommend** that you first run your subnet locally and finish your development and testing before running the subnet on Bittensor testnet. 
+- You can also run your subnet either as a subnet owner, or as a validator or as a miner. 
+- **IMPORTANT:** Make sure you are aware of the minimum compute requirements for your subnet. See the [Minimum compute YAML configuration](./min_compute.yml).
+- Note that installation instructions differ based on your situation: For example, installing for local development and testing will require a few additional steps compared to installing for testnet. Similarly, installation instructions differ for a subnet owner vs a validator or a miner. 
+
+### Install
+
+- **Running locally**: Follow the step-by-step instructions described in this section: [Running Your Own Subtensor Chain Locally](./docs/running_on_staging.md).
+- **Running on Bittensor testnet**: Follow the step-by-step instructions described in this section: [Running on the Testing Network](./docs/running_on_testnet.md).
+
+---
+
+## Writing your own incentive mechanism
+
+As described in [Quickstarter template](#quickstarter-template) section above, when you are ready to write your own incentive mechanism, update this template repository by editing the following files. The code in these files contains detailed documentation on how to update the template. Read the documentation in each of the files to understand how to update the template. There are multiple **TODO**s in each of the files identifying sections you should update. These files are:
+- `template/protocol.py`: Contains the definition of the wire-protocol used by miners and validators.
+- `neurons/miner.py`: Script that defines the miner's behavior, i.e., how the miner responds to requests from validators.
+- `neurons/validator.py`: This script defines the validator's behavior, i.e., how the validator requests information from the miners and determines the scores.
 
 ---
 
