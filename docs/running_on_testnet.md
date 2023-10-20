@@ -10,6 +10,8 @@ This tutorial shows how to use the Bittensor test network to create a subnet and
 - Do not reuse the password of your mainnet wallet.
 - Make sure your incentive mechanism is resistant to abuse. 
 
+## Prerequisites
+
 Before proceeding further, make sure that you have installed Bittensor. See the below instructions:
 
 - [Install `bittensor`](https://github.com/opentensor/bittensor#install).
