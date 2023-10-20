@@ -1,10 +1,19 @@
-## Running Your Own Subtensor Chain Locally
+# Running Subnet Locally
 
-This tutorial will guide you through setting up a local subtensor chain, creating a subnetwork, and connecting your mechanism to it.
+This tutorial will guide you through setting up a local blockchain (subtensor), creating a subnet, and run your incentive mechanism on the subnet.
 
-### 1. Install substrate dependencies
+## Prerequisites
+
+Before proceeding further, make sure that you have installed Bittensor. See the below instructions:
+
+- [Install `bittensor`](https://github.com/opentensor/bittensor#install).
+
+After installing `bittensor`, proceed as below:
+
+## 1. Install substrate dependencies
 Begin by installing the required dependencies for running a substrate node.
 ```bash
+# Instructions for Linux
 # Update your system packages
 sudo apt update 
 
@@ -12,7 +21,7 @@ sudo apt update
 sudo apt install --assume-yes make build-essential git clang curl libssl-dev llvm libudev-dev protobuf-compiler
 ```
 
-### 2. Install Rust and Cargo
+## 2. Install Rust and Cargo
 Rust is the programming language used in substrate development, and Cargo is Rust's package manager.
 ```bash
 # Install rust and cargo
@@ -22,13 +31,13 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source "$HOME/.cargo/env"
 ```
 
-### 3. Clone the Subtensor Repository
+## 3. Clone the subtensor repository
 This step fetches the subtensor codebase to your local machine.
 ```bash
 git clone https://github.com/opentensor/subtensor.git
 ```
 
-### 4. Switch to the User-Creation Branch
+## 4. Switch to the user-creation branch
 Navigate into the repository and switch to the desired branch.
 ```bash
 cd subtensor
@@ -36,26 +45,25 @@ git fetch origin subnets/user-creation
 git checkout subnets/user-creation
 ```
 
-### 5. Setup Rust for Substrate Development
+## 5. Setup Rust for Substrate development
 Ensure you have the nightly toolchain and the WebAssembly (wasm) compilation target. Note that this step will run the subtensor chain on your terminal directly, hence we advise that you run this as a background process using PM2 or other software.
 ```bash
 # Update to the nightly version of rust
 ./subtensor/scripts/init.sh
 ```
 
-### 6. Initialize Your Local Subtensor Chain in Development Mode
-This command will set up and run a local subtensor network.
+## 6. Initialize 
+
+Initialize your local subtensor chain in development mode. This command will set up and run a local subtensor network.
 ```bash
 ./scripts/localnet.sh
 ```
 *Note: Watch for any build or initialization outputs here. If building the project for the first time, this step will take while to finish building depending on your hardware.*
 
-### 7. Clone and Setup Bittensor Revolution
-If you don't already have the Bittensor revolution, follow these steps.
-```bash
-# Navigate to your workspace root
-cd ..
+## 7. Install subnet template
 
+```bash
+# Navigate to your project directory
 # Clone the template repository
 git clone https://github.com/opentensor/bittensor-subnet-template.git
 
@@ -66,7 +74,7 @@ cd bittensor-subnet-template
 python -m pip install -e .
 ```
 
-### 8. Set Up Wallets
+## 8. Set up wallets
 You'll need wallets for different roles in the subnetwork. The owner wallet creates and controls the subnet. The validator and miner will run the respective validator/miner scripts and be registered to the subnetwork created by the owner.
 ```bash
 # Create a coldkey for the owner role
@@ -81,7 +89,7 @@ btcli wallet new_coldkey --wallet.name validator
 btcli wallet new_hotkey --wallet.name validator --wallet.hotkey default
 ```
 
-### 9. Mint yourself tokens.
+## 9. Mint tokens from faucet
 You will need tokens to initialize the intentive mechanism on the chain as well as registering a network (below). 
 Run the following command to mint yourself tokens on your chain.
 ```bash
@@ -93,7 +101,7 @@ btcli wallet faucet --wallet.name validator --subtensor.chain_endpoint ws://127.
 >> Balance: τ0.000000000 ➡ τ100.000000000
 ```
 
-### 10. Create a Subnetwork
+## 10. Create a subnetwork
 The commands below establish a new subnetwork on the local chain. The cost will be exactly τ100.000000000 for the first network you create.
 ```bash
 btcli subnet create --wallet.name owner --subtensor.chain_endpoint ws://127.0.0.1:9946 
@@ -104,26 +112,23 @@ btcli subnet create --wallet.name owner --subtensor.chain_endpoint ws://127.0.0.
 ```
 *Note: The local chain will now have a default netuid of 1, the second registration will create netuid 2 and so on until you reach the subnet limit of 8. After this point the subnetwork with the least staked TAO will be replaced the incoming one.*
 
-### 11. Register Your Validator and Miner Keys
-Enroll your validator and miner on the network. This gives your two keys unique slots on the subnetwork which has a current limit of 128 slots.
+## 11. Register your subnet validator and subnet miner Keys
+Enroll your subnet validator and subnet miner on the network. This gives your two keys unique slots on the subnetwork which has a current limit of 128 slots.
 ```bash
-# Register the miner
-btcli subnet register --wallet.name miner --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946
+# Register the subnet miner
+btcli subnet recycle_register --wallet.name miner --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946
 >> Enter netuid [1] (1): 1
 >> Continue Registration? [y/n]: y
->> ⠦ 📡 Submitting POW...
 >> ✅ Registered
 
-
-# Register the validator
-btcli subnet register --wallet.name validator --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946
+# Register the subnet validator
+btcli subnet recycle_register --wallet.name validator --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946
 >> Enter netuid [1] (1): 1
 >> Continue Registration? [y/n]: y
->> ⠦ 📡 Submitting POW...
 >> ✅ Registered
 ```
 
-### 11. Stake to your validator
+## 11. Stake to your subnet validator
 This bootstraps the incentives on your new subnet by adding stake into its incentive mechanism.
 ```bash
 btcli stake add --wallet.name validator --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946
@@ -132,7 +137,7 @@ btcli stake add --wallet.name validator --wallet.hotkey default --subtensor.chai
     τ0.000000000 ➡ τ100.000000000
 ```
 
-### 12. Validate Your Key Registrations on your new subnet
+## 12. Validate your key registrations on your new subnet
 Ensure both the miner and validator keys are successfully registered.
 ```bash
 btcli subnet list --subtensor.chain_endpoint ws://127.0.0.1:9946
@@ -157,7 +162,7 @@ miner    default  1      True   0.00000  0.00000  0.00000    0.00000    0.00000 
 
 ```
 
-### 13. Run Miner and Validator
+## 13. Run subnet miner and subnet validator
 Make sure to specify your subnetwork parameters.
 ```bash
 python neurons/miner.py --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1:9946 --wallet.name miner --wallet.hotkey default --logging.debug
@@ -166,18 +171,16 @@ python neurons/validator.py --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1
 >> ... # Run logs.
 ```
 
-### 14. Verify your incentive mechanism is running
+## 14. Verify your incentive mechanism is running
 After a few blocks you validators will set weights this enables the mechanism. Then after the subnet tempo elapses (300 block ~1hrs ) you should see your incentive mechanism beginning to distribute TAO to your miner.
 ```bash
 btcli wallet overview --wallet.name miner --subtensor.chain_endpoint ws://127.0.0.1:9946
 ```
 
-### Ending Your Session
+## Ending your session
 If you wish to halt your nodes:
 ```bash
-# Simply use the CTRL + C command in the terminal.
+# Press CTRL + C keys in the terminal.
 ```
 
 ---
-
-With these steps, you should be up and running with your own local Subtensor chain.
