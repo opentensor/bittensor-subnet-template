@@ -34,18 +34,21 @@ This template contains all the required installation instructions, scripts, and 
 
 **IMPORTANT**: If you are new to Bittensor subnets, read this section before proceeding to [Installation](#installation) section. 
 
-The Bittensor blockchain hosts multiple self-contained incentive mechanisms called **subnets**. Subnets are playing fields in which miners, those producing value, and validators, those producing consensus, determine together the proper distribution of TAO for the purpose of incentivizing the creation of value, i.e., generating digital commodities, such as intelligence or data. 
+The Bittensor blockchain hosts multiple self-contained incentive mechanisms called **subnets**. Subnets are playing fields in which:
+- Subnet miners who produce value, and
+- Subnet validators who produce consensus
+
+determine together the proper distribution of TAO for the purpose of incentivizing the creation of value, i.e., generating digital commodities, such as intelligence or data. 
 
 Each subnet consists of:
-- A wire protocol through which miners and validators interact.
-- The method of interactions of miners and validators with Bittensor's chain consensus engine [Yuma Consensus](https://bittensor.com/documentation/validating/yuma-consensus). The Yuma Consensus is designed to drive these actors, validators and miners, into agreement on who is creating value. 
+- Subnet miners and subnet validators.
+- A protocol using which the subnet miners and subnet validators interact with one another. This protocol is part of the incentive mechanism.
+- The Bittensor API using which the subnet miners and subnet validators interact with Bittensor's onchain consensus engine [Yuma Consensus](https://bittensor.com/documentation/validating/yuma-consensus). The Yuma Consensus is designed to drive these actors: subnet validators and subnet miners, into agreement on who is creating value and what that value is worth. 
 
-When you are ready to write your own custom incentive mechanism, start with this starter template repository. It is preloaded with all the files you need to run a very simple incentive mechanism. This simple incentive mechanism rewards miners for responding with the multiple of the value sent by validators. 
-
-This simple starter template is split into three primary files. To write your own incentive mechanism, you should edit these files. These files are:
-- `template/protocol.py`: Contains the definition of the wire-protocol used by miners and validators.
-- `neurons/miner.py`: Script that defines the miner's behavior, i.e., how the miner responds to requests from validators.
-- `neurons/validator.py`: This script defines the validator's behavior, i.e., how the validator requests information from the miners and determines the scores.
+This starter template is split into three primary files. To write your own incentive mechanism, you should edit these files. These files are:
+1. `template/protocol.py`: Contains the definition of the protocol used by subnet miners and subnet validators.
+2. `neurons/miner.py`: Script that defines the subnet miner's behavior, i.e., how the subnet miner responds to requests from subnet validators.
+3. `neurons/validator.py`: This script defines the subnet validator's behavior, i.e., how the subnet validator requests information from the subnet miners and determines the scores.
 
 ### Example
 
@@ -58,15 +61,17 @@ The Bittensor Subnet 1 for Text Prompting is built using this template. See [Bit
 ### Before you proceed
 Before you proceed with the installation of the subnet, note the following: 
 
-- Following these instructions you can run your subnet locally for your development and testing, or on Bittensor testnet. We do **recommend** that you first run your subnet locally and finish your development and testing before running the subnet on Bittensor testnet. 
-- You can also run your subnet either as a subnet owner, or as a validator or as a miner. 
+- Use these instructions to run your subnet locally for your development and testing, or on Bittensor testnet or on Bittensor mainnet. 
+- **IMPORTANT**: We **strongly recommend** that you first run your subnet locally and complete your development and testing before running the subnet on Bittensor testnet. Furthermore, make sure that you next run your subnet on Bittensor testnet before running it on the Bittensor mainnet.
+- You can run your subnet either as a subnet owner, or as a subnet validator or as a subnet miner. 
 - **IMPORTANT:** Make sure you are aware of the minimum compute requirements for your subnet. See the [Minimum compute YAML configuration](./min_compute.yml).
 - Note that installation instructions differ based on your situation: For example, installing for local development and testing will require a few additional steps compared to installing for testnet. Similarly, installation instructions differ for a subnet owner vs a validator or a miner. 
 
 ### Install
 
-- **Running locally**: Follow the step-by-step instructions described in this section: [Running Your Own Subtensor Chain Locally](./docs/running_on_staging.md).
-- **Running on Bittensor testnet**: Follow the step-by-step instructions described in this section: [Running on the Testing Network](./docs/running_on_testnet.md).
+- **Running locally**: Follow the step-by-step instructions described in this section: [Running Subnet Locally](./docs/running_on_staging.md).
+- **Running on Bittensor testnet**: Follow the step-by-step instructions described in this section: [Running on the Test Network](./docs/running_on_testnet.md).
+- **Running on Bittensor mainnet**: Follow the step-by-step instructions described in this section: [Running on the Main Network](./docs/running_on_mainnet.md).
 
 ---
 
