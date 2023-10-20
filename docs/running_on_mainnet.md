@@ -15,12 +15,11 @@ Your incentive mechanisms running on the main are open to anyone. They emit real
 
 ## Prerequisites
 
-Before proceeding further, make sure that you have installed Bittensor and the Wallet. See the below instructions:
+Before proceeding further, make sure that you have installed Bittensor. See the below instructions:
 
 - [Install `bittensor`](https://github.com/opentensor/bittensor#install).
-- [Install `wallet`](https://github.com/opentensor/bittensor#wallets).
 
-After installing the above two, proceed as below:
+After installing `bittensor`, proceed as below:
 
 ## Steps
 
