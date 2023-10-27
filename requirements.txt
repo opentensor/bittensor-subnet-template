@@ -1,2 +1,4 @@
 bittensor
 torch
+python-bitcoinrpc
+docker
