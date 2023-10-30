@@ -1,7 +1,6 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
+# Copyright © 2023 aph5nt
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
@@ -18,9 +17,6 @@
 # DEALINGS IN THE SOFTWARE.
 
 # Bittensor Validator Template:
-# TODO(developer): Rewrite based on protocol defintion.
-
-# Step 1: Import necessary libraries and modules
 import os
 import time
 import torch
@@ -28,35 +24,22 @@ import argparse
 import traceback
 import bittensor as bt
 
-# import this repo
-import template
+from neurons import protocol
 
 
 # Step 2: Set up the configuration parser
 # This function is responsible for setting up and parsing command-line arguments.
 def get_config():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--alpha", default=0.9, type=float, help="The weight moving average scoring."
-    )
-    # TODO(developer): Adds your custom validator arguments to the parser.
-    parser.add_argument(
-        "--custom", default="my_custom_value", help="Adds a custom value to the parser."
-    )
-    # Adds override arguments for network and netuid.
+    parser.add_argument("--alpha", default=0.9, type=float, help="The weight moving average scoring.")
+    parser.add_argument("--blockchain", default="BITCOIN", help="Set miner's supported blockchain network.")
     parser.add_argument("--netuid", type=int, default=1, help="The chain subnet uid.")
-    # Adds subtensor specific arguments i.e. --subtensor.chain_endpoint ... --subtensor.network ...
-    bt.subtensor.add_args(parser)
-    # Adds logging specific arguments i.e. --logging.debug ..., --logging.trace .. or --logging.logging_dir ...
-    bt.logging.add_args(parser)
-    # Adds wallet specific arguments i.e. --wallet.name ..., --wallet.hotkey ./. or --wallet.path ...
-    bt.wallet.add_args(parser)
-    # Parse the config (will take command-line arguments if provided)
-    # To print help message, run python3 template/validator.py --help
-    config = bt.config(parser)
 
-    # Step 3: Set up logging directory
-    # Logging is crucial for monitoring and debugging purposes.
+    bt.subtensor.add_args(parser)
+    bt.logging.add_args(parser)
+    bt.wallet.add_args(parser)
+
+    config = bt.config(parser)
     config.full_path = os.path.expanduser(
         "{}/{}/{}/netuid{}/{}".format(
             config.logging.logging_dir,
@@ -66,11 +49,10 @@ def get_config():
             "validator",
         )
     )
-    # Ensure the logging directory exists.
+
     if not os.path.exists(config.full_path):
         os.makedirs(config.full_path, exist_ok=True)
 
-    # Return the parsed config.
     return config
 
 
@@ -129,20 +111,23 @@ def main(config):
                 # Send the query to all miners in the network.
                 metagraph.axons,
                 # Construct a dummy query.
-                template.protocol.Dummy(dummy_input=step),  # Construct a dummy query.
+                protocol.GetBlockchainData(network=config.blockchain, cypher_query=""),
                 # All responses have the deserialize function called on them before returning.
                 deserialize=True,
             )
 
             # Log the results for monitoring purposes.
-            bt.logging.info(f"Received dummy responses: {responses}")
+            bt.logging.info(f"Received responses: {responses}")
 
             # TODO(developer): Define how the validator scores responses.
             # Adjust the scores based on responses from miners.
             for i, resp_i in enumerate(responses):
+
+                # we returna  synapses here, so we can make a list of compatible miners, and then allow usesr to query them
+
                 # Check if the miner has provided the correct response by doubling the dummy input.
                 # If correct, set their score for this round to 1. Otherwise, set it to 0.
-                score = template.reward.dummy(step, resp_i)
+                score = 1
 
                 # Update the global score of the miner.
                 # This score contributes to the miner's weight in the network.

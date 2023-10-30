@@ -11,7 +11,6 @@ class BitcoinCoreCliTests(unittest.TestCase):
         remove_container(cls.container_name)
         create_and_start_bitcoin_core_container(cls.container_name)
         time.sleep(10)
-        cls.shared_resource = "Some resource available to all test methods."
 
     def test_sending_transaction(self):
         # 1. Create wallet
@@ -27,7 +26,6 @@ class BitcoinCoreCliTests(unittest.TestCase):
         result = execute_bitcoin_cli_command(self.container_name, f"generatetoaddress 101 {address}")
         print(result.output.decode())
 
-        # Wait for a moment to let the transactions confirm
         time.sleep(2)
 
         # 4. Check balance

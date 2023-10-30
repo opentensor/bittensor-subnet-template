@@ -2,3 +2,5 @@ bittensor
 torch
 python-bitcoinrpc
 docker
+setuptools
+redis

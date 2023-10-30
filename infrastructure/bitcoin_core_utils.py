@@ -20,12 +20,13 @@ def create_and_start_bitcoin_core_container(container_name):
         "-printtoconsole",
         "-regtest=1",
         "-rpcallowip=0.0.0.0/0",
+        "-rpcbind=0.0.0.0",  # Bind RPC server to all network interfaces
         "-server=1",
         "-txindex=1",
         "-rpcuser=bitcoinrpc",
         "-rpcpassword=rpcpassword"
     ]
-    ports = {"18443/tcp": ("0.0.0.0", 18443)}
+    ports = {"18443/tcp": 18443}  # Expose port 18443 for the host
 
     # Ensure the image is pulled
     client.images.pull(image_name)
