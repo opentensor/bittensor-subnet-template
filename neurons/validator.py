@@ -151,6 +151,7 @@ def main(config):
 
             bt.logging.info(f"Scores: {scores}")
             # Periodically update the weights on the Bittensor blockchain.
+            # TODO(developer): Define how often the validator updates weights.
             if (step + 1) % 10 == 0:
                 # TODO(developer): Define how the validator normalizes scores before setting weights.
                 weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
@@ -168,6 +169,9 @@ def main(config):
                     bt.logging.success("Successfully set weights.")
                 else:
                     bt.logging.error("Failed to set weights.")
+
+                metagraph, scores = template.utils.resync_metagraph(metagraph, subtensor, scores)
+                bt.logging.info("Resynced metagraph.")
 
             # End the current step and prepare for the next iteration.
             step += 1
