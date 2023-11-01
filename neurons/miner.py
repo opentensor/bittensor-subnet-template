@@ -41,6 +41,9 @@ def get_config():
     parser.add_argument(
         "--custom", default="my_custom_value", help="Adds a custom value to the parser."
     )
+    parser.add_argument(
+        "--no_set_weights", action="store_true", help="If true, don't set weights."
+    )
     # Adds override arguments for network and netuid.
     parser.add_argument("--netuid", type=int, default=1, help="The chain subnet uid.")
     # Adds subtensor specific arguments i.e. --subtensor.chain_endpoint ... --subtensor.network ...
@@ -209,6 +212,17 @@ def main(config):
                 bt.logging.info(log)
             step += 1
             time.sleep(1)
+
+            # --- Set weights.
+            if not config.miner.no_set_weights:
+                template.utils.set_weights(
+                    subtensor,
+                    config.netuid,
+                    my_subnet_uid,
+                    wallet,
+                    config.wandb.on,
+                )
+            step += 1
 
         # If someone intentionally stops the miner, it'll safely terminate operations.
         except KeyboardInterrupt:
