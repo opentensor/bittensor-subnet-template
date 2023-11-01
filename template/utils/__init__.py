@@ -1,5 +1,6 @@
 from .set_weights import set_weights
 
+
 def resync_metagraph(metagraph, subtensor, scores):
     """Resyncs the metagraph and updates moving averages based on the new metagraph."""
     bt.logging.info("resync_metagraph()")

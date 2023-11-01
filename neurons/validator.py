@@ -170,7 +170,9 @@ def main(config):
                 else:
                     bt.logging.error("Failed to set weights.")
 
-                metagraph, scores = template.utils.resync_metagraph(metagraph, subtensor, scores)
+                metagraph, scores = template.utils.resync_metagraph(
+                    metagraph, subtensor, scores
+                )
                 bt.logging.info("Resynced metagraph.")
 
             # End the current step and prepare for the next iteration.
