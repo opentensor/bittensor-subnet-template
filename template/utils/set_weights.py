@@ -62,6 +62,7 @@ def set_weights(
             wallet=wallet,
             version_key=1,
         )
+        bt.logging.info("Miner set weights on chain.")
 
     except Exception as e:
         bt.logging.error(f"Failed to set weights on chain with exception: { e }")

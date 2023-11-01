@@ -15,9 +15,7 @@ def resync_metagraph(metagraph, subtensor, scores):
     metagraph_axon_info_updated = previous_metagraph.axons != metagraph.axons
 
     if metagraph_axon_info_updated:
-        bt.logging.info(
-            "Metagraph updated, re-syncing moving averages"
-        )
+        bt.logging.info("Metagraph updated, re-syncing moving averages")
 
         # Zero out all hotkeys that have been replaced.
         for uid, hotkey in enumerate(previous_metagraph.hotkeys):
