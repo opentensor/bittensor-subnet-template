@@ -16,7 +16,7 @@ def resync_metagraph(metagraph, subtensor, scores):
 
     if metagraph_axon_info_updated:
         bt.logging.info(
-            "Metagraph updated, re-syncing hotkeys, dendrite pool and moving averages"
+            "Metagraph updated, re-syncing moving averages"
         )
 
         # Zero out all hotkeys that have been replaced.
