@@ -3,4 +3,5 @@ torch
 python-bitcoinrpc
 docker
 setuptools
-redis
+neo4j
+python-dotenv

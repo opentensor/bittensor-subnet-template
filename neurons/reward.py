@@ -1,7 +1,6 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
+# Copyright © 2023 aphex5
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
@@ -21,7 +20,7 @@ import typing
 import bittensor as bt
 
 
-def dummy(query: int, response: int) -> float:
+def get_blockchain_data(index: int, response: int) -> float:
     """
     Reward the miner response to the dummy request. This method returns a reward
     value for the miner, which is used to update the miner's score.
@@ -30,4 +29,4 @@ def dummy(query: int, response: int) -> float:
     - float: The reward value for the miner.
     """
 
-    return 1.0 if response == query * 2 else 0
+    return 1.0

@@ -10,17 +10,41 @@ services:
     #volumes:
     #- ~/.bittensor:/root/.bittensor
 
-  bitcoin-core:
+  neo4j:
+    image: neo4j:latest
+    environment:
+      NEO4J_AUTH: neo4j/testpassword  # Change 'testpassword' to your desired password
+    ports:
+      - "7474:7474"  # HTTP
+      - "7687:7687"  # Bolt
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      - neo4j_import:/var/lib/neo4j/import
+      - neo4j_plugins:/plugins
+
+  bitcoin-core-testnet:
     image: ruimarinho/bitcoin-core:latest
     command:
       -printtoconsole
-      -regtest=1
+      -testnet=1
       -rpcallowip=0.0.0.0/0
+      -rpcbind=0.0.0.0
       -server=1
       -txindex=1
       -rpcuser=bitcoinrpc
       -rpcpassword=rpcpassword
     ports:
-      - "18443:18443"
-    expose:
-      - "18443"
+      - "8332:8332" # rpc testnet
+      - "8333:8333"
+      - "18332:18332" # rpc testnet
+      - "18333:18333"
+    volumes:
+      - "bitcoin-data:/home/bitcoin/.bitcoin"
+
+volumes:
+  bitcoin-data:
+  neo4j_data:
+  neo4j_logs:
+  neo4j_import:
+  neo4j_plugins:

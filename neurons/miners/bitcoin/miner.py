@@ -1,7 +1,6 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
+# Copyright © 2023 aphex5
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
@@ -25,14 +24,18 @@ import traceback
 import bittensor as bt
 
 from neurons import protocol
-from neurons.bitcoin.miners.query import BitcoinQuery, BitcoinNodeConfig
-from neurons.bitcoin.utils import BlockchainSyncStatus
+from neurons.miners.bitcoin.bitcoin_node import BitcoinNode, BitcoinNodeConfig
+from neurons.miners.bitcoin.utils import BlockchainSyncStatus
 
 
 def get_config():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--blockchain", default="BITCOIN", help="Set miner's supported blockchain network.")
+    parser.add_argument(
+        "--blockchain",
+        default="BITCOIN",
+        help="Set miner's supported blockchain network.",
+    )
     parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
 
     bt.subtensor.add_args(parser)
@@ -59,7 +62,9 @@ def get_config():
 def main(config):
     bt.logging(config=config, logging_dir=config.full_path)
 
-    bt.logging.info(f"Running miner for subnet: {config.netuid} on network: {config.subtensor.chain_endpoint} with config:")
+    bt.logging.info(
+        f"Running miner for subnet: {config.netuid} on network: {config.subtensor.chain_endpoint} with config:"
+    )
     bt.logging.info(config)
     bt.logging.info("Setting up bittensor objects.")
 
@@ -83,32 +88,38 @@ def main(config):
     bt.logging.info(f"Running miner on uid: {my_subnet_uid}")
 
     def blacklist_fn(synapse: protocol.GetBlockchainData) -> typing.Tuple[bool, str]:
-        # Below: Check that the hotkey is a registered entity in the metagraph.
         if synapse.dendrite.hotkey not in metagraph.hotkeys:
-            # Ignore requests from unrecognized entities.
-            bt.logging.trace(f"Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}")
+            bt.logging.trace(
+                f"Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}"
+            )
             return True, "Unrecognized hotkey"
+
+        if synapse.benchmark is True:
+            return False, "Running in benchmark mode."
 
         if synapse.network == config.blockchain:
             return False, "Blockchain is supported."
         else:
-            bt.logging.trace(f"Blacklisting hot key {synapse.dendrite.hotkey} because of wrong blockchain")
+            bt.logging.trace(
+                f"Blacklisting hot key {synapse.dendrite.hotkey} because of wrong blockchain"
+            )
             return True, "Unrecognized blockchain"
 
     def priority_fn(synapse: protocol.GetBlockchainData) -> float:
-        # TODO(developer): Define how miners should prioritize requests.
-        # Miners may recieve messages from multiple entities at once. This function
-        # determines which request should be processed first. Higher values indicate
-        # that the request should be processed first. Lower values indicate that the
-        # request should be processed later.
-        # Below: simple logic, prioritize requests from entities with more stake.
-        caller_uid = metagraph.hotkeys.index(synapse.dendrite.hotkey)  # Get the caller index.
+        caller_uid = metagraph.hotkeys.index(
+            synapse.dendrite.hotkey
+        )  # Get the caller index.
         prirority = float(metagraph.S[caller_uid])  # Return the stake as the priority.
-        bt.logging.trace(f"Prioritizing {synapse.dendrite.hotkey} with value: ", prirority)
+        bt.logging.trace(
+            f"Prioritizing {synapse.dendrite.hotkey} with value: ", prirority
+        )
         return prirority
 
-    def get_blockchain_data(synapse: protocol.GetBlockchainData) -> protocol.GetBlockchainData:
-        query = BitcoinQuery(BitcoinNodeConfig())
+    def get_blockchain_data(
+        synapse: protocol.GetBlockchainData,
+    ) -> protocol.GetBlockchainData:
+        query = BitcoinNode(BitcoinNodeConfig())
+        synapse.network = config.blockchain
         synapse.output = query.execute(synapse.cypher_query)
         return synapse
 
@@ -176,8 +187,6 @@ def main(config):
         except Exception as e:
             bt.logging.error(traceback.format_exc())
             continue
-
-
 
 
 # This is the main function, which runs the miner.

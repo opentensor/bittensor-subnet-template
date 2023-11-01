@@ -4,14 +4,10 @@ import bittensor as bt
 
 
 class GetBlockchainData(bt.Synapse):
-    network: str = "BITCOIN"
-    cypher_query: Optional[int] = None
+    benchmark: bool = False
+    network: str = None
+    cypher_query: str = None
     output: Optional[List[Dict]] = None
 
     def deserialize(self) -> List[Dict]:
-        """
-        Deserialize the scrap_output into a list of dictionaries.
-        """
-        # TODO: Add error handling for when scrap_output is None
         return self.output
-
