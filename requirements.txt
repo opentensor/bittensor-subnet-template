@@ -1,2 +1,7 @@
 bittensor
 torch
+python-bitcoinrpc
+docker
+setuptools
+neo4j
+python-dotenv
