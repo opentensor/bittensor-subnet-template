@@ -48,14 +48,12 @@ class GraphIndexerConfig:
             self.graph_db_url = graph_db_url
 
         if graph_db_user is None:
-            self.graph_db_user = os.environ.get("GRAPH_DB_USER") or "neo4j"
+            self.graph_db_user = os.environ.get("GRAPH_DB_USER") or ""
         else:
             self.graph_db_user = graph_db_user
 
         if graph_db_password is None:
-            self.graph_db_password = (
-                os.environ.get("GRAPH_DB_PASSWORD") or "testpassword"
-            )
+            self.graph_db_password = os.environ.get("GRAPH_DB_PASSWORD") or ""
         else:
             self.graph_db_password = graph_db_password
 

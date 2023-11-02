@@ -4,7 +4,7 @@ services:
   #bittensor:
    # build:
       #context: https://github.com/opentensor/bittensor.git
-      #dockerfile: Dockerfile
+      #dockerfile: indexer.bitcoin.Dockerfile
     #ports:
     #- "8091:8091"
     #volumes:
@@ -22,6 +22,16 @@ services:
       - neo4j_logs:/logs
       - neo4j_import:/var/lib/neo4j/import
       - neo4j_plugins:/plugins
+
+  memgraph:
+    container_name: memgraph
+    image: memgraph/memgraph-platform
+    ports:
+      - "7687:7687"
+      - "7444:7444"
+      - "3000:3000"
+    volumes:
+      - memgraph-data:/var/lib/memgraph
 
   bitcoin-core-testnet:
     image: ruimarinho/bitcoin-core:latest
@@ -44,6 +54,7 @@ services:
 
 volumes:
   bitcoin-data:
+  memgraph-data:
   neo4j_data:
   neo4j_logs:
   neo4j_import:
