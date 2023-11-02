@@ -22,7 +22,7 @@ jobs:
       - name: Fetch latest release
         id: fetch-latest-release
         run: |
-          VERSION=$(curl -f --retry 5 --retry-all-errors https://api.github.com/repos/gitphantomman/scraping_subnet/releases/latest | jq -r '.tag_name')
+          VERSION=$(curl -f --retry 5 --retry-all-errors https://api.github.com/repos/blockchain-insights/blockchain-data-subnet/releases/latest | jq -r '.tag_name')
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Check if new version
