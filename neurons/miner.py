@@ -85,9 +85,6 @@ def get_config():
 def main(config):
     # Activating Bittensor's logging with the set configurations.
     bt.logging(config=config, logging_dir=config.full_path)
-    bt.logging.info(
-        f"Running miner for subnet: {config.netuid} on network: {config.subtensor.chain_endpoint} with config:"
-    )
 
     # This logs the active configuration to the specified logging directory for review.
     bt.logging.info(config)
@@ -113,6 +110,10 @@ def main(config):
             f"\nYour miner: {wallet} is not registered to chain connection: {subtensor} \nRun btcli register and try again. "
         )
         exit()
+
+    bt.logging.info(
+        f"Running miner for subnet: {config.netuid} on network: {subtensor.chain_endpoint} with config:"
+    )
 
     # Each miner gets a unique identity (UID) in the network for differentiation.
     my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
