@@ -1,5 +1,9 @@
 name: build dev docker image
 
+permissions:
+  contents: write
+  packages: write
+
 on:
   push:
     branches: [ "dev" ]
