@@ -3,11 +3,10 @@ name: build docker image
 on:
   push:
     branches: [ "main", "dev" ]
-  pull_request:
-    branches: [ "main", "dev" ]
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
   build-and-push:
@@ -16,45 +15,37 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
 
-      - name: Get the current version
-        id: get_version
+      - name: Determine version
+        id: version
         run: |
-          VERSION_FILE="VERSION_$(echo ${{ github.ref_name }} | tr '[:lower:]' '[:upper:]')"
-          VERSION=$(cat "$VERSION_FILE")
-          echo "Current version from $VERSION_FILE: $VERSION"
-          echo "::set-output name=current_version::$VERSION"
-
-      - name: Increment the version
-        id: increment_version
-        run: |
-          VERSION_FILE="VERSION_$(echo ${{ github.ref_name }} | tr '[:lower:]' '[:upper:]')"
-          CURRENT_VERSION=${{ steps.get_version.outputs.current_version }}
-          NEW_VERSION=$((CURRENT_VERSION + 1))
-          echo "New version: $NEW_VERSION"
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          VERSION_FILE="${BRANCH_NAME}.version"
+          if [ -f "$VERSION_FILE" ]; then
+            VERSION=$(cat "$VERSION_FILE")
+          else
+            VERSION=0
+          fi
+          NEW_VERSION=$((VERSION + 1))
           echo "$NEW_VERSION" > "$VERSION_FILE"
-          echo "::set-output name=new_version::$NEW_VERSION"
-
-      - name: Commit and push the new version
-        run: |
-          VERSION_FILE="VERSION_$(echo ${{ github.ref_name }} | tr '[:lower:]' '[:upper:]')"
+          echo "::set-output name=version::$NEW_VERSION"
+          git add "$VERSION_FILE"
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add "$VERSION_FILE"
-          git commit -m "Increment $VERSION_FILE to ${{ steps.increment_version.outputs.new_version }}"
-          git push origin HEAD:${{ github.ref_name }}
+          git commit -m "Increment version to $NEW_VERSION"
+          git push
 
-      - name: Set the BRANCH_NAME environment variable
-        run: |
-          echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build the Docker image with BRANCH argument
+      - name: Build and push Docker image
         run: |
-          NEW_VERSION=${{ steps.increment_version.outputs.new_version }}
-          docker build . --file Dockerfile --tag myimage/${{ github.ref_name }}:v$NEW_VERSION --build-arg BRANCH=$BRANCH_NAME
-
-      - name: Push new tag
-        if: github.event_name == 'push'
-        run: |
-          NEW_VERSION=${{ steps.increment_version.outputs.new_version }}
-          git tag "${{ github.ref_name }}-v$NEW_VERSION"
-          git push origin "${{ github.ref_name }}-v$NEW_VERSION"
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/myimage
+          TAG_VERSION=${{ steps.version.outputs.version }}
+          FULL_TAG="$IMAGE_NAME:$BRANCH_NAME-v$TAG_VERSION"
+          docker build --build-arg BRANCH=$BRANCH_NAME --tag $FULL_TAG --file Dockerfile .
+          docker push $FULL_TAG
