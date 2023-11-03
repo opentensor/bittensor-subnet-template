@@ -1,8 +1,16 @@
 name: build docker image
 
 on:
-  push:
-    branches: [ "main", "dev" ]
+  workflow_dispatch:
+    inputs:
+      branchName:
+        description: 'Branch name to build and push'
+        required: true
+        default: 'main'
+      version:
+        description: 'Version number'
+        required: false
+        default: '1.0.0'
 
 permissions:
   contents: write
@@ -14,25 +22,8 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v3
-
-      - name: Determine version
-        id: version
-        run: |
-          BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          VERSION_FILE="${BRANCH_NAME}.version"
-          if [ -f "$VERSION_FILE" ]; then
-            VERSION=$(cat "$VERSION_FILE")
-          else
-            VERSION=0
-          fi
-          NEW_VERSION=$((VERSION + 1))
-          echo "$NEW_VERSION" > "$VERSION_FILE"
-          echo "::set-output name=version::$NEW_VERSION"
-          git add "$VERSION_FILE"
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git commit -m "Increment version to $NEW_VERSION"
-          git push
+        with:
+          ref: ${{ github.event.inputs.branchName }}
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v1
@@ -43,9 +34,9 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          BRANCH_NAME=${{ github.event.inputs.branchName }}
           IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/myimage
-          TAG_VERSION=${{ steps.version.outputs.version }}
+          TAG_VERSION=${{ github.event.inputs.version }}
           FULL_TAG="$IMAGE_NAME:$BRANCH_NAME-v$TAG_VERSION"
           docker build --build-arg BRANCH=$BRANCH_NAME --tag $FULL_TAG --file Dockerfile .
           docker push $FULL_TAG
