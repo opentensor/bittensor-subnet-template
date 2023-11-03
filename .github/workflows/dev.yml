@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: build dev docker image
 
 on:
   push:
@@ -42,7 +42,7 @@ jobs:
       - name: Build the Docker image
         run: |
           NEW_VERSION=${{ steps.increment_version.outputs.new_version }}
-          docker build . --file Dockerfile --tag myimage/dev:v$NEW_VERSION
+          docker build . --file Dockerfile --tag blockchain-insights/dev:v$NEW_VERSION
 
       # Add steps for Docker login and push if needed
 
