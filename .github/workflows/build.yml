@@ -1,0 +1,60 @@
+name: build docker image
+
+on:
+  push:
+    branches: [ "main", "dev" ]
+  pull_request:
+    branches: [ "main", "dev" ]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Get the current version
+        id: get_version
+        run: |
+          VERSION_FILE="VERSION_$(echo ${{ github.ref_name }} | tr '[:lower:]' '[:upper:]')"
+          VERSION=$(cat "$VERSION_FILE")
+          echo "Current version from $VERSION_FILE: $VERSION"
+          echo "::set-output name=current_version::$VERSION"
+
+      - name: Increment the version
+        id: increment_version
+        run: |
+          VERSION_FILE="VERSION_$(echo ${{ github.ref_name }} | tr '[:lower:]' '[:upper:]')"
+          CURRENT_VERSION=${{ steps.get_version.outputs.current_version }}
+          NEW_VERSION=$((CURRENT_VERSION + 1))
+          echo "New version: $NEW_VERSION"
+          echo "$NEW_VERSION" > "$VERSION_FILE"
+          echo "::set-output name=new_version::$NEW_VERSION"
+
+      - name: Commit and push the new version
+        run: |
+          VERSION_FILE="VERSION_$(echo ${{ github.ref_name }} | tr '[:lower:]' '[:upper:]')"
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add "$VERSION_FILE"
+          git commit -m "Increment $VERSION_FILE to ${{ steps.increment_version.outputs.new_version }}"
+          git push origin HEAD:${{ github.ref_name }}
+
+      - name: Set the BRANCH_NAME environment variable
+        run: |
+          echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+
+      - name: Build the Docker image with BRANCH argument
+        run: |
+          NEW_VERSION=${{ steps.increment_version.outputs.new_version }}
+          docker build . --file Dockerfile --tag myimage/${{ github.ref_name }}:v$NEW_VERSION --build-arg BRANCH=$BRANCH_NAME
+
+      - name: Push new tag
+        if: github.event_name == 'push'
+        run: |
+          NEW_VERSION=${{ steps.increment_version.outputs.new_version }}
+          git tag "${{ github.ref_name }}-v$NEW_VERSION"
+          git push origin "${{ github.ref_name }}-v$NEW_VERSION"
