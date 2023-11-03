@@ -1,16 +1,16 @@
 name: build docker image
 
 on:
+  # Uncomment the following lines if you want the workflow to run on pushes to these branches
+  # push:
+  #   branches: [ "main", "dev" ]
+
   workflow_dispatch:
     inputs:
       branchName:
-        description: 'Branch name to build and push'
+        description: 'Branch name to build from'
         required: true
         default: 'main'
-      version:
-        description: 'Version number'
-        required: false
-        default: '1.0.0'
 
 permissions:
   contents: write
@@ -35,8 +35,28 @@ jobs:
       - name: Build and push Docker image
         run: |
           BRANCH_NAME=${{ github.event.inputs.branchName }}
-          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/myimage
-          TAG_VERSION=${{ github.event.inputs.version }}
-          FULL_TAG="$IMAGE_NAME:$BRANCH_NAME-v$TAG_VERSION"
-          docker build --build-arg BRANCH=$BRANCH_NAME --tag $FULL_TAG --file Dockerfile .
-          docker push $FULL_TAG
+          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/myimage:${BRANCH_NAME}-${{ github.run_number }}
+          docker build --tag $IMAGE_NAME --build-arg BRANCH=$BRANCH_NAME .
+          docker push $IMAGE_NAME
+
+      - name: Update version file
+        run: |
+          BRANCH_NAME=${{ github.event.inputs.branchName }}
+          VERSION_FILE="${BRANCH_NAME}.version"
+          if [ -f "$VERSION_FILE" ]; then
+            VERSION=$(cat "$VERSION_FILE")
+          else
+            VERSION=0
+          fi
+          NEW_VERSION=$((VERSION + 1))
+          echo "$NEW_VERSION" > "$VERSION_FILE"
+          echo "New version: $NEW_VERSION"
+
+      - name: Commit version file changes
+        run: |
+          VERSION_FILE="${{ github.event.inputs.branchName }}.version"
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add "$VERSION_FILE"
+          git commit -m "Update $VERSION_FILE to ${{ steps.update-version.outputs.new_version }}"
+          git push
