@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   build-and-push:
-    runs-on: python:3.9
+    runs-on: ubuntu-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v3
