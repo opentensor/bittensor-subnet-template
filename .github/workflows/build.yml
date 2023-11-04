@@ -34,8 +34,11 @@ jobs:
 
       - name: Build and push Docker image
         run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/} # Extract branch name from GITHUB_REF
           IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/blockchain-data-subnet
           VERSION=${{ github.event.inputs.version }}
-          FULL_TAG="$IMAGE_NAME:${VERSION}"
+          # Combine branch name and version into the tag
+          FULL_TAG="$IMAGE_NAME:$BRANCH_NAME-${VERSION}"
           docker build --tag $FULL_TAG .
           docker push $FULL_TAG
+
