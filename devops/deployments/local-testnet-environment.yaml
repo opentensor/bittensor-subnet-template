@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  portainer:
+    image: portainer/portainer-ce
+    ports:
+      - "9000:9000"
+      - "8000:8000"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "portainer_data:/data"
+    command: -H unix:///var/run/docker.sock
+    deploy:
+      placement:
+        constraints: [ node.role == manager ]
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 512M
+
+  bitcoin-indexer:
+    image: ghcr.io/blockchain-insights/blockchain-data-subnet:latest
+    entrypoint: [ "python3", "./neurons/miners/bitcoin/indexer.py" ]
+    environment:
+      NODE_RPC_URL: "http://bitcoin-core-testnet:18332"
+      GRAPH_DB_URL: "bolt://memgraph:7687"
+      PYTHONPATH: .
+    deploy:
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+
+  memgraph:
+    image: memgraph/memgraph-platform
+    ports:
+      - "7687:7687"
+      - "7444:7444"
+      - "3000:3000"
+    volumes:
+      - memgraph-data:/var/lib/memgraph
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+
+  bitcoin-core-testnet:
+    image: ruimarinho/bitcoin-core:latest
+    command:
+      -printtoconsole
+      -testnet=1
+      -rpcallowip=0.0.0.0/0
+      -rpcbind=0.0.0.0
+      -server=1
+      -txindex=1
+      -rpcuser=bitcoinrpc
+      -rpcpassword=rpcpassword
+    ports:
+      - "8332:8332" # rpc testnet
+      - "8333:8333"
+      - "18332:18332" # rpc testnet
+      - "18333:18333"
+    volumes:
+      - "bitcoin-data:/home/bitcoin/.bitcoin"
+    deploy:
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+
+volumes:
+  bitcoin-data:
+  memgraph-data:
+  portainer_data:

@@ -1,6 +1,16 @@
 version: '3.8'
 
 services:
+  portainer:
+    image: portainer/portainer-ce
+    ports:
+      - "9000:9000"
+      - "8000:8000"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "portainer_data:/data"
+    command: -H unix:///var/run/docker.sock
+
   #bittensor:
    # build:
       #context: https://github.com/opentensor/bittensor.git
@@ -11,8 +21,7 @@ services:
     #- ~/.bittensor:/root/.bittensor
 
   bitcoin-indexer:
-    build:
-        context: ..
+    image: ghcr.io/blockchain-insights/blockchain-data-subnet:latest
     restart: unless-stopped
     volumes:
       - bittensor-data-wallets:/wallets:ro
@@ -21,10 +30,8 @@ services:
     environment:
       PYTHONPATH: .
 
-
-
   bitcoin-miner:
-      image: ./Dockerfile
+      image: ghcr.io/blockchain-insights/blockchain-data-subnet:latest
       restart: unless-stopped
       volumes:
         - bittensor-data-wallets:/wallets:ro

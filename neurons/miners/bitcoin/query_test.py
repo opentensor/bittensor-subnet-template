@@ -3,7 +3,7 @@ import unittest
 
 from bitcoinrpc.authproxy import AuthServiceProxy
 
-from infrastructure.bitcoin_core_utils import (
+from devops.tests.bitcoin_core_utils import (
     execute_bitcoin_cli_command,
     remove_container,
     create_and_start_bitcoin_core_container,
@@ -14,7 +14,7 @@ RPC_URL = "http://bitcoinrpc:rpcpassword@127.0.0.1:18443"
 
 
 class RpcIntegrationTest(unittest.TestCase):
-    container_name = "infrastructure-bitcoin-core-1"
+    container_name = "devops-bitcoin-core-1"
 
     @classmethod
     def tearDownClass(cls):
@@ -36,7 +36,7 @@ class RpcIntegrationTest(unittest.TestCase):
 
 
 class BitcoinQueryTest(unittest.TestCase):
-    container_name = "infrastructure-bitcoin-core-1"
+    container_name = "devops-bitcoin-core-1"
 
     @classmethod
     def tearDownClass(cls):
