@@ -22,6 +22,7 @@ def shutdown_handler(signum, frame):
 
 def index_blocks(_bitcoin_node, _graph_indexer):
     global shutdown_flag
+
     while not shutdown_flag:
         start_height = _graph_indexer.get_latest_block_number() + 1
         current_block_height = _bitcoin_node.get_current_block_height()
@@ -30,7 +31,7 @@ def index_blocks(_bitcoin_node, _graph_indexer):
             logger.info(
                 f"Waiting for new blocks. Current height is {current_block_height}."
             )
-            time.sleep(10)  # Wait for a minute before checking for new blocks
+            time.sleep(10)
             continue
 
         block_height = start_height
@@ -41,14 +42,30 @@ def index_blocks(_bitcoin_node, _graph_indexer):
             success = _graph_indexer.create_graph_from_block(block)
             end_time = time.time()
             time_taken = end_time - start_time
+            node_block_height = bitcoin_node.get_current_block_height()
+            progress = block_height / node_block_height * 100
+            formatted_num_transactions = "{:>3}".format(num_transactions)
+            formatted_time_taken = "{:6.2f}".format(time_taken)
+            formatted_tps = "{:8.2f}".format(
+                num_transactions / time_taken if time_taken > 0 else float("inf")
+            )
+            formatted_progress = "{:6.2f}".format(progress)
+
             if time_taken > 0:
-                tps = num_transactions / time_taken
                 logger.info(
-                    f"Block {block_height}: Processed {num_transactions} transactions in {time_taken:.2f} seconds ({tps:.2f} TPS)"
+                    "Block {:>6}: Processed {} transactions in {} seconds {} TPS Progress: {}%".format(
+                        block_height,
+                        formatted_num_transactions,
+                        formatted_time_taken,
+                        formatted_tps,
+                        formatted_progress,
+                    )
                 )
             else:
                 logger.info(
-                    f"Block {block_height}: Processed {num_transactions} transactions in 0 seconds"
+                    "Block {:>6}: Processed {} transactions in 0.00 seconds (  Inf TPS). Progress: {}%".format(
+                        block_height, formatted_num_transactions, formatted_progress
+                    )
                 )
 
             if success:
