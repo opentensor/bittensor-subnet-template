@@ -18,7 +18,9 @@ class GraphIndexer:
 
     def get_latest_block_number(self):
         with self.driver.session() as session:
-            result = session.run("MATCH (b:Block) RETURN MAX(b.number) AS latest_block")
+            result = session.run(
+                "MATCH (b:Block) RETURN MAX(b.height) AS latest_block_height"
+            )
             single_result = result.single()
             if single_result[0] is None:
                 return 0
@@ -31,192 +33,135 @@ class GraphIndexer:
 
     from neo4j import Transaction
 
-    def create_transaction_graph(self, transactions):
-        # Cypher query to create a Block and Transaction nodes, and the CONTAINS relationship
-        create_block_tx_query = """
-        UNWIND $data as row
-        MERGE (b:Block {number: row.block_height})
-        WITH b, row
-        UNWIND row.txs as tx
-        MERGE (t:Transaction {id: tx.txid, type: tx.type})
-        MERGE (b)-[:CONTAINS]->(t)
-        RETURN count(t) as transactionsCreated
-        """
-
-        # Cypher query to create Coinbase, Vin, Vout, and Address nodes and their relationships
-        create_vin_vout_address_query = """
-        UNWIND $data as row
-        MATCH (t:Transaction {id: row.txid})
-        WITH t, row
-        WHERE row.vin IS NOT NULL AND row.vout IS NOT NULL
-        FOREACH (input IN row.vin | 
-            MERGE (v:Vin {txid: input.prev_txid, vout: input.prev_vout})
-            MERGE (prev:Transaction {id: input.prev_txid})
-            MERGE (v)-[:VIN_OF]->(t)
-            MERGE (v)-[:VOUT_REF]->(prev)
-        )
-        FOREACH (output IN row.vout | 
-            MERGE (v:Vout {n: output.n, value: output.value_satoshi, script_type: output.script_type})
-            MERGE (t)-[:VOUT]->(v)
-            FOREACH (address IN output.addresses |
-                MERGE (a:Address {address: address})
-                MERGE (v)-[:TO_ADDRESS]->(a)
-            )
-        )
-        RETURN count(t) as transactionsProcessed
-        """
-
-        # Convert transactions to a format suitable for parameterized queries with batching
-        block_tx_data = []
-        vin_vout_address_data = []
-
-        for block_height, txs in transactions:
-            block_tx_row = {"block_height": block_height, "txs": []}
-            for tx in txs:
-                txid = tx["txid"]
-                tx_type = tx.get(
-                    "type", "unknown"
-                )  # Add a default type if not specified
-                tx_data = {"txid": txid, "type": tx_type}
-                block_tx_row["txs"].append(tx_data)
-
-                vin_data = []
-                vout_data = []
-
-                # Handle inputs (vins)
-                for vin in tx.get("vin", []):
-                    if "coinbase" in vin:
-                        # Handle coinbase transactions differently
-                        vin_data.append({"coinbase": vin["coinbase"]})
-                    else:
-                        prev_txid = vin.get("txid")
-                        prev_vout = vin.get("vout")
-                        if prev_txid and prev_vout is not None:
-                            vin_data.append(
-                                {"prev_txid": prev_txid, "prev_vout": prev_vout}
-                            )
-
-                # Handle outputs (vouts)
-                for vout in tx.get("vout", []):
-                    value_satoshi = int(Decimal(vout["value"]) * Decimal("100000000"))
-                    n = vout["n"]
-                    script_type = vout["scriptPubKey"].get("type", "unknown")
-                    addresses = vout["scriptPubKey"].get("addresses", [])
-                    vout_data.append(
-                        {
-                            "n": n,
-                            "value_satoshi": value_satoshi,
-                            "script_type": script_type,
-                            "addresses": addresses,
-                        }
-                    )
-
-                vin_vout_address_data.append(
-                    {"txid": txid, "vin": vin_data, "vout": vout_data}
-                )
-
-            block_tx_data.append(block_tx_row)
-
-        # Use the driver's session to execute the batched operations
+    def create_indexes(self):
         with self.driver.session() as session:
-            # Execute batch creation of Block and Transaction nodes
-            session.run(create_block_tx_query, data=block_tx_data)
+            index_creation_statements = [
+                "CREATE INDEX ON :Block(height);",
+                "CREATE INDEX ON :Transaction(tx_id);",
+                "CREATE INDEX ON :Address(address)",
+            ]
+            for statement in index_creation_statements:
+                try:
+                    session.run(statement)
+                except Exception as e:
+                    print(f"An exception occurred: {e}")
 
-            # Execute batch creation of Coinbase, Vin, Vout, and Address nodes and relationships
-            session.run(create_vin_vout_address_query, data=vin_vout_address_data)
+    def create_graph_from_block(self, block):
+        with self.driver.session() as session_initial:
+            session = session_initial.begin_transaction()
+            try:
+                block_height = block["height"]
+                block_hash = block["hash"]
+                block_previous_hash = block["previousblockhash"]
+                timestamp = block["time"]
 
-    def create_transaction_graph2(self, transactions):
-        with self.driver.session() as session:
-            for block_height, txs in transactions:
-                for tx in txs:
-                    txid = tx["txid"]
-                    tx_type = tx.get(
-                        "type", "unknown"
-                    )  # Add a default type if not specified
-
-                    # Create a block node
-                    session.run(
-                        "MERGE (b:Block {number: $block_height})",
-                        block_height=block_height,
-                    )
-                    # Create a transaction node with type and link it to the block
+                if block_height == 1:
+                    # Create the genesis block
                     session.run(
                         """
-                        MATCH (b:Block {number: $block_height})
-                        MERGE (t:Transaction {id: $txid, type: $tx_type})
-                        MERGE (b)-[:CONTAINS]->(t)
-                        """,
+                            CREATE (b:Block {height: $block_height, hash: $block_hash, timestamp: $timestamp})
+                            """,
                         block_height=block_height,
-                        txid=txid,
-                        tx_type=tx_type,
+                        block_hash=block_hash,
+                        timestamp=timestamp,
                     )
-                    # Handle inputs (vins)
-                    for vin in tx.get("vin", []):
+                else:
+                    # Create a block node
+                    block_previous_height = block_height - 1
+                    session.run(
+                        """
+                            MATCH (prev:Block {height: $block_previous_height})
+                            CREATE (b:Block {height: $block_height, hash: $block_hash, previous_hash: $block_previous_hash, timestamp: $timestamp})""",
+                        block_height=block_height,
+                        block_hash=block_hash,
+                        block_previous_height=block_previous_height,
+                        block_previous_hash=block_previous_hash,
+                        timestamp=timestamp,
+                    )
+
+                transactions = block["tx"]
+                for txs in transactions:
+                    tx_id = txs["txid"]
+                    session.run(
+                        """
+                             MATCH (b:Block {height: $block_height})
+                             CREATE (t:Transaction {tx_id: $tx_id })
+                             CREATE (b)-[:CONTAINS]->(t)
+                             """,
+                        block_height=block_height,
+                        tx_id=tx_id,
+                    )
+
+                    for vin in txs["vin"]:
                         if "coinbase" in vin:
-                            # Handle coinbase transactions differently
                             session.run(
                                 """
-                                MATCH (t:Transaction {id: $txid})
-                                MERGE (c:Coinbase {id: $coinbase})
-                                MERGE (t)-[:COINBASE_INPUT]->(c)
-                                """,
-                                txid=txid,
+                                    MATCH (t:Transaction { tx_id: $tx_id })
+                                    CREATE (v:Vin { coinbase: $coinbase })
+                                    CREATE (v)-[:VIN_OF]->(t)
+                                    """,
+                                tx_id=tx_id,
                                 coinbase=vin["coinbase"],
                             )
                         else:
-                            prev_txid = vin.get("txid")
+                            prev_tx_id = vin.get("txid")
                             prev_vout = vin.get("vout")
-                            if prev_txid and prev_vout is not None:
+                            if prev_tx_id and prev_vout is not None:
                                 # Link vin to its previous tx
                                 session.run(
                                     """
-                                    MATCH (t:Transaction {id: $txid})
-                                    MERGE (v:Vin {txid: $prev_txid, vout: $prev_vout})
-                                    MERGE (prev:Transaction {id: $prev_txid})
-                                    MERGE (v)-[:VIN_OF]->(t)
-                                    MERGE (v)-[:VOUT_REF]->(prev)
+                                    MATCH (t:Transaction { tx_id: $tx_id})
+                                    CREATE (v:Vin {tx_id: $prev_tx_id, vout: $prev_vout })
+                                    CREATE (prev:Transaction {tx_id: $prev_tx_id})
+                                    CREATE (v)-[:VIN_OF]->(t)
+                                    CREATE (v)-[:VOUT_REF]->(prev)
                                     """,
-                                    txid=txid,
-                                    prev_txid=prev_txid,
+                                    tx_id=tx_id,
+                                    prev_tx_id=prev_tx_id,
                                     prev_vout=prev_vout,
                                 )
 
-                    # Handle outputs (vouts)
-                    for vout in tx.get("vout", []):
-                        # Convert value from BTC to satoshi
+                    for vout in txs["vout"]:
                         value_satoshi = int(
                             Decimal(vout["value"]) * Decimal("100000000")
-                        )  # Use strings to avoid float
-
-                        n = vout["n"]  # The index of the output in the transaction
+                        )
+                        n = vout["n"]
                         scriptPubKey = vout["scriptPubKey"]
-                        script_type = scriptPubKey.get(
-                            "type", "unknown"
-                        )  # Add a default script type if not specified
-                        addresses = scriptPubKey.get("addresses", [])
+                        script_type = scriptPubKey.get("type", "unknown")
+                        address = scriptPubKey.get("address", None)
 
                         # Create Vout node and relationship to Transaction
                         session.run(
                             """
-                            MATCH (t:Transaction {id: $txid})
-                            MERGE (v:Vout {n: $n, value: $value_satoshi, script_type: $script_type})
-                            MERGE (t)-[:VOUT]->(v)
-                            """,
-                            txid=txid,
+                                MATCH (t:Transaction {tx_id: $tx_id})
+                                CREATE (v:Vout {n: $n, value: $value_satoshi, script_type: $script_type})
+                                CREATE (t)-[:VOUT]->(v)
+                                """,
+                            tx_id=tx_id,
                             n=n,
                             value_satoshi=value_satoshi,
                             script_type=script_type,
                         )
 
                         # Create Address nodes and relationships to Vout
-                        for address in addresses:
+                        if address is not None:
                             session.run(
                                 """
-                                MATCH (v:Vout {n: $n, value: $value_satoshi})
-                                MERGE (a:Address {address: $address})
-                                MERGE (v)-[:TO_ADDRESS]->(a)
-                                """,
+                                    MATCH (v:Vout {n: $n, value: $value_satoshi})
+                                    CREATE (a:Address {address: $address})
+                                    CREATE (v)-[:TO_ADDRESS]->(a)
+                                    """,
                                 n=n,
                                 value_satoshi=value_satoshi,
                                 address=address,
                             )
+                session.commit()
+                return True
+
+            except Exception as e:
+                session.rollback()
+                print(f"An exception occurred: {e}")
+                return False
+            finally:
+                if not session.closed():
+                    session.close()

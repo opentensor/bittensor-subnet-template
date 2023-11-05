@@ -33,15 +33,13 @@ def index_blocks(_bitcoin_node, _graph_indexer):
             time.sleep(10)  # Wait for a minute before checking for new blocks
             continue
 
-        for block_height in range(start_height, current_block_height + 1):
-            transactions = _bitcoin_node.get_transactions_from_block_height(
-                block_height
-            )
-            num_transactions = len(transactions)
+        block_height = start_height
+        while block_height <= current_block_height:
+            block = _bitcoin_node.get_block_by_height(block_height)
+            num_transactions = len(block["tx"])
             start_time = time.time()
-            _graph_indexer.create_transaction_graph2([(block_height, transactions)])
+            success = _graph_indexer.create_graph_from_block(block)
             end_time = time.time()
-
             time_taken = end_time - start_time
             if time_taken > 0:
                 tps = num_transactions / time_taken
@@ -52,6 +50,12 @@ def index_blocks(_bitcoin_node, _graph_indexer):
                 logger.info(
                     f"Block {block_height}: Processed {num_transactions} transactions in 0 seconds"
                 )
+
+            if success:
+                block_height += 1
+            else:
+                logger.error(f"Failed to index block {block_height}.")
+                time.sleep(30)
 
             if shutdown_flag:
                 logger.info(f"Finished indexing block {block_height} before shutdown.")
@@ -73,10 +77,13 @@ if __name__ == "__main__":
 
     logger.info("Starting indexer")
     logger.info(f"Current config: {indexer_config}")
-    logger.info(f"Current block height: {bitcoin_node.get_current_block_height()}")
-    logger.info(f"Latest block height: {graph_indexer.get_latest_block_number()}")
+    logger.info(f"Current node block height: {bitcoin_node.get_current_block_height()}")
+    logger.info(
+        f"Latest indexed block height: {graph_indexer.get_latest_block_number()}"
+    )
 
     try:
+        graph_indexer.create_indexes()
         index_blocks(bitcoin_node, graph_indexer)
     except Exception as e:
         logger.error(f"Indexing failed with error: {e}")
