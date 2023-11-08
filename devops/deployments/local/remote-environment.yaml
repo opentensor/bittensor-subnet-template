@@ -1,20 +1,19 @@
 version: '3.8'
 
 services:
-  memgraph3:
+  memgraph:
     image: memgraph/memgraph-platform
     ports:
       - "7687:7687"
       - "7444:7444"
       - "3000:3000"
     volumes:
-      - memgraph-data3:/var/lib/memgraph
+      - memgraph-data:/var/lib/memgraph
 
-  bitcoin-core-testnet:
+  bitcoin-core-mainnet:
     image: ruimarinho/bitcoin-core:latest
     command:
       -printtoconsole
-      -testnet=1
       -rpcallowip=0.0.0.0/0
       -rpcbind=0.0.0.0
       -server=1
@@ -22,14 +21,13 @@ services:
       -rpcuser=bitcoinrpc
       -rpcpassword=rpcpassword
     ports:
-      - "8332:8332" # rpc testnet
-      - "8333:8333"
-      - "18332:18332" # rpc testnet
-      - "18333:18333"
+      - "8332:8332" # rpc mainnet
+      - "8333:8333" # peer to peer mainnet
     volumes:
       - "bitcoin-data:/home/bitcoin/.bitcoin"
 
+
 volumes:
   bitcoin-data:
-  memgraph-data3:
+  memgraph-data:
   portainer_data:
