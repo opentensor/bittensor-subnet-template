@@ -24,6 +24,7 @@ class Block:
 @dataclass
 class Transaction:
     tx_id: str
+    block_height: int
     timestamp: int  # Using int to represent Unix epoch time
     fee_satoshi: int
     vins: List["VIN"] = field(default_factory=list)
@@ -57,6 +58,36 @@ class GraphIndexer:
     def close(self):
         self.driver.close()
 
+    def get_latest_block_number(self):
+        with self.driver.session() as session:
+            result = session.run(
+                "MATCH (b:Block) RETURN MAX(b.height) AS latest_block_height"
+            )
+            single_result = result.single()
+            if single_result[0] is None:
+                return 0
+            return single_result[0]
+
+    from decimal import Decimal, getcontext
+
+    # Set the precision high enough to handle satoshis for Bitcoin transactions
+    getcontext().prec = 28
+
+    from neo4j import Transaction
+
+    def create_indexes(self):
+        with self.driver.session() as session:
+            index_creation_statements = [
+                "CREATE INDEX ON :Block(height);",
+                "CREATE INDEX ON :Transaction(tx_id);",
+                "CREATE INDEX ON :Address(address)",
+            ]
+            for statement in index_creation_statements:
+                try:
+                    session.run(statement)
+                except Exception as e:
+                    print(f"An exception occurred: {e}")
+
     def create_in_memory_graph_from_block(self, block_data):
         # Parse block data
         block_height = block_data["height"]
@@ -85,7 +116,10 @@ class GraphIndexer:
 
             # Create the Transaction instance
             tx = Transaction(
-                tx_id=tx_id, timestamp=tx_timestamp, fee_satoshi=fee_satoshi
+                tx_id=tx_id,
+                timestamp=tx_timestamp,
+                fee_satoshi=fee_satoshi,
+                block_height=block_height,
             )
 
             # Parse VINs
@@ -122,36 +156,6 @@ class GraphIndexer:
 
         return {"block": block}
 
-    def get_latest_block_number(self):
-        with self.driver.session() as session:
-            result = session.run(
-                "MATCH (b:Block) RETURN MAX(b.height) AS latest_block_height"
-            )
-            single_result = result.single()
-            if single_result[0] is None:
-                return 0
-            return single_result[0]
-
-    from decimal import Decimal, getcontext
-
-    # Set the precision high enough to handle satoshis for Bitcoin transactions
-    getcontext().prec = 28
-
-    from neo4j import Transaction
-
-    def create_indexes(self):
-        with self.driver.session() as session:
-            index_creation_statements = [
-                "CREATE INDEX ON :Block(height);",
-                "CREATE INDEX ON :Transaction(tx_id);",
-                "CREATE INDEX ON :Address(address)",
-            ]
-            for statement in index_creation_statements:
-                try:
-                    session.run(statement)
-                except Exception as e:
-                    print(f"An exception occurred: {e}")
-
     def create_graph_from_block(self, block):
         in_memory_graph = self.create_in_memory_graph_from_block(block)
 
@@ -185,8 +189,10 @@ class GraphIndexer:
                 for tx in block_node.transactions:
                     session.run(
                         """
+                            MATCH (b:Block {height: $block_height})
                             CREATE (t:Transaction {
                                 tx_id: $tx_id,
+                                block_height: $block_height,
                                 fee_satoshi: $fee_satoshi,
                                 timestamp: $timestamp
                             })
@@ -195,13 +201,14 @@ class GraphIndexer:
                         tx_id=tx.tx_id,
                         fee_satoshi=tx.fee_satoshi,
                         timestamp=tx.timestamp,
-                        block_hash=block_node.block_hash,
+                        block_height=block_node.block_height,
                     )
 
                     # Create VIN relationships
                     for vin in tx.vins:
                         session.run(
                             """
+                                MATCH (t:Transaction {tx_id: $tx_id})
                                 CREATE (v:VIN {
                                     vin_id: $vin_id,
                                     vout_id: $vout_id,
@@ -221,6 +228,7 @@ class GraphIndexer:
                     for vout in tx.vouts:
                         session.run(
                             """
+                                MATCH (t:Transaction {tx_id: $tx_id})
                                 CREATE (v:VOUT {
                                     vout_id: $vout_id,
                                     value_satoshi: $value_satoshi,
