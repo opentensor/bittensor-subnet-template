@@ -1,14 +1,14 @@
 version: '3.8'
 
 services:
-  memgraph3:
+  memgraph4:
     image: memgraph/memgraph-platform
     ports:
       - "7687:7687"
       - "7444:7444"
       - "3000:3000"
     volumes:
-      - memgraph-data3:/var/lib/memgraph
+      - memgraph-data4:/var/lib/memgraph
 
   bitcoin-core-testnet:
     image: ruimarinho/bitcoin-core:latest
@@ -31,5 +31,5 @@ services:
 
 volumes:
   bitcoin-data:
-  memgraph-data3:
+  memgraph-data4:
   portainer_data:

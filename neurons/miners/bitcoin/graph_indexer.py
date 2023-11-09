@@ -185,8 +185,25 @@ class GraphIndexer:
                     previous_hash=previous_hash,
                 )
 
+                # Now, create a relationship to the previous block using block_hash
+                if previous_hash:
+                    # This check is important to handle the genesis block which has no predecessor
+                    session.run(
+                        """
+                            MATCH (current:Block {hash: $block_hash})
+                            MATCH (previous:Block {hash: $previous_hash})
+                            CREATE (current)-[:PREVIOUS]->(previous)
+                        """,
+                        block_hash=block_node.block_hash,
+                        previous_hash=previous_hash,
+                    )
+
                 # Iterate over transactions in the block
                 for tx in block_node.transactions:
+                    is_coinbase = (
+                        tx.is_coinbase if hasattr(tx, "is_coinbase") else False
+                    )
+                    # Create a Transaction node, with special handling if it's a coinbase transaction
                     session.run(
                         """
                             MATCH (b:Block {height: $block_height})
@@ -194,31 +211,57 @@ class GraphIndexer:
                                 tx_id: $tx_id,
                                 block_height: $block_height,
                                 fee_satoshi: $fee_satoshi,
-                                timestamp: $timestamp
+                                timestamp: $timestamp,
+                                is_coinbase: $is_coinbase
                             })
                             CREATE (b)-[:CONTAINS]->(t)
                         """,
                         tx_id=tx.tx_id,
-                        fee_satoshi=tx.fee_satoshi,
+                        fee_satoshi=tx.fee_satoshi
+                        if not is_coinbase
+                        else 0,  # Coinbase transactions don't have a fee
                         timestamp=tx.timestamp,
                         block_height=block_node.block_height,
+                        is_coinbase=is_coinbase,
                     )
+
+                    # If it's a coinbase transaction, create an Output with special attributes
+                    if is_coinbase:
+                        session.run(
+                            """
+                                MATCH (t:Transaction {tx_id: $tx_id})
+                                CREATE (v:Output {
+                                    vout_id: $vout_id,
+                                    value_satoshi: $value_satoshi,
+                                    script_pub_key: $script_pub_key,
+                                    is_coinbase: $is_coinbase
+                                })
+                                CREATE (t)-[:OUT]->(v)
+                                CREATE (a:Address {address: $address})
+                                CREATE (v)-[:LOCKED]->(a)
+                            """,
+                            vout_id=tx.vout_id,  # The ID for the coinbase output, often 0 or a special identifier
+                            value_satoshi=tx.value_satoshi,  # The block reward plus any transaction fees from other transactions
+                            script_pub_key=tx.script_pub_key,  # Often contains arbitrary data or even messages
+                            tx_id=tx.tx_id,
+                            address=tx.address,  # The address of the miner receiving the block reward
+                            is_coinbase=is_coinbase,
+                        )
 
                     # Create VIN relationships
                     for vin in tx.vins:
                         session.run(
                             """
+                                MATCH (v:Output {vout_id: $vout_id})
                                 MATCH (t:Transaction {tx_id: $tx_id})
-                                CREATE (v:VIN {
+                                CREATE (v)-[:IN {
                                     vin_id: $vin_id,
-                                    vout_id: $vout_id,
                                     script_sig: $script_sig,
                                     sequence: $sequence
-                                })
-                                CREATE (v)-[:IN]->(t)
+                                }]->(t)
                             """,
-                            vin_id=vin.vin_id,
                             vout_id=vin.vout_id,
+                            vin_id=vin.vin_id,
                             script_sig=vin.script_sig,
                             sequence=vin.sequence,
                             tx_id=tx.tx_id,
@@ -228,16 +271,15 @@ class GraphIndexer:
                     for vout in tx.vouts:
                         session.run(
                             """
-                                MATCH (t:Transaction {tx_id: $tx_id})
-                                CREATE (v:VOUT {
+                                CREATE (v:Output {
                                     vout_id: $vout_id,
                                     value_satoshi: $value_satoshi,
                                     script_pub_key: $script_pub_key,
-                                    is_spent: $is_spent,
-                                    address: $address
+                                    is_spent: $is_spent
                                 })
-                                CREATE (t)-[:OUT]->(v)
                                 CREATE (a:Address {address: $address})
+                                CREATE (t:Transaction {tx_id: $tx_id})
+                                CREATE (t)-[:OUT]->(v)
                                 CREATE (v)-[:LOCKED]->(a)
                             """,
                             vout_id=vout.vout_id,
