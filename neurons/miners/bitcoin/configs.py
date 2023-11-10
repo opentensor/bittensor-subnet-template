@@ -14,7 +14,7 @@ class BitcoinNodeConfig:
         if node_rpc_url is None:
             self.node_rpc_url = (
                 os.environ.get("NODE_RPC_URL")
-                or "http://bitcoinrpc:rpcpassword@127.0.0.1:18332"
+                or "http://bitcoinrpc:rpcpassword@127.0.0.1:8332"
             )
         else:
             self.rpc_url = node_rpc_url
