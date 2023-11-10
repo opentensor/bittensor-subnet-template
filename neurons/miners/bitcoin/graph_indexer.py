@@ -35,6 +35,7 @@ class GraphIndexer:
             index_creation_statements = [
                 "CREATE INDEX ON :Transaction(tx_id);",
                 "CREATE INDEX ON :Transaction(block_height);",
+                "CREATE INDEX ON :Address(address);",
             ]
             for statement in index_creation_statements:
                 try:
