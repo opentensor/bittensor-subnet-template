@@ -1,6 +1,8 @@
 bittensor
 torch
 python-bitcoinrpc
+bitcoin
+base58
 docker
 setuptools
 neo4j

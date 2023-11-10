@@ -5,6 +5,7 @@ import logging
 from neurons.logging import setup_logger
 from neurons.miners.bitcoin.bitcoin_node import BitcoinNode
 from neurons.miners.bitcoin.configs import IndexerConfig
+from neurons.miners.bitcoin.graph_creator import GraphCreator
 from neurons.miners.bitcoin.graph_indexer import GraphIndexer
 
 # Global flag to signal shutdown
@@ -20,7 +21,7 @@ def shutdown_handler(signum, frame):
     shutdown_flag = True
 
 
-def index_blocks(_bitcoin_node, _graph_indexer):
+def index_blocks(_bitcoin_node, _graph_creator, _graph_indexer):
     global shutdown_flag
 
     while not shutdown_flag:
@@ -39,7 +40,8 @@ def index_blocks(_bitcoin_node, _graph_indexer):
             block = _bitcoin_node.get_block_by_height(block_height)
             num_transactions = len(block["tx"])
             start_time = time.time()
-            success = _graph_indexer.create_graph_from_block(block)
+            in_memory_graph = _graph_creator.create_in_memory_graph_from_block(block)
+            success = _graph_indexer.create_graph_focused_on_money_flow(in_memory_graph)
             end_time = time.time()
             time_taken = end_time - start_time
             node_block_height = bitcoin_node.get_current_block_height()
@@ -90,6 +92,7 @@ if __name__ == "__main__":
 
     indexer_config = IndexerConfig()
     bitcoin_node = BitcoinNode(config=indexer_config.node_config)
+    graph_creator = GraphCreator()
     graph_indexer = GraphIndexer(config=indexer_config.graph_config)
 
     logger.info("Starting indexer")
@@ -101,7 +104,7 @@ if __name__ == "__main__":
 
     try:
         graph_indexer.create_indexes()
-        index_blocks(bitcoin_node, graph_indexer)
+        index_blocks(bitcoin_node, graph_creator, graph_indexer)
     except Exception as e:
         logger.error(f"Indexing failed with error: {e}")
     finally:
