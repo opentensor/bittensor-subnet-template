@@ -3,6 +3,7 @@ torch
 python-bitcoinrpc
 bitcoin
 base58
+pycryptodome
 docker
 setuptools
 neo4j
