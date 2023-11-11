@@ -104,7 +104,9 @@ class GraphCreator:
                         pubkey = script_pub_key_asm.split()[0]
                         address = pubkey_to_address(pubkey)
                     else:
-                        raise Exception("Unknown address type")
+                        raise Exception(
+                            f"Unknown address type: {vout_data['scriptPubKey']}"
+                        )
 
                 vout = VOUT(
                     vout_id=n,
