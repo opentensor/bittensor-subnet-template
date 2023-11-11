@@ -9,19 +9,19 @@ MODEL_TYPE_FUNDS_FLOW = "funds_flow-v1.0"
 NETWORK_BITCOIN = "bitcoin"
 
 
-class DiscoveryMetadata:
+class MinerDiscoveryMetadata:
     network: str = None
     assets: List[str] = None
     model_type: str = None
 
 
-class DiscoveryOutput:
-    metadata: DiscoveryMetadata = None
+class MinerDiscoveryOutput:
+    metadata: MinerDiscoveryMetadata = None
     data: Optional[List[Dict]] = None
 
 
 class MinerDiscovery(bt.Synapse):
-    output: DiscoveryOutput = None
+    output: MinerDiscoveryOutput = None
 
-    def deserialize(self) -> DiscoveryOutput:
+    def deserialize(self) -> MinerDiscoveryOutput:
         return self.output

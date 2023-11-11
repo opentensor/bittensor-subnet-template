@@ -22,10 +22,9 @@ import torch
 import argparse
 import traceback
 import bittensor as bt
-from typing import List, Dict
-from bittensor import TerminalInfo
-from neurons import protocol, reward
-from neurons.protocol import GetBlockchainData
+from neurons import protocol
+from neurons.protocol import MinerDiscovery
+from neurons.validators.miner_registry import MinerRegistry
 
 
 def get_config():
@@ -93,31 +92,32 @@ def main(config):
     bt.logging.info("Starting validator loop.")
     step = 0
 
-    network_axons: Dict[str, List[TerminalInfo]] = {}
-
     while True:
         try:
             responses = dendrite.query(
                 metagraph.axons,
-                protocol.DataExchange(
-                    query_type=protocol.QUERY_METADATA,
-                ),
+                protocol.MinerDiscovery(),
                 deserialize=True,
             )
 
-            # verify random data sample, this sample can not be always the same, should be oftern uniqueue; 3 times same response, lower the score
-
             bt.logging.info(f"Received responses: {responses}")
+            for response in enumerate(responses):
+                synapse: MinerDiscovery = response
 
-            for index, network, response in enumerate(responses):
-                bt.logging.info(f"Scoring response: {response}")
-                typed_response: GetBlockchainData = response
-                network_axons[network].append(typed_response.axon)
-
-                score = reward.get_blockchain_data(index, response)
-                scores[index] = (
-                    config.alpha * scores[index] + (1 - config.alpha) * score
+                MinerRegistry().store_miner_metadata(
+                    ip_address=synapse.axon.ip,
+                    network=synapse.output.network,
+                    assets=synapse.output.assets,
+                    model_type=synapse.output.model_type,
                 )
+
+                bt.logging.info(f"Scoring response: {response}")
+
+                score = 1
+
+                # scores[index] = (
+                #    config.alpha * scores[index] + (1 - config.alpha) * score
+                # )
 
             bt.logging.info(f"Scores: {scores}")
 

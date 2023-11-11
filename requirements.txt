@@ -8,3 +8,4 @@ docker
 setuptools
 neo4j
 python-dotenv
+sqlalchemy

@@ -26,7 +26,11 @@ from neurons import protocol
 from neurons.miners.bitcoin.node import BitcoinNodeConfig
 from neurons.miners.bitcoin.utils import BlockchainSyncStatus
 from neurons.miners.discovery import get_data_to_verify_by_validator
-from neurons.protocol import MODEL_TYPE_FUNDS_FLOW, NETWORK_BITCOIN, DiscoveryMetadata
+from neurons.protocol import (
+    MODEL_TYPE_FUNDS_FLOW,
+    NETWORK_BITCOIN,
+    MinerDiscoveryMetadata,
+)
 
 
 def get_config():
@@ -86,8 +90,8 @@ def main(config):
     bt.logging.info(f"Running miner on uid: {my_subnet_uid}")
 
     def miner_discovery(synapse: protocol.MinerDiscovery) -> protocol.MinerDiscovery:
-        synapse.output = protocol.DiscoveryOutput(
-            metadata=DiscoveryMetadata(
+        synapse.output = protocol.MinerDiscoveryOutput(
+            metadata=MinerDiscoveryMetadata(
                 network=config.network,
                 assets=config.assets.split(","),
                 model_type=config.model_type,
