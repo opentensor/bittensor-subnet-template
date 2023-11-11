@@ -3,6 +3,11 @@ from typing import List, Optional
 from decimal import Decimal, getcontext
 
 from neurons.miners.bitcoin.utils import pubkey_to_address
+from neurons.miners.bitcoin.utils_multisign import (
+    construct_redeem_script,
+    hash_redeem_script,
+    create_p2sh_address,
+)
 
 
 @dataclass
@@ -103,6 +108,12 @@ class GraphCreator:
                     elif "OP_CHECKSIG" in script_pub_key_asm:
                         pubkey = script_pub_key_asm.split()[0]
                         address = pubkey_to_address(pubkey)
+                    elif "OP_CHECKMULTISIG" in script_pub_key_asm:
+                        pubkeys = script_pub_key_asm.split()[1:-2]
+                        m = int(script_pub_key_asm.split()[0])
+                        redeem_script = construct_redeem_script(pubkeys, m)
+                        hashed_script = hash_redeem_script(redeem_script)
+                        address = create_p2sh_address(hashed_script)
                     else:
                         raise Exception(
                             f"Unknown address type: {vout_data['scriptPubKey']}"
