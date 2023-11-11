@@ -1,12 +1,11 @@
 import signal
 import time
-import logging
 
 from neurons.logging import setup_logger
-from neurons.miners.bitcoin.bitcoin_node import BitcoinNode
-from neurons.miners.bitcoin.configs import IndexerConfig
-from neurons.miners.bitcoin.graph_creator import GraphCreator
-from neurons.miners.bitcoin.graph_indexer import GraphIndexer
+from neurons.miners.bitcoin.node import BitcoinNode
+from neurons.miners.configs import IndexerConfig
+from neurons.miners.bitcoin.funds_flow.graph_creator import GraphCreator
+from neurons.miners.bitcoin.funds_flow.graph_indexer import GraphIndexer
 
 # Global flag to signal shutdown
 shutdown_flag = False

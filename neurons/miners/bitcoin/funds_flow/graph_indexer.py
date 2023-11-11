@@ -1,9 +1,9 @@
-from neurons.miners.bitcoin.configs import GraphIndexerConfig
+from neurons.miners.configs import GraphDatabaseConfig
 from neo4j import GraphDatabase
 
 
 class GraphIndexer:
-    def __init__(self, config: GraphIndexerConfig):
+    def __init__(self, config: GraphDatabaseConfig):
         self.driver = GraphDatabase.driver(
             config.graph_db_url,
             auth=(config.graph_db_user, config.graph_db_password),
@@ -25,7 +25,7 @@ class GraphIndexer:
                 return 0
             return single_result[0]
 
-    from decimal import Decimal, getcontext
+    from decimal import getcontext
 
     # Set the precision high enough to handle satoshis for Bitcoin transactions
     getcontext().prec = 28
@@ -36,6 +36,7 @@ class GraphIndexer:
                 "CREATE INDEX ON :Transaction(tx_id);",
                 "CREATE INDEX ON :Transaction(block_height);",
                 "CREATE INDEX ON :Address(address);",
+                "CREATE INDEX ON :SENT(value_satoshi)",
             ]
             for statement in index_creation_statements:
                 try:

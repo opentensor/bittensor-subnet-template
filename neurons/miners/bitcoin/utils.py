@@ -27,6 +27,25 @@ def pubkey_to_address(pubkey: str) -> str:
     return bitcoin_address
 
 
+def construct_redeem_script(pubkeys, m):
+    n = len(pubkeys)
+    script = f"{m} " + " ".join(pubkeys) + f" {n} OP_CHECKMULTISIG"
+    return script.encode("utf-8")
+
+
+def hash_redeem_script(redeem_script):
+    sha256 = SHA256.new(redeem_script).digest()
+    ripemd160 = RIPEMD160.new(sha256).digest()
+    return ripemd160
+
+
+def create_p2sh_address(hashed_script, mainnet=True):
+    version_byte = b"\x05" if mainnet else b"\xc4"
+    payload = version_byte + hashed_script
+    checksum = SHA256.new(SHA256.new(payload).digest()).digest()[:4]
+    return base58.b58encode(payload + checksum).decode()
+
+
 class BlockchainSyncStatus:
     def __init__(self, config):
         self.config = config
@@ -58,15 +77,3 @@ class BlockchainSyncStatus:
         except Exception as e:
             sys.stdout.write(f"\nFailed to check sync status: {e}\n")
             return False
-
-
-"""
-# Example usage:
-# Assuming you have a valid config dictionary with an RPC URL
-config = {
-    'rpc_url': 'http://username:password@localhost:8332'
-}
-
-blockchain_status = BlockchainSyncStatus(config)
-blockchain_status.is_synced()
-"""

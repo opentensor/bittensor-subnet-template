@@ -2,8 +2,8 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 from decimal import Decimal, getcontext
 
-from neurons.miners.bitcoin.utils import pubkey_to_address
-from neurons.miners.bitcoin.utils_multisign import (
+from neurons.miners.bitcoin.utils import (
+    pubkey_to_address,
     construct_redeem_script,
     hash_redeem_script,
     create_p2sh_address,

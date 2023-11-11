@@ -1,6 +1,5 @@
-import os
 from bitcoinrpc.authproxy import AuthServiceProxy
-from neurons.miners.bitcoin.configs import BitcoinNodeConfig
+from neurons.miners.configs import BitcoinNodeConfig
 
 
 class BitcoinNode:

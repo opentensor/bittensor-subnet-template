@@ -23,9 +23,9 @@ class BitcoinNodeConfig:
         return f"BitcoinNodeConfig(node_rpc_url={self.node_rpc_url})"
 
 
-class GraphIndexerConfig:
+class GraphDatabaseConfig:
     """
-    Configuration for the graph indexer.
+    Configuration for the Neo4j/Memgraph graph database.
     """
 
     def __init__(
@@ -71,7 +71,7 @@ class IndexerConfig:
     def __init__(
         self,
         node_config: BitcoinNodeConfig = None,
-        graph_config: GraphIndexerConfig = None,
+        graph_config: GraphDatabaseConfig = None,
     ):
         """
         Args:
@@ -84,7 +84,7 @@ class IndexerConfig:
             self.node_config = node_config
 
         if graph_config is None:
-            self.graph_config = GraphIndexerConfig()
+            self.graph_config = GraphDatabaseConfig()
         else:
             self.graph_config = graph_config
 

@@ -99,17 +99,13 @@ def main(config):
         try:
             responses = dendrite.query(
                 metagraph.axons,
-                protocol.GetBlockchainData(
-                    benchmark=True,
-                    cypher_query="""
-                        MATCH (w:Wallet)-[r:RECEIVED]->()
-                        RETURN w.address AS Address, SUM(r.value) AS Balance
-                        ORDER BY Balance DESC
-                        LIMIT 100
-                        """,
+                protocol.DataExchange(
+                    query_type=protocol.QUERY_METADATA,
                 ),
                 deserialize=True,
             )
+
+            # verify random data sample, this sample can not be always the same, should be oftern uniqueue; 3 times same response, lower the score
 
             bt.logging.info(f"Received responses: {responses}")
 
