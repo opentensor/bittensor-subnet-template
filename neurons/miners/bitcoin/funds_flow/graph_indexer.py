@@ -63,7 +63,7 @@ class GraphIndexer:
                             f"An exception occurred while creating index {index_name}: {e}"
                         )
 
-    def create_graph_focused_on_money_flow(self, in_memory_graph, batch_size=4):
+    def create_graph_focused_on_money_flow(self, in_memory_graph, batch_size=8):
         block_node = in_memory_graph["block"]
         transactions = block_node.transactions
 
