@@ -45,7 +45,7 @@ def index_blocks(_bitcoin_node, _graph_creator, _graph_indexer):
             time_taken = end_time - start_time
             node_block_height = bitcoin_node.get_current_block_height()
             progress = block_height / node_block_height * 100
-            formatted_num_transactions = "{:>3}".format(num_transactions)
+            formatted_num_transactions = "{:>4}".format(num_transactions)
             formatted_time_taken = "{:6.2f}".format(time_taken)
             formatted_tps = "{:8.2f}".format(
                 num_transactions / time_taken if time_taken > 0 else float("inf")
