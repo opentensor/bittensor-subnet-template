@@ -44,7 +44,7 @@ class GraphIndexer:
                 except Exception as e:
                     print(f"An exception occurred: {e}")
 
-    def create_graph_focused_on_money_flow(self, in_memory_graph):
+    def create_graph_focused_on_money_flow_experimental(self, in_memory_graph):
         block_node = in_memory_graph["block"]
         transactions = block_node.transactions
 
@@ -101,7 +101,7 @@ class GraphIndexer:
                 print(f"An exception occurred: {e}")
                 return False
 
-    def create_graph_focused_on_money_flow2(self, in_memory_graph):
+    def create_graph_focused_on_money_flow(self, in_memory_graph):
         block_node = in_memory_graph["block"]
 
         with self.driver.session() as session_initial:
