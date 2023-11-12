@@ -1,5 +1,9 @@
+from neurons.logging import setup_logger
 from neurons.miners.configs import GraphDatabaseConfig
 from neo4j import GraphDatabase
+
+
+logger = setup_logger("BITCOIN INDEXER")
 
 
 class GraphIndexer:
@@ -40,68 +44,84 @@ class GraphIndexer:
             ]
             for statement in index_creation_statements:
                 try:
+                    logger.info(f"Creating index for {statement}")
                     session.run(statement)
                 except Exception as e:
                     print(f"An exception occurred: {e}")
 
-    def create_graph_focused_on_money_flow_experimental(self, in_memory_graph):
+    def create_graph_focused_on_money_flow(self, in_memory_graph, batch_size=8):
         block_node = in_memory_graph["block"]
         transactions = block_node.transactions
 
         with self.driver.session() as session:
-            try:
-                # Process all transactions in a single batch
-                session.run(
-                    """
-                    UNWIND $transactions AS tx
-                    MERGE (t:Transaction {tx_id: tx.tx_id})
-                    ON CREATE SET t.timestamp = tx.timestamp,
-                                  t.block_height = tx.block_height,
-                                  t.is_coinbase = tx.is_coinbase
-                    """,
-                    transactions=[
-                        {
-                            "tx_id": tx.tx_id,
-                            "timestamp": tx.timestamp,
-                            "block_height": tx.block_height,
-                            "is_coinbase": tx.is_coinbase,
-                        }
-                        for tx in transactions
-                    ],
-                )
+            # Start a transaction
+            transaction = session.begin_transaction()
 
-                # Process all vouts in a single batch
-                vouts = []
-                for tx in transactions:
-                    for index, vout in enumerate(tx.vouts):
-                        vouts.append(
+            try:
+                for i in range(0, len(transactions), batch_size):
+                    batch_transactions = transactions[i : i + batch_size]
+
+                    # Process transactions in the current batch
+                    transaction.run(
+                        """
+                        UNWIND $transactions AS tx
+                        MERGE (t:Transaction {tx_id: tx.tx_id})
+                        ON CREATE SET t.timestamp = tx.timestamp,
+                                      t.block_height = tx.block_height,
+                                      t.is_coinbase = tx.is_coinbase
+                        """,
+                        transactions=[
                             {
                                 "tx_id": tx.tx_id,
-                                "address": vout.address,
-                                "value_satoshi": vout.value_satoshi,
-                                "is_coinbase": tx.is_coinbase
-                                and index
-                                == 0,  # True only for the first vout of a coinbase transaction
+                                "timestamp": tx.timestamp,
+                                "block_height": tx.block_height,
+                                "is_coinbase": tx.is_coinbase,
                             }
-                        )
+                            for tx in batch_transactions
+                        ],
+                    )
 
-                session.run(
-                    """
-                    UNWIND $vouts AS vout
-                    MERGE (a:Address {address: vout.address})
-                    MERGE (t:Transaction {tx_id: vout.tx_id})
-                    CREATE (t)-[:SENT { value_satoshi: vout.value_satoshi, is_coinbase: vout.is_coinbase }]->(a)
-                    """,
-                    vouts=vouts,
-                )
+                    # Process all vouts for transactions in the current batch
+                    batch_vouts = []
+                    for tx in batch_transactions:
+                        for index, vout in enumerate(tx.vouts):
+                            batch_vouts.append(
+                                {
+                                    "tx_id": tx.tx_id,
+                                    "address": vout.address,
+                                    "value_satoshi": vout.value_satoshi,
+                                    "is_coinbase": tx.is_coinbase
+                                    and index
+                                    == 0,  # True only for the first vout of a coinbase transaction
+                                }
+                            )
 
+                    transaction.run(
+                        """
+                        UNWIND $vouts AS vout
+                        MERGE (a:Address {address: vout.address})
+                        MERGE (t:Transaction {tx_id: vout.tx_id})
+                        CREATE (t)-[:SENT { value_satoshi: vout.value_satoshi, is_coinbase: vout.is_coinbase }]->(a)
+                        """,
+                        vouts=batch_vouts,
+                    )
+
+                # Commit the transaction
+                transaction.commit()
                 return True
 
             except Exception as e:
+                # Roll back the transaction in case of an error
+                transaction.rollback()
                 print(f"An exception occurred: {e}")
                 return False
 
-    def create_graph_focused_on_money_flow(self, in_memory_graph):
+            finally:
+                # Close the transaction
+                if transaction.closed() is False:
+                    transaction.close()
+
+    def create_graph_focused_on_money_flow2(self, in_memory_graph):
         block_node = in_memory_graph["block"]
 
         with self.driver.session() as session_initial:

@@ -102,7 +102,9 @@ if __name__ == "__main__":
     )
 
     try:
+        logger.info("Creating indexes...")
         graph_indexer.create_indexes()
+        logger.info("Starting indexing blocks...")
         index_blocks(bitcoin_node, graph_creator, graph_indexer)
     except Exception as e:
         logger.error(f"Indexing failed with error: {e}")
