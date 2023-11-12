@@ -9,7 +9,7 @@ from neurons.miners.bitcoin.funds_flow.graph_indexer import GraphIndexer
 
 # Global flag to signal shutdown
 shutdown_flag = False
-logger = setup_logger("BITCOIN INDEXER")
+logger = setup_logger("Indexer")
 
 
 def shutdown_handler(signum, frame):

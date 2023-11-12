@@ -3,7 +3,7 @@ from neurons.miners.configs import GraphDatabaseConfig
 from neo4j import GraphDatabase
 
 
-logger = setup_logger("BITCOIN INDEXER")
+logger = setup_logger("GraphIndexer")
 
 
 class GraphIndexer:
@@ -36,18 +36,33 @@ class GraphIndexer:
 
     def create_indexes(self):
         with self.driver.session() as session:
-            index_creation_statements = [
-                "CREATE INDEX ON :Transaction(tx_id);",
-                "CREATE INDEX ON :Transaction(block_height);",
-                "CREATE INDEX ON :Address(address);",
-                "CREATE INDEX ON :SENT(value_satoshi)",
-            ]
-            for statement in index_creation_statements:
-                try:
-                    logger.info(f"Creating index for {statement}")
-                    session.run(statement)
-                except Exception as e:
-                    print(f"An exception occurred: {e}")
+            # Fetch existing indexes
+            existing_indexes = session.run("SHOW INDEX INFO")
+            existing_index_set = set()
+            for record in existing_indexes:
+                label = record["label"]
+                property = record["property"]
+                index_name = f"{label}-{property}"
+                if index_name:
+                    existing_index_set.add(index_name)
+                    print(index_name)
+
+            index_creation_statements = {
+                "Transaction-tx_id": "CREATE INDEX ON :Transaction(tx_id);",
+                "Transaction-block_height": "CREATE INDEX ON :Transaction(block_height);",
+                "Address-address": "CREATE INDEX ON :Address(address);",
+                "SENT-value_satoshi": "CREATE INDEX ON :SENT(value_satoshi)",
+            }
+
+            for index_name, statement in index_creation_statements.items():
+                if index_name not in existing_index_set:
+                    try:
+                        logger.info(f"Creating index: {index_name}")
+                        session.run(statement)
+                    except Exception as e:
+                        print(
+                            f"An exception occurred while creating index {index_name}: {e}"
+                        )
 
     def create_graph_focused_on_money_flow(self, in_memory_graph, batch_size=8):
         block_node = in_memory_graph["block"]
