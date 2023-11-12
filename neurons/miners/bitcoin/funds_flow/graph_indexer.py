@@ -45,7 +45,6 @@ class GraphIndexer:
                 index_name = f"{label}-{property}"
                 if index_name:
                     existing_index_set.add(index_name)
-                    print(index_name)
 
             index_creation_statements = {
                 "Transaction-tx_id": "CREATE INDEX ON :Transaction(tx_id);",
