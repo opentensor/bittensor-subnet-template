@@ -101,13 +101,19 @@ if __name__ == "__main__":
         f"Latest indexed block height: {graph_indexer.get_latest_block_number()}"
     )
 
-    try:
-        logger.info("Creating indexes...")
-        graph_indexer.create_indexes()
-        logger.info("Starting indexing blocks...")
-        index_blocks(bitcoin_node, graph_creator, graph_indexer)
-    except Exception as e:
-        logger.error(f"Indexing failed with error: {e}")
-    finally:
-        graph_indexer.close()
-        logger.info("Indexer stopped")
+    retry_delay = 60
+
+    while True:
+        try:
+            logger.info("Creating indexes...")
+            graph_indexer.create_indexes()
+            logger.info("Starting indexing blocks...")
+            index_blocks(bitcoin_node, graph_creator, graph_indexer)
+            break  # Break the loop if successful
+        except Exception as e:
+            logger.error(f"Retry failed with error: {e}")
+            logger.info(f"Retrying in {retry_delay} seconds...")
+            time.sleep(retry_delay)
+        finally:
+            graph_indexer.close()
+            logger.info("Indexer stopped")
