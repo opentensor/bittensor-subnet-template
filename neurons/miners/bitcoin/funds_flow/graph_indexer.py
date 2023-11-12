@@ -46,6 +46,63 @@ class GraphIndexer:
 
     def create_graph_focused_on_money_flow(self, in_memory_graph):
         block_node = in_memory_graph["block"]
+        transactions = block_node.transactions
+
+        with self.driver.session() as session:
+            try:
+                # Process all transactions in a single batch
+                session.run(
+                    """
+                    UNWIND $transactions AS tx
+                    MERGE (t:Transaction {tx_id: tx.tx_id})
+                    ON CREATE SET t.timestamp = tx.timestamp,
+                                  t.block_height = tx.block_height,
+                                  t.is_coinbase = tx.is_coinbase
+                    """,
+                    transactions=[
+                        {
+                            "tx_id": tx.tx_id,
+                            "timestamp": tx.timestamp,
+                            "block_height": tx.block_height,
+                            "is_coinbase": tx.is_coinbase,
+                        }
+                        for tx in transactions
+                    ],
+                )
+
+                # Process all vouts in a single batch
+                vouts = []
+                for tx in transactions:
+                    for index, vout in enumerate(tx.vouts):
+                        vouts.append(
+                            {
+                                "tx_id": tx.tx_id,
+                                "address": vout.address,
+                                "value_satoshi": vout.value_satoshi,
+                                "is_coinbase": tx.is_coinbase
+                                and index
+                                == 0,  # True only for the first vout of a coinbase transaction
+                            }
+                        )
+
+                session.run(
+                    """
+                    UNWIND $vouts AS vout
+                    MERGE (a:Address {address: vout.address})
+                    MERGE (t:Transaction {tx_id: vout.tx_id})
+                    CREATE (t)-[:SENT { value_satoshi: vout.value_satoshi, is_coinbase: vout.is_coinbase }]->(a)
+                    """,
+                    vouts=vouts,
+                )
+
+                return True
+
+            except Exception as e:
+                print(f"An exception occurred: {e}")
+                return False
+
+    def create_graph_focused_on_money_flow2(self, in_memory_graph):
+        block_node = in_memory_graph["block"]
 
         with self.driver.session() as session_initial:
             session = session_initial.begin_transaction()

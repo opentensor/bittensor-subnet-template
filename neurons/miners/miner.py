@@ -20,12 +20,15 @@ import os
 import time
 import argparse
 import traceback
+import typing
 import bittensor as bt
-
 from neurons import protocol
 from neurons.miners.bitcoin.node import BitcoinNodeConfig
 from neurons.miners.bitcoin.utils import BlockchainSyncStatus
-from neurons.miners.discovery import get_data_to_verify_by_validator
+from neurons.miners.query import (
+    execute_query_proxy,
+    get_graph_search,
+)
 from neurons.protocol import (
     MODEL_TYPE_FUNDS_FLOW,
     NETWORK_BITCOIN,
@@ -41,16 +44,23 @@ def get_config():
         help="Set miner's supported blockchain network.",
     )
     parser.add_argument(
+        "--assets",
+        default="BTC",
+        help="Set miner's supported blockchain assets.",
+    )
+    parser.add_argument(
         "--model_type",
         type=str,
         default=MODEL_TYPE_FUNDS_FLOW,
         help="Set miner's supported model type.",
     )
     parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
+
     bt.subtensor.add_args(parser)
     bt.logging.add_args(parser)
     bt.wallet.add_args(parser)
     bt.axon.add_args(parser)
+
     config = bt.config(parser)
     config.full_path = os.path.expanduser(
         "{}/{}/{}/netuid{}/{}".format(
@@ -85,20 +95,77 @@ def main(config):
         )
         exit()
 
-    # Each miner gets a unique identity (UID) in the network for differentiation.
     my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
     bt.logging.info(f"Running miner on uid: {my_subnet_uid}")
 
     def miner_discovery(synapse: protocol.MinerDiscovery) -> protocol.MinerDiscovery:
-        synapse.output = protocol.MinerDiscoveryOutput(
-            metadata=MinerDiscoveryMetadata(
-                network=config.network,
-                assets=config.assets.split(","),
-                model_type=config.model_type,
-            ),
-            data=get_data_to_verify_by_validator(config.network),
-        )
+        try:
+            graph_search = get_graph_search(config.network, config.model_type)
+            synapse.output = protocol.MinerDiscoveryOutput(
+                metadata=MinerDiscoveryMetadata(
+                    network=config.network,
+                    assets=config.assets.split(","),
+                    model_type=config.model_type,
+                ),
+                data=graph_search.verify_random_block_transaction(),
+            )
+            return synapse
+        except Exception as e:
+            bt.logging.error(traceback.format_exc())
+            synapse.output = None
+            return synapse
+
+    def execute_query(synapse: protocol.MinerQuery) -> protocol.MinerQuery:
+        try:
+            synapse.output = execute_query_proxy(
+                network=synapse.network,
+                asset=synapse.asset,
+                model_type=synapse.model_type,
+                query=synapse.query,
+            )
+        except Exception as e:
+            bt.logging.error(traceback.format_exc())
+            synapse.output = None
+
         return synapse
+
+    def priority_execute_query(synapse: protocol.MinerQuery) -> protocol.MinerQuery:
+        caller_uid = metagraph.hotkeys.index(synapse.dendrite.hotkey)
+        prirority = float(metagraph.S[caller_uid])
+        bt.logging.trace(
+            f"Prioritizing {synapse.dendrite.hotkey} with value: ", prirority
+        )
+        return prirority
+
+    def blacklist_execute_query(
+        synapse: protocol.MinerQuery,
+    ) -> typing.Tuple[bool, str]:
+        if synapse.dendrite.hotkey not in metagraph.hotkeys:
+            bt.logging.trace(
+                f"Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}"
+            )
+            return True, "Unrecognized hotkey"
+
+        if synapse.network == config.blockchain:
+            bt.logging.trace(
+                f"Blacklisting hot key {synapse.dendrite.hotkey} because of wrong blockchain"
+            )
+            return True, "Blockchain not supported."
+
+        elif synapse.model_type == config.model_type:
+            bt.logging.trace(
+                f"Blacklisting hot key {synapse.dendrite.hotkey} because of wrong model type"
+            )
+            return True, "Model type not supported."
+
+        elif synapse.asset not in config.assets.split(","):
+            bt.logging.trace(
+                f"Blacklisting hot key {synapse.dendrite.hotkey} because of wrong asset"
+            )
+            return True, "Asset not supported."
+
+        else:
+            return False, "All ok"
 
     def wait_for_sync():
         sync = BlockchainSyncStatus(BitcoinNodeConfig())
@@ -109,7 +176,11 @@ def main(config):
     axon = bt.axon(wallet=wallet, config=config)
     bt.logging.info(f"Attaching forward function to axon.")
 
-    axon.attach(forward_fn=miner_discovery)
+    axon.attach(forward_fn=miner_discovery).attach(
+        forward_fn=execute_query,
+        blacklist_fn=blacklist_execute_query,
+        priority_fn=priority_execute_query,
+    )
     bt.logging.info(
         f"Serving axon {axon} on network: {config.subtensor.chain_endpoint} with netuid: {config.netuid}"
     )
@@ -122,8 +193,6 @@ def main(config):
     step = 0
     while True:
         try:
-            # TODO(developer): Define any additional operations to be performed by the miner.
-            # Below: Periodically update our knowledge of the network graph.
             if step % 5 == 0:
                 metagraph = subtensor.metagraph(config.netuid)
                 log = (

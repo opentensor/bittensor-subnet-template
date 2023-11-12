@@ -106,10 +106,14 @@ def main(config):
 
                 MinerRegistry().store_miner_metadata(
                     ip_address=synapse.axon.ip,
+                    hot_key=synapse.dendrite.hotkey,
                     network=synapse.output.network,
                     assets=synapse.output.assets,
                     model_type=synapse.output.model_type,
                 )
+
+                # VALIDATE - check on blockexplorer the output
+                # CHECK NUMBER OF MINERS: check how many miners there are for given network and model type
 
                 bt.logging.info(f"Scoring response: {response}")
 
