@@ -5,7 +5,7 @@ services:
     image: ruimarinho/bitcoin-core:latest
     command:
       -printtoconsole
-      -rpcallowip=0.0.0.0
+      -rpcallowip=0.0.0.0/0
       -rpcbind=0.0.0.0
       -server=1
       -txindex=1
