@@ -1,0 +1,1 @@
+docker image build -t blockchain_insights_base -f Dockerfile .

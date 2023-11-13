@@ -1,20 +1,20 @@
 version: '3.8'
 
 services:
-  memgraph:
+  memgraph-funds-flow:
     image: memgraph/memgraph-mage:latest
     ports:
       - "7687:7687"
       - "7444:7444"
       - "3000:3000"
     volumes:
-      - memgraph-data:/var/lib/memgraph
+      - memgraph-funds-flow-data:/var/lib/memgraph
 
   bitcoin-funds-flow-indexer:
-    build:
-        context: ../../..
-        dockerfile: Dockerfile
+    image: blockchain_insights_base
     command: ["python", "neurons/miners/bitcoin/funds_flow/indexer.py"]
+    environment:
+      - PYTHONPATH=.
 
 volumes:
-  memgraph-data:
+   memgraph-funds-flow-data:

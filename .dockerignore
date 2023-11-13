@@ -3,3 +3,4 @@ contrib/
 devops/
 docs/
 .github/
+venv/

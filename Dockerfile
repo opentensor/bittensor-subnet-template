@@ -6,6 +6,8 @@ WORKDIR /app
 # Copy only the files needed for pip install
 COPY requirements.txt .
 COPY setup.py .
+COPY README.md .
+COPY insights/ insights/
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt

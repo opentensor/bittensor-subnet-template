@@ -11,19 +11,23 @@
     First server will be used to run memgraph, indexer, miner, and the second one to run bitcoin core node;
 While purchasing machines, select private network integration, so the machines can communicate each other via private network.
 
+
+4) Install python on both machines
+ - ``sudo apt-get install python3.9``
+ - ``alias python=python3``
+ - ``source ~/.bashrc``
+ - ``python --version``
+
 4) Install docker on both machines, and make sure docker is running.
-5) Install git and clone subnet repo on both machines.
+- ``apt-get install docker``
+- ``apt-get install docker-compose``
+5) clone subnet repo on both machines:``git clone https://github.com/blockchain-insights/blockchain-data-subnet.git``
 
-sudo apt update
-sudo apt upgrade
 
-sudo apt-get install python3.9
-alias python=python3
-source ~/.bashrc
-python --version
+
+
 
  
-8) apt-get install docker
-7) apt-get install docker-compose
+
 8) install python 3.9 on both machines
 
