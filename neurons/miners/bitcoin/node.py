@@ -19,6 +19,8 @@ class BitcoinNode:
         else:
             self.node_rpc_url = node_rpc_url
 
+        print(self.node_rpc_url)
+
     def is_synced(self):
         rpc_connection = AuthServiceProxy(self.node_rpc_url)
         return (

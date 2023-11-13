@@ -25,9 +25,21 @@ While purchasing machines, select private network integration, so the machines c
 
 
 
+on node machine
+sudo ufw enable
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw allow ssh
+sudo ufw allow 8333 comment 'Allow Bitcoin Node'
+sudo ufw allow 8332 comment 'Allow Bitcoin RPC'
 
+sudo ufw allow 8333/tcp comment 'Allow Bitcoin Node'
 
- 
+for .env file use docker eth ip address
+
+ sudo ufw status
+sudo ufw reload
+
 
 8) install python 3.9 on both machines
 
