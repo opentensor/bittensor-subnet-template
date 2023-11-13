@@ -1,5 +1,5 @@
+import os
 from neurons.logging import setup_logger
-from neurons.miners.configs import GraphDatabaseConfig
 from neo4j import GraphDatabase
 
 
@@ -7,10 +7,32 @@ logger = setup_logger("GraphIndexer")
 
 
 class GraphIndexer:
-    def __init__(self, config: GraphDatabaseConfig):
+    def __init__(
+        self,
+        graph_db_url: str = None,
+        graph_db_user: str = None,
+        graph_db_password: str = None,
+    ):
+        if graph_db_url is None:
+            self.graph_db_url = (
+                os.environ.get("GRAPH_DB_URL") or "bolt://localhost:7687"
+            )
+        else:
+            self.graph_db_url = graph_db_url
+
+        if graph_db_user is None:
+            self.graph_db_user = os.environ.get("GRAPH_DB_USER") or ""
+        else:
+            self.graph_db_user = graph_db_user
+
+        if graph_db_password is None:
+            self.graph_db_password = os.environ.get("GRAPH_DB_PASSWORD") or ""
+        else:
+            self.graph_db_password = graph_db_password
+
         self.driver = GraphDatabase.driver(
-            config.graph_db_url,
-            auth=(config.graph_db_user, config.graph_db_password),
+            self.graph_db_url,
+            auth=(self.graph_db_user, self.graph_db_password),
         )
 
     def close(self):

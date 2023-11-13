@@ -24,9 +24,9 @@ import traceback
 import bittensor as bt
 from neurons import protocol
 from neurons.protocol import MinerDiscovery
+from neurons.validators.blockchair_api import BlockchairAPI
 from neurons.validators.miner_data_sample import MinerDataSample
 from neurons.validators.miner_registry import MinerRegistry
-from neurons.validators.verification import get_latest_block_height, verify_data_sample
 
 
 def get_config():
@@ -101,6 +101,8 @@ def main(config):
     bt.logging.info("Starting validator loop.")
     step = 0
 
+    blochair_api = BlockchairAPI(config.blockchain, config.blockchair_api_key)
+
     while True:
         try:
             responses = dendrite.query(
@@ -128,13 +130,13 @@ def main(config):
                     data_sample=synapse.output.data_sample.block_height,
                 )
 
-                last_block_height = get_latest_block_height(
+                last_block_height = blochair_api.get_latest_block_height(
                     network=synapse.output.metadata.network
                 )
 
                 miner_block_height = synapse.output.block_height
 
-                data_sample_is_valid = verify_data_sample(
+                data_sample_is_valid = blochair_api.verify_data_sample(
                     network=synapse.output.metadata.network,
                     input_result=synapse.output.data_sample,
                 )

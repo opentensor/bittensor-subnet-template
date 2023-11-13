@@ -4,21 +4,16 @@ from neurons.miners.bitcoin.funds_flow.graph_search import (
 from neurons.miners.litecoin.funds_flow.graph_search import (
     GraphSearch as LitecoinGraphSearch,
 )
-from neurons.miners.configs import GraphDatabaseConfig
 from neurons.protocol import NETWORK_BITCOIN, MODEL_TYPE_FUNDS_FLOW, NETWORK_LITECOIN
 
 
 def get_graph_search(network, model_type):
     switch = {
         NETWORK_BITCOIN: {
-            MODEL_TYPE_FUNDS_FLOW: lambda: BitcoinGraphSearch(
-                config=GraphDatabaseConfig()
-            ),
+            MODEL_TYPE_FUNDS_FLOW: lambda: BitcoinGraphSearch(),
         },
         NETWORK_LITECOIN: {
-            MODEL_TYPE_FUNDS_FLOW: lambda: LitecoinGraphSearch(
-                config=GraphDatabaseConfig()
-            ),
+            MODEL_TYPE_FUNDS_FLOW: lambda: LitecoinGraphSearch(),
         },
     }
 

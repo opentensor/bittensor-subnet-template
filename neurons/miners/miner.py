@@ -23,8 +23,6 @@ import traceback
 import typing
 import bittensor as bt
 from neurons import protocol
-from neurons.miners.bitcoin.node import BitcoinNodeConfig
-from neurons.miners.bitcoin.utils import BlockchainSyncStatus
 from neurons.miners.query import (
     execute_query_proxy,
     get_graph_search,

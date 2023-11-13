@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 from decimal import Decimal, getcontext
 
-from neurons.miners.bitcoin.utils import (
+from neurons.miners.bitcoin.node_utils import (
     pubkey_to_address,
     construct_redeem_script,
     hash_redeem_script,
