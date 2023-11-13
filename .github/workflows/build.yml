@@ -22,7 +22,7 @@ jobs:
           ref: ${{ github.ref }}
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v1
+        uses: docker/login-action@funds_flow
         with:
           registry: ghcr.io
           username: ${{ github.actor }}

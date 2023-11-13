@@ -2,8 +2,8 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 from decimal import Decimal, getcontext
 
-from neurons.miners.bitcoin.utils import pubkey_to_address
-from neurons.miners.bitcoin.utils_multisign import (
+from neurons.miners.bitcoin.node_utils import (
+    pubkey_to_address,
     construct_redeem_script,
     hash_redeem_script,
     create_p2sh_address,
@@ -93,7 +93,8 @@ class GraphCreator:
                 tx.is_coinbase = "coinbase" in vin_data
 
             for vout_data in tx_data["vout"]:
-                if "nonstandard" in vout_data["scriptPubKey"].get("type", ""):
+                script_type = vout_data["scriptPubKey"].get("type", "")
+                if "nonstandard" in script_type or script_type == "nulldata":
                     continue
 
                 value_satoshi = int(Decimal(vout_data["value"]) * SATOSHI)

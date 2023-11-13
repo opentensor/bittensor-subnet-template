@@ -1,16 +1,13 @@
 import signal
 import time
-import logging
-
 from neurons.logging import setup_logger
-from neurons.miners.bitcoin.bitcoin_node import BitcoinNode
-from neurons.miners.bitcoin.configs import IndexerConfig
-from neurons.miners.bitcoin.graph_creator import GraphCreator
-from neurons.miners.bitcoin.graph_indexer import GraphIndexer
+from neurons.miners.bitcoin.node import BitcoinNode
+from neurons.miners.bitcoin.funds_flow.graph_creator import GraphCreator
+from neurons.miners.bitcoin.funds_flow.graph_indexer import GraphIndexer
 
 # Global flag to signal shutdown
 shutdown_flag = False
-logger = setup_logger("BITCOIN INDEXER")
+logger = setup_logger("Indexer")
 
 
 def shutdown_handler(signum, frame):
@@ -34,7 +31,7 @@ def index_blocks(_bitcoin_node, _graph_creator, _graph_indexer):
             )
             time.sleep(10)
             continue
-
+        # TODO: we need to wait 3-6 blocks to avoid possible reorgs, forks etc.
         block_height = start_height
         while block_height <= current_block_height:
             block = _bitcoin_node.get_block_by_height(block_height)
@@ -46,7 +43,7 @@ def index_blocks(_bitcoin_node, _graph_creator, _graph_indexer):
             time_taken = end_time - start_time
             node_block_height = bitcoin_node.get_current_block_height()
             progress = block_height / node_block_height * 100
-            formatted_num_transactions = "{:>3}".format(num_transactions)
+            formatted_num_transactions = "{:>4}".format(num_transactions)
             formatted_time_taken = "{:6.2f}".format(time_taken)
             formatted_tps = "{:8.2f}".format(
                 num_transactions / time_taken if time_taken > 0 else float("inf")
@@ -90,23 +87,29 @@ if __name__ == "__main__":
 
     load_dotenv()
 
-    indexer_config = IndexerConfig()
-    bitcoin_node = BitcoinNode(config=indexer_config.node_config)
+    bitcoin_node = BitcoinNode()
     graph_creator = GraphCreator()
-    graph_indexer = GraphIndexer(config=indexer_config.graph_config)
+    graph_indexer = GraphIndexer()
 
     logger.info("Starting indexer")
-    logger.info(f"Current config: {indexer_config}")
     logger.info(f"Current node block height: {bitcoin_node.get_current_block_height()}")
     logger.info(
         f"Latest indexed block height: {graph_indexer.get_latest_block_number()}"
     )
 
-    try:
-        graph_indexer.create_indexes()
-        index_blocks(bitcoin_node, graph_creator, graph_indexer)
-    except Exception as e:
-        logger.error(f"Indexing failed with error: {e}")
-    finally:
-        graph_indexer.close()
-        logger.info("Indexer stopped")
+    retry_delay = 60
+
+    while True:
+        try:
+            logger.info("Creating indexes...")
+            graph_indexer.create_indexes()
+            logger.info("Starting indexing blocks...")
+            index_blocks(bitcoin_node, graph_creator, graph_indexer)
+            break
+        except Exception as e:
+            logger.error(f"Retry failed with error: {e}")
+            logger.info(f"Retrying in {retry_delay} seconds...")
+            time.sleep(retry_delay)
+        finally:
+            graph_indexer.close()
+            logger.info("Indexer stopped")

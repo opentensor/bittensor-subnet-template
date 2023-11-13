@@ -10,6 +10,20 @@ services:
     volumes:
       - memgraph-data4:/var/lib/memgraph
 
+  litecoin-core-testnet:
+    image: uphold/litecoin-core
+    command:
+      -printtoconsole
+      -testnet=1
+      -rpcallowip=0.0.0.0/0
+      -rpcbind=0.0.0.0
+      -rpcuser=bitcoinrpc
+      -rpcpassword=rpcpassword
+    ports:
+      - "19332:19332"
+    volumes:
+      - litecoin-data:/home/litecoin/.litecoin
+
   bitcoin-core-testnet:
     image: ruimarinho/bitcoin-core:latest
     command:
@@ -29,7 +43,8 @@ services:
     volumes:
       - "bitcoin-data:/home/bitcoin/.bitcoin"
 
+
 volumes:
   bitcoin-data:
+  litecoin-data:
   memgraph-data4:
-  portainer_data:

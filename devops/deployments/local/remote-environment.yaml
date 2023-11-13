@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   memgraph:
-    image: memgraph/memgraph-platform
+    image: memgraph/memgraph-mage:latest
     ports:
       - "7687:7687"
       - "7444:7444"
