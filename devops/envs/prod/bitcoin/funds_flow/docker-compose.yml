@@ -14,6 +14,8 @@ services:
     image: blockchain_insights_base
     command: ["python", "neurons/miners/bitcoin/funds_flow/indexer.py"]
     environment:
+      - NODE_RPC_URL=${NODE_RPC_URL}
+      - GRAPH_DB_URL=${GRAPH_DB_URL}
       - PYTHONPATH=.
 
 volumes:
