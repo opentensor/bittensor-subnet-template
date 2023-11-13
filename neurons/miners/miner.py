@@ -23,6 +23,7 @@ import traceback
 import typing
 import bittensor as bt
 from neurons import protocol
+from neurons.miners.bitcoin.node import BitcoinNode
 from neurons.miners.query import (
     execute_query_proxy,
     get_graph_search,
@@ -167,8 +168,8 @@ def main(config):
             return False, "All ok"
 
     def wait_for_sync():
-        sync = BlockchainSyncStatus(BitcoinNodeConfig())
-        sync.is_synced()
+        node = BitcoinNode()
+        node.is_synced()
 
     wait_for_sync()
 
@@ -218,4 +219,5 @@ def main(config):
 
 
 if __name__ == "__main__":
-    main(get_config())
+    config = get_config()
+    main(config)

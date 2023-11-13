@@ -164,7 +164,7 @@ class GraphIndexer:
             session = session_initial.begin_transaction()
             try:
                 for tx in block_node.transactions:
-                    # Add the Transaction node
+                    # Add the Transaction bitcoin-node
                     session.run(
                         """
                             MERGE (t:Transaction {tx_id: $tx_id})
