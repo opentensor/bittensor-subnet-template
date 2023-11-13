@@ -13,6 +13,17 @@ While purchasing machines, select private network integration, so the machines c
 
 4) Install docker on both machines, and make sure docker is running.
 5) Install git and clone subnet repo on both machines.
-5) Init docker swarm on first one, and join the swarm on the second one:
+
+sudo apt update
+sudo apt upgrade
+
+sudo apt-get install python3.9
+alias python=python3
+source ~/.bashrc
+python --version
+
  
-    ``docker swarm init``
+8) apt-get install docker
+7) apt-get install docker-compose
+8) install python 3.9 on both machines
+
