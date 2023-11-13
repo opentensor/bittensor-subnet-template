@@ -107,7 +107,8 @@ def main(config):
                     assets=config.assets.split(","),
                     model_type=config.model_type,
                 ),
-                data=graph_search.verify_random_block_transaction(),
+                data_sample=graph_search.get_random_block_transaction(),
+                block_height=graph_search.get_latest_block_number(),
             )
             return synapse
         except Exception as e:

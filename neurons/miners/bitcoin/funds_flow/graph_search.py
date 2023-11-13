@@ -14,7 +14,7 @@ class GraphSearch:
         # filterout dangerous keywords: delete, create, merge  etc...
         return []
 
-    def verify_random_block_transaction(self):
+    def get_random_block_transaction(self):
         with self.neo4j_handler.driver.session() as session:
             data_set = session.run(
                 """
@@ -28,6 +28,7 @@ class GraphSearch:
                 """
             )
             return {
+                "block_height": data_set.single()["block_height"],
                 "total_value_satoshi": data_set.single()["total_value_satoshi"],
                 "transaction_count": data_set.single()["transaction_count"],
             }

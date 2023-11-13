@@ -33,7 +33,7 @@ def index_blocks(_bitcoin_node, _graph_creator, _graph_indexer):
             )
             time.sleep(10)
             continue
-
+        # TODO: we need to wait 3-6 blocks to avoid possible reorgs, forks etc.
         block_height = start_height
         while block_height <= current_block_height:
             block = _bitcoin_node.get_block_by_height(block_height)

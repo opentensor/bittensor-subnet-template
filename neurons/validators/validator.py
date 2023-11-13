@@ -24,7 +24,9 @@ import traceback
 import bittensor as bt
 from neurons import protocol
 from neurons.protocol import MinerDiscovery
+from neurons.validators.miner_data_sample import MinerDataSample
 from neurons.validators.miner_registry import MinerRegistry
+from neurons.validators.verification import get_latest_block_height, verify_data_sample
 
 
 def get_config():
@@ -37,6 +39,13 @@ def get_config():
         default="BITCOIN",
         help="Set miner's supported blockchain network.",
     )
+
+    parser.add_argument(
+        "--blockchair_api_key",
+        default="BITCOIN",
+        help="Blockchair api key.",
+    )
+
     parser.add_argument("--netuid", type=int, default=1, help="The chain subnet uid.")
 
     bt.subtensor.add_args(parser)
@@ -101,34 +110,74 @@ def main(config):
             )
 
             bt.logging.info(f"Received responses: {responses}")
-            for response in enumerate(responses):
+            for index, response in enumerate(responses):
                 synapse: MinerDiscovery = response
 
                 MinerRegistry().store_miner_metadata(
                     ip_address=synapse.axon.ip,
                     hot_key=synapse.dendrite.hotkey,
-                    network=synapse.output.network,
-                    assets=synapse.output.assets,
-                    model_type=synapse.output.model_type,
+                    network=synapse.output.metadata.network,
+                    assets=synapse.output.metadata.assets,
+                    model_type=synapse.output.metadata.model_type,
                 )
 
-                # VALIDATE - check on blockexplorer the output
-                # CHECK NUMBER OF MINERS: check how many miners there are for given network and model type
+                MinerDataSample().store_miner_data_sample(
+                    hot_key=synapse.dendrite.hotkey,
+                    network=synapse.output.metadata.network,
+                    model_type=synapse.output.metadata.model_type,
+                    data_sample=synapse.output.data_sample.block_height,
+                )
 
-                bt.logging.info(f"Scoring response: {response}")
+                last_block_height = get_latest_block_height(
+                    network=synapse.output.metadata.network
+                )
 
-                score = 1
+                miner_block_height = synapse.output.block_height
 
-                # scores[index] = (
-                #    config.alpha * scores[index] + (1 - config.alpha) * score
-                # )
+                data_sample_is_valid = verify_data_sample(
+                    network=synapse.output.metadata.network,
+                    input_result=synapse.output.data_sample,
+                )
 
-            bt.logging.info(f"Scores: {scores}")
+                is_block_heights_random = MinerDataSample().is_block_heights_random(
+                    synapse.dendrite.hotkey,
+                    synapse.output.metadata.network,
+                    synapse.output.metadata.model_type,
+                )
+
+                bt.logging.info(f"Last block height: {last_block_height}")
+                bt.logging.info(f"Miner block height: {miner_block_height}")
+                bt.logging.info(f"Data sample is valid: {data_sample_is_valid}")
+                bt.logging.info(f"Block heights are random: {is_block_heights_random}")
+
+                score = 0
+
+                if data_sample_is_valid and is_block_heights_random:
+                    score = 1
+                    proportion = MinerRegistry().get_miner_proportion(
+                        synapse.output.metadata.network,
+                        synapse.output.metadata.model_type,
+                    )
+
+                    bt.logging.info(f"Miner proportion: {proportion}")
+
+                    score *= proportion
+
+                    block_height_diff = abs(last_block_height - miner_block_height)
+                    bt.logging.info(f"Block height diff: {block_height_diff}")
+
+                    if block_height_diff == 100:
+                        score *= 0.5
+
+                scores[index] = (
+                    config.alpha * scores[index] + (1 - config.alpha) * score
+                )
+
+            bt.logging.info(f"Scoring response: {scores}")
 
             if (step + 1) % 10 == 0:
                 weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
                 bt.logging.info(f"Setting weights: {weights}")
-
                 result = subtensor.set_weights(
                     netuid=config.netuid,  # Subnet to set weights on.
                     wallet=wallet,  # Wallet to sign set weights using hotkey.

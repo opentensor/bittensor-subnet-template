@@ -22,12 +22,3 @@ class BitcoinNode:
         block_hash = rpc_connection.getblockhash(block_height)
         block_data = rpc_connection.getblock(block_hash, 2)
         return block_data
-
-    def get_transactions_from_block_range(self, start_height, end_height):
-        all_transactions = []
-
-        for block_height in range(start_height, end_height + 1):
-            txs = self.get_transactions_from_block_height(block_height)
-            all_transactions.extend((block_height, txs))
-
-        return all_transactions

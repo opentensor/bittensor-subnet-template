@@ -25,6 +25,27 @@ class MinerRegistry:
     def __init__(self, db_path="sqlite:///miner_registry.db"):
         self.engine = create_engine(db_path)
 
+    def get_miner_proportion(self, network, model_type):
+        session = sessionmaker(bind=self.engine)()
+        try:
+            total_miners = session.query(func.count(MinerRegistry.ip_address)).scalar()
+            matching_miners = (
+                session.query(func.count(MinerRegistry.ip_address))
+                .filter(
+                    MinerRegistry.network == network,
+                    MinerRegistry.model_type == model_type,
+                )
+                .scalar()
+            )
+
+            proportion = matching_miners / total_miners if total_miners > 0 else 0
+            return proportion
+        except Exception as e:
+            print(f"Error occurred: {e}")
+            return 0
+        finally:
+            session.close()
+
     def store_miner_metadata(self, ip_address, hot_key, network, assets, model_type):
         session = sessionmaker(bind=self.engine)()
         try:
