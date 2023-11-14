@@ -101,13 +101,15 @@ def main(config):
     def miner_discovery(synapse: protocol.MinerDiscovery) -> protocol.MinerDiscovery:
         try:
             graph_search = get_graph_search(config.network, config.model_type)
+            block_height = synapse.random_block_height[config.network][config.model_type]
+
             synapse.output = protocol.MinerDiscoveryOutput(
                 metadata=MinerDiscoveryMetadata(
                     network=config.network,
                     assets=config.assets.split(","),
                     model_type=config.model_type,
                 ),
-                data_sample=graph_search.get_random_block_transaction(),
+                data_sample=graph_search.get_block_transaction(block_height=block_height),
                 block_height=graph_search.get_latest_block_number(),
             )
             return synapse

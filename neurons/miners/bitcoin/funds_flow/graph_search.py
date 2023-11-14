@@ -36,21 +36,19 @@ class GraphSearch:
         # TODO: Implement this
         return []
 
-    def get_random_block_transaction(self):
+    def get_block_transaction(self, block_height):
         with self.neo4j_handler.driver.session() as session:
             data_set = session.run(
                 """
-                MATCH (t:Transaction)
-                WITH COLLECT(DISTINCT t.block_height) AS blockHeights
-                WITH blockHeights, blockHeights[TOINTEGER(RAND() * SIZE(blockHeights))] AS randomBlockHeight
-                WITH [randomBlockHeight] AS randomBlockHeightList
-                UNWIND randomBlockHeightList AS rbh
-                MATCH (t:Transaction { block_height: rbh })-[r:SENT]->(a:Address)
-                RETURN SUM(r.value_satoshi) AS total_value_satoshi, COUNT(t) AS transaction_count
-                """
+                MATCH (t:Transaction { block_height: $blockHeight })-[r:SENT]->(a:Address)
+                RETURN t.block_height AS block_height, SUM(r.value_satoshi) AS total_value_satoshi, COUNT(t) AS transaction_count
+                """,
+                blockHeight=block_height
             )
+            result = data_set.single()
             return {
-                "block_height": data_set.single()["block_height"],
-                "total_value_satoshi": data_set.single()["total_value_satoshi"],
-                "transaction_count": data_set.single()["transaction_count"],
+                "block_height": result["block_height"],
+                "total_value_satoshi": result["total_value_satoshi"],
+                "transaction_count": result["transaction_count"],
             }
+

@@ -18,6 +18,8 @@
 
 import os
 import time
+from random import random
+
 import torch
 import argparse
 import traceback
@@ -25,7 +27,6 @@ import bittensor as bt
 from insights import protocol
 from insights.protocol import MinerDiscovery
 from neurons.validators.blockchair_api import BlockchairAPI
-from neurons.validators.miner_data_sample import MinerDataSample
 from neurons.validators.miner_registry import MinerRegistry
 
 
@@ -105,9 +106,22 @@ def main(config):
 
     while True:
         try:
+            last_block_height = blochair_api.get_latest_block_height(
+                network=synapse.output.metadata.network
+            )
+
+            #TODO: move to separate function
+            random_block_height: dict[dict[dict]] = {
+                "bitcoin": {
+                    "btc": {
+                        "funds_flow": random.randint(1, last_block_height-100)
+                    }
+                }
+            }
+
             responses = dendrite.query(
                 metagraph.axons,
-                protocol.MinerDiscovery(),
+                protocol.MinerDiscovery(random_block_height=random_block_height),
                 deserialize=True,
             )
 
@@ -115,6 +129,7 @@ def main(config):
             for index, response in enumerate(responses):
                 synapse: MinerDiscovery = response
 
+                # we need registry for API usage and calculating proportions
                 MinerRegistry().store_miner_metadata(
                     ip_address=synapse.axon.ip,
                     hot_key=synapse.dendrite.hotkey,
@@ -123,38 +138,18 @@ def main(config):
                     model_type=synapse.output.metadata.model_type,
                 )
 
-                MinerDataSample().store_miner_data_sample(
-                    hot_key=synapse.dendrite.hotkey,
-                    network=synapse.output.metadata.network,
-                    model_type=synapse.output.metadata.model_type,
-                    data_sample=synapse.output.data_sample.block_height,
-                )
-
-                last_block_height = blochair_api.get_latest_block_height(
-                    network=synapse.output.metadata.network
-                )
-
                 miner_block_height = synapse.output.block_height
-
                 data_sample_is_valid = blochair_api.verify_data_sample(
                     network=synapse.output.metadata.network,
                     input_result=synapse.output.data_sample,
                 )
 
-                is_block_heights_random = MinerDataSample().is_block_heights_random(
-                    synapse.dendrite.hotkey,
-                    synapse.output.metadata.network,
-                    synapse.output.metadata.model_type,
-                )
-
                 bt.logging.info(f"Last block height: {last_block_height}")
                 bt.logging.info(f"Miner block height: {miner_block_height}")
                 bt.logging.info(f"Data sample is valid: {data_sample_is_valid}")
-                bt.logging.info(f"Block heights are random: {is_block_heights_random}")
 
                 score = 0
-
-                if data_sample_is_valid and is_block_heights_random:
+                if data_sample_is_valid:
                     score = 1
                     proportion = MinerRegistry().get_miner_proportion(
                         synapse.output.metadata.network,
