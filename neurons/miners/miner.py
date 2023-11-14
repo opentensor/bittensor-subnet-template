@@ -22,17 +22,18 @@ import argparse
 import traceback
 import typing
 import bittensor as bt
-from neurons import protocol
-from neurons.miners.bitcoin.node import BitcoinNode
+
+from insights import protocol
 from neurons.miners.query import (
     execute_query_proxy,
     get_graph_search,
 )
-from neurons.protocol import (
+from insights.protocol import (
     MODEL_TYPE_FUNDS_FLOW,
     NETWORK_BITCOIN,
     MinerDiscoveryMetadata,
 )
+from neurons.miners.bitcoin.node import BitcoinNode
 
 
 def get_config():
@@ -53,7 +54,7 @@ def get_config():
         default=MODEL_TYPE_FUNDS_FLOW,
         help="Set miner's supported model type.",
     )
-    parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
+    parser.add_argument("--netuid", type=int, default=1, help="The chain subnet uid.")
 
     bt.subtensor.add_args(parser)
     bt.logging.add_args(parser)
@@ -129,7 +130,7 @@ def main(config):
 
         return synapse
 
-    def priority_execute_query(synapse: protocol.MinerQuery) -> protocol.MinerQuery:
+    def priority_execute_query(synapse: protocol.MinerQuery) -> float:
         caller_uid = metagraph.hotkeys.index(synapse.dendrite.hotkey)
         prirority = float(metagraph.S[caller_uid])
         bt.logging.trace(
@@ -220,4 +221,19 @@ def main(config):
 
 if __name__ == "__main__":
     config = get_config()
+
+    # for debuggin on localnetwork
+    """
+    python miner.py 
+    --netuid 1  # The subnet id you want to connect to
+    --subtensor.network finney  # blockchain endpoint you want to connect
+    --wallet.name <your miner wallet> # name of your wallet
+    --wallet.hotkey <your miner hotkey> # hotkey name of your wallet
+    """
+    config.subtensor.chain_endpoint = "ws://127.0.0.1:9946"
+    config.subtensor.network = "finney"
+
+    config.wallet.hotkey = 'default'
+    config.wallet.name = 'miner'
+
     main(config)

@@ -1,5 +1,6 @@
 from typing import Optional, List, Dict
 import bittensor as bt
+from pydantic import BaseModel
 
 # Model types
 MODEL_TYPE_FUNDS_FLOW = "funds_flow"
@@ -14,13 +15,13 @@ NETWORK_ZCASH = "zcash"
 NETWORK_BITCOIN_CASH = "bitcoin_cash"
 
 
-class MinerDiscoveryMetadata:
+class MinerDiscoveryMetadata(BaseModel):
     network: str = None
     assets: List[str] = None
     model_type: str = None
 
 
-class MinerDiscoveryOutput:
+class MinerDiscoveryOutput(BaseModel):
     metadata: MinerDiscoveryMetadata = None
     data_sample: Optional[List[Dict]] = None
     block_height: Optional[int] = None

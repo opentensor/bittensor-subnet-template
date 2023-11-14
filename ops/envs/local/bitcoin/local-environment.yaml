@@ -1,28 +1,14 @@
 version: '3.8'
 
 services:
-  memgraph4:
+  memgraph:
     image: memgraph/memgraph-platform
     ports:
       - "7687:7687"
       - "7444:7444"
       - "3000:3000"
     volumes:
-      - memgraph-data4:/var/lib/memgraph
-
-  litecoin-core-testnet:
-    image: uphold/litecoin-core
-    command:
-      -printtoconsole
-      -testnet=1
-      -rpcallowip=0.0.0.0/0
-      -rpcbind=0.0.0.0
-      -rpcuser=bitcoinrpc
-      -rpcpassword=rpcpassword
-    ports:
-      - "19332:19332"
-    volumes:
-      - litecoin-data:/home/litecoin/.litecoin
+      - memgraph-data:/var/lib/memgraph
 
   bitcoin-core-testnet:
     image: ruimarinho/bitcoin-core:latest
@@ -43,8 +29,6 @@ services:
     volumes:
       - "bitcoin-data:/home/bitcoin/.bitcoin"
 
-
 volumes:
   bitcoin-data:
-  litecoin-data:
-  memgraph-data4:
+  memgraph-data:

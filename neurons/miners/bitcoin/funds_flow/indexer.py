@@ -86,21 +86,22 @@ if __name__ == "__main__":
     from dotenv import load_dotenv
 
     load_dotenv()
-
     bitcoin_node = BitcoinNode()
     graph_creator = GraphCreator()
     graph_indexer = GraphIndexer()
-
-    logger.info("Starting indexer")
-    logger.info(f"Current node block height: {bitcoin_node.get_current_block_height()}")
-    logger.info(
-        f"Latest indexed block height: {graph_indexer.get_latest_block_number()}"
-    )
 
     retry_delay = 60
 
     while True:
         try:
+            logger.info("Starting indexer")
+            logger.info(
+                f"Current node block height: {bitcoin_node.get_current_block_height()}"
+            )
+            logger.info(
+                f"Latest indexed block height: {graph_indexer.get_latest_block_number()}"
+            )
+
             logger.info("Creating indexes...")
             graph_indexer.create_indexes()
             logger.info("Starting indexing blocks...")

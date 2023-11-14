@@ -4,7 +4,7 @@ from neurons.miners.bitcoin.funds_flow.graph_search import (
 from neurons.miners.litecoin.funds_flow.graph_search import (
     GraphSearch as LitecoinGraphSearch,
 )
-from neurons.protocol import NETWORK_BITCOIN, MODEL_TYPE_FUNDS_FLOW, NETWORK_LITECOIN
+from insights.protocol import NETWORK_BITCOIN, MODEL_TYPE_FUNDS_FLOW, NETWORK_LITECOIN
 
 
 def get_graph_search(network, model_type):

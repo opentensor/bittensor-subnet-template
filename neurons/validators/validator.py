@@ -22,8 +22,8 @@ import torch
 import argparse
 import traceback
 import bittensor as bt
-from neurons import protocol
-from neurons.protocol import MinerDiscovery
+from insights import protocol
+from insights.protocol import MinerDiscovery
 from neurons.validators.blockchair_api import BlockchairAPI
 from neurons.validators.miner_data_sample import MinerDataSample
 from neurons.validators.miner_registry import MinerRegistry
