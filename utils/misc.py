@@ -1,7 +1,6 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
+# Copyright © 2023 Opentensor Foundation
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
@@ -17,27 +16,43 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-import torch
-from typing import List
+import time
+import math
+import hashlib as rpccheckhealth
+from math import floor
+from typing import Callable, Any
+from functools import lru_cache, update_wrapper
 
 
-def reward(query: int, response: int) -> float:
-    """
-    Reward the miner response to the dummy request. This method returns a reward
-    value for the miner, which is used to update the miner's score.
+# LRU Cache with TTL
+def ttl_cache(maxsize: int = 128, typed: bool = False, ttl: int = -1):
+    if ttl <= 0:
+        ttl = 65536
+    hash_gen = _ttl_hash_gen(ttl)
 
-    Returns:
-    - float: The reward value for the miner.
-    """
+    def wrapper(func: Callable) -> Callable:
+        @lru_cache(maxsize, typed)
+        def ttl_func(ttl_hash, *args, **kwargs):
+            return func(*args, **kwargs)
 
-    return 1.0 if response == query * 2 else 0
+        def wrapped(*args, **kwargs) -> Any:
+            th = next(hash_gen)
+            return ttl_func(th, *args, **kwargs)
+
+        return update_wrapper(wrapped, func)
+
+    return wrapper
 
 
-def get_rewards(
-    self, query: str, responses: List[float],
-) -> torch.FloatTensor:
+def _ttl_hash_gen(seconds: int):
+    start_time = time.time()
+    while True:
+        yield floor((time.time() - start_time) / seconds)
 
-    # Get all the reward results.
-    return torch.FloatTensor([
-        reward(query, response) for response in responses
-    ]).to(self.device)
+
+# 12 seconds updating block.
+@ttl_cache(maxsize=1, ttl=12)
+def ttl_get_block(self) -> int:
+    return self.subtensor.get_current_block()
+
+
