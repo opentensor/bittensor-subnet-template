@@ -21,7 +21,7 @@
 # TODO(developer): Rewrite based on protocol defintion.
 
 # Step 1: Import necessary libraries and modules
-import os
+import copy
 import torch
 import asyncio
 import bittensor as bt
@@ -54,9 +54,11 @@ class BaseValidatorNeuron(ABC):
     metagraph: "bt.metagraph"
 
 
-    def __init__(self, config):
+    def __init__(self, config=None):
 
-        self.config = BaseValidatorNeuron.config()
+        base_config = copy.deepcopy(config or BaseValidatorNeuron.config())
+        self.config = self.config()
+        self.config.merge(base_config)
 
         # Set up logging with the provided configuration and directory.
         bt.logging(config=config, logging_dir=config.full_path)

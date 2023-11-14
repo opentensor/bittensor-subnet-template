@@ -28,12 +28,6 @@ def check_config(cls, config: "bt.Config"):
     # bt.wallet.check_config(config)
     # bt.subtensor.check_config(config)
 
-    if config.mock:
-        config.neuron.mock_reward_models = True
-        config.neuron.mock_gating_model = True
-        config.neuron.mock_dataset = True
-        config.wallet._mock = True
-
     full_path = os.path.expanduser(
         "{}/{}/{}/netuid{}/{}".format(
             config.logging.logging_dir,
@@ -93,6 +87,14 @@ def add_args(cls, parser):
         help="The number of concurrent forwards running at any time.",
         default=1,
     )
+
+    parser.add_argument(
+        "--neuron.sample_size",
+        type=int,
+        help="The number of miners to query in a single step.",
+        default=10,
+    )
+
     parser.add_argument(
         "--neuron.disable_set_weights",
         action="store_true",

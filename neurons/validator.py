@@ -28,19 +28,19 @@ import argparse
 import traceback
 import bittensor as bt
 
-from template.forward import forward
-from template.reward import reward
+from template.validator.forward import forward
+from template.validator.reward import reward
 
 # import this repo
 from base import BaseValidatorNeuron
 
 class Neuron(BaseValidatorNeuron):
 
-    def __init__(self):
+    def __init__(self, config=None):
 
         # Takes care of routine tasks such as setting up wallet, subtensor, metagraph, logging directory, parsing config, etc.
         # init parent class
-        super().__init__()
+        super().__init__(config=config)
 
         # Anything else specific to your use case you can do here
 

@@ -20,6 +20,7 @@
 import torch
 import copy
 import bittensor as bt
+from typing import List
 import neurons.base.validator as validator
 
 # TODO: Replace spec version with your own implementation
@@ -139,7 +140,13 @@ def set_weights(self):
     )
 
 
-def update_scores(self, rewards, uids):
+def update_scores(self, rewards: torch.FloatTensor, uids: List[int]):
+
+    # Check if rewards contains NaN values.
+    if torch.isnan(rewards).any():
+        bt.logging.warning(f"NaN values detected in rewards: {rewards}")
+        # Replace any NaN values in rewards with 0.
+        rewards = torch.nan_to_num(rewards, 0)
 
     # Compute forward pass rewards, assumes uids are mutually exclusive.
     # shape: [ metagraph.n ]
