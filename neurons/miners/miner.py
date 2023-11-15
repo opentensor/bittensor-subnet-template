@@ -26,7 +26,7 @@ import bittensor as bt
 from insights import protocol
 from neurons.miners.query import (
     execute_query_proxy,
-    get_graph_search,
+    get_graph_search, is_query_only,
 )
 from insights.protocol import (
     MODEL_TYPE_FUNDS_FLOW,
@@ -44,17 +44,12 @@ def get_config():
         help="Set miner's supported blockchain network.",
     )
     parser.add_argument(
-        "--assets",
-        default="BTC",
-        help="Set miner's supported blockchain assets.",
-    )
-    parser.add_argument(
         "--model_type",
         type=str,
         default=MODEL_TYPE_FUNDS_FLOW,
         help="Set miner's supported model type.",
     )
-    parser.add_argument("--netuid", type=int, default=1, help="The chain subnet uid.")
+    parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
 
     bt.subtensor.add_args(parser)
     bt.logging.add_args(parser)
@@ -106,7 +101,6 @@ def main(config):
             synapse.output = protocol.MinerDiscoveryOutput(
                 metadata=MinerDiscoveryMetadata(
                     network=config.network,
-                    assets=config.assets.split(","),
                     model_type=config.model_type,
                 ),
                 data_sample=graph_search.get_block_transaction(block_height=block_height),
@@ -122,7 +116,6 @@ def main(config):
         try:
             synapse.output = execute_query_proxy(
                 network=synapse.network,
-                asset=synapse.asset,
                 model_type=synapse.model_type,
                 query=synapse.query,
             )
@@ -160,13 +153,11 @@ def main(config):
                 f"Blacklisting hot key {synapse.dendrite.hotkey} because of wrong model type"
             )
             return True, "Model type not supported."
-
-        elif synapse.asset not in config.assets.split(","):
+        elif not is_query_only(synapse.query):
             bt.logging.trace(
-                f"Blacklisting hot key {synapse.dendrite.hotkey} because of wrong asset"
+                f"Blacklisting hot key {synapse.dendrite.hotkey} because of illegal cypher keywords"
             )
-            return True, "Asset not supported."
-
+            return True, "Illegal cypher keywords."
         else:
             return False, "All ok"
 
@@ -232,10 +223,10 @@ if __name__ == "__main__":
     --wallet.name <your miner wallet> # name of your wallet
     --wallet.hotkey <your miner hotkey> # hotkey name of your wallet
     """
-    config.subtensor.chain_endpoint = "ws://127.0.0.1:9946"
-    config.subtensor.network = "finney"
+    #config.subtensor.chain_endpoint = "ws://127.0.0.1:9946"
+    #config.subtensor.network = "finney"
 
-    config.wallet.hotkey = 'default'
-    config.wallet.name = 'miner'
+    #config.wallet.hotkey = 'default'
+    #config.wallet.name = 'miner'
 
     main(config)

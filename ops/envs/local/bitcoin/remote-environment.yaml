@@ -26,7 +26,6 @@ services:
     volumes:
       - "bitcoin-data:/home/bitcoin/.bitcoin"
 
-
 volumes:
   bitcoin-data:
   memgraph-data:

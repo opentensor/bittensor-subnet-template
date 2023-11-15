@@ -32,7 +32,7 @@ class GraphSearch:
             auth=(self.graph_db_user, self.graph_db_password),
         )
 
-    def execute_query(self, network, asset, query):
+    def execute_query(self, network, query):
         # TODO: Implement this
         return []
 
@@ -40,10 +40,10 @@ class GraphSearch:
         with self.neo4j_handler.driver.session() as session:
             data_set = session.run(
                 """
-                MATCH (t:Transaction { block_height: $blockHeight })-[r:SENT]->(a:Address)
+                MATCH (t:Transaction { block_height: $block_height })-[r:SENT]->(a:Address)
                 RETURN t.block_height AS block_height, SUM(r.value_satoshi) AS total_value_satoshi, COUNT(t) AS transaction_count
                 """,
-                blockHeight=block_height
+                block_height=block_height
             )
             result = data_set.single()
             return {

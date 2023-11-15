@@ -4,9 +4,10 @@ import requests
 
 class BlockchairAPI:
     def __init__(self, api_key):
-        self.api_key = api_key is os.getenv(
-            "BLOCKCHAIR_API_KEY", "A___mw5wNljHQ4n0UAdM5Ivotp0Bsi93"
-        )
+        if api_key is None:
+            self.api_key = os.getenv("BLOCKCHAIN_API_KEY", "A___mw5wNljHQ4n0UAdM5Ivotp0Bsi93")
+        else:
+            self.api_key = api_key
 
     def get_latest_block_height(self, network):
         url = f"https://api.blockchair.com/{network.lower()}/stats?key={self.api_key}"
@@ -16,10 +17,11 @@ class BlockchairAPI:
             latest_block_height = data["data"]["blocks"]
             return latest_block_height
         else:
+            print(url)
             raise Exception(f"Failed to fetch data: HTTP {response.status_code}")
 
-    def verify_data_sample(self, network, input_result):
-        url = f"https://api.blockchair.com/{network.lower()}/dashboards/block/{input_result.block_height}?key={self.api_key}"
+    def verify_data_sample(self, network, block_height, input_result):
+        url = f"https://api.blockchair.com/{network.lower()}/dashboards/block/{block_height}?key={self.api_key}"
         response = requests.get(url)
         if response.status_code == 200:
             block_data = response.json()

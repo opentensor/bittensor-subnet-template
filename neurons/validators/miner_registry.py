@@ -12,12 +12,11 @@ class MinerRegistry(Base):
     hot_key = Column(String, primary_key=True)
     ip_address = Column(String)
     network = Column(String)
-    assets = Column(String)
     model_type = Column(String)
     updated = Column(DateTime, default=datetime.datetime.utcnow)
 
     def __repr__(self):
-        return f"<MinerRegistry(ip_address='{self.ip_address}', hot_key='{self.hot_key}, network='{self.network}', assets='{self.assets}', model_type='{self.model_type}', updated='{self.updated}')>"
+        return f"<MinerRegistry(ip_address='{self.ip_address}', hot_key='{self.hot_key}, network='{self.network}', model_type='{self.model_type}', updated='{self.updated}')>"
 
 
 class MinerRegistryManager:
@@ -45,7 +44,7 @@ class MinerRegistryManager:
         finally:
             session.close()
 
-    def store_miner_metadata(self, hot_key, ip_address, network, assets, model_type):
+    def store_miner_metadata(self, hot_key, ip_address, network, model_type):
         session = sessionmaker(bind=self.engine)()
         try:
             existing_miner = (
@@ -55,7 +54,6 @@ class MinerRegistryManager:
             if existing_miner:
                 existing_miner.network = network
                 existing_miner.ip_address = ip_address
-                existing_miner.assets = assets
                 existing_miner.model_type = model_type
                 existing_miner.updated = datetime.datetime.utcnow()
             else:
@@ -63,7 +61,6 @@ class MinerRegistryManager:
                     ip_address=ip_address,
                     hot_key=hot_key,
                     network=network,
-                    assets=assets,
                     model_type=model_type,
                 )
                 session.add(new_miner)

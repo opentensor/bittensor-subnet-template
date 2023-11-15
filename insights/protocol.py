@@ -17,8 +17,9 @@ NETWORK_BITCOIN_CASH = "bitcoin_cash"
 
 class MinerDiscoveryMetadata(BaseModel):
     network: str = None
-    assets: List[str] = None
     model_type: str = None
+    graph_schema: Optional[Dict] = None
+    #TODO: implement method for getting graph schema from miner
 
 
 class MinerDiscoveryOutput(BaseModel):
@@ -28,7 +29,7 @@ class MinerDiscoveryOutput(BaseModel):
 
 
 class MinerDiscovery(bt.Synapse):
-    random_block_height: dict[dict[dict]] = None
+    random_block_height: dict[str, dict] = None
     output: MinerDiscoveryOutput = None
 
     def deserialize(self) -> MinerDiscoveryOutput:
@@ -37,7 +38,6 @@ class MinerDiscovery(bt.Synapse):
 
 class MinerQuery(bt.Synapse):
     network: str = None
-    asset: str = None
     model_type: str = None
     query: str = None
     output: Optional[List[Dict]] = None

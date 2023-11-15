@@ -18,15 +18,13 @@
 
 import os
 import time
-from random import random
-
 import torch
 import argparse
 import traceback
 import bittensor as bt
 from insights import protocol
 from insights.protocol import MinerDiscovery
-from neurons.validators.blockchair_api import BlockchairAPI
+from neurons.validators.discovery import BlockVerification
 from neurons.validators.miner_registry import MinerRegistry
 
 
@@ -35,12 +33,6 @@ def get_config():
     parser.add_argument(
         "--alpha", default=0.9, type=float, help="The weight moving average scoring."
     )
-    parser.add_argument(
-        "--blockchain",
-        default="BITCOIN",
-        help="Set miner's supported blockchain network.",
-    )
-
     parser.add_argument(
         "--blockchair_api_key",
         default="BITCOIN",
@@ -102,26 +94,14 @@ def main(config):
     bt.logging.info("Starting validator loop.")
     step = 0
 
-    blochair_api = BlockchairAPI(config.blockchain, config.blockchair_api_key)
-
     while True:
         try:
-            last_block_height = blochair_api.get_latest_block_height(
-                network=synapse.output.metadata.network
-            )
-
-            #TODO: move to separate function
-            random_block_height: dict[dict[dict]] = {
-                "bitcoin": {
-                    "btc": {
-                        "funds_flow": random.randint(1, last_block_height-100)
-                    }
-                }
-            }
+            block_verification = BlockVerification(config.blockchair_api_key)
+            verification_data = block_verification.get_verification_data()
 
             responses = dendrite.query(
                 metagraph.axons,
-                protocol.MinerDiscovery(random_block_height=random_block_height),
+                protocol.MinerDiscovery(random_block_height=verification_data),
                 deserialize=True,
             )
 
@@ -129,42 +109,46 @@ def main(config):
             for index, response in enumerate(responses):
                 synapse: MinerDiscovery = response
 
-                # we need registry for API usage and calculating proportions
+                network = synapse.output.metadata.network
+                model_type = synapse.metadata.model_type
+                last_block_height = verification_data[network].last_block_height
+                data_sample_block_height = synapse.output.block_height
+                data_sample = synapse.output.data_sample
+
                 MinerRegistry().store_miner_metadata(
                     ip_address=synapse.axon.ip,
                     hot_key=synapse.dendrite.hotkey,
-                    network=synapse.output.metadata.network,
-                    assets=synapse.output.metadata.assets,
-                    model_type=synapse.output.metadata.model_type,
+                    network=network,
+                    model_type=model_type,
                 )
 
-                miner_block_height = synapse.output.block_height
-                data_sample_is_valid = blochair_api.verify_data_sample(
-                    network=synapse.output.metadata.network,
-                    input_result=synapse.output.data_sample,
+                data_sample_is_valid = block_verification.verify_data_sample(
+                    network=network,
+                    block_height=data_sample_block_height,
+                    input_result=data_sample,
                 )
 
                 bt.logging.info(f"Last block height: {last_block_height}")
-                bt.logging.info(f"Miner block height: {miner_block_height}")
+                bt.logging.info(f"Data sample block height: {data_sample_block_height}")
                 bt.logging.info(f"Data sample is valid: {data_sample_is_valid}")
 
                 score = 0
                 if data_sample_is_valid:
                     score = 1
                     proportion = MinerRegistry().get_miner_proportion(
-                        synapse.output.metadata.network,
-                        synapse.output.metadata.model_type,
+                        network,
+                        model_type,
                     )
 
                     bt.logging.info(f"Miner proportion: {proportion}")
 
                     score *= proportion
 
-                    block_height_diff = abs(last_block_height - miner_block_height)
+                    block_height_diff = abs(last_block_height - data_sample_block_height)
                     bt.logging.info(f"Block height diff: {block_height_diff}")
 
                     if block_height_diff == 100:
-                        score *= 0.5
+                        score *= 0.1
 
                 scores[index] = (
                     config.alpha * scores[index] + (1 - config.alpha) * score
@@ -176,10 +160,10 @@ def main(config):
                 weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
                 bt.logging.info(f"Setting weights: {weights}")
                 result = subtensor.set_weights(
-                    netuid=config.netuid,  # Subnet to set weights on.
-                    wallet=wallet,  # Wallet to sign set weights using hotkey.
-                    uids=metagraph.uids,  # Uids of the miners to set weights for.
-                    weights=weights,  # Weights to set for the miners.
+                    netuid=config.netuid,
+                    wallet=wallet,
+                    uids=metagraph.uids,
+                    weights=weights,
                     wait_for_inclusion=True,
                 )
                 if result:

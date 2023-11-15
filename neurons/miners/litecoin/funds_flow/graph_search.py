@@ -1,5 +1,4 @@
 import os
-
 from neo4j import GraphDatabase
 
 
@@ -32,7 +31,7 @@ class GraphSearch:
             auth=(self.graph_db_user, self.graph_db_password),
         )
 
-    def execute_query(self, network, asset, query):
+    def execute_query(self, network, query):
         # filterout dangerous keywords: delete, create, merge  etc...
         return []
 

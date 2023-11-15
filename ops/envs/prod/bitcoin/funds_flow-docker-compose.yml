@@ -12,7 +12,7 @@ services:
 
   bitcoin-funds-flow-indexer:
     image: blockchain_insights_base
-    command: ["python", "neurons/miners/bitcoin/funds_flow/indexer.py"]
+    command: ["./scripts/run_indexer_bitcoin_funds_flow_mainnet.sh"]
     environment:
       - NODE_RPC_URL=${NODE_RPC_URL}
       - PYTHONPATH=.

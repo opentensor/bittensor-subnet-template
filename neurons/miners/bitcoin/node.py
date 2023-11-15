@@ -22,6 +22,7 @@ class BitcoinNode:
         print(self.node_rpc_url)
 
     def is_synced(self):
+        #TODO: this still does not work
         rpc_connection = AuthServiceProxy(self.node_rpc_url)
         return (
             rpc_connection.getblockcount()
@@ -56,12 +57,11 @@ class BitcoinNode:
                 )
                 sys.stdout.flush()
 
-                # Check if the current block is equal to the highest block
                 if current_block == highest_block:
                     sys.stdout.write("\nNode is synced!\n")
                     return True
                 else:
-                    time.sleep(1)  # Wait a bit before checking again
+                    time.sleep(1)
         except Exception as e:
             sys.stdout.write(f"\nFailed to check sync status: {e}\n")
             return False
