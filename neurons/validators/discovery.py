@@ -20,7 +20,7 @@ class BlockVerification:
 
         return result
 
-    def verity_data_sample(self, network, block_height, input_result):
+    def verify_data_sample(self, network, block_height, input_result):
         data_sample_is_valid = self.blochair_api.verify_data_sample(
             network=network,
             block_height=block_height,

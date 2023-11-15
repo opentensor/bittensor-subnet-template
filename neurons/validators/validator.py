@@ -23,9 +23,9 @@ import argparse
 import traceback
 import bittensor as bt
 from insights import protocol
-from insights.protocol import MinerDiscovery
+from insights.protocol import MinerDiscovery, MinerDiscoveryOutput
 from neurons.validators.discovery import BlockVerification
-from neurons.validators.miner_registry import MinerRegistry
+from neurons.validators.miner_registry import MinerRegistry, MinerRegistryManager
 
 
 def get_config():
@@ -115,21 +115,22 @@ def main(config):
                 if response is None:
                     continue
 
-                synapse: MinerDiscovery = response
+                output: MinerDiscoveryOutput = response
+                network = output.metadata.network
+                model_type = output.metadata.model_type
+                data_sample_block_height = output.block_height
+                data_sample = output.data_sample
+                axon_ip = metagraph.axons[index].ip
+                hot_key = metagraph.axons[index].hotkey
 
-                network = synapse.output.metadata.network
-                model_type = synapse.metadata.model_type
-                last_block_height = verification_data[network].last_block_height
-                data_sample_block_height = synapse.output.block_height
-                data_sample = synapse.output.data_sample
-
-                MinerRegistry().store_miner_metadata(
-                    ip_address=synapse.axon.ip,
-                    hot_key=synapse.dendrite.hotkey,
+                MinerRegistryManager().store_miner_metadata(
+                    ip_address=axon_ip,
+                    hot_key=hot_key,
                     network=network,
                     model_type=model_type,
                 )
 
+                last_block_height = verification_data[network]['last_block_height']
                 data_sample_is_valid = block_verification.verify_data_sample(
                     network=network,
                     block_height=data_sample_block_height,
@@ -143,7 +144,7 @@ def main(config):
                 score = 0
                 if data_sample_is_valid:
                     score = 1
-                    proportion = MinerRegistry().get_miner_proportion(
+                    proportion = MinerRegistryManager().get_miner_proportion(
                         network,
                         model_type,
                     )
@@ -194,4 +195,22 @@ def main(config):
 
 if __name__ == "__main__":
     config = get_config()
+
+    os.environ["NODE_RPC_URL"] = "http://bitcoinrpc:rpcpassword@localhost:18332"
+    os.environ["GRAPH_DB_URL"] = "bolt://localhost:7687"
+
+    """
+    python miner.py 
+    --netuid 1  # The subnet id you want to connect to
+    --subtensor.network finney  # blockchain endpoint you want to connect
+    --wallet.name <your miner wallet> # name of your wallet
+    --wallet.hotkey <your miner hotkey> # hotkey name of your wallet
+    """
+    config.subtensor.chain_endpoint = "ws://127.0.0.1:9946"
+    config.subtensor.network = "finney"
+    config.wallet.hotkey = 'default'
+    config.wallet.name = 'validator'
+    config.netuid = 1
+    config.blockchair_api_key = "A___mw5wNljHQ4n0UAdM5Ivotp0Bsi93"
+
     main(config)

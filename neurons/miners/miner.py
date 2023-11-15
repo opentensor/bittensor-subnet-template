@@ -97,14 +97,16 @@ def main(config):
         try:
             graph_search = get_graph_search(config.network, config.model_type)
             block_height = synapse.random_block_height[config.network][config.model_type]
+            data_sample = graph_search.get_block_transaction(block_height=block_height)
+            last_block_height = graph_search.get_latest_block_number()
 
             synapse.output = protocol.MinerDiscoveryOutput(
                 metadata=MinerDiscoveryMetadata(
                     network=config.network,
                     model_type=config.model_type,
                 ),
-                data_sample=graph_search.get_block_transaction(block_height=block_height),
-                block_height=graph_search.get_latest_block_number(),
+                data_sample=data_sample,
+                block_height=last_block_height,
             )
             return synapse
         except Exception as e:
@@ -161,12 +163,6 @@ def main(config):
         else:
             return False, "All ok"
 
-    def wait_for_sync():
-        node = BitcoinNode()
-        node.is_synced()
-
-    wait_for_sync()
-
     axon = bt.axon(wallet=wallet, config=config)
     bt.logging.info(f"Attaching forward function to axon.")
 
@@ -214,8 +210,9 @@ def main(config):
 
 if __name__ == "__main__":
     config = get_config()
+    os.environ["NODE_RPC_URL"] = "http://bitcoinrpc:rpcpassword@localhost:18332"
+    os.environ["GRAPH_DB_URL"] = "bolt://localhost:7687"
 
-    # for debuggin on localnetwork
     """
     python miner.py 
     --netuid 1  # The subnet id you want to connect to
@@ -223,10 +220,9 @@ if __name__ == "__main__":
     --wallet.name <your miner wallet> # name of your wallet
     --wallet.hotkey <your miner hotkey> # hotkey name of your wallet
     """
-    #config.subtensor.chain_endpoint = "ws://127.0.0.1:9946"
-    #config.subtensor.network = "finney"
-
-    #config.wallet.hotkey = 'default'
-    #config.wallet.name = 'miner'
-
+    config.subtensor.chain_endpoint = "ws://127.0.0.1:9946"
+    config.subtensor.network = "finney"
+    config.wallet.hotkey = 'default'
+    config.wallet.name = 'miner'
+    config.netuid = 1
     main(config)

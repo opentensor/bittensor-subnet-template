@@ -37,7 +37,7 @@ class GraphSearch:
         return []
 
     def get_block_transaction(self, block_height):
-        with self.neo4j_handler.driver.session() as session:
+        with self.driver.session() as session:
             data_set = session.run(
                 """
                 MATCH (t:Transaction { block_height: $block_height })-[r:SENT]->(a:Address)
@@ -51,4 +51,17 @@ class GraphSearch:
                 "total_value_satoshi": result["total_value_satoshi"],
                 "transaction_count": result["transaction_count"],
             }
+
+    def get_latest_block_number(self):
+        with self.driver.session() as session:
+            result = session.run(
+                """
+                MATCH (t:Transaction)
+                RETURN MAX(t.block_height) AS latest_block_height
+                """
+            )
+            single_result = result.single()
+            if single_result[0] is None:
+                return 0
+            return single_result[0]
 

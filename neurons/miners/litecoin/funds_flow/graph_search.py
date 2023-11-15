@@ -36,7 +36,7 @@ class GraphSearch:
         return []
 
     def verify_random_block_transaction(self):
-        with self.neo4j_handler.driver.session() as session:
+        with self.driver.session() as session:
             data_set = session.run(
                 """
                 MATCH (t:Transaction)

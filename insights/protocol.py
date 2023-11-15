@@ -24,8 +24,8 @@ class MinerDiscoveryMetadata(BaseModel):
 
 class MinerDiscoveryOutput(BaseModel):
     metadata: MinerDiscoveryMetadata = None
-    data_sample: Optional[List[Dict]] = None
-    block_height: Optional[int] = None
+    data_sample: Dict = None
+    block_height: int = None
 
 
 class MinerDiscovery(bt.Synapse):

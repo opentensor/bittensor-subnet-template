@@ -1,9 +1,13 @@
+import argparse
 import itertools
 import os
 import sys
+import bittensor as bt
 from datetime import time
 from bitcoinrpc.authproxy import AuthServiceProxy
 
+parser = argparse.ArgumentParser()
+bt.logging.add_args(parser)
 
 class BitcoinNode:
     def __init__(self, node_rpc_url: str = None):
@@ -19,16 +23,6 @@ class BitcoinNode:
         else:
             self.node_rpc_url = node_rpc_url
 
-        print(self.node_rpc_url)
-
-    def is_synced(self):
-        #TODO: this still does not work
-        rpc_connection = AuthServiceProxy(self.node_rpc_url)
-        return (
-            rpc_connection.getblockcount()
-            == rpc_connection.getblockchaininfo()["blocks"]
-        )
-
     def get_current_block_height(self):
         rpc_connection = AuthServiceProxy(self.node_rpc_url)
         return rpc_connection.getblockcount()
@@ -38,30 +32,3 @@ class BitcoinNode:
         block_hash = rpc_connection.getblockhash(block_height)
         block_data = rpc_connection.getblock(block_hash, 2)
         return block_data
-
-    def spinner(self):
-        spinner_words = itertools.cycle(["Tao", "Bit", "Tensor", "AI"])
-        while True:
-            yield next(spinner_words)
-
-    def is_synced(self):
-        rpc_connection = AuthServiceProxy(self.node_rpc_url)
-        spinner_gen = self.spinner()
-        try:
-            while True:
-                current_block = rpc_connection.getblockcount()
-                highest_block = rpc_connection.getblockchaininfo()["blocks"]
-                spinner_word = next(spinner_gen)
-                sys.stdout.write(
-                    f"\rChecking sync status... {spinner_word} {current_block}/{highest_block}"
-                )
-                sys.stdout.flush()
-
-                if current_block == highest_block:
-                    sys.stdout.write("\nNode is synced!\n")
-                    return True
-                else:
-                    time.sleep(1)
-        except Exception as e:
-            sys.stdout.write(f"\nFailed to check sync status: {e}\n")
-            return False

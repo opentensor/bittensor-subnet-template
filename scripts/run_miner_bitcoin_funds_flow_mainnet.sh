@@ -19,6 +19,18 @@ if [ -z "$WALLET_HOTKEY" ]; then
     export WALLET_HOTKEY=default
 fi
 
+if [ -z "$GRAPH_DB_URL" ]; then
+    export GRAPH_DB_URL="bolt://localhost:7687"
+fi
+
+if [ -z "$GRAPH_DB_USER" ]; then
+    export GRAPH_DB_USER=""
+fi
+
+if [ -z "$GRAPH_DB_PASSWORD" ]; then
+    export GRAPH_DB_PASSWORD=""
+fi
+
 # Activate the Python virtual environment (path adjusted for Ubuntu)
 source venv/bin/activate
 

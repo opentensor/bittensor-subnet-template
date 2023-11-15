@@ -24,16 +24,19 @@ class BlockchairAPI:
         url = f"https://api.blockchair.com/{network.lower()}/dashboards/block/{block_height}?key={self.api_key}"
         response = requests.get(url)
         if response.status_code == 200:
-            block_data = response.json()
-            block_info = block_data["data"][str(input_result.block_height)]["block"]
-            num_transactions = block_info["transaction_count"]
-            total_sent = block_info["output_total"]
-            result = {
-                "block_height": input_result.block_height,
-                "total_value_satoshi": total_sent,
-                "transaction_count": num_transactions,
-            }
-            return result == input_result
-
+            try:
+                block_data = response.json()
+                block_height = str(input_result['block_height'])
+                block_info = block_data["data"][block_height]["block"]
+                num_transactions = block_info["transaction_count"]
+                total_sent = block_info["output_total"]
+                result = {
+                    "block_height": input_result.block_height,
+                    "total_value_satoshi": total_sent,
+                    "transaction_count": num_transactions,
+                }
+                return result == input_result
+            except KeyError as e:
+                return False
         else:
             raise Exception(f"Failed to fetch data: HTTP {response.status_code}")

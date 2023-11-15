@@ -22,6 +22,7 @@ class MinerRegistry(Base):
 class MinerRegistryManager:
     def __init__(self, db_path="sqlite:///miner_registry.db"):
         self.engine = create_engine(db_path)
+        Base.metadata.create_all(self.engine)
 
     def get_miner_proportion(self, network, model_type):
         session = sessionmaker(bind=self.engine)()
