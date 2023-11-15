@@ -105,8 +105,16 @@ def main(config):
                 deserialize=True,
             )
 
+            if responses is None or responses == [None, None]:
+                bt.logging.info(f"No valid responses received. {bt.__blocktime__} seconds until next query.")
+                time.sleep(bt.__blocktime__)
+                continue
+
             bt.logging.info(f"Received responses: {responses}")
             for index, response in enumerate(responses):
+                if response is None:
+                    continue
+
                 synapse: MinerDiscovery = response
 
                 network = synapse.output.metadata.network
