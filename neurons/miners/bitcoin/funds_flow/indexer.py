@@ -90,9 +90,17 @@ signal.signal(signal.SIGINT, shutdown_handler)
 signal.signal(signal.SIGTERM, shutdown_handler)
 
 if __name__ == "__main__":
-    from dotenv import load_dotenv
+    import os
+    print("NODE_RPC_URL:", os.getenv("NODE_RPC_URL"))
+    print("GRAPH_DB_URL:", os.getenv("GRAPH_DB_URL"))
 
+    from dotenv import load_dotenv
     load_dotenv()
+
+    print("NODE_RPC_URL:", os.getenv("NODE_RPC_URL"))
+    print("GRAPH_DB_URL:", os.getenv("GRAPH_DB_URL"))
+
+
     bitcoin_node = BitcoinNode()
     graph_creator = GraphCreator()
     graph_indexer = GraphIndexer()

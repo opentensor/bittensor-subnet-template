@@ -23,10 +23,10 @@ import argparse
 import traceback
 import bittensor as bt
 from insights import protocol
-from insights.protocol import MinerDiscovery, MinerDiscoveryOutput
-from neurons.validators.blockchair_api import BlockchairAPIError
+from insights.protocol import MinerDiscoveryOutput
+from neurons.external_api.blockchair_api import BlockchairAPIError
 from neurons.validators.discovery import BlockVerification
-from neurons.validators.miner_registry import MinerRegistry, MinerRegistryManager
+from neurons.validators.miner_registry import MinerRegistryManager
 
 
 def get_config():
@@ -65,7 +65,6 @@ def get_config():
 
 def main(config):
     bt.logging(config=config, logging_dir=config.full_path)
-    bt.logging.info(config)
     bt.logging.info("Setting up bittensor objects.")
 
     wallet = bt.wallet(config=config)
@@ -202,22 +201,18 @@ def main(config):
 
 if __name__ == "__main__":
     config = get_config()
-
-    os.environ["NODE_RPC_URL"] = "http://bitcoinrpc:rpcpassword@localhost:18332"
-    os.environ["GRAPH_DB_URL"] = "bolt://localhost:7687"
-
     """
     python miner.py 
     --netuid 1  # The subnet id you want to connect to
     --subtensor.network finney  # blockchain endpoint you want to connect
     --wallet.name <your miner wallet> # name of your wallet
     --wallet.hotkey <your miner hotkey> # hotkey name of your wallet
-    """
-    config.subtensor.chain_endpoint = "ws://127.0.0.1:9946"
+     config.subtensor.chain_endpoint = "ws://127.0.0.1:9946"
     config.subtensor.network = "finney"
     config.wallet.hotkey = 'default'
     config.wallet.name = 'validator'
     config.netuid = 1
     config.blockchair_api_key = "A___mw5wNljHQ4n0UAdM5Ivotp0Bsi93"
+    """
 
     main(config)

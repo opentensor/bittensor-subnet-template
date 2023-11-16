@@ -1,16 +1,16 @@
 version: '3.8'
 
 services:
-  memgraph:
+  memgraph-funds-flow:
     image: memgraph/memgraph-platform
     ports:
       - "7687:7687"
       - "7444:7444"
       - "3000:3000"
     volumes:
-      - memgraph-data:/var/lib/memgraph
+      - memgraph-funds-flow-data:/var/lib/memgraph
 
-  bitcoin-core-testnet:
+  bitcoin-core:
     image: ruimarinho/bitcoin-core:latest
     command:
       -printtoconsole
@@ -29,6 +29,60 @@ services:
     volumes:
       - "bitcoin-data:/home/bitcoin/.bitcoin"
 
+  bitcoin-funds-flow-indexer:
+    image: blockchain_insights_base
+    command: ["./scripts/run_indexer_bitcoin_funds_flow.sh"]
+    environment:
+      - NODE_RPC_URL=http://bitcoinrpc:rpcpassword@bitcoin-core:18332
+      - GRAPH_DB_URL=bolt://memgraph-funds-flow:7687
+    depends_on:
+      - memgraph-funds-flow
+      - bitcoin-core
+
+  btcli:
+    image: blockchain_insights_base
+    command: ["tail", "-f", "/dev/null"]
+    volumes:
+      - bittensor:/root/.bittensor
+
+  bitcoin-funds-flow-miner:
+    image: blockchain_insights_base
+    command: [ "./scripts/run_miner_bitcoin_funds_flow_local.sh" ]
+    environment:
+      - GRAPH_DB_URL=bolt://memgraph-funds-flow:7687
+      - SUBTENSOR_CHAIN_ENDPOINT=ws://host.docker.internal:9946
+      - WALLET_NAME=miner
+      - WALLET_HOTKEY=default
+      - NETUID=1
+      - WAIT_FOR_SYNC=False
+      - BLOCKCHAIR_API_KEY=A___mw5wNljHQ4n0UAdM5Ivotp0Bsi93
+    volumes:
+      - bittensor:/root/.bittensor
+    depends_on:
+      - btcli
+
+
+  #172.25.219.199 - ip of sybtensor running unser WSL/win
+  validator:
+    image: blockchain_insights_base
+    command: [ "./scripts/run_validator_local.sh" ]
+    environment:
+      - SUBTENSOR_CHAIN_ENDPOINT=ws://host.docker.internal:9946
+      - WALLET_NAME=validator
+      - WALLET_HOTKEY=default
+      - NETUID=1
+      - BLOCKCHAIR_API_KEY=A___mw5wNljHQ4n0UAdM5Ivotp0Bsi93
+    volumes:
+      - bittensor:/root/.bittensor
+    depends_on:
+      - btcli
+
 volumes:
   bitcoin-data:
-  memgraph-data:
+  memgraph-funds-flow-data:
+  bittensor:
+    driver: local
+
+
+#
+#172.25.208.1

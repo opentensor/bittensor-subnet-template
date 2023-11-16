@@ -12,10 +12,9 @@ services:
 
   bitcoin-funds-flow-indexer:
     image: blockchain_insights_base
-    command: ["./scripts/run_indexer_bitcoin_funds_flow_mainnet.sh"]
+    command: ["./scripts/run_indexer_bitcoin_funds_flow.sh"]
     environment:
       - NODE_RPC_URL=${NODE_RPC_URL}
-      - PYTHONPATH=.
 
 volumes:
    memgraph-funds-flow-data:

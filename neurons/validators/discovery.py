@@ -1,5 +1,5 @@
 from random import randint
-from neurons.validators.blockchair_api import BlockchairAPI
+from neurons.external_api.blockchair_api import BlockchairAPI
 
 
 class BlockVerification:
