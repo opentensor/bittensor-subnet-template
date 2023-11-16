@@ -22,11 +22,11 @@ import torch
 import argparse
 import traceback
 import bittensor as bt
-from neurons import protocol
-from neurons.protocol import MinerDiscovery
-from neurons.validators.blockchair_api import BlockchairAPI
-from neurons.validators.miner_data_sample import MinerDataSample
-from neurons.validators.miner_registry import MinerRegistry
+from insights import protocol
+from insights.protocol import MinerDiscovery, MinerDiscoveryOutput
+from neurons.validators.blockchair_api import BlockchairAPIError
+from neurons.validators.discovery import BlockVerification
+from neurons.validators.miner_registry import MinerRegistry, MinerRegistryManager
 
 
 def get_config():
@@ -34,12 +34,6 @@ def get_config():
     parser.add_argument(
         "--alpha", default=0.9, type=float, help="The weight moving average scoring."
     )
-    parser.add_argument(
-        "--blockchain",
-        default="BITCOIN",
-        help="Set miner's supported blockchain network.",
-    )
-
     parser.add_argument(
         "--blockchair_api_key",
         default="BITCOIN",
@@ -101,75 +95,70 @@ def main(config):
     bt.logging.info("Starting validator loop.")
     step = 0
 
-    blochair_api = BlockchairAPI(config.blockchain, config.blockchair_api_key)
-
     while True:
         try:
+            block_verification = BlockVerification(config.blockchair_api_key)
+            verification_data = block_verification.get_verification_data()
+
             responses = dendrite.query(
                 metagraph.axons,
-                protocol.MinerDiscovery(),
+                protocol.MinerDiscovery(random_block_height=verification_data),
                 deserialize=True,
             )
 
+            if responses is None or responses == [None, None]:
+                bt.logging.info(f"No valid responses received. {bt.__blocktime__} seconds until next query.")
+                time.sleep(bt.__blocktime__)
+                continue
+
             bt.logging.info(f"Received responses: {responses}")
             for index, response in enumerate(responses):
-                synapse: MinerDiscovery = response
+                if response is None:
+                    continue
 
-                MinerRegistry().store_miner_metadata(
-                    ip_address=synapse.axon.ip,
-                    hot_key=synapse.dendrite.hotkey,
-                    network=synapse.output.metadata.network,
-                    assets=synapse.output.metadata.assets,
-                    model_type=synapse.output.metadata.model_type,
+                output: MinerDiscoveryOutput = response
+                network = output.metadata.network
+                model_type = output.metadata.model_type
+                data_sample_block_height = output.block_height
+                data_sample = output.data_sample
+                axon_ip = metagraph.axons[index].ip
+                hot_key = metagraph.axons[index].hotkey
+
+                MinerRegistryManager().store_miner_metadata(
+                    ip_address=axon_ip,
+                    hot_key=hot_key,
+                    network=network,
+                    model_type=model_type,
                 )
 
-                MinerDataSample().store_miner_data_sample(
-                    hot_key=synapse.dendrite.hotkey,
-                    network=synapse.output.metadata.network,
-                    model_type=synapse.output.metadata.model_type,
-                    data_sample=synapse.output.data_sample.block_height,
-                )
-
-                last_block_height = blochair_api.get_latest_block_height(
-                    network=synapse.output.metadata.network
-                )
-
-                miner_block_height = synapse.output.block_height
-
-                data_sample_is_valid = blochair_api.verify_data_sample(
-                    network=synapse.output.metadata.network,
-                    input_result=synapse.output.data_sample,
-                )
-
-                is_block_heights_random = MinerDataSample().is_block_heights_random(
-                    synapse.dendrite.hotkey,
-                    synapse.output.metadata.network,
-                    synapse.output.metadata.model_type,
+                last_block_height = verification_data[network]['last_block_height']
+                data_sample_is_valid = block_verification.verify_data_sample(
+                    network=network,
+                    block_height=data_sample_block_height,
+                    input_result=data_sample,
                 )
 
                 bt.logging.info(f"Last block height: {last_block_height}")
-                bt.logging.info(f"Miner block height: {miner_block_height}")
+                bt.logging.info(f"Data sample block height: {data_sample_block_height}")
                 bt.logging.info(f"Data sample is valid: {data_sample_is_valid}")
-                bt.logging.info(f"Block heights are random: {is_block_heights_random}")
 
                 score = 0
-
-                if data_sample_is_valid and is_block_heights_random:
+                if data_sample_is_valid:
                     score = 1
-                    proportion = MinerRegistry().get_miner_proportion(
-                        synapse.output.metadata.network,
-                        synapse.output.metadata.model_type,
+                    proportion = MinerRegistryManager().get_miner_proportion(
+                        network,
+                        model_type,
                     )
 
                     bt.logging.info(f"Miner proportion: {proportion}")
 
                     score *= proportion
 
-                    block_height_diff = abs(last_block_height - miner_block_height)
+                    block_height_diff = abs(last_block_height - data_sample_block_height)
                     bt.logging.info(f"Block height diff: {block_height_diff}")
 
                     if block_height_diff == 100:
-                        score *= 0.5
+                        score *= 0.1
 
                 scores[index] = (
                     config.alpha * scores[index] + (1 - config.alpha) * score
@@ -181,20 +170,26 @@ def main(config):
                 weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
                 bt.logging.info(f"Setting weights: {weights}")
                 result = subtensor.set_weights(
-                    netuid=config.netuid,  # Subnet to set weights on.
-                    wallet=wallet,  # Wallet to sign set weights using hotkey.
-                    uids=metagraph.uids,  # Uids of the miners to set weights for.
-                    weights=weights,  # Weights to set for the miners.
+                    netuid=config.netuid,
+                    wallet=wallet,
+                    uids=metagraph.uids,
+                    weights=weights,
                     wait_for_inclusion=True,
                 )
                 if result:
                     bt.logging.success("Successfully set weights.")
+                    time.sleep(bt.__blocktime__ * 101)
                 else:
                     bt.logging.error("Failed to set weights.")
 
             step += 1
             metagraph = subtensor.metagraph(config.netuid)
             time.sleep(bt.__blocktime__)
+
+        except BlockchairAPIError as e:
+            bt.logging.error(e)
+            traceback.print_exc()
+            time.sleep(bt.__blocktime__ * 12)
 
         except RuntimeError as e:
             bt.logging.error(e)
@@ -207,4 +202,22 @@ def main(config):
 
 if __name__ == "__main__":
     config = get_config()
+
+    os.environ["NODE_RPC_URL"] = "http://bitcoinrpc:rpcpassword@localhost:18332"
+    os.environ["GRAPH_DB_URL"] = "bolt://localhost:7687"
+
+    """
+    python miner.py 
+    --netuid 1  # The subnet id you want to connect to
+    --subtensor.network finney  # blockchain endpoint you want to connect
+    --wallet.name <your miner wallet> # name of your wallet
+    --wallet.hotkey <your miner hotkey> # hotkey name of your wallet
+    """
+    config.subtensor.chain_endpoint = "ws://127.0.0.1:9946"
+    config.subtensor.network = "finney"
+    config.wallet.hotkey = 'default'
+    config.wallet.name = 'validator'
+    config.netuid = 1
+    config.blockchair_api_key = "A___mw5wNljHQ4n0UAdM5Ivotp0Bsi93"
+
     main(config)

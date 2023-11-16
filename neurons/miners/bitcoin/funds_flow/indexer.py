@@ -20,10 +20,16 @@ def shutdown_handler(signum, frame):
 
 def index_blocks(_bitcoin_node, _graph_creator, _graph_indexer):
     global shutdown_flag
+    skip_blocks = 6
 
     while not shutdown_flag:
         start_height = _graph_indexer.get_latest_block_number() + 1
-        current_block_height = _bitcoin_node.get_current_block_height()
+        current_block_height = _bitcoin_node.get_current_block_height() - 6
+
+        if current_block_height - skip_blocks < 0:
+            logger.info("Waiting min 6 for blocks to be mined.")
+            time.sleep(1)
+            continue
 
         if start_height > current_block_height:
             logger.info(
@@ -31,9 +37,10 @@ def index_blocks(_bitcoin_node, _graph_creator, _graph_indexer):
             )
             time.sleep(10)
             continue
-        # TODO: we need to wait 3-6 blocks to avoid possible reorgs, forks etc.
+
+
         block_height = start_height
-        while block_height <= current_block_height:
+        while block_height <= current_block_height - skip_blocks:
             block = _bitcoin_node.get_block_by_height(block_height)
             num_transactions = len(block["tx"])
             start_time = time.time()
@@ -86,21 +93,22 @@ if __name__ == "__main__":
     from dotenv import load_dotenv
 
     load_dotenv()
-
     bitcoin_node = BitcoinNode()
     graph_creator = GraphCreator()
     graph_indexer = GraphIndexer()
-
-    logger.info("Starting indexer")
-    logger.info(f"Current node block height: {bitcoin_node.get_current_block_height()}")
-    logger.info(
-        f"Latest indexed block height: {graph_indexer.get_latest_block_number()}"
-    )
 
     retry_delay = 60
 
     while True:
         try:
+            logger.info("Starting indexer")
+            logger.info(
+                f"Current node block height: {bitcoin_node.get_current_block_height()}"
+            )
+            logger.info(
+                f"Latest indexed block height: {graph_indexer.get_latest_block_number()}"
+            )
+
             logger.info("Creating indexes...")
             graph_indexer.create_indexes()
             logger.info("Starting indexing blocks...")

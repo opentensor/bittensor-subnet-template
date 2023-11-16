@@ -1,5 +1,5 @@
 #exclude folders
 contrib/
-devops/
+ops/
 docs/
 .github/

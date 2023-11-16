@@ -1,5 +1,4 @@
 import os
-
 from neo4j import GraphDatabase
 
 
@@ -32,12 +31,12 @@ class GraphSearch:
             auth=(self.graph_db_user, self.graph_db_password),
         )
 
-    def execute_query(self, network, asset, query):
+    def execute_query(self, network, query):
         # filterout dangerous keywords: delete, create, merge  etc...
         return []
 
     def verify_random_block_transaction(self):
-        with self.neo4j_handler.driver.session() as session:
+        with self.driver.session() as session:
             data_set = session.run(
                 """
                 MATCH (t:Transaction)

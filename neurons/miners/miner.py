@@ -22,17 +22,18 @@ import argparse
 import traceback
 import typing
 import bittensor as bt
-from neurons import protocol
-from neurons.miners.bitcoin.node import BitcoinNode
+
+from insights import protocol
 from neurons.miners.query import (
     execute_query_proxy,
-    get_graph_search,
+    get_graph_search, is_query_only,
 )
-from neurons.protocol import (
+from insights.protocol import (
     MODEL_TYPE_FUNDS_FLOW,
     NETWORK_BITCOIN,
     MinerDiscoveryMetadata,
 )
+from neurons.miners.bitcoin.node import BitcoinNode
 
 
 def get_config():
@@ -41,11 +42,6 @@ def get_config():
         "--network",
         default=NETWORK_BITCOIN,
         help="Set miner's supported blockchain network.",
-    )
-    parser.add_argument(
-        "--assets",
-        default="BTC",
-        help="Set miner's supported blockchain assets.",
     )
     parser.add_argument(
         "--model_type",
@@ -100,14 +96,17 @@ def main(config):
     def miner_discovery(synapse: protocol.MinerDiscovery) -> protocol.MinerDiscovery:
         try:
             graph_search = get_graph_search(config.network, config.model_type)
+            block_height = synapse.random_block_height[config.network][config.model_type]
+            data_sample = graph_search.get_block_transaction(block_height=block_height)
+            last_block_height = graph_search.get_latest_block_number()
+
             synapse.output = protocol.MinerDiscoveryOutput(
                 metadata=MinerDiscoveryMetadata(
                     network=config.network,
-                    assets=config.assets.split(","),
                     model_type=config.model_type,
                 ),
-                data_sample=graph_search.get_random_block_transaction(),
-                block_height=graph_search.get_latest_block_number(),
+                data_sample=data_sample,
+                block_height=last_block_height,
             )
             return synapse
         except Exception as e:
@@ -119,7 +118,6 @@ def main(config):
         try:
             synapse.output = execute_query_proxy(
                 network=synapse.network,
-                asset=synapse.asset,
                 model_type=synapse.model_type,
                 query=synapse.query,
             )
@@ -129,7 +127,7 @@ def main(config):
 
         return synapse
 
-    def priority_execute_query(synapse: protocol.MinerQuery) -> protocol.MinerQuery:
+    def priority_execute_query(synapse: protocol.MinerQuery) -> float:
         caller_uid = metagraph.hotkeys.index(synapse.dendrite.hotkey)
         prirority = float(metagraph.S[caller_uid])
         bt.logging.trace(
@@ -157,21 +155,13 @@ def main(config):
                 f"Blacklisting hot key {synapse.dendrite.hotkey} because of wrong model type"
             )
             return True, "Model type not supported."
-
-        elif synapse.asset not in config.assets.split(","):
+        elif not is_query_only(synapse.query):
             bt.logging.trace(
-                f"Blacklisting hot key {synapse.dendrite.hotkey} because of wrong asset"
+                f"Blacklisting hot key {synapse.dendrite.hotkey} because of illegal cypher keywords"
             )
-            return True, "Asset not supported."
-
+            return True, "Illegal cypher keywords."
         else:
             return False, "All ok"
-
-    def wait_for_sync():
-        node = BitcoinNode()
-        node.is_synced()
-
-    wait_for_sync()
 
     axon = bt.axon(wallet=wallet, config=config)
     bt.logging.info(f"Attaching forward function to axon.")
@@ -220,4 +210,19 @@ def main(config):
 
 if __name__ == "__main__":
     config = get_config()
+    os.environ["NODE_RPC_URL"] = "http://bitcoinrpc:rpcpassword@localhost:18332"
+    os.environ["GRAPH_DB_URL"] = "bolt://localhost:7687"
+
+    """
+    python miner.py 
+    --netuid 1  # The subnet id you want to connect to
+    --subtensor.network finney  # blockchain endpoint you want to connect
+    --wallet.name <your miner wallet> # name of your wallet
+    --wallet.hotkey <your miner hotkey> # hotkey name of your wallet
+    """
+    config.subtensor.chain_endpoint = "ws://127.0.0.1:9946"
+    config.subtensor.network = "finney"
+    config.wallet.hotkey = 'default'
+    config.wallet.name = 'miner'
+    config.netuid = 1
     main(config)

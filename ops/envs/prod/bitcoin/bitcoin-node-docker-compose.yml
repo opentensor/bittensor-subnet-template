@@ -4,13 +4,13 @@ services:
   bitcoin-core-mainnet:
     image: ruimarinho/bitcoin-core:latest
     command:
-      - -printtoconsole
-      - -rpcallowip=172.16.4.3/22
-      - -rpcbind=0.0.0.0
-      - -server=1
-      - -txindex=1
-      - -rpcuser=bitcoinrpc
-      - -rpcpassword=rpcpassword
+      -printtoconsole
+      -rpcallowip=0.0.0.0/0
+      -rpcbind=0.0.0.0
+      -server=1
+      -txindex=1
+      -rpcuser=bitcoinrpc
+      -rpcpassword=rpcpassword
     ports:
       - "8332:8332" # rpc mainnet
       - "8333:8333" # peer to peer mainnet
