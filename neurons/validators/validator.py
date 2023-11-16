@@ -24,6 +24,7 @@ import traceback
 import bittensor as bt
 from insights import protocol
 from insights.protocol import MinerDiscovery, MinerDiscoveryOutput
+from neurons.validators.blockchair_api import BlockchairAPIError
 from neurons.validators.discovery import BlockVerification
 from neurons.validators.miner_registry import MinerRegistry, MinerRegistryManager
 
@@ -177,12 +178,18 @@ def main(config):
                 )
                 if result:
                     bt.logging.success("Successfully set weights.")
+                    time.sleep(bt.__blocktime__ * 101)
                 else:
                     bt.logging.error("Failed to set weights.")
 
             step += 1
             metagraph = subtensor.metagraph(config.netuid)
             time.sleep(bt.__blocktime__)
+
+        except BlockchairAPIError as e:
+            bt.logging.error(e)
+            traceback.print_exc()
+            time.sleep(bt.__blocktime__ * 12)
 
         except RuntimeError as e:
             bt.logging.error(e)

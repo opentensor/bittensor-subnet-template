@@ -39,4 +39,9 @@ class BlockchairAPI:
             except KeyError as e:
                 return False
         else:
-            raise Exception(f"Failed to fetch data: HTTP {response.status_code}")
+            raise BlockchairAPIError(f"Failed to fetch data: HTTP {response.status_code}", response.status_code)
+
+class BlockchairAPIError(Exception):
+    def __init__(self, message, code):
+        super().__init__(message)
+        self.code = code
