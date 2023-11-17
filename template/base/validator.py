@@ -28,11 +28,11 @@ import bittensor as bt
 from abc import ABC, abstractmethod
 from traceback import print_exception
 
-from utils.config import check_config, add_args, config
-from utils.misc import ttl_get_block
+from template.utils.config import check_config, add_args, config
+from template.utils.misc import ttl_get_block
 
 # Sync calls set weights and also resyncs the metagraph.
-from utils.sync import sync
+from template.utils.sync import sync
 
 
 class BaseValidatorNeuron(ABC):
@@ -109,7 +109,7 @@ class BaseValidatorNeuron(ABC):
     @abstractmethod
     async def forward(self):
         # This method is responsible for the actual validation logic.
-        pass
+        ...
 
     # Run multiple forwards.
     async def run_forward(self):
@@ -118,7 +118,6 @@ class BaseValidatorNeuron(ABC):
             for _ in range(self.config.neuron.num_concurrent_forwards)
         ]
         await asyncio.gather(*coroutines)
-
 
     def run(self):
         bt.logging.info("Starting validator loop.")
@@ -134,10 +133,16 @@ class BaseValidatorNeuron(ABC):
 
                 self.step += 1
 
+        # If someone intentionally stops the validator, it'll safely terminate operations.
+        except KeyboardInterrupt:
+            self.axon.stop()
+            bt.logging.success("Miner killed by keyboard interrupt.")
+            exit()
+
+        # In case of unforeseen errors, the validator will log the error and continue operations.
         except Exception as err:
             bt.logging.error("Error during validation", str(err))
             bt.logging.debug(print_exception(type(err), err, err.__traceback__))
-
 
 
     def __enter__(self):

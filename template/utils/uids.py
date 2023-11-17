@@ -5,8 +5,6 @@ import bittensor as bt
 from typing import List
 
 
-
-
 def check_uid_availability(
     metagraph: "bt.metagraph.Metagraph", uid: int, vpermit_tao_limit: int
 ) -> bool:

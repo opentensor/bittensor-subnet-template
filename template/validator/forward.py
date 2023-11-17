@@ -1,8 +1,8 @@
 
 import torch
 import bittensor as bt
-from utils.uids import get_random_uids
-from utils.sync import update_scores
+from template.utils.uids import get_random_uids
+from template.utils.sync import update_scores
 
 from template.protocol import Dummy
 from template.validator.reward import get_rewards

@@ -25,8 +25,8 @@ from loguru import logger
 def check_config(cls, config: "bt.Config"):
     r"""Checks/validates the config namespace object."""
     bt.logging.check_config(config)
-    # bt.wallet.check_config(config)
-    # bt.subtensor.check_config(config)
+    bt.wallet.check_config(config)
+    bt.subtensor.check_config(config)
 
     full_path = os.path.expanduser(
         "{}/{}/{}/netuid{}/{}".format(
@@ -150,7 +150,18 @@ def add_args(cls, parser):
         default=False,
     )
 
-
+    parser.add_argument(
+        "--blacklist.force_validator_permit",
+        action="store_true",
+        help="If set, we will force incoming requests to have a permit.",
+        default=False,
+    )
+    parser.add_argument(
+        "--blacklist.allow_non_registered",
+        action="store_true",
+        help="If set, we will allow non registered entities to query us. (Dangerous!)",
+        default=False,
+    )
 
 def config(cls):
     parser = argparse.ArgumentParser()

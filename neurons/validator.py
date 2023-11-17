@@ -28,11 +28,11 @@ import argparse
 import traceback
 import bittensor as bt
 
-from template.validator.forward import forward
-from template.validator.reward import reward
+from template.validator import forward
+from template.validator import reward
 
 # import this repo
-from base import BaseValidatorNeuron
+from template.base import BaseValidatorNeuron
 
 class Neuron(BaseValidatorNeuron):
 
