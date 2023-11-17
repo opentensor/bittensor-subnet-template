@@ -3,6 +3,11 @@ name: Release Docker Image
 on:
   release:
     types: [created]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release Version'
+        required: true
 
 permissions:
   contents: write
@@ -27,7 +32,7 @@ jobs:
       - name: Build and push Docker image
         run: |
           IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/blockchain_insights_base
-          VERSION=${{ github.event.release.tag_name }}
+          VERSION=${{ github.event.inputs.version || github.event.release.tag_name }}
           FULL_TAG="$IMAGE_NAME:$VERSION"
           docker build --tag $FULL_TAG .
           docker push $FULL_TAG
