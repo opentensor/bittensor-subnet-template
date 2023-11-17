@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  bitcoin-core-mainnet:
+  bitcoin-core:
     image: ruimarinho/bitcoin-core:latest
     command:
       -printtoconsole

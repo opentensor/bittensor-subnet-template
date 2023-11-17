@@ -24,6 +24,8 @@ import typing
 import bittensor as bt
 
 from insights import protocol
+from neurons.external_api.blockchair_api import BlockchairAPI
+from neurons.miners.bitcoin.funds_flow.graph_indexer import GraphIndexer
 from neurons.miners.query import (
     execute_query_proxy,
     get_graph_search, is_query_only,
@@ -76,7 +78,6 @@ def main(config):
     bt.logging.info(
         f"Running miner for subnet: {config.netuid} on network: {config.subtensor.chain_endpoint} with config:"
     )
-    bt.logging.info(config)
     bt.logging.info("Setting up bittensor objects.")
     wallet = bt.wallet(config=config)
     bt.logging.info(f"Wallet: {wallet}")
@@ -89,6 +90,35 @@ def main(config):
             f"\nYour miner: {wallet} is not registered to chain connection: {subtensor} \nRun btcli register and try again. "
         )
         exit()
+
+    bt.logging.info(f"Waiting for graph model to sync with blockchain.")
+    is_synced=False
+    while not is_synced:
+        wait_for_sync = os.getenv('WAIT_FOR_SYNC', 'False')
+        if wait_for_sync == 'False':
+            bt.logging.info(f"Skipping graph sync.")
+            break
+
+        try:
+            blockchair_api = BlockchairAPI(config.blockchair_api_key)
+            graph_indexer = GraphIndexer(config.graph_db_url)
+
+            latest_block_height = blockchair_api.get_latest_block_height(config.network)
+            if config.network == 'bitcoin':
+                current_block_height = graph_indexer.get_latest_block_number()
+                if latest_block_height - current_block_height < 100:
+                    is_synced = True
+                    bt.logging.info(f"Graph model is synced with blockchain.")
+                else:
+                    bt.logging.info(f"Graph Sync: {current_block_height}/{latest_block_height}")
+                    time.sleep(bt.__blocktime__ * 12)
+            else:
+                raise Exception("Unsupported blockchain network")
+        except Exception as e:
+            bt.logging.error(traceback.format_exc())
+            time.sleep(bt.__blocktime__ * 12)
+            bt.logging.info(f"Failed to connect with graph database. Retrying...")
+            continue
 
     my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
     bt.logging.info(f"Running miner on uid: {my_subnet_uid}")
@@ -108,6 +138,8 @@ def main(config):
                 data_sample=data_sample,
                 block_height=last_block_height,
             )
+            bt.logging.info(f"Serving miner discovery output: {synapse.output}")
+
             return synapse
         except Exception as e:
             bt.logging.error(traceback.format_exc())
@@ -210,19 +242,20 @@ def main(config):
 
 if __name__ == "__main__":
     config = get_config()
-    os.environ["NODE_RPC_URL"] = "http://bitcoinrpc:rpcpassword@localhost:18332"
-    os.environ["GRAPH_DB_URL"] = "bolt://localhost:7687"
 
-    """
+    """ Uncomment for local debugging
     python miner.py 
     --netuid 1  # The subnet id you want to connect to
     --subtensor.network finney  # blockchain endpoint you want to connect
     --wallet.name <your miner wallet> # name of your wallet
     --wallet.hotkey <your miner hotkey> # hotkey name of your wallet
-    """
+    os.environ["NODE_RPC_URL"] = "http://bitcoinrpc:rpcpassword@localhost:18332"
+    os.environ["GRAPH_DB_URL"] = "bolt://localhost:7687"
     config.subtensor.chain_endpoint = "ws://127.0.0.1:9946"
     config.subtensor.network = "finney"
     config.wallet.hotkey = 'default'
     config.wallet.name = 'miner'
     config.netuid = 1
+    """
+
     main(config)

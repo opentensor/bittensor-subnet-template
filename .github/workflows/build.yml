@@ -1,12 +1,8 @@
-name: build docker image
+name: Release Docker Image
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version number'
-        required: true
-        default: '1.0.0'
+  release:
+    types: [created]
 
 permissions:
   contents: write
@@ -22,7 +18,7 @@ jobs:
           ref: ${{ github.ref }}
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@funds_flow
+        uses: docker/login-action@v1
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -30,11 +26,8 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          BRANCH_NAME=${GITHUB_REF#refs/heads/} # Extract branch name from GITHUB_REF
-          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/blockchain-data-subnet
-          VERSION=${{ github.event.inputs.version }}
-          # Combine branch name and version into the tag
-          FULL_TAG="$IMAGE_NAME:$BRANCH_NAME-${VERSION}"
+          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/blockchain_insights_base
+          VERSION=${{ github.event.release.tag_name }}
+          FULL_TAG="$IMAGE_NAME:$VERSION"
           docker build --tag $FULL_TAG .
           docker push $FULL_TAG
-

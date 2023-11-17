@@ -10,9 +10,28 @@ services:
     volumes:
       - memgraph-funds-flow-data:/var/lib/memgraph
 
+  bitcoin-core:
+    image: ruimarinho/bitcoin-core:latest
+    command:
+      -printtoconsole
+      -testnet=1
+      -rpcallowip=0.0.0.0/0
+      -rpcbind=0.0.0.0
+      -server=1
+      -txindex=1
+      -rpcuser=bitcoinrpc
+      -rpcpassword=rpcpassword
+    ports:
+      - "8332:8332" # rpc testnet
+      - "8333:8333"
+      - "18332:18332" # rpc testnet
+      - "18333:18333"
+    volumes:
+      - "bitcoin-data:/home/bitcoin/.bitcoin"
+
   bitcoin-funds-flow-indexer:
     image: blockchain_insights_base
-    command: [ "./scripts/run_indexer_bitcoin_funds_flow.sh" ]
+    command: ["./scripts/run_indexer_bitcoin_funds_flow.sh"]
     environment:
       - NODE_RPC_URL=http://bitcoinrpc:rpcpassword@bitcoin-core:18332
       - GRAPH_DB_URL=bolt://memgraph-funds-flow:7687
@@ -22,13 +41,13 @@ services:
 
   btcli:
     image: blockchain_insights_base
-    command: [ "tail", "-f", "/dev/null" ]
+    command: ["tail", "-f", "/dev/null"]
     volumes:
       - bittensor:/root/.bittensor
 
   bitcoin-funds-flow-miner:
     image: blockchain_insights_base
-    command: [ "./scripts/run_miner_bitcoin_funds_flow_mainnet.sh" ]
+    command: [ "./scripts/run_miner_bitcoin_funds_flow_local.sh" ]
     environment:
       - GRAPH_DB_URL=bolt://memgraph-funds-flow:7687
       - SUBTENSOR_CHAIN_ENDPOINT=ws://host.docker.internal:9946
@@ -44,7 +63,7 @@ services:
 
   validator:
     image: blockchain_insights_base
-    command: [ "./scripts/run_validator_mainnet.sh" ]
+    command: [ "./scripts/run_validator_local.sh" ]
     environment:
       - SUBTENSOR_CHAIN_ENDPOINT=ws://host.docker.internal:9946
       - WALLET_NAME=validator
@@ -56,8 +75,20 @@ services:
     depends_on:
       - btcli
 
+  dozzle:
+    container_name: dozzle
+    image: amir20/dozzle:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "9999:8080"
+
 volumes:
   bitcoin-data:
   memgraph-funds-flow-data:
   bittensor:
     driver: local
+
+
+#
+#172.25.208.1
