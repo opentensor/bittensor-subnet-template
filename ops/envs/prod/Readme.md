@@ -23,6 +23,17 @@ While purchasing machines, select private network integration, so the machines c
 - ``apt-get install docker-compose``
 5) clone subnet repo on both machines:``git clone https://github.com/blockchain-insights/blockchain-data-subnet.git``
 
+Task: Provide readme.md for
+NODE
+sudo ip link add link eno1 name eno1.2733 type vlan id 2733
+sudo ip link set eno1.2733 up
+sudo ip addr add 172.16.4.2/22 dev eno1.2733
+
+
+MINER
+sudo ip link add link eno1 name eno1.3530 type vlan id 3530
+sudo ip link set eno1.3530 up
+sudo ip addr add 172.16.4.3/22 dev eno1.3530
 
 
 on node machine

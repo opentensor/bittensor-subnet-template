@@ -1,5 +1,7 @@
 import signal
 import time
+import traceback
+
 from neurons.logging import setup_logger
 from neurons.miners.bitcoin.node import BitcoinNode
 from neurons.miners.bitcoin.funds_flow.graph_creator import GraphCreator
@@ -90,16 +92,8 @@ signal.signal(signal.SIGINT, shutdown_handler)
 signal.signal(signal.SIGTERM, shutdown_handler)
 
 if __name__ == "__main__":
-    import os
-    print("NODE_RPC_URL:", os.getenv("NODE_RPC_URL"))
-    print("GRAPH_DB_URL:", os.getenv("GRAPH_DB_URL"))
-
     from dotenv import load_dotenv
     load_dotenv()
-
-    print("NODE_RPC_URL:", os.getenv("NODE_RPC_URL"))
-    print("GRAPH_DB_URL:", os.getenv("GRAPH_DB_URL"))
-
 
     bitcoin_node = BitcoinNode()
     graph_creator = GraphCreator()
@@ -123,6 +117,7 @@ if __name__ == "__main__":
             index_blocks(bitcoin_node, graph_creator, graph_indexer)
             break
         except Exception as e:
+            traceback.print_exc()
             logger.error(f"Retry failed with error: {e}")
             logger.info(f"Retrying in {retry_delay} seconds...")
             time.sleep(retry_delay)

@@ -17,7 +17,6 @@ class BlockchairAPI:
             latest_block_height = data["data"]["blocks"]
             return latest_block_height
         else:
-            print(url)
             raise Exception(f"Failed to fetch data: HTTP {response.status_code}")
 
     def verify_data_sample(self, network, block_height, input_result):
