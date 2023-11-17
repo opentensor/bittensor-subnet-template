@@ -61,12 +61,8 @@ class BaseValidatorNeuron(ABC):
         self.config.merge(base_config)
 
         # Set up logging with the provided configuration and directory.
-        bt.logging(config=config, logging_dir=config.full_path)
-        bt.logging.info(
-            f"Running validator for subnet: {config.netuid} on network: {config.subtensor.chain_endpoint} with config:"
-        )
         # Log the configuration for reference.
-        bt.logging.info(config)
+        bt.logging.info(self.config)
 
         # Step 4: Build Bittensor validator objects
         # These are core Bittensor classes to interact with the network.
@@ -77,7 +73,7 @@ class BaseValidatorNeuron(ABC):
         bt.logging.info(f"Wallet: {self.wallet}")
 
         # The subtensor is our connection to the Bittensor blockchain.
-        self.subtensor = bt.subtensor(config=config)
+        self.subtensor = bt.subtensor(config=self.config)
         bt.logging.info(f"Subtensor: {self.subtensor}")
 
         # Dendrite is the RPC client; it lets us send messages to other nodes (axons) in the network.
@@ -85,13 +81,18 @@ class BaseValidatorNeuron(ABC):
         bt.logging.info(f"Dendrite: {self.dendrite}")
 
         # The metagraph holds the state of the network, letting us know about other validators and miners.
-        self.metagraph = self.subtensor.metagraph(config.netuid)
+        self.metagraph = self.subtensor.metagraph(self.config.netuid)
         bt.logging.info(f"Metagraph: {self.metagraph}")
 
-        sync( self )
+        bt.logging(config=self.config, logging_dir=self.config.full_path)
+        bt.logging.info(
+            f"Running validator for subnet: {self.config.netuid} on network: {self.subtensor.chain_endpoint} with config:"
+        )
 
         self.uid = self.metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
         bt.logging.info(f"Running validator on uid: {self.uid}")
+
+        sync( self )
 
         # Step 6: Set up initial scoring weights for validation
         bt.logging.info("Building validation weights.")

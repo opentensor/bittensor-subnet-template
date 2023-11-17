@@ -109,9 +109,9 @@ def add_args(cls, parser):
     )
 
     parser.add_argument(
-        "--neuron.epoch_length_override",
+        "--neuron.epoch_length",
         type=int,
-        help="Override the default epoch length (how often we set weights).",
+        help="The default epoch length (how often we set weights).",
         default=0,
     )
     parser.add_argument(

@@ -23,6 +23,7 @@ import bittensor as bt
 from typing import List
 
 import template
+
 spec_version = template.__spec_version__
 
 
@@ -68,7 +69,7 @@ def set_weights(self):
     Raises:
         Exception: If there's an error while setting weights, the exception is logged for diagnosis.
     """
-    if issubclass(self, BaseValidatorNeuron):
+    if issubclass(self, template.base.BaseValidatorNeuron):
 
         # Calculate the average reward for each uid across non-zero values.
         # Replace any NaN values with 0.
@@ -101,7 +102,7 @@ def set_weights(self):
             version_key=spec_version,
         )
 
-    elif issubclass(self, BaseMinerNeuron):
+    elif issubclass(self, template.base.BaseMinerNeuron):
 
         try:
             # --- query the chain for the most current number of peers on the network
@@ -142,8 +143,9 @@ def resync_metagraph(self):
     self.metagraph.sync(subtensor=self.subtensor)
 
     # Check if the metagraph axon info has changed.
+    import pdb; pdb.set_trace()
     if (
-        issubclass(self, BaseValidatorNeuron) and
+        issubclass(self, template.base.BaseValidatorNeuron) and
         previous_metagraph.axons != self.metagraph.axons
     ):
         bt.logging.info(
@@ -209,7 +211,7 @@ def save_state(self):
     Typically, only validators would need this functionality.
     """
 
-    if issubclass(self, BaseMinerNeuron):
+    if issubclass(self, template.base.BaseMinerNeuron):
         return
 
     bt.logging.info("save_state()")
