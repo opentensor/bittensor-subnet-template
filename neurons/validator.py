@@ -34,10 +34,9 @@ from template.validator import reward
 # import this repo
 from template.base import BaseValidatorNeuron
 
+
 class Neuron(BaseValidatorNeuron):
-
     def __init__(self, config=None):
-
         # Takes care of routine tasks such as setting up wallet, subtensor, metagraph, logging directory, parsing config, etc.
         # init parent class
         super().__init__(config=config)
@@ -46,14 +45,14 @@ class Neuron(BaseValidatorNeuron):
 
     async def forward(self):
         # You should replace the template forward with your own implementation
-        return await forward( self )
+        return await forward(self)
 
     async def reward(self):
         # You should replace the template reward with your own implementation
-        return await reward( self )
+        return await reward(self)
+
 
 # The main function parses the configuration and runs the validator.
 if __name__ == "__main__":
-
     with Neuron() as validator:
         validator.run()

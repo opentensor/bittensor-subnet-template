@@ -109,6 +109,3 @@
 
 #         with self.assertLogs(bt.logging, level='WARNING') as cm:
 #             update_scores(self.neuron, rewards, self.miner_uids)
-
-
-

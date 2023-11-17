@@ -22,6 +22,7 @@ import argparse
 import bittensor as bt
 from loguru import logger
 
+
 def check_config(cls, config: "bt.Config"):
     r"""Checks/validates the config namespace object."""
     bt.logging.check_config(config)
@@ -161,6 +162,7 @@ def add_args(cls, parser):
         help="If set, we will allow non registered entities to query us. (Dangerous!)",
         default=False,
     )
+
 
 def config(cls):
     parser = argparse.ArgumentParser()

@@ -36,7 +36,6 @@ from template.utils.sync import sync, check_registered
 
 
 class BaseValidatorNeuron(ABC):
-
     @classmethod
     def check_config(cls, config: "bt.Config"):
         check_config(cls, config)
@@ -53,9 +52,7 @@ class BaseValidatorNeuron(ABC):
     wallet: "bt.wallet"
     metagraph: "bt.metagraph"
 
-
     def __init__(self, config=None):
-
         base_config = copy.deepcopy(config or BaseValidatorNeuron.config())
         self.config = self.config()
         self.check_config(self.config)
@@ -97,7 +94,7 @@ class BaseValidatorNeuron(ABC):
         )
 
         # Ensure we're registered on the subnet first.
-        check_registered( self )
+        check_registered(self)
 
         self.uid = self.metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
         bt.logging.info(f"Running validator on uid: {self.uid}")
@@ -107,7 +104,7 @@ class BaseValidatorNeuron(ABC):
         self.scores = torch.ones_like(self.metagraph.S, dtype=torch.float32)
         bt.logging.info(f"Weights: {self.scores}")
 
-        sync( self )
+        sync(self)
 
         # Create asyncio event loop to manage async tasks.
         self.loop = asyncio.get_event_loop()
@@ -115,7 +112,7 @@ class BaseValidatorNeuron(ABC):
 
     @property
     def block(self):
-        return ttl_get_block( self )
+        return ttl_get_block(self)
 
     @abstractmethod
     async def forward(self):
@@ -125,8 +122,7 @@ class BaseValidatorNeuron(ABC):
     # Run multiple forwards.
     async def run_forward(self):
         coroutines = [
-            self.forward()
-            for _ in range(self.config.neuron.num_concurrent_forwards)
+            self.forward() for _ in range(self.config.neuron.num_concurrent_forwards)
         ]
         await asyncio.gather(*coroutines)
 
@@ -135,12 +131,11 @@ class BaseValidatorNeuron(ABC):
 
         try:
             while True:
-
                 bt.logging.info(f"step({self.step}) block({self.block})")
 
-                self.loop.run_until_complete( self.run_forward() )
+                self.loop.run_until_complete(self.run_forward())
 
-                sync( self )
+                sync(self)
 
                 self.step += 1
 
@@ -154,7 +149,6 @@ class BaseValidatorNeuron(ABC):
         except Exception as err:
             bt.logging.error("Error during validation", str(err))
             bt.logging.debug(print_exception(type(err), err, err.__traceback__))
-
 
     def __enter__(self):
         """

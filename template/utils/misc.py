@@ -54,5 +54,3 @@ def _ttl_hash_gen(seconds: int):
 @ttl_cache(maxsize=1, ttl=12)
 def ttl_get_block(self) -> int:
     return self.subtensor.get_current_block()
-
-

@@ -15,8 +15,8 @@ from template.utils.sync import sync
 from template.utils.config import check_config, add_args, config
 from template.utils.misc import ttl_get_block
 
-class BaseMinerNeuron(ABC):
 
+class BaseMinerNeuron(ABC):
     @classmethod
     def check_config(cls, config: "bt.Config"):
         check_config(cls, config)
@@ -34,13 +34,12 @@ class BaseMinerNeuron(ABC):
     metagraph: "bt.metagraph"
 
     def __init__(self, config=None):
-
         base_config = copy.deepcopy(config or BaseMinerNeuron.config())
-        print('\nbaseconfig:', base_config)
+        print("\nbaseconfig:", base_config)
         self.config = self.config()
-        print('\nself.config:', self.config)
+        print("\nself.config:", self.config)
         self.config.merge(base_config)
-        print('\nmerged config:', self.config)
+        print("\nmerged config:", self.config)
 
         # Activating Bittensor's logging with the set configurations.
         bt.logging(config=self.config, logging_dir=self.config.full_path)
@@ -83,9 +82,7 @@ class BaseMinerNeuron(ABC):
             exit(1)
         else:
             # Each miner gets a unique identity (UID) in the network for differentiation.
-            self.uid = self.metagraph.hotkeys.index(
-                self.wallet.hotkey.ss58_address
-            )
+            self.uid = self.metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
             bt.logging.info(f"Running miner on uid: {self.uid}")
 
         # The axon handles request processing, allowing validators to send this process requests.
@@ -108,11 +105,15 @@ class BaseMinerNeuron(ABC):
         self.request_timestamps: Dict = {}
 
     @abstractmethod
-    async def forward(self, synapse: template.protocol.Dummy) -> template.protocol.Dummy:
+    async def forward(
+        self, synapse: template.protocol.Dummy
+    ) -> template.protocol.Dummy:
         ...
 
     @abstractmethod
-    async def blacklist(self, synapse: template.protocol.Dummy) -> typing.Tuple[bool, str]:
+    async def blacklist(
+        self, synapse: template.protocol.Dummy
+    ) -> typing.Tuple[bool, str]:
         ...
 
     @abstractmethod
@@ -121,7 +122,7 @@ class BaseMinerNeuron(ABC):
 
     @property
     def block(self):
-        return ttl_get_block( self )
+        return ttl_get_block(self)
 
     def run(self):
         """
@@ -171,7 +172,7 @@ class BaseMinerNeuron(ABC):
         self.axon.start()
 
         # --- Run until should_exit = True.
-        self.last_epoch_block = ttl_get_block( self )
+        self.last_epoch_block = ttl_get_block(self)
         bt.logging.info(f"Miner starting at block: {self.last_epoch_block}")
 
         # This loop maintains the miner's operations until intentionally stopped.
@@ -182,24 +183,24 @@ class BaseMinerNeuron(ABC):
                 start_epoch = time.time()
 
                 # --- Wait until next epoch.
-                current_block = ttl_get_block( self )
+                current_block = ttl_get_block(self)
                 while (
                     current_block - self.last_epoch_block
                     < self.config.neuron.checkpoint_block_length
                 ):
                     # --- Wait for next bloc.
                     time.sleep(1)
-                    current_block = ttl_get_block( self )
+                    current_block = ttl_get_block(self)
 
                     # --- Check if we should exit.
                     if self.should_exit:
                         break
 
                 # --- Update the metagraph with the latest network state.
-                self.last_epoch_block = ttl_get_block( self )
+                self.last_epoch_block = ttl_get_block(self)
 
                 # --- Sync metagraph and potentially set weights.
-                sync( self )
+                sync(self)
                 self.step += 1
 
         # If someone intentionally stops the miner, it'll safely terminate operations.
@@ -211,7 +212,6 @@ class BaseMinerNeuron(ABC):
         # In case of unforeseen errors, the miner will log the error and continue operations.
         except Exception as e:
             bt.logging.error(traceback.format_exc())
-
 
     def run_in_background_thread(self):
         """

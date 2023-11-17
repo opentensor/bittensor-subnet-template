@@ -34,10 +34,11 @@ def reward(query: int, response: int) -> float:
 
 
 def get_rewards(
-    self, query: int, responses: List[float],
+    self,
+    query: int,
+    responses: List[float],
 ) -> torch.FloatTensor:
-
     # Get all the reward results.
-    return torch.FloatTensor([
-        reward(query, response) for response in responses
-    ]).to(self.device)
+    return torch.FloatTensor([reward(query, response) for response in responses]).to(
+        self.device
+    )

@@ -27,7 +27,7 @@ import template
 spec_version = template.__spec_version__
 
 
-def check_registered( self ):
+def check_registered(self):
     if self.wallet.hotkey.ss58_address not in self.metagraph.hotkeys:
         bt.logging.error(
             f"\nYour validator: {self.wallet} if not registered to chain connection: {self.subtensor} \nRun btcli register and try again."
@@ -35,20 +35,20 @@ def check_registered( self ):
         exit()
 
 
-def sync( self ):
+def sync(self):
     """
     Wrapper for synchronizing the state of the network for the given miner or validator.
     """
 
-    check_registered( self )
+    check_registered(self)
 
-    if should_sync_metagraph( self ):
-        resync_metagraph( self )
+    if should_sync_metagraph(self):
+        resync_metagraph(self)
 
-    if should_set_weights( self ):
-        set_weights( self )
+    if should_set_weights(self):
+        set_weights(self)
 
-    save_state( self )
+    save_state(self)
 
 
 def set_weights(self):
@@ -62,14 +62,13 @@ def set_weights(self):
 
     For validators:
     This function assigns weights to the metagraph hotkeys based on the scores it has
-    received from the miners. The weights determine the trust and incentive level the 
+    received from the miners. The weights determine the trust and incentive level the
     validator assigns to miner nodes on the network.
 
     Raises:
         Exception: If there's an error while setting weights, the exception is logged for diagnosis.
     """
     if issubclass(type(self), template.base.BaseValidatorNeuron):
-
         # Calculate the average reward for each uid across non-zero values.
         # Replace any NaN values with 0.
         raw_weights = torch.nn.functional.normalize(self.scores, p=1, dim=0)
@@ -102,10 +101,11 @@ def set_weights(self):
         )
 
     elif issubclass(type(self), template.base.BaseMinerNeuron):
-
         try:
             # --- query the chain for the most current number of peers on the network
-            chain_weights = torch.zeros(subtensor.subnetwork_n(netuid=self.metagraph.netuid))
+            chain_weights = torch.zeros(
+                subtensor.subnetwork_n(netuid=self.metagraph.netuid)
+            )
             chain_weights[uid] = 1
 
             # --- Set weights.
@@ -121,14 +121,16 @@ def set_weights(self):
             bt.logging.error(f"Failed to set weights on chain with exception: { e }")
 
     else:
-        raise Exception("Neuron must be either a subclass of BaseValidatorNeuron or BaseMinerNeuron.")
+        raise Exception(
+            "Neuron must be either a subclass of BaseValidatorNeuron or BaseMinerNeuron."
+        )
 
 
 def should_sync_metagraph(self):
     # Check if enough epoch blocks have elapsed since the last checkpoint.
     return (
-        (self.block - self.metagraph.last_update[self.uid]) > self.config.neuron.epoch_length
-    )
+        self.block - self.metagraph.last_update[self.uid]
+    ) > self.config.neuron.epoch_length
 
 
 def resync_metagraph(self):
@@ -143,8 +145,8 @@ def resync_metagraph(self):
 
     # Check if the metagraph axon info has changed.
     if (
-        issubclass(type(self), template.base.BaseValidatorNeuron) and
-        previous_metagraph.axons != self.metagraph.axons
+        issubclass(type(self), template.base.BaseValidatorNeuron)
+        and previous_metagraph.axons != self.metagraph.axons
     ):
         bt.logging.info(
             "Metagraph updated, re-syncing hotkeys, dendrite pool and moving averages"
@@ -173,12 +175,11 @@ def should_set_weights(self) -> bool:
         return False
 
     return (
-        (self.block - self.metagraph.last_update[self.uid]) > self.config.neuron.epoch_length
-    )
+        self.block - self.metagraph.last_update[self.uid]
+    ) > self.config.neuron.epoch_length
 
 
 def update_scores(self, rewards: torch.FloatTensor, uids: List[int]):
-
     # Check if rewards contains NaN values.
     if torch.isnan(rewards).any():
         bt.logging.warning(f"NaN values detected in rewards: {rewards}")
@@ -201,11 +202,10 @@ def update_scores(self, rewards: torch.FloatTensor, uids: List[int]):
     bt.logging.debug(f"Updated moving avg scores: {self.scores}")
 
 
-
 def save_state(self):
     r"""
     Save hotkeys, neuron weights and moving average scores to filesystem.
-    
+
     Typically, only validators would need this functionality.
     """
 

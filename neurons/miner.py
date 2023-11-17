@@ -35,14 +35,15 @@ from template.base import BaseMinerNeuron
 
 class Neuron(BaseMinerNeuron):
     def __init__(self, config=None):
-
         # Takes care of routine tasks such as setting up wallet, subtensor, metagraph, logging directory, parsing config, etc.
         # init parent class
         super(Neuron, self).__init__(config=config)
 
         # Anything else specific to your use case you can do here
 
-    async def forward(self, synapse: template.protocol.Dummy) -> template.protocol.Dummy:
+    async def forward(
+        self, synapse: template.protocol.Dummy
+    ) -> template.protocol.Dummy:
         # You should replace the template forward with your own implementation
         synapse.dummy_output = synapse.dummy_input * 2
         return synapse
@@ -50,7 +51,9 @@ class Neuron(BaseMinerNeuron):
     # Step 5: Set up miner functionalities
     # The following functions control the miner's response to incoming requests.
     # The blacklist function decides if a request should be ignored.
-    async def blacklist(self, synapse: template.protocol.Dummy) -> typing.Tuple[bool, str]:
+    async def blacklist(
+        self, synapse: template.protocol.Dummy
+    ) -> typing.Tuple[bool, str]:
         # TODO(developer): Define how miners should blacklist requests. This Function
         # Runs before the synapse data has been deserialized (i.e. before synapse.data is available).
         # The synapse is instead contructed via the headers of the request. It is important to blacklist

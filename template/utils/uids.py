@@ -1,4 +1,3 @@
-
 import torch
 import random
 import bittensor as bt

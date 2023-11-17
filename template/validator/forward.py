@@ -1,4 +1,3 @@
-
 import torch
 import bittensor as bt
 from template.utils.uids import get_random_uids
@@ -8,7 +7,7 @@ from template.protocol import Dummy
 from template.validator.reward import get_rewards
 
 
-async def forward( self ):
+async def forward(self):
     """
     The forward function is called by the validator every time step.
 
@@ -35,7 +34,7 @@ async def forward( self ):
 
     # TODO(developer): Define how the validator scores responses.
     # Adjust the scores based on responses from miners.
-    rewards = get_rewards( self, query = self.step, responses = responses )
+    rewards = get_rewards(self, query=self.step, responses=responses)
 
     bt.logging.info(f"Scored responses: {rewards}")
     update_scores(self, rewards, miner_uids)
