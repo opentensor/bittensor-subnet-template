@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  btcli:
+    image: blockchain_insights_base
+    command: [ "tail", "-f", "/dev/null" ]
+    volumes:
+      - bittensor:/root/.bittensor
+
+  validator:
+    image: blockchain_insights_base
+    command: [ "./scripts/run_validator_mainnet.sh" ]
+    environment:
+      - SUBTENSOR_CHAIN_ENDPOINT=ws://host.docker.internal:9946
+      - WALLET_NAME=validator
+      - WALLET_HOTKEY=default
+      - NETUID=1
+      - BLOCKCHAIR_API_KEY=A___mw5wNljHQ4n0UAdM5Ivotp0Bsi93
+    volumes:
+      - bittensor:/root/.bittensor
+    depends_on:
+      - btcli
+
+volumes:
+  bittensor:
+    driver: local

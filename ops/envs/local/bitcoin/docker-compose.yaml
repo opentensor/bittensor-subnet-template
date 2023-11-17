@@ -61,8 +61,6 @@ services:
     depends_on:
       - btcli
 
-
-  #172.25.219.199 - ip of sybtensor running unser WSL/win
   validator:
     image: blockchain_insights_base
     command: [ "./scripts/run_validator_local.sh" ]
@@ -76,6 +74,14 @@ services:
       - bittensor:/root/.bittensor
     depends_on:
       - btcli
+
+  dozzle:
+    container_name: dozzle
+    image: amir20/dozzle:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "9999:8080"
 
 volumes:
   bitcoin-data:

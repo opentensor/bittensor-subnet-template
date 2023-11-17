@@ -207,12 +207,18 @@ if __name__ == "__main__":
     --subtensor.network finney  # blockchain endpoint you want to connect
     --wallet.name <your miner wallet> # name of your wallet
     --wallet.hotkey <your miner hotkey> # hotkey name of your wallet
-     config.subtensor.chain_endpoint = "ws://127.0.0.1:9946"
+    config.subtensor.chain_endpoint = "ws://127.0.0.1:9946"
+    config.subtensor.network = "finney"
+    config.wallet.hotkey = 'default'
+    config.wallet.name = 'validator'
+    config.netuid = 1
+    config.blockchair_api_key = "A___mw5wNljHQ4n0UAdM5Ivotp0Bsi93"
+      
+    config.subtensor.chain_endpoint = "ws://127.0.0.1:9946"
     config.subtensor.network = "finney"
     config.wallet.hotkey = 'default'
     config.wallet.name = 'validator'
     config.netuid = 1
     config.blockchair_api_key = "A___mw5wNljHQ4n0UAdM5Ivotp0Bsi93"
     """
-
     main(config)

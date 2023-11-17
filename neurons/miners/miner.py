@@ -91,12 +91,12 @@ def main(config):
         )
         exit()
 
-    bt.logging.info(f"Waiting for node to sync with blockchain.")
+    bt.logging.info(f"Waiting for graph model to sync with blockchain.")
     is_synced=False
     while not is_synced:
-        wait_for_sync = os.getenv('WAIT_FOR_SYNC', 'True')
+        wait_for_sync = os.getenv('WAIT_FOR_SYNC', 'False')
         if wait_for_sync == 'False':
-            bt.logging.info(f"Skipping node sync.")
+            bt.logging.info(f"Skipping graph sync.")
             break
 
         try:
@@ -108,16 +108,16 @@ def main(config):
                 current_block_height = graph_indexer.get_latest_block_number()
                 if latest_block_height - current_block_height < 100:
                     is_synced = True
-                    bt.logging.info(f"Node is synced with blockchain.")
+                    bt.logging.info(f"Graph model is synced with blockchain.")
                 else:
-                    bt.logging.info(f"Node Sync: {current_block_height}/{latest_block_height}")
+                    bt.logging.info(f"Graph Sync: {current_block_height}/{latest_block_height}")
                     time.sleep(bt.__blocktime__ * 12)
             else:
                 raise Exception("Unsupported blockchain network")
         except Exception as e:
             bt.logging.error(traceback.format_exc())
             time.sleep(bt.__blocktime__ * 12)
-            bt.logging.info(f"Failed to connect with node. Retrying...")
+            bt.logging.info(f"Failed to connect with graph database. Retrying...")
             continue
 
     my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
@@ -138,6 +138,8 @@ def main(config):
                 data_sample=data_sample,
                 block_height=last_block_height,
             )
+            bt.logging.info(f"Serving miner discovery output: {synapse.output}")
+
             return synapse
         except Exception as e:
             bt.logging.error(traceback.format_exc())
