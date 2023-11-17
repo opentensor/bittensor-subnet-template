@@ -48,8 +48,7 @@ def sync( self ):
     if should_set_weights( self ):
         set_weights( self )
 
-    if should_save_state( self ):
-        save_state( self )
+    save_state( self )
 
 
 def set_weights(self):
@@ -69,11 +68,11 @@ def set_weights(self):
     Raises:
         Exception: If there's an error while setting weights, the exception is logged for diagnosis.
     """
-    if issubclass(self, template.base.BaseValidatorNeuron):
+    if issubclass(type(self), template.base.BaseValidatorNeuron):
 
         # Calculate the average reward for each uid across non-zero values.
         # Replace any NaN values with 0.
-        raw_weights = torch.nn.functional.normalize(self.moving_averaged_scores, p=1, dim=0)
+        raw_weights = torch.nn.functional.normalize(self.scores, p=1, dim=0)
         bt.logging.trace("raw_weights", raw_weights)
         bt.logging.trace("top10 values", raw_weights.sort()[0])
         bt.logging.trace("top10 uids", raw_weights.sort()[1])
@@ -102,7 +101,7 @@ def set_weights(self):
             version_key=spec_version,
         )
 
-    elif issubclass(self, template.base.BaseMinerNeuron):
+    elif issubclass(type(self), template.base.BaseMinerNeuron):
 
         try:
             # --- query the chain for the most current number of peers on the network
@@ -143,9 +142,8 @@ def resync_metagraph(self):
     self.metagraph.sync(subtensor=self.subtensor)
 
     # Check if the metagraph axon info has changed.
-    import pdb; pdb.set_trace()
     if (
-        issubclass(self, template.base.BaseValidatorNeuron) and
+        issubclass(type(self), template.base.BaseValidatorNeuron) and
         previous_metagraph.axons != self.metagraph.axons
     ):
         bt.logging.info(
@@ -194,13 +192,13 @@ def update_scores(self, rewards: torch.FloatTensor, uids: List[int]):
     ).to(self.device)
     bt.logging.debug(f"Scattered rewards: {rewards}")
 
-    # Update moving_averaged_scores with rewards produced by this step.
+    # Update scores with rewards produced by this step.
     # shape: [ metagraph.n ]
     alpha: float = self.config.neuron.moving_average_alpha
     self.scores: torch.FloatTensor = alpha * scattered_rewards + (
         1 - alpha
     ) * self.scores.to(self.device)
-    bt.logging.debug(f"Updated moving avg scores: {self.moving_averaged_scores}")
+    bt.logging.debug(f"Updated moving avg scores: {self.scores}")
 
 
 
@@ -211,13 +209,13 @@ def save_state(self):
     Typically, only validators would need this functionality.
     """
 
-    if issubclass(self, template.base.BaseMinerNeuron):
+    if issubclass(type(self), template.base.BaseMinerNeuron):
         return
 
     bt.logging.info("save_state()")
     try:
         neuron_state_dict = {
-            "neuron_weights": self.moving_averaged_scores.to("cpu").tolist(),
+            "neuron_weights": self.scores.to("cpu").tolist(),
             "neuron_hotkeys": self.hotkeys,
         }
         torch.save(neuron_state_dict, f"{self.config.neuron.full_path}/model.torch")

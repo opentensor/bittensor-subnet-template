@@ -34,7 +34,7 @@ def reward(query: int, response: int) -> float:
 
 
 def get_rewards(
-    self, query: str, responses: List[float],
+    self, query: int, responses: List[float],
 ) -> torch.FloatTensor:
 
     # Get all the reward results.

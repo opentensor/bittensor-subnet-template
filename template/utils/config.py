@@ -25,8 +25,6 @@ from loguru import logger
 def check_config(cls, config: "bt.Config"):
     r"""Checks/validates the config namespace object."""
     bt.logging.check_config(config)
-    bt.wallet.check_config(config)
-    bt.subtensor.check_config(config)
 
     full_path = os.path.expanduser(
         "{}/{}/{}/netuid{}/{}".format(
@@ -37,6 +35,7 @@ def check_config(cls, config: "bt.Config"):
             config.neuron.name,
         )
     )
+    print("full path:", full_path)
     config.neuron.full_path = os.path.expanduser(full_path)
     if not os.path.exists(config.neuron.full_path):
         os.makedirs(config.neuron.full_path, exist_ok=True)
@@ -72,7 +71,7 @@ def add_args(cls, parser):
         "--neuron.device",
         type=str,
         help="Device to run the validator on.",
-        default="cuda" if torch.cuda.is_available() else "cpu",
+        default="cpu",
     )
     parser.add_argument(
         "--neuron.disable_log_rewards",

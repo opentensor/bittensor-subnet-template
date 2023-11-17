@@ -32,7 +32,7 @@ from template.utils.config import check_config, add_args, config
 from template.utils.misc import ttl_get_block
 
 # Sync calls set weights and also resyncs the metagraph.
-from template.utils.sync import sync
+from template.utils.sync import sync, check_registered
 
 
 class BaseValidatorNeuron(ABC):
@@ -58,7 +58,11 @@ class BaseValidatorNeuron(ABC):
 
         base_config = copy.deepcopy(config or BaseValidatorNeuron.config())
         self.config = self.config()
+        self.check_config(self.config)
         self.config.merge(base_config)
+
+        # If a gpu is required, set the device to cuda:N (e.g. cuda:0)
+        self.device = self.config.neuron.device
 
         # Set up logging with the provided configuration and directory.
         # Log the configuration for reference.
@@ -84,20 +88,26 @@ class BaseValidatorNeuron(ABC):
         self.metagraph = self.subtensor.metagraph(self.config.netuid)
         bt.logging.info(f"Metagraph: {self.metagraph}")
 
+        # Save a copy of the hotkeys to local memory.
+        self.hotkeys = copy.deepcopy(self.metagraph.hotkeys)
+
         bt.logging(config=self.config, logging_dir=self.config.full_path)
         bt.logging.info(
-            f"Running validator for subnet: {self.config.netuid} on network: {self.subtensor.chain_endpoint} with config:"
+            f"Running validator for subnet: {self.config.netuid} on network: {self.subtensor.chain_endpoint}"
         )
+
+        # Ensure we're registered on the subnet first.
+        check_registered( self )
 
         self.uid = self.metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
         bt.logging.info(f"Running validator on uid: {self.uid}")
-
-        sync( self )
 
         # Step 6: Set up initial scoring weights for validation
         bt.logging.info("Building validation weights.")
         self.scores = torch.ones_like(self.metagraph.S, dtype=torch.float32)
         bt.logging.info(f"Weights: {self.scores}")
+
+        sync( self )
 
         # Create asyncio event loop to manage async tasks.
         self.loop = asyncio.get_event_loop()
