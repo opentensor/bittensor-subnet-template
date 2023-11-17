@@ -28,14 +28,16 @@ import bittensor as bt
 from abc import ABC, abstractmethod
 from traceback import print_exception
 
-from template.utils.config import check_config, add_args, config
 from template.utils.misc import ttl_get_block
-
-# Sync calls set weights and also resyncs the metagraph.
 from template.utils.sync import sync, check_registered
+from template.utils.config import check_config, add_args, config
 
 
 class BaseValidatorNeuron(ABC):
+    """
+    Base class for Bittensor validators.
+    """
+
     @classmethod
     def check_config(cls, config: "bt.Config"):
         check_config(cls, config)
@@ -61,7 +63,6 @@ class BaseValidatorNeuron(ABC):
         # If a gpu is required, set the device to cuda:N (e.g. cuda:0)
         self.device = self.config.neuron.device
 
-        # Set up logging with the provided configuration and directory.
         # Log the configuration for reference.
         bt.logging.info(self.config)
 
@@ -88,6 +89,7 @@ class BaseValidatorNeuron(ABC):
         # Save a copy of the hotkeys to local memory.
         self.hotkeys = copy.deepcopy(self.metagraph.hotkeys)
 
+        # Set up logging with the provided configuration and directory.
         bt.logging(config=self.config, logging_dir=self.config.full_path)
         bt.logging.info(
             f"Running validator for subnet: {self.config.netuid} on network: {self.subtensor.chain_endpoint}"
@@ -99,11 +101,12 @@ class BaseValidatorNeuron(ABC):
         self.uid = self.metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
         bt.logging.info(f"Running validator on uid: {self.uid}")
 
-        # Step 6: Set up initial scoring weights for validation
+        # Set up initial scoring weights for validation
         bt.logging.info("Building validation weights.")
         self.scores = torch.ones_like(self.metagraph.S, dtype=torch.float32)
         bt.logging.info(f"Weights: {self.scores}")
 
+        # Init sync with the network. Updates the metagraph.
         sync(self)
 
         # Create asyncio event loop to manage async tasks.
@@ -117,6 +120,7 @@ class BaseValidatorNeuron(ABC):
     @abstractmethod
     async def forward(self):
         # This method is responsible for the actual validation logic.
+        # It must be implemented by your validator subclass.
         ...
 
     # Run multiple forwards.
@@ -142,7 +146,7 @@ class BaseValidatorNeuron(ABC):
         # If someone intentionally stops the validator, it'll safely terminate operations.
         except KeyboardInterrupt:
             self.axon.stop()
-            bt.logging.success("Miner killed by keyboard interrupt.")
+            bt.logging.success("Validator killed by keyboard interrupt.")
             exit()
 
         # In case of unforeseen errors, the validator will log the error and continue operations.
@@ -152,15 +156,15 @@ class BaseValidatorNeuron(ABC):
 
     def __enter__(self):
         """
-        Starts the miner's operations in a background thread upon entering the context.
-        This method facilitates the use of the miner in a 'with' statement.
+        Starts the validator's operations in a background thread upon entering the context.
+        This method facilitates the use of the validator in a 'with' statement.
         """
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         """
-        Stops the miner's background operations upon exiting the context.
-        This method facilitates the use of the miner in a 'with' statement.
+        Stops the validator's background operations upon exiting the context.
+        This method facilitates the use of the validator in a 'with' statement.
 
         Args:
             exc_type: The type of the exception that caused the context to be exited.

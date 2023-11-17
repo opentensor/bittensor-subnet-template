@@ -28,6 +28,9 @@ spec_version = template.__spec_version__
 
 
 def check_registered(self):
+    """
+    Checks if the miner or validator hotkey is registered on the network.
+    """
     if self.wallet.hotkey.ss58_address not in self.metagraph.hotkeys:
         bt.logging.error(
             f"\nYour validator: {self.wallet} if not registered to chain connection: {self.subtensor} \nRun btcli register and try again."
@@ -39,7 +42,7 @@ def sync(self):
     """
     Wrapper for synchronizing the state of the network for the given miner or validator.
     """
-
+    # Ensure miner or validator hotkey is still registered on the network.
     check_registered(self)
 
     if should_sync_metagraph(self):
@@ -48,6 +51,7 @@ def sync(self):
     if should_set_weights(self):
         set_weights(self)
 
+    # Always save state.
     save_state(self)
 
 
@@ -127,7 +131,9 @@ def set_weights(self):
 
 
 def should_sync_metagraph(self):
-    # Check if enough epoch blocks have elapsed since the last checkpoint.
+    """
+    Check if enough epoch blocks have elapsed since the last checkpoint to sync.
+    """
     return (
         self.block - self.metagraph.last_update[self.uid]
     ) > self.config.neuron.epoch_length

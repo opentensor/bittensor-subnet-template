@@ -57,6 +57,9 @@ def check_config(cls, config: "bt.Config"):
 
 
 def add_args(cls, parser):
+    """
+    Adds relevant arguments to the parser for operation.
+    """
     # Netuid Arg
     parser.add_argument(
         "--netuid", type=int, help="Prompting network netuid", default=1
@@ -165,6 +168,9 @@ def add_args(cls, parser):
 
 
 def config(cls):
+    """
+    Returns the configuration object specific to this miner or validator after adding relevant arguments.
+    """
     parser = argparse.ArgumentParser()
     bt.wallet.add_args(parser)
     bt.subtensor.add_args(parser)

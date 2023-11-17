@@ -38,7 +38,17 @@ def get_rewards(
     query: int,
     responses: List[float],
 ) -> torch.FloatTensor:
-    # Get all the reward results.
+    """
+    Returns a tensor of rewards for the given query and responses.
+
+    Args:
+    - query (int): The query sent to the miner.
+    - responses (List[float]): A list of responses from the miner.
+
+    Returns:
+    - torch.FloatTensor: A tensor of rewards for the given query and responses.
+    """
+    # Get all the reward results by iteratively calling your reward() function.
     return torch.FloatTensor([reward(query, response) for response in responses]).to(
         self.device
     )

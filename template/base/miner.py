@@ -17,6 +17,10 @@ from template.utils.misc import ttl_get_block
 
 
 class BaseMinerNeuron(ABC):
+    """
+    Base class for Bittensor miners.
+    """
+
     @classmethod
     def check_config(cls, config: "bt.Config"):
         check_config(cls, config)
@@ -35,11 +39,9 @@ class BaseMinerNeuron(ABC):
 
     def __init__(self, config=None):
         base_config = copy.deepcopy(config or BaseMinerNeuron.config())
-        print("\nbaseconfig:", base_config)
         self.config = self.config()
-        print("\nself.config:", self.config)
         self.config.merge(base_config)
-        print("\nmerged config:", self.config)
+        self.check_config(self.config)
 
         # Activating Bittensor's logging with the set configurations.
         bt.logging(config=self.config, logging_dir=self.config.full_path)
@@ -54,11 +56,11 @@ class BaseMinerNeuron(ABC):
                 "You are allowing non-registered entities to send requests to your miner. This is a security risk."
             )
 
-        # Step 4: Build Bittensor validator objects
+        # Build Bittensor miner objects
         # These are core Bittensor classes to interact with the network.
         bt.logging.info("Setting up bittensor objects.")
 
-        # The wallet holds the cryptographic key pairs for the validator.
+        # The wallet holds the cryptographic key pairs for the miner.
         self.wallet = bt.wallet(config=self.config)
         bt.logging.info(f"Wallet: {self.wallet}")
 
@@ -74,18 +76,14 @@ class BaseMinerNeuron(ABC):
         self.metagraph = self.subtensor.metagraph(self.config.netuid)
         bt.logging.info(f"Metagraph: {self.metagraph}")
 
-        bt.logging.info(f"Subtensor: {self.subtensor}")
-        if self.wallet.hotkey.ss58_address not in self.metagraph.hotkeys:
-            bt.logging.error(
-                f"\nYour wallet: {self.wallet} if not registered to chain connection: {self.subtensor} \nRun btcli register and try again. "
-            )
-            exit(1)
-        else:
-            # Each miner gets a unique identity (UID) in the network for differentiation.
-            self.uid = self.metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
-            bt.logging.info(f"Running miner on uid: {self.uid}")
+        # Check if the miner is registered on the Bittensor network before proceeding further.
+        check_registered(self)
 
-        # The axon handles request processing, allowing validators to send this process requests.
+        # Each miner gets a unique identity (UID) in the network for differentiation.
+        self.uid = self.metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
+        bt.logging.info(f"Running miner on uid: {self.uid}")
+
+        # The axon handles request processing, allowing validators to send this miner requests.
         self.axon = bt.axon(wallet=self.wallet, port=self.config.axon.port)
 
         # Attach determiners which functions are called when servicing a request.
