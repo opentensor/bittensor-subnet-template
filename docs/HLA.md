@@ -1,8 +1,6 @@
 # The Blockchain Insights Subnet - High Level Architecture
 
 ## System Context
-
-
 <img src="imgs/hla_system_context.png" alt="System Context Diagram" title="System Context Diagram" height="380" />
 
 ### MINERS

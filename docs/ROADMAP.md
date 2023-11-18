@@ -1,8 +1,7 @@
 
 # Blockchain Insights Development Roadmap
 
-## Introduction
-The Blockchain Insights project aims to revolutionize how we interact with and understand blockchain data. Our roadmap outlines a strategic plan for integrating various blockchain types, researching advanced graph algorithms, and enhancing user experience, all aimed at building a robust and intuitive platform.
+## Project Roadmap
 
 ## Development Streams
 
