@@ -14,10 +14,10 @@
 </div>
 
 ### Table of Contents <!-- omit in toc -->
-- [Overview](#Blockchain Insights Overview)
-- [Development Roadmap](#Project Roadmap)
-- [High Level Architecture](#High Level Architecture)
-- [Instalation & Configuration](docs/INSTALL.md)
+- [Overview](#Blockchain-insights-overview)
+- [Instalation & Configuration](#instalation)
+- [Development Roadmap](#Project-roadmap)
+- [High Level Architecture](#High-level-architecture)
 - [License](#license)
 ---
 
@@ -30,7 +30,6 @@ Blockchain Insights Subnet is an innovative project focusing on transforming raw
     - **Native Tokens and ERC-20 Token Insights:** Provides analysis for native tokens and ERC-20 token transactions.
     - **DeFi and NFT Insights:** Provides analysis for decentralized finance and non-fungible token transactions.
     - **Customizable Queries:** Allows users to execute tailored queries for specific data analysis needs.
-    
   - **API Support:**
     - **Predefined Queries:** Offers a set of standard queries for common analytics tasks.
     - **Cypher Endpoint:** Enables custom query execution for advanced data analysis.
@@ -41,14 +40,17 @@ Blockchain Insights Subnet is an innovative project focusing on transforming raw
   - **Bitcoin-like UTXO Blockchains:** Integration with Bitcoin and other UTXO-based blockchains (etc. Bitcoin, Litecoin, Dogecoin and more).
   - **Ethereum and EVM-Compatible Blockchains:** Compatibility with Ethereum, including Layer 2 solutions (etc. Ethereum, Avax, Polygon, Arbitrum and more).
 ---
+## Instalation
+Instalation files and instructions can be found in the [blockchain data subnet ops](https://github.com/blockchain-insights/blockchain-data-subnet-ops).
 
 ## Project Roadmap
-
 Development of the Blockchain Insights Subnet is divided into four streams, each with its own objectives and milestones. These streams are:
+
 - **[BI]** Blockchain Integrations
 - **[AI]** Intelligence
 - **[QS]** Query Studio
 - **[UE]** User Experience
+
 
 - **Milestone 0**
   - [BI] Launch the subnet with a support for the Bitcoin blockchain.
@@ -67,7 +69,6 @@ Development of the Blockchain Insights Subnet is divided into four streams, each
   - TBA
 
 ## High Level Architecture
-
 Description of the Blockchain Insights Subnet's high-level architecture, including the system context and container diagrams.
 
 ### System Context
