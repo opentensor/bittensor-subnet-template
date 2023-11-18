@@ -41,17 +41,16 @@ Blockchain Insights Subnet is an innovative project focusing on transforming raw
   - **Ethereum and EVM-Compatible Blockchains:** Compatibility with Ethereum, including Layer 2 solutions (etc. Ethereum, Avax, Polygon, Arbitrum and more).
 ---
 ## Instalation
-Instalation files and instructions can be found in the [blockchain data subnet ops](https://github.com/blockchain-insights/blockchain-data-subnet-ops).
+Instalation files and instructions can be found in the [blockchain data subnet ops](https://github.com/blockchain-insights/blockchain-data-subnet-ops) repository.
 
 ## Project Roadmap
 Development of the Blockchain Insights Subnet is divided into four streams, each with its own objectives and milestones. These streams are:
-
 - **[BI]** Blockchain Integrations
 - **[AI]** Intelligence
 - **[QS]** Query Studio
 - **[UE]** User Experience
 
-
+The following sections outline the objectives and milestones for each stream.
 - **Milestone 0**
   - [BI] Launch the subnet with a support for the Bitcoin blockchain.
   - [AI] Develop and integrate the funds flow graph model for Bitcoin data analysis.
