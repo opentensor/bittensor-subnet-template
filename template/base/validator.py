@@ -17,10 +17,7 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-# Bittensor Validator Template:
-# TODO(developer): Rewrite based on protocol defintion.
 
-# Step 1: Import necessary libraries and modules
 import copy
 import torch
 import asyncio
@@ -35,7 +32,7 @@ from template.utils.config import check_config, add_args, config
 
 class BaseValidatorNeuron(ABC):
     """
-    Base class for Bittensor validators.
+    Base class for Bittensor validators. Your validator should inherit from this class.
     """
 
     @classmethod
@@ -54,6 +51,10 @@ class BaseValidatorNeuron(ABC):
     wallet: "bt.wallet"
     metagraph: "bt.metagraph"
 
+    @property
+    def block(self):
+        return ttl_get_block(self)
+
     def __init__(self, config=None):
         base_config = copy.deepcopy(config or BaseValidatorNeuron.config())
         self.config = self.config()
@@ -66,40 +67,39 @@ class BaseValidatorNeuron(ABC):
         # Log the configuration for reference.
         bt.logging.info(self.config)
 
-        # Step 4: Build Bittensor validator objects
         # These are core Bittensor classes to interact with the network.
-        bt.logging.info("Setting up bittensor objects.")
+        bt.logging.info("Setting up bittensor objects:")
 
-        # The wallet holds the cryptographic key pairs for the validator.
+        # Wallet holds the cryptographic key pairs for the validator.
         self.wallet = bt.wallet(config=config)
         bt.logging.info(f"Wallet: {self.wallet}")
 
-        # The subtensor is our connection to the Bittensor blockchain.
+        # Subtensor is our connection to the Bittensor blockchain.
         self.subtensor = bt.subtensor(config=self.config)
         bt.logging.info(f"Subtensor: {self.subtensor}")
 
-        # Dendrite is the RPC client; it lets us send messages to other nodes (axons) in the network.
+        # Dendrite lets us send messages to other nodes (axons) in the network.
         self.dendrite = bt.dendrite(wallet=self.wallet)
         bt.logging.info(f"Dendrite: {self.dendrite}")
 
-        # The metagraph holds the state of the network, letting us know about other validators and miners.
+        # Metagraph holds the state of the network, letting us know about other validators and miners.
         self.metagraph = self.subtensor.metagraph(self.config.netuid)
         bt.logging.info(f"Metagraph: {self.metagraph}")
 
+        # Ensure we're registered on the subnet first.
+        check_registered(self)
+
         # Save a copy of the hotkeys to local memory.
         self.hotkeys = copy.deepcopy(self.metagraph.hotkeys)
+        # Get the uid of the validator running this code.
+        self.uid = self.metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
+        bt.logging.info(f"Running validator on uid: {self.uid}")
 
         # Set up logging with the provided configuration and directory.
         bt.logging(config=self.config, logging_dir=self.config.full_path)
         bt.logging.info(
             f"Running validator for subnet: {self.config.netuid} on network: {self.subtensor.chain_endpoint}"
         )
-
-        # Ensure we're registered on the subnet first.
-        check_registered(self)
-
-        self.uid = self.metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
-        bt.logging.info(f"Running validator on uid: {self.uid}")
 
         # Set up initial scoring weights for validation
         bt.logging.info("Building validation weights.")
@@ -109,13 +109,40 @@ class BaseValidatorNeuron(ABC):
         # Init sync with the network. Updates the metagraph.
         sync(self)
 
+        # Serve axon to enable external connections.
+        if not self.config.neuron.axon_off:
+            self.serve_axon()
+        else:
+            bt.logging.warning("axon off, not serving ip to chain.")
+
         # Create asyncio event loop to manage async tasks.
         self.loop = asyncio.get_event_loop()
+
         self.step = 0
 
-    @property
-    def block(self):
-        return ttl_get_block(self)
+    def serve_axon(self):
+        """Serve axon to enable external connections."""
+
+        bt.logging.info("serving ip to chain...")
+        try:
+            axon = bt.axon(wallet=self.wallet, config=self.config)
+
+            try:
+                self.subtensor.serve_axon(
+                    netuid=self.config.netuid,
+                    axon=axon,
+                )
+            except Exception as e:
+                bt.logging.error(f"Failed to serve Axon with exception: {e}")
+                pass
+
+            del axon
+        except Exception as e:
+            bt.logging.error(
+                f"Failed to create Axon initialize with exception: {e}"
+            )
+            pass
+
 
     @abstractmethod
     async def forward(self):
