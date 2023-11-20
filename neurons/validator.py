@@ -21,11 +21,6 @@
 # TODO(developer): Rewrite based on protocol defintion.
 
 # Step 1: Import necessary libraries and modules
-import os
-import time
-import torch
-import argparse
-import traceback
 import bittensor as bt
 
 from template.validator import forward
@@ -44,12 +39,17 @@ class Neuron(BaseValidatorNeuron):
         # Anything else specific to your use case you can do here
 
     async def forward(self):
-        # You should replace the template forward with your own implementation
-        return await forward(self)
+        r"""
+        Validator forward pass. Consists of:
+        - Generating the query
+        - Querying the miners
+        - Getting the responses
+        - Rewarding the miners
+        - Updating the scores
 
-    async def reward(self):
-        # You should replace the template reward with your own implementation
-        return await reward(self)
+        """
+        # TODO (developer): Rewrite this function based on your protocol definition.
+        return await forward(self)
 
 
 # The main function parses the configuration and runs the validator.
