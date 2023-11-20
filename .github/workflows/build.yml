@@ -33,6 +33,12 @@ jobs:
         run: |
           IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/blockchain_insights_base
           VERSION=${{ github.event.inputs.version || github.event.release.tag_name }}
-          FULL_TAG="$IMAGE_NAME:$VERSION"
-          docker build --tag $FULL_TAG .
-          docker push $FULL_TAG
+          VERSION_TAG="$IMAGE_NAME:$VERSION"
+          LATEST_TAG="$IMAGE_NAME:latest"
+          # Build the Docker image with the version tag
+          docker build --tag $VERSION_TAG .
+          # Tag the same image with the 'latest' tag
+          docker tag $VERSION_TAG $LATEST_TAG
+          # Push both the version tag and the latest tag
+          docker push $VERSION_TAG
+          docker push $LATEST_TAG
