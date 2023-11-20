@@ -35,8 +35,6 @@ from insights.protocol import (
     NETWORK_BITCOIN,
     MinerDiscoveryMetadata,
 )
-from neurons.miners.bitcoin.node import BitcoinNode
-
 
 def get_config():
     parser = argparse.ArgumentParser()
@@ -167,31 +165,32 @@ def main(config):
         )
         return prirority
 
-    def blacklist_execute_query(
-        synapse: protocol.MinerQuery,
-    ) -> typing.Tuple[bool, str]:
+    def blacklist_execute_query(synapse: protocol.MinerQuery) -> typing.Tuple[bool, str]:
+
         if synapse.dendrite.hotkey not in metagraph.hotkeys:
             bt.logging.trace(
                 f"Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}"
             )
             return True, "Unrecognized hotkey"
 
-        if synapse.network == config.blockchain:
+        if synapse.network != config.blockchain:
             bt.logging.trace(
                 f"Blacklisting hot key {synapse.dendrite.hotkey} because of wrong blockchain"
             )
             return True, "Blockchain not supported."
 
-        elif synapse.model_type == config.model_type:
+        elif synapse.model_type != config.model_type:
             bt.logging.trace(
                 f"Blacklisting hot key {synapse.dendrite.hotkey} because of wrong model type"
             )
             return True, "Model type not supported."
+
         elif not is_query_only(synapse.query):
             bt.logging.trace(
                 f"Blacklisting hot key {synapse.dendrite.hotkey} because of illegal cypher keywords"
             )
             return True, "Illegal cypher keywords."
+
         else:
             return False, "All ok"
 
