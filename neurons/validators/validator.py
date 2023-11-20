@@ -32,7 +32,7 @@ from neurons.validators.miner_registry import MinerRegistryManager
 def get_config():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--alpha", default=0.9, type=float, help="The weight moving average scoring."
+        "--alpha", default=0.9, type=float, help="The weight moving average scoring.py."
     )
     parser.add_argument(
         "--blockchair_api_key",
@@ -73,10 +73,12 @@ def main(config):
     subtensor = bt.subtensor(config=config)
     bt.logging.info(f"Subtensor: {subtensor}")
 
+    # dendrite is used to query the chain
     dendrite = bt.dendrite(wallet=wallet)
     bt.logging.info(f"Dendrite: {dendrite}")
 
     metagraph = subtensor.metagraph(config.netuid)
+    metagraph.sync(subtensor = subtensor)
     bt.logging.info(f"Metagraph: {metagraph}")
 
     if wallet.hotkey.ss58_address not in metagraph.hotkeys:
@@ -87,10 +89,33 @@ def main(config):
 
     my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
     bt.logging.info(f"Running validator on uid: {my_subnet_uid}")
-    bt.logging.info("Building validation weights.")
-    scores = torch.ones_like(metagraph.S, dtype=torch.float32)
-    bt.logging.info(f"Weights: {scores}")
 
+    # setting up scores
+    bitcoin_alpha = 0.7
+    dogecoin_alpha = 0.4
+    litecoin_alpha = 0.4
+
+    bt.logging.info("Building validation weights.")
+    # loading scores from file if exists
+    scores_file = "scores.pt"
+    try:
+        scores = torch.load(scores_file)
+        bt.logging.info(f"Loaded scores from save file: {scores}")
+    except:
+        scores = torch.zeros_like(metagraph.S, dtype=torch.float32)
+        bt.logging.info(f"Initialized all scores to 0")
+
+
+    # all nodes with more than 1e3 total stake are set to 0 (sets validators weights to 0)
+    scores = scores * (metagraph.total_stake < 1.024e3)
+
+    # set all nodes without ips set to 0
+    scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids])
+
+
+    #scores = torch.ones_like(metagraph.S, dtype=torch.float32)
+
+    bt.logging.info(f"Initial scores: {scores}")
     bt.logging.info("Starting validator loop.")
     step = 0
 
@@ -114,6 +139,8 @@ def main(config):
             for index, response in enumerate(responses):
                 if response is None:
                     continue
+
+                process_time = response.dendrite.process_time
 
                 output: MinerDiscoveryOutput = response
                 network = output.metadata.network
@@ -183,6 +210,10 @@ def main(config):
 
             step += 1
             metagraph = subtensor.metagraph(config.netuid)
+
+            # storing scores to file
+            torch.save(scores, scores_file)
+            bt.logging.info(f"Saved weights to \"{scores_file}\"")
             time.sleep(bt.__blocktime__)
 
         except BlockchairAPIError as e:
