@@ -216,7 +216,7 @@ def save_state(self):
     """
 
     if issubclass(type(self), template.base.BaseMinerNeuron):
-        #TODO: Add save_state() for miners, for example to save model checkpoints from fine-tuning via backward passes.
+        # TODO: Add save_state() for miners, for example to save model checkpoints from fine-tuning via backward passes.
         return
 
     bt.logging.info("save_state()")

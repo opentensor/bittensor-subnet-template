@@ -138,11 +138,8 @@ class BaseValidatorNeuron(ABC):
 
             del axon
         except Exception as e:
-            bt.logging.error(
-                f"Failed to create Axon initialize with exception: {e}"
-            )
+            bt.logging.error(f"Failed to create Axon initialize with exception: {e}")
             pass
-
 
     @abstractmethod
     async def forward(self):
