@@ -21,6 +21,7 @@ import torch
 import argparse
 import bittensor as bt
 from loguru import logger
+from template.base import BaseValidatorNeuron
 
 
 def check_config(cls, config: "bt.Config"):
@@ -29,7 +30,7 @@ def check_config(cls, config: "bt.Config"):
 
     full_path = os.path.expanduser(
         "{}/{}/{}/netuid{}/{}".format(
-            config.logging.logging_dir,
+            config.logging.logging_dir, # TODO: change from ~/.bittensor/miners to ~/.bittensor/neurons
             config.wallet.name,
             config.wallet.hotkey,
             config.netuid,
@@ -45,7 +46,7 @@ def check_config(cls, config: "bt.Config"):
         # Add custom event logger for the events.
         logger.level("EVENTS", no=38, icon="📝")
         logger.add(
-            config.neuron.full_path + "/" + "completions.log",
+            os.path.join(config.neuron.full_path,"events.log"),
             rotation=config.neuron.events_retention_size,
             serialize=True,
             enqueue=True,
@@ -60,55 +61,25 @@ def add_args(cls, parser):
     """
     Adds relevant arguments to the parser for operation.
     """
-    # Netuid Arg
+    # Netuid Arg: The netuid of the subnet to connect to.
     parser.add_argument(
-        "--netuid", type=int, help="Prompting network netuid", default=1
+        "--netuid", type=int, help="Subnet netuid", default=1
     )
+
+    neuron_type = "validator" if issubclass(cls, BaseValidatorNeuron) else "miner"
 
     parser.add_argument(
         "--neuron.name",
         type=str,
-        help="Trials for this miner go in miner.root / (wallet_cold - wallet_hot) / miner.name. ",
-        default="core_prompting_validator",
+        help="Trials for this neuron go in neuron.root / (wallet_cold - wallet_hot) / neuron.name. ",
+        default=neuron_type,
     )
+
     parser.add_argument(
         "--neuron.device",
         type=str,
-        help="Device to run the validator on.",
+        help="Device to run on.",
         default="cpu",
-    )
-    parser.add_argument(
-        "--neuron.disable_log_rewards",
-        action="store_true",
-        help="Disable all reward logging, suppresses reward functions and their values from being logged to wandb.",
-        default=False,
-    )
-
-    parser.add_argument(
-        "--neuron.num_concurrent_forwards",
-        type=int,
-        help="The number of concurrent forwards running at any time.",
-        default=1,
-    )
-
-    parser.add_argument(
-        "--neuron.sample_size",
-        type=int,
-        help="The number of miners to query in a single step.",
-        default=10,
-    )
-
-    parser.add_argument(
-        "--neuron.disable_set_weights",
-        action="store_true",
-        help="Disables setting weights.",
-        default=False,
-    )
-    parser.add_argument(
-        "--neuron.moving_average_alpha",
-        type=float,
-        help="Moving average alpha parameter, how much to add of the new observation.",
-        default=0.05,
     )
 
     parser.add_argument(
@@ -117,18 +88,21 @@ def add_args(cls, parser):
         help="The default epoch length (how often we set weights).",
         default=0,
     )
+
     parser.add_argument(
         "--neuron.checkpoint_block_length",
         type=int,
         help="Blocks before a checkpoint is saved.",
         default=100,
     )
+
     parser.add_argument(
         "--neuron.events_retention_size",
         type=str,
         help="Events retention size.",
         default="2 GB",
     )
+
     parser.add_argument(
         "--neuron.dont_save_events",
         action="store_true",
@@ -136,35 +110,67 @@ def add_args(cls, parser):
         default=False,
     )
 
-    parser.add_argument(
-        "--neuron.vpermit_tao_limit",
-        type=int,
-        help="The maximum number of TAO allowed to query a validator with a vpermit.",
-        default=4096,
-    )
+    if neuron_type == "validator":
+        parser.add_argument(
+            "--neuron.num_concurrent_forwards",
+            type=int,
+            help="The number of concurrent forwards running at any time.",
+            default=1,
+        )
 
-    parser.add_argument(
-        "--neuron.axon_off",
-        "--axon_off",
-        action="store_true",
-        # Note: the validator needs to serve an Axon with their IP or they may
-        #   be blacklisted by the firewall of serving peers on the network.
-        help="Set this flag to not attempt to serve an Axon.",
-        default=False,
-    )
+        parser.add_argument(
+            "--neuron.sample_size",
+            type=int,
+            help="The number of miners to query in a single step.",
+            default=10,
+        )
 
-    parser.add_argument(
-        "--blacklist.force_validator_permit",
-        action="store_true",
-        help="If set, we will force incoming requests to have a permit.",
-        default=False,
-    )
-    parser.add_argument(
-        "--blacklist.allow_non_registered",
-        action="store_true",
-        help="If set, we will allow non registered entities to query us. (Dangerous!)",
-        default=False,
-    )
+        parser.add_argument(
+            "--neuron.disable_set_weights",
+            action="store_true",
+            help="Disables setting weights.",
+            default=False,
+        )
+
+        parser.add_argument(
+            "--neuron.moving_average_alpha",
+            type=float,
+            help="Moving average alpha parameter, how much to add of the new observation.",
+            default=0.05,
+        )
+
+        parser.add_argument(
+            "--neuron.axon_off",
+            "--axon_off",
+            action="store_true",
+            # Note: the validator needs to serve an Axon with their IP or they may
+            #   be blacklisted by the firewall of serving peers on the network.
+            help="Set this flag to not attempt to serve an Axon.",
+            default=False,
+        )
+
+        parser.add_argument(
+            "--neuron.vpermit_tao_limit",
+            type=int,
+            help="The maximum number of TAO allowed to query a validator with a vpermit.",
+            default=4096,
+        )
+
+    else:
+
+        parser.add_argument(
+            "--blacklist.force_validator_permit",
+            action="store_true",
+            help="If set, we will force incoming requests to have a permit.",
+            default=False,
+        )
+
+        parser.add_argument(
+            "--blacklist.allow_non_registered",
+            action="store_true",
+            help="If set, miners will accept queries from non registered entities. (Dangerous!)",
+            default=False,
+        )
 
 
 def config(cls):
