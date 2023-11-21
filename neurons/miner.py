@@ -20,12 +20,8 @@
 # Bittensor Miner Template:
 # TODO(developer): Rewrite based on protocol and validator defintion.
 
-# Step 1: Import necessary libraries and modules
-import os
 import time
-import argparse
 import typing
-import traceback
 import bittensor as bt
 
 # import this repo
@@ -94,7 +90,7 @@ class Neuron(BaseMinerNeuron):
         Otherwise, allow the request to be processed further.
         """
         # TODO(developer): Define how miners should blacklist requests. This Function
-        if synapse.dendrite.hotkey not in metagraph.hotkeys:
+        if synapse.dendrite.hotkey not in self.metagraph.hotkeys:
             # Ignore requests from unrecognized entities.
             bt.logging.trace(
                 f"Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}"
@@ -127,10 +123,12 @@ class Neuron(BaseMinerNeuron):
         - A higher stake results in a higher priority value.
         """
         # TODO(developer): Define how miners should prioritize requests.
-        caller_uid = metagraph.hotkeys.index(
+        caller_uid = self.metagraph.hotkeys.index(
             synapse.dendrite.hotkey
         )  # Get the caller index.
-        prirority = float(metagraph.S[caller_uid])  # Return the stake as the priority.
+        prirority = float(
+            self.metagraph.S[caller_uid]
+        )  # Return the stake as the priority.
         bt.logging.trace(
             f"Prioritizing {synapse.dendrite.hotkey} with value: ", prirority
         )

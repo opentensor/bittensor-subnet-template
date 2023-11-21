@@ -131,7 +131,7 @@ workflows:
       - check_compatibility:
           python_version: "3.11"
           name: check-compatibility-3.11
-  
+
   pr-requirements:
     jobs:
       - black:

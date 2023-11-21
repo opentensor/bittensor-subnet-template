@@ -22,92 +22,38 @@ import copy
 import torch
 import asyncio
 import bittensor as bt
-from abc import ABC, abstractmethod
+
+from typing import List
 from traceback import print_exception
 
-from template.utils.misc import ttl_get_block
-from template.utils.sync import sync, check_registered
-from template.utils.config import check_config, add_args, config
+import template
+from template.base.neuron import BaseNeuron
+
+# TODO (developer): Replace this with the spec version of your own subnet
+spec_version = template.__spec_version__
 
 
-class BaseValidatorNeuron(ABC):
+class BaseValidatorNeuron(BaseNeuron):
     """
     Base class for Bittensor validators. Your validator should inherit from this class.
     """
 
-    @classmethod
-    def check_config(cls, config: "bt.Config"):
-        check_config(cls, config)
-
-    @classmethod
-    def add_args(cls, parser):
-        add_args(cls, parser)
-
-    @classmethod
-    def config(cls):
-        return config(cls)
-
-    subtensor: "bt.subtensor"
-    wallet: "bt.wallet"
-    metagraph: "bt.metagraph"
-
-    @property
-    def block(self):
-        return ttl_get_block(self)
-
     def __init__(self, config=None):
-        base_config = copy.deepcopy(config or BaseValidatorNeuron.config())
-        self.config = self.config()
-        self.check_config(self.config)
-        self.config.merge(base_config)
+        super().__init__(config=config)
 
-        # If a gpu is required, set the device to cuda:N (e.g. cuda:0)
-        self.device = self.config.neuron.device
-
-        # Log the configuration for reference.
-        bt.logging.info(self.config)
-
-        # These are core Bittensor classes to interact with the network.
-        bt.logging.info("Setting up bittensor objects:")
-
-        # Wallet holds the cryptographic key pairs for the validator.
-        self.wallet = bt.wallet(config=config)
-        bt.logging.info(f"Wallet: {self.wallet}")
-
-        # Subtensor is our connection to the Bittensor blockchain.
-        self.subtensor = bt.subtensor(config=self.config)
-        bt.logging.info(f"Subtensor: {self.subtensor}")
+        # Save a copy of the hotkeys to local memory.
+        self.hotkeys = copy.deepcopy(self.metagraph.hotkeys)
 
         # Dendrite lets us send messages to other nodes (axons) in the network.
         self.dendrite = bt.dendrite(wallet=self.wallet)
         bt.logging.info(f"Dendrite: {self.dendrite}")
 
-        # Metagraph holds the state of the network, letting us know about other validators and miners.
-        self.metagraph = self.subtensor.metagraph(self.config.netuid)
-        bt.logging.info(f"Metagraph: {self.metagraph}")
-
-        # Ensure we're registered on the subnet first.
-        check_registered(self)
-
-        # Save a copy of the hotkeys to local memory.
-        self.hotkeys = copy.deepcopy(self.metagraph.hotkeys)
-        # Get the uid of the validator running this code.
-        self.uid = self.metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
-        bt.logging.info(f"Running validator on uid: {self.uid}")
-
-        # Set up logging with the provided configuration and directory.
-        bt.logging(config=self.config, logging_dir=self.config.full_path)
-        bt.logging.info(
-            f"Running validator for subnet: {self.config.netuid} on network: {self.subtensor.chain_endpoint}"
-        )
-
         # Set up initial scoring weights for validation
         bt.logging.info("Building validation weights.")
         self.scores = torch.zeros_like(self.metagraph.S, dtype=torch.float32)
-        bt.logging.info(f"Weights: {self.scores}")
 
         # Init sync with the network. Updates the metagraph.
-        sync(self)
+        self.sync()
 
         # Serve axon to enable external connections.
         if not self.config.neuron.axon_off:
@@ -117,8 +63,6 @@ class BaseValidatorNeuron(ABC):
 
         # Create asyncio event loop to manage async tasks.
         self.loop = asyncio.get_event_loop()
-
-        self.step = 0
 
     def serve_axon(self):
         """Serve axon to enable external connections."""
@@ -141,14 +85,7 @@ class BaseValidatorNeuron(ABC):
             bt.logging.error(f"Failed to create Axon initialize with exception: {e}")
             pass
 
-    @abstractmethod
-    async def forward(self):
-        # This method is responsible for the actual validation logic.
-        # It must be implemented by your validator subclass.
-        ...
-
-    # Run multiple forwards.
-    async def run_forward(self):
+    async def concurrent_forward(self):
         coroutines = [
             self.forward() for _ in range(self.config.neuron.num_concurrent_forwards)
         ]
@@ -161,9 +98,10 @@ class BaseValidatorNeuron(ABC):
             while True:
                 bt.logging.info(f"step({self.step}) block({self.block})")
 
-                self.loop.run_until_complete(self.run_forward())
+                # Run multiple forwards concurrently.
+                self.loop.run_until_complete(self.concurrent_forward())
 
-                sync(self)
+                self.sync()
 
                 self.step += 1
 
@@ -199,3 +137,105 @@ class BaseValidatorNeuron(ABC):
                        None if the context was exited without an exception.
         """
         return self
+
+    def set_weights(self):
+        """
+        Sets the validator weights to the metagraph hotkeys based on the scores it has received from the miners. The weights determine the trust and incentive level the validator assigns to miner nodes on the network.
+        """
+
+        # Check if self.scores contains any NaN values and log a warning if it does.
+        if torch.isnan(self.scores).any():
+            bt.logging.warning(
+                f"Scores contain NaN values. This may be due to a lack of responses from miners, or a bug in your reward functions."
+            )
+
+        # Calculate the average reward for each uid across non-zero values.
+        # Replace any NaN values with 0.
+        raw_weights = torch.nn.functional.normalize(self.scores, p=1, dim=0)
+        bt.logging.trace("raw_weights", raw_weights)
+        bt.logging.trace("top10 values", raw_weights.sort()[0])
+        bt.logging.trace("top10 uids", raw_weights.sort()[1])
+
+        # Process the raw weights to final_weights via subtensor limitations.
+        (
+            processed_weight_uids,
+            processed_weights,
+        ) = bt.utils.weight_utils.process_weights_for_netuid(
+            uids=self.metagraph.uids.to("cpu"),
+            weights=raw_weights.to("cpu"),
+            netuid=self.config.netuid,
+            subtensor=self.subtensor,
+            metagraph=self.metagraph,
+        )
+        bt.logging.trace("processed_weights", processed_weights)
+        bt.logging.trace("processed_weight_uids", processed_weight_uids)
+
+        # Set the weights on chain via our subtensor connection.
+        self.subtensor.set_weights(
+            wallet=self.wallet,
+            netuid=self.config.netuid,
+            uids=processed_weight_uids,
+            weights=processed_weights,
+            wait_for_finalization=False,
+            version_key=spec_version,
+        )
+
+        bt.logging.info(f"Set weights: {processed_weights}")
+
+    def resync_metagraph(self):
+        """Resyncs the metagraph and updates the hotkeys and moving averages based on the new metagraph."""
+        bt.logging.info("resync_metagraph()")
+
+        # Copies state of metagraph before syncing.
+        previous_metagraph = copy.deepcopy(self.metagraph)
+
+        # Sync the metagraph.
+        self.metagraph.sync(subtensor=self.subtensor)
+
+        # Check if the metagraph axon info has changed.
+        if previous_metagraph.axons == self.metagraph.axons:
+            return
+
+        bt.logging.info(
+            "Metagraph updated, re-syncing hotkeys, dendrite pool and moving averages"
+        )
+        # Zero out all hotkeys that have been replaced.
+        for uid, hotkey in enumerate(self.hotkeys):
+            if hotkey != self.metagraph.hotkeys[uid]:
+                self.scores[uid] = 0  # hotkey has been replaced
+
+        # Check to see if the metagraph has changed size.
+        # If so, we need to add new hotkeys and moving averages.
+        if len(self.hotkeys) < len(self.metagraph.hotkeys):
+            # Update the size of the moving average scores.
+            new_moving_average = torch.zeros((self.metagraph.n)).to(self.device)
+            min_len = min(len(self.hotkeys), len(self.scores))
+            new_moving_average[:min_len] = self.scores[:min_len]
+            self.scores = new_moving_average
+
+        # Update the hotkeys.
+        self.hotkeys = copy.deepcopy(self.metagraph.hotkeys)
+
+    def update_scores(self, rewards: torch.FloatTensor, uids: List[int]):
+        """Performs exponential moving average on the scores based on the rewards received from the miners."""
+
+        # Check if rewards contains NaN values.
+        if torch.isnan(rewards).any():
+            bt.logging.warning(f"NaN values detected in rewards: {rewards}")
+            # Replace any NaN values in rewards with 0.
+            rewards = torch.nan_to_num(rewards, 0)
+
+        # Compute forward pass rewards, assumes uids are mutually exclusive.
+        # shape: [ metagraph.n ]
+        scattered_rewards: torch.FloatTensor = self.scores.scatter(
+            0, torch.tensor(uids).to(self.device), rewards
+        ).to(self.device)
+        bt.logging.debug(f"Scattered rewards: {rewards}")
+
+        # Update scores with rewards produced by this step.
+        # shape: [ metagraph.n ]
+        alpha: float = self.config.neuron.moving_average_alpha
+        self.scores: torch.FloatTensor = alpha * scattered_rewards + (
+            1 - alpha
+        ) * self.scores.to(self.device)
+        bt.logging.debug(f"Updated moving avg scores: {self.scores}")

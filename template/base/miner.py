@@ -1,50 +1,44 @@
-import copy
+# The MIT License (MIT)
+# Copyright © 2023 Yuma Rao
+# TODO(developer): Set your name
+# Copyright © 2023 <your name>
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+# documentation files (the “Software”), to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+# and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in all copies or substantial portions of
+# the Software.
+
+# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+# THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+# DEALINGS IN THE SOFTWARE.
+
 import time
-import typing
+import torch
 import asyncio
 import threading
 import traceback
 
 import bittensor as bt
 
-from abc import ABC, abstractmethod
-
-# Sync calls set weights and also resyncs the metagraph.
 import template
-from template.utils.sync import sync
-from template.utils.config import check_config, add_args, config
-from template.utils.misc import ttl_get_block
+from template.base.neuron import BaseNeuron
+
+# TODO (developer): Replace this with the spec version of your own subnet
+spec_version = template.__spec_version__
 
 
-class BaseMinerNeuron(ABC):
+class BaseMinerNeuron(BaseNeuron):
     """
     Base class for Bittensor miners.
     """
 
-    @classmethod
-    def check_config(cls, config: "bt.Config"):
-        check_config(cls, config)
-
-    @classmethod
-    def add_args(cls, parser):
-        add_args(cls, parser)
-
-    @classmethod
-    def config(cls):
-        return config(cls)
-
-    subtensor: "bt.subtensor"
-    wallet: "bt.wallet"
-    metagraph: "bt.metagraph"
-
     def __init__(self, config=None):
-        base_config = copy.deepcopy(config or BaseMinerNeuron.config())
-        self.config = self.config()
-        self.config.merge(base_config)
-        self.check_config(self.config)
-
-        # Activating Bittensor's logging with the set configurations.
-        bt.logging(config=self.config, logging_dir=self.config.full_path)
+        super().__init__(config=config)
 
         # Warn if allowing incoming requests from anyone.
         if not self.config.blacklist.force_validator_permit:
@@ -55,33 +49,6 @@ class BaseMinerNeuron(ABC):
             bt.logging.warning(
                 "You are allowing non-registered entities to send requests to your miner. This is a security risk."
             )
-
-        # Build Bittensor miner objects
-        # These are core Bittensor classes to interact with the network.
-        bt.logging.info("Setting up bittensor objects.")
-
-        # The wallet holds the cryptographic key pairs for the miner.
-        self.wallet = bt.wallet(config=self.config)
-        bt.logging.info(f"Wallet: {self.wallet}")
-
-        # The subtensor is our connection to the Bittensor blockchain.
-        self.subtensor = bt.subtensor(config=self.config)
-        bt.logging.info(f"Subtensor: {self.subtensor}")
-
-        bt.logging.info(
-            f"Running miner for subnet: {self.config.netuid} on network: {self.subtensor.chain_endpoint} with config:"
-        )
-
-        # The metagraph holds the state of the network, letting us know about other validators and miners.
-        self.metagraph = self.subtensor.metagraph(self.config.netuid)
-        bt.logging.info(f"Metagraph: {self.metagraph}")
-
-        # Check if the miner is registered on the Bittensor network before proceeding further.
-        check_registered(self)
-
-        # Each miner gets a unique identity (UID) in the network for differentiation.
-        self.uid = self.metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
-        bt.logging.info(f"Running miner on uid: {self.uid}")
 
         # The axon handles request processing, allowing validators to send this miner requests.
         self.axon = bt.axon(wallet=self.wallet, port=self.config.axon.port)
@@ -100,27 +67,6 @@ class BaseMinerNeuron(ABC):
         self.is_running: bool = False
         self.thread: threading.Thread = None
         self.lock = asyncio.Lock()
-        self.request_timestamps: Dict = {}
-
-    @abstractmethod
-    async def forward(
-        self, synapse: template.protocol.Dummy
-    ) -> template.protocol.Dummy:
-        ...
-
-    @abstractmethod
-    async def blacklist(
-        self, synapse: template.protocol.Dummy
-    ) -> typing.Tuple[bool, str]:
-        ...
-
-    @abstractmethod
-    async def priority(self, synapse: template.protocol.Dummy) -> float:
-        ...
-
-    @property
-    def block(self):
-        return ttl_get_block(self)
 
     def run(self):
         """
@@ -147,21 +93,11 @@ class BaseMinerNeuron(ABC):
             KeyboardInterrupt: If the miner is stopped by a manual interruption.
             Exception: For unforeseen errors during the miner's operation, which are logged for diagnosis.
         """
-        # --- Check for registration.
-        if not self.subtensor.is_hotkey_registered(
-            netuid=self.config.netuid,
-            hotkey_ss58=self.wallet.hotkey.ss58_address,
-        ):
-            bt.logging.error(
-                f"Wallet: {self.wallet} is not registered on netuid {self.config.netuid}"
-                f"Please register the hotkey using `btcli subnets register` before trying again"
-            )
-            exit()
 
         # Serve passes the axon information to the network + netuid we are hosting on.
         # This will auto-update if the axon port of external ip have changed.
         bt.logging.info(
-            f"Serving axon {self.axon} on network: {self.config.subtensor.chain_endpoint} with netuid: {self.config.netuid}"
+            f"Serving miner axon {self.axon} on network: {self.config.subtensor.chain_endpoint} with netuid: {self.config.netuid}"
         )
         self.axon.serve(netuid=self.config.netuid, subtensor=self.subtensor)
 
@@ -170,32 +106,22 @@ class BaseMinerNeuron(ABC):
         self.axon.start()
 
         # --- Run until should_exit = True.
-        self.last_epoch_block = ttl_get_block(self)
-        bt.logging.info(f"Miner starting at block: {self.last_epoch_block}")
+        bt.logging.info(f"Miner starting at block: {self.block}")
 
         # This loop maintains the miner's operations until intentionally stopped.
         bt.logging.info(f"Starting miner main loop")
-        step = 0
         try:
             while not self.should_exit:
-                start_epoch = time.time()
-
-                # --- Wait until next epoch.
-                current_block = ttl_get_block(self)
                 while (
-                    current_block - self.last_epoch_block
-                    < self.config.neuron.checkpoint_block_length
+                    self.block - self.metagraph.last_update[self.uid]
+                    < self.config.neuron.epoch_length
                 ):
                     # --- Wait for next bloc.
                     time.sleep(1)
-                    current_block = ttl_get_block(self)
 
                     # --- Check if we should exit.
                     if self.should_exit:
                         break
-
-                # --- Update the metagraph with the latest network state.
-                self.last_epoch_block = ttl_get_block(self)
 
                 # --- Sync metagraph and potentially set weights.
                 sync(self)
@@ -257,3 +183,40 @@ class BaseMinerNeuron(ABC):
                        None if the context was exited without an exception.
         """
         self.stop_run_thread()
+
+    def set_weights(self):
+        """
+        Self-assigns a weight of 1 to the current miner (identified by its UID) and
+        a weight of 0 to all other peers in the network. The weights determine the trust level the miner assigns to other nodes on the network.
+
+        Raises:
+            Exception: If there's an error while setting weights, the exception is logged for diagnosis.
+        """
+        try:
+            # --- query the chain for the most current number of peers on the network
+            chain_weights = torch.zeros(
+                self.subtensor.subnetwork_n(netuid=self.metagraph.netuid)
+            )
+            chain_weights[self.uid] = 1
+
+            # --- Set weights.
+            self.subtensor.set_weights(
+                wallet=self.wallet,
+                netuid=self.metagraph.netuid,
+                uids=torch.arange(0, len(chain_weights)),
+                weights=chain_weights.to("cpu"),
+                wait_for_inclusion=False,
+                version_key=spec_version,
+            )
+
+        except Exception as e:
+            bt.logging.error(f"Failed to set weights on chain with exception: { e }")
+
+        bt.logging.info(f"Set weights: {chain_weights}")
+
+    def resync_metagraph(self):
+        """Resyncs the metagraph and updates the hotkeys and moving averages based on the new metagraph."""
+        bt.logging.info("resync_metagraph()")
+
+        # Sync the metagraph.
+        self.metagraph.sync(subtensor=self.subtensor)
