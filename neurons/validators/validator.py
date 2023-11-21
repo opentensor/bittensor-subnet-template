@@ -135,6 +135,9 @@ def main(config):
                 time.sleep(bt.__blocktime__)
                 continue
 
+            # iterate and fill database, so later i can get the proportion of miners for scoring function, or do it in memory...
+
+
             bt.logging.info(f"Received responses: {responses}")
             for index, response in enumerate(responses):
                 if response is None:

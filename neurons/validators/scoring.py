@@ -7,6 +7,7 @@ BLOCKCHAIN_IMPORTANCE = {
 }
 
 # Example miner distribution (should be dynamically calculated)
+# get from database
 MINER_DISTRIBUTION = {
     'bitcoin': 1,  # Number of miners
     'ltc': 100,
@@ -40,11 +41,11 @@ def calculate_score(response, last_block_height, network):
     if response.dendrite:
         process_time = response.dendrite.process_time
         # Process time scoring logic
-        if process_time <= 10:
+        if process_time <= 0.1: # 0.1 second
             process_time_score = 1  # Optimal response time
         else:
             # Decrease score based on how much process time exceeds 10ms
-            time_penalty = (process_time - 10) / (10000 - 10)
+            time_penalty = (process_time - 0.1) / (100 - 0.1)
             process_time_score = 1 - time_penalty
 
     if response:
