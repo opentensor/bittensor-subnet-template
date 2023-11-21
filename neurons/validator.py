@@ -19,12 +19,7 @@
 
 # Bittensor Validator Template:
 # TODO(developer): Rewrite based on protocol defintion.
-
-# Step 1: Import necessary libraries and modules
-import bittensor as bt
-
 from template.validator import forward
-from template.validator import reward
 
 # import this repo
 from template.base import BaseValidatorNeuron
