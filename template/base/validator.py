@@ -26,11 +26,7 @@ import bittensor as bt
 from typing import List
 from traceback import print_exception
 
-import template
 from template.base.neuron import BaseNeuron
-
-# TODO (developer): Replace this with the spec version of your own subnet
-spec_version = template.__spec_version__
 
 
 class BaseValidatorNeuron(BaseNeuron):
@@ -92,8 +88,35 @@ class BaseValidatorNeuron(BaseNeuron):
         await asyncio.gather(*coroutines)
 
     def run(self):
-        bt.logging.info("Starting validator loop.")
+        """
+        Initiates and manages the main loop for the miner on the Bittensor network. The main loop handles graceful shutdown on keyboard interrupts and logs unforeseen errors.
 
+        This function performs the following primary tasks:
+        1. Check for registration on the Bittensor network.
+        2. Continuously forwards queries to the miners on the network, rewarding their responses and updating the scores accordingly.
+        3. Periodically resynchronizes with the chain; updating the metagraph with the latest network state and setting weights.
+
+        The essence of the validator's operations is in the forward function, which is called every step. The forward function is responsible for querying the network and scoring the responses.
+
+        Note:
+            - The function leverages the global configurations set during the initialization of the miner.
+            - The miner's axon serves as its interface to the Bittensor network, handling incoming and outgoing requests.
+
+        Raises:
+            KeyboardInterrupt: If the miner is stopped by a manual interruption.
+            Exception: For unforeseen errors during the miner's operation, which are logged for diagnosis.
+        """
+
+        # Check that validator is registered on the network.
+        self.sync()
+
+        bt.logging.info(
+            f"Running validator {self.axon} on network: {self.config.subtensor.chain_endpoint} with netuid: {self.config.netuid}"
+        )
+
+        bt.logging.info(f"Validator starting at block: {self.block}")
+
+        # This loop maintains the validator's operations until intentionally stopped.
         try:
             while True:
                 bt.logging.info(f"step({self.step}) block({self.block})")
@@ -101,6 +124,7 @@ class BaseValidatorNeuron(BaseNeuron):
                 # Run multiple forwards concurrently.
                 self.loop.run_until_complete(self.concurrent_forward())
 
+                # Sync metagraph and potentially set weights.
                 self.sync()
 
                 self.step += 1
@@ -177,7 +201,7 @@ class BaseValidatorNeuron(BaseNeuron):
             uids=processed_weight_uids,
             weights=processed_weights,
             wait_for_finalization=False,
-            version_key=spec_version,
+            version_key=self.spec_version,
         )
 
         bt.logging.info(f"Set weights: {processed_weights}")
