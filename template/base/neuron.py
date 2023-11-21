@@ -62,9 +62,6 @@ class BaseNeuron(ABC):
 
         # Set up logging with the provided configuration and directory.
         bt.logging(config=self.config, logging_dir=self.config.full_path)
-        bt.logging.info(
-            f"Running validator for subnet: {self.config.netuid} on network: {self.subtensor.chain_endpoint}"
-        )
 
         # If a gpu is required, set the device to cuda:N (e.g. cuda:0)
         self.device = self.config.neuron.device
@@ -95,23 +92,13 @@ class BaseNeuron(ABC):
         self.uid = self.metagraph.hotkeys.index(
             self.wallet.hotkey.ss58_address
         )
-        bt.logging.info(f"Running miner on uid: {self.uid}")
-
+        bt.logging.info(
+            f"Running neuron on subnet: {self.config.netuid} with uid {self.uid} using network: {self.subtensor.chain_endpoint}"
+        )
         self.step = 0
 
     @abstractmethod
     async def forward(self, synapse: bt.Synapse) -> bt.Synapse:
-        ...
-
-    # async def backward(self, synapse: bt.Synapse) -> bt.Synapse:
-    #     pass
-
-    @abstractmethod
-    async def blacklist(self, synapse: bt.Synapse) -> typing.Tuple[bool, str]:
-        ...
-
-    @abstractmethod
-    async def priority(self, synapse: bt.Synapse) -> float:
         ...
 
     @abstractmethod
@@ -141,8 +128,8 @@ class BaseNeuron(ABC):
             hotkey_ss58=self.wallet.hotkey.ss58_address,
         ):
             bt.logging.error(
-                f"Wallet: {self.wallet} is not registered on netuid {self.config.netuid}"
-                f"Please register the hotkey using `btcli subnets register` before trying again"
+                f"Wallet: {self.wallet} is not registered on netuid {self.config.netuid}."
+                f" Please register the hotkey using `btcli subnets register` before trying again"
             )
             exit()
 

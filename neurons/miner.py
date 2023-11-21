@@ -25,7 +25,7 @@ import bittensor as bt
 import template
 
 # import base miner class which takes care of most of the boilerplate
-from template.base import BaseMinerNeuron
+from template.base.miner import BaseMinerNeuron
 
 
 class Neuron(BaseMinerNeuron):
