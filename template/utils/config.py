@@ -30,7 +30,7 @@ def check_config(cls, config: "bt.Config"):
 
     full_path = os.path.expanduser(
         "{}/{}/{}/netuid{}/{}".format(
-            config.logging.logging_dir, # TODO: change from ~/.bittensor/miners to ~/.bittensor/neurons
+            config.logging.logging_dir,  # TODO: change from ~/.bittensor/miners to ~/.bittensor/neurons
             config.wallet.name,
             config.wallet.hotkey,
             config.netuid,
@@ -46,7 +46,7 @@ def check_config(cls, config: "bt.Config"):
         # Add custom event logger for the events.
         logger.level("EVENTS", no=38, icon="📝")
         logger.add(
-            os.path.join(config.neuron.full_path,"events.log"),
+            os.path.join(config.neuron.full_path, "events.log"),
             rotation=config.neuron.events_retention_size,
             serialize=True,
             enqueue=True,
@@ -62,9 +62,7 @@ def add_args(cls, parser):
     Adds relevant arguments to the parser for operation.
     """
     # Netuid Arg: The netuid of the subnet to connect to.
-    parser.add_argument(
-        "--netuid", type=int, help="Subnet netuid", default=1
-    )
+    parser.add_argument("--netuid", type=int, help="Subnet netuid", default=1)
 
     neuron_type = "validator" if issubclass(cls, BaseValidatorNeuron) else "miner"
 
@@ -157,7 +155,6 @@ def add_args(cls, parser):
         )
 
     else:
-
         parser.add_argument(
             "--blacklist.force_validator_permit",
             action="store_true",
