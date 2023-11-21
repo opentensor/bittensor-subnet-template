@@ -38,9 +38,8 @@ class Neuron(BaseMinerNeuron):
     """
 
     def __init__(self, config=None):
-
         super(Neuron, self).__init__(config=config)
-        
+
         # TODO(developer): Replace this with the spec version of your own subnet
         self.spec_version = template.__spec_version__
 
@@ -98,7 +97,7 @@ class Neuron(BaseMinerNeuron):
 
         Otherwise, allow the request to be processed further.
         """
-        # TODO(developer): Define how miners should blacklist requests. 
+        # TODO(developer): Define how miners should blacklist requests.
         if synapse.dendrite.hotkey not in self.metagraph.hotkeys:
             # Ignore requests from unrecognized entities.
             bt.logging.trace(

@@ -64,7 +64,9 @@ def add_args(cls, parser):
     # Netuid Arg: The netuid of the subnet to connect to.
     parser.add_argument("--netuid", type=int, help="Subnet netuid", default=1)
 
-    neuron_type = "validator" if issubclass(cls, BaseValidatorNeuron) else "miner"
+    neuron_type = (
+        "validator" if issubclass(cls, BaseValidatorNeuron) else "miner"
+    )
 
     parser.add_argument(
         "--neuron.name",

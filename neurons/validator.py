@@ -36,7 +36,6 @@ class Neuron(BaseValidatorNeuron):
     """
 
     def __init__(self, config=None):
-
         super(Neuron, self).__init__(config=config)
 
         # TODO(developer): Replace this with the spec version of your own subnet
