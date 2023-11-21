@@ -93,7 +93,9 @@ class BaseNeuron(ABC):
         self.check_registered()
 
         # Each miner gets a unique identity (UID) in the network for differentiation.
-        self.uid = self.metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
+        self.uid = self.metagraph.hotkeys.index(
+            self.wallet.hotkey.ss58_address
+        )
         bt.logging.info(f"Running miner on uid: {self.uid}")
 
         self.step = 0

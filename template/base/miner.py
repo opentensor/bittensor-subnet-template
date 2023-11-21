@@ -102,7 +102,9 @@ class BaseMinerNeuron(BaseNeuron):
         self.axon.serve(netuid=self.config.netuid, subtensor=self.subtensor)
 
         # Start  starts the miner's axon, making it active on the network.
-        bt.logging.info(f"Starting axon server on port: {self.config.axon.port}")
+        bt.logging.info(
+            f"Starting axon server on port: {self.config.axon.port}"
+        )
         self.axon.start()
 
         # --- Run until should_exit = True.
@@ -210,7 +212,9 @@ class BaseMinerNeuron(BaseNeuron):
             )
 
         except Exception as e:
-            bt.logging.error(f"Failed to set weights on chain with exception: { e }")
+            bt.logging.error(
+                f"Failed to set weights on chain with exception: { e }"
+            )
 
         bt.logging.info(f"Set weights: {chain_weights}")
 
