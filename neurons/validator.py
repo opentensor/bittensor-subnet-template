@@ -19,9 +19,11 @@
 
 # Bittensor Validator Template:
 # TODO(developer): Rewrite based on protocol defintion.
-from template.validator import forward
 
 # import this repo
+from typing import Tuple
+from template.protocol import Dummy
+from template.validator import forward
 from template.base import BaseValidatorNeuron
 
 
@@ -46,6 +48,11 @@ class Neuron(BaseValidatorNeuron):
         # TODO (developer): Rewrite this function based on your protocol definition.
         return await forward(self)
 
+    async def blacklist(self, synapse: Dummy) -> Tuple[str, bool]:
+        return ("Reason to blacklist or not.", False)
+
+    async def priority(self, synapse: Dummy) -> float:
+        return 0.0
 
 # The main function parses the configuration and runs the validator.
 if __name__ == "__main__":

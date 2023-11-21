@@ -52,7 +52,8 @@ class TemplateValidatorNeuronTestCase(unittest.TestCase):
 
     def test_run_single_step(self):
         # TODO: Test a single step
-        pass
+        with self.neuron():
+            pass
 
     def test_sync_error_if_not_registered(self):
         # TODO: Test that the validator throws an error if it is not registered on metagraph

@@ -1,7 +1,6 @@
 import torch
 import bittensor as bt
 from template.utils.uids import get_random_uids
-from template.utils.sync import update_scores
 
 from template.protocol import Dummy
 from template.validator.reward import get_rewards
@@ -42,4 +41,4 @@ async def forward(self):
     bt.logging.info(f"Scored responses: {rewards}")
     # Update the scores based on the rewards.
     # You are encouraged to define your own update_scores function.
-    update_scores(self, rewards, miner_uids)
+    self.update_scores(rewards, miner_uids)

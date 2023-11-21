@@ -21,7 +21,7 @@ import torch
 import argparse
 import bittensor as bt
 from loguru import logger
-from template.base import BaseValidatorNeuron
+# from template.base import BaseValidatorNeuron
 
 
 def check_config(cls, config: "bt.Config"):
@@ -64,7 +64,7 @@ def add_args(cls, parser):
     # Netuid Arg: The netuid of the subnet to connect to.
     parser.add_argument("--netuid", type=int, help="Subnet netuid", default=1)
 
-    neuron_type = "validator" if issubclass(cls, BaseValidatorNeuron) else "miner"
+    neuron_type = cls.__name__.lower()
 
     parser.add_argument(
         "--neuron.name",
