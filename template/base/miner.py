@@ -1,7 +1,5 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
@@ -25,11 +23,7 @@ import traceback
 
 import bittensor as bt
 
-import template
 from template.base.neuron import BaseNeuron
-
-# TODO (developer): Replace this with the spec version of your own subnet
-spec_version = template.__spec_version__
 
 
 class BaseMinerNeuron(BaseNeuron):
@@ -70,15 +64,12 @@ class BaseMinerNeuron(BaseNeuron):
 
     def run(self):
         """
-        Initiates and manages the main loop for the miner on the Bittensor network.
+        Initiates and manages the main loop for the miner on the Bittensor network. The main loop handles graceful shutdown on keyboard interrupts and logs unforeseen errors.
 
         This function performs the following primary tasks:
         1. Check for registration on the Bittensor network.
-        2. Attaches the miner's forward, blacklist, and priority functions to its axon.
-        3. Starts the miner's axon, making it active on the network.
-        4. Regularly updates the metagraph with the latest network state.
-        5. Optionally sets weights on the network, defining how much trust to assign to other nodes.
-        6. Handles graceful shutdown on keyboard interrupts and logs unforeseen errors.
+        2. Starts the miner's axon, making it active on the network.
+        3. Periodically resynchronizes with the chain; updating the metagraph with the latest network state and setting weights.
 
         The miner continues its operations until `should_exit` is set to True or an external interruption occurs.
         During each epoch of its operation, the miner waits for new blocks on the Bittensor network, updates its
@@ -94,6 +85,9 @@ class BaseMinerNeuron(BaseNeuron):
             Exception: For unforeseen errors during the miner's operation, which are logged for diagnosis.
         """
 
+        # Check that miner is registered on the network.
+        self.sync()
+
         # Serve passes the axon information to the network + netuid we are hosting on.
         # This will auto-update if the axon port of external ip have changed.
         bt.logging.info(
@@ -102,29 +96,26 @@ class BaseMinerNeuron(BaseNeuron):
         self.axon.serve(netuid=self.config.netuid, subtensor=self.subtensor)
 
         # Start  starts the miner's axon, making it active on the network.
-        bt.logging.info(f"Starting axon server on port: {self.config.axon.port}")
         self.axon.start()
 
-        # --- Run until should_exit = True.
         bt.logging.info(f"Miner starting at block: {self.block}")
 
         # This loop maintains the miner's operations until intentionally stopped.
-        bt.logging.info(f"Starting miner main loop")
         try:
             while not self.should_exit:
                 while (
                     self.block - self.metagraph.last_update[self.uid]
                     < self.config.neuron.epoch_length
                 ):
-                    # --- Wait for next bloc.
+                    # Wait before checking again.
                     time.sleep(1)
 
-                    # --- Check if we should exit.
+                    # Check if we should exit.
                     if self.should_exit:
                         break
 
-                # --- Sync metagraph and potentially set weights.
-                sync(self)
+                # Sync metagraph and potentially set weights.
+                self.sync()
                 self.step += 1
 
         # If someone intentionally stops the miner, it'll safely terminate operations.
@@ -206,11 +197,13 @@ class BaseMinerNeuron(BaseNeuron):
                 uids=torch.arange(0, len(chain_weights)),
                 weights=chain_weights.to("cpu"),
                 wait_for_inclusion=False,
-                version_key=spec_version,
+                version_key=self.spec_version,
             )
 
         except Exception as e:
-            bt.logging.error(f"Failed to set weights on chain with exception: { e }")
+            bt.logging.error(
+                f"Failed to set weights on chain with exception: { e }"
+            )
 
         bt.logging.info(f"Set weights: {chain_weights}")
 

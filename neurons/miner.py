@@ -17,25 +17,30 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-# Bittensor Miner Template:
-# TODO(developer): Rewrite based on protocol and validator defintion.
-
 import time
 import typing
 import bittensor as bt
 
-# import this repo
+# Bittensor Miner Template:
 import template
-from template.base import BaseMinerNeuron
+
+# import base miner class which takes care of most of the boilerplate
+from template.base.miner import BaseMinerNeuron
 
 
-class Neuron(BaseMinerNeuron):
+class Miner(BaseMinerNeuron):
+    """
+    Your miner neuron class. You should use this class to define your miner's behavior. In particular, you should replace the forward function with your own logic. You may also want to override the blacklist and priority functions according to your needs.
+
+    This class inherits from the BaseMinerNeuron class, which in turn inherits from BaseNeuron. The BaseNeuron class takes care of routine tasks such as setting up wallet, subtensor, metagraph, logging directory, parsing config, etc. You can override any of the methods in BaseNeuron if you need to customize the behavior.
+
+    This class provides reasonable default behavior for a miner such as blacklisting unrecognized hotkeys, prioritizing requests based on stake, and forwarding requests to the forward function. If you need to define custom
+    """
+
     def __init__(self, config=None):
-        # Takes care of routine tasks such as setting up wallet, subtensor, metagraph, logging directory, parsing config, etc.
-        # init parent class
-        super(Neuron, self).__init__(config=config)
+        super(Miner, self).__init__(config=config)
 
-        # Anything else specific to your use case you can do here
+        # TODO(developer): Anything specific to your use case you can do here
 
     async def forward(
         self, synapse: template.protocol.Dummy
@@ -53,7 +58,7 @@ class Neuron(BaseMinerNeuron):
         The 'forward' function is a placeholder and should be overridden with logic that is appropriate for
         the miner's intended operation. This method demonstrates a basic transformation of input data.
         """
-        # TODO (developer): Replace with actual implementation logic.
+        # TODO(developer): Replace with actual implementation logic.
         synapse.dummy_output = synapse.dummy_input * 2
         return synapse
 
@@ -89,7 +94,7 @@ class Neuron(BaseMinerNeuron):
 
         Otherwise, allow the request to be processed further.
         """
-        # TODO(developer): Define how miners should blacklist requests. This Function
+        # TODO(developer): Define how miners should blacklist requests.
         if synapse.dendrite.hotkey not in self.metagraph.hotkeys:
             # Ignore requests from unrecognized entities.
             bt.logging.trace(
@@ -137,7 +142,7 @@ class Neuron(BaseMinerNeuron):
 
 # This is the main function, which runs the miner.
 if __name__ == "__main__":
-    with Neuron() as miner:
+    with Miner() as miner:
         while True:
-            bt.logging.info("running...", time.time())
+            bt.logging.info("Miner running...", time.time())
             time.sleep(5)

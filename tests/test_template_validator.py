@@ -25,7 +25,6 @@ from neurons.validator import Neuron as Validator
 from neurons.miner import Neuron as Miner
 
 from template.protocol import Dummy
-from template.utils.sync import update_scores
 from template.validator.forward import forward
 from template.utils.uids import get_random_uids
 from template.validator.reward import get_rewards
@@ -47,7 +46,7 @@ class TemplateValidatorNeuronTestCase(unittest.TestCase):
         config.wallet._mock = True
         config.metagraph._mock = True
         config.subtensor._mock = True
-        self.neuron = ValidatorNeuron(config)
+        self.neuron = Validator(config)
         self.miner_uids = get_random_uids(self, k=10)
 
     def test_run_single_step(self):
@@ -67,7 +66,9 @@ class TemplateValidatorNeuronTestCase(unittest.TestCase):
 
         responses = self.neuron.dendrite.query(
             # Send the query to miners in the network.
-            axons=[self.neuron.metagraph.axons[uid] for uid in self.miner_uids],
+            axons=[
+                self.neuron.metagraph.axons[uid] for uid in self.miner_uids
+            ],
             # Construct a dummy query.
             synapse=Dummy(dummy_input=self.neuron.step),
             # All responses have the deserialize function called on them before returning.
@@ -110,4 +111,4 @@ class TemplateValidatorNeuronTestCase(unittest.TestCase):
         rewards[0] = float("nan")
 
         with self.assertLogs(bt.logging, level="WARNING") as cm:
-            update_scores(self.neuron, rewards, self.miner_uids)
+            self.neuron.update_scores(rewards, self.miner_uids)

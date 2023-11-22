@@ -28,6 +28,7 @@ This template contains all the required installation instructions, scripts, and 
 - Building Bittensor subnets.
 - Creating custom incentive mechanisms and running these mechanisms on the subnets. 
 
+In order to simplify the building of subnets, this template abstracts away the complexity of the underlying blockchain and other boilerplate code. While the default behavior of the template is sufficient for a simple subnet, you should customize the template in order to meet your specific requirements.
 ---
 
 ## Introduction
@@ -81,7 +82,18 @@ As described in [Quickstarter template](#quickstarter-template) section above, w
 - `template/protocol.py`: Contains the definition of the wire-protocol used by miners and validators.
 - `neurons/miner.py`: Script that defines the miner's behavior, i.e., how the miner responds to requests from validators.
 - `neurons/validator.py`: This script defines the validator's behavior, i.e., how the validator requests information from the miners and determines the scores.
+- `template/forward.py`: Contains the definition of the validator's forward pass.
+- `template/reward.py`: Contains the definition of how validators reward miner responses.
 
+In addition to the above files, you should also update the following files:
+- `README.md`: This file contains the documentation for your project. Update this file to reflect your project's documentation.
+- `CONTRIBUTING.md`: This file contains the instructions for contributing to your project. Update this file to reflect your project's contribution guidelines.
+- `template/__init__.py`: This file contains the version of your project.
+- `setup.py`: This file contains the metadata about your project. Update this file to reflect your project's metadata.
+- `docs/`: This directory contains the documentation for your project. Update this directory to reflect your project's documentation.
+
+__Note__
+The `template` directory should also be renamed to your project name.
 ---
 
 ## License
