@@ -26,9 +26,12 @@ def index_blocks(_bitcoin_node, _graph_creator, _graph_indexer):
     skip_blocks = 6
 
     while not shutdown_flag:
-        default_start_height = _graph_indexer.get_latest_block_number() + 1
-        start_height = int(os.getenv('START_BLOCK_HEIGHT', default_start_height))
+
+        start_height = _graph_indexer.get_latest_block_number() + 1
         current_block_height = _bitcoin_node.get_current_block_height() - 6
+
+        if start_height == 1:
+            start_height = int(os.getenv('START_BLOCK_HEIGHT', start_height))
 
         if current_block_height - skip_blocks < 0:
             logger.info("Waiting min 6 for blocks to be mined.")
@@ -41,7 +44,6 @@ def index_blocks(_bitcoin_node, _graph_creator, _graph_indexer):
             )
             time.sleep(10)
             continue
-
 
         block_height = start_height
         while block_height <= current_block_height - skip_blocks:
@@ -80,6 +82,12 @@ def index_blocks(_bitcoin_node, _graph_creator, _graph_indexer):
 
             if success:
                 block_height += 1
+
+                # indexer flooding prevention
+                if num_transactions < 10:
+                    logger.info("Slowing down indexing to prevent flooding.")
+                    time.sleep(1)
+
             else:
                 logger.error(f"Failed to index block {block_height}.")
                 time.sleep(30)
