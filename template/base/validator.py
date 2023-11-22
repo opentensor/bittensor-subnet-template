@@ -315,7 +315,6 @@ class BaseValidatorNeuron(BaseNeuron):
         torch.save(
             {
                 "step": self.step,
-                "block": self.block,
                 "scores": self.scores,
                 "hotkeys": self.hotkeys,
             },
@@ -329,6 +328,5 @@ class BaseValidatorNeuron(BaseNeuron):
         # Load the state of the validator from file.
         state = torch.load(self.config.neuron.full_path + "/state.pt")
         self.step = state["step"]
-        self.block = state["block"]
         self.scores = state["scores"]
         self.hotkeys = state["hotkeys"]
