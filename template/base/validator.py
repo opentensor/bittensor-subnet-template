@@ -181,7 +181,7 @@ class BaseValidatorNeuron(BaseNeuron):
 
     def __enter__(self):
         self.run_in_background_thread()
-        return self        
+        return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         """
