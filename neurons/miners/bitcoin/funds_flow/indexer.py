@@ -1,3 +1,4 @@
+import os
 import signal
 import time
 import traceback
@@ -25,7 +26,8 @@ def index_blocks(_bitcoin_node, _graph_creator, _graph_indexer):
     skip_blocks = 6
 
     while not shutdown_flag:
-        start_height = _graph_indexer.get_latest_block_number() + 1
+        default_start_height = _graph_indexer.get_latest_block_number() + 1
+        start_height = int(os.getenv('START_BLOCK_HEIGHT', default_start_height))
         current_block_height = _bitcoin_node.get_current_block_height() - 6
 
         if current_block_height - skip_blocks < 0:
