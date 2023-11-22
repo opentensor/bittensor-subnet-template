@@ -144,10 +144,15 @@ class BaseNeuron(ABC):
         ) > self.config.neuron.epoch_length
 
     def should_set_weights(self) -> bool:
+        # Don't set weights on initialization.
+        if self.step == 0:
+            return False
+
         # Check if enough epoch blocks have elapsed since the last epoch.
         if self.config.neuron.disable_set_weights:
             return False
 
+        # Define appropriate logic for when set weights.
         return (
             self.block - self.metagraph.last_update[self.uid]
         ) > self.config.neuron.epoch_length
@@ -155,4 +160,9 @@ class BaseNeuron(ABC):
     def save_state(self):
         bt.logging.warning(
             "save_state() not implemented for this neuron. You can implement this function to save model checkpoints or other useful data."
+        )
+
+    def load_state(self):
+        bt.logging.warning(
+            "load_state() not implemented for this neuron. You can implement this function to load model checkpoints or other useful data."
         )
