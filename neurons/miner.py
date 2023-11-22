@@ -28,7 +28,7 @@ import template
 from template.base.miner import BaseMinerNeuron
 
 
-class Neuron(BaseMinerNeuron):
+class Miner(BaseMinerNeuron):
     """
     Your miner neuron class. You should use this class to define your miner's behavior. In particular, you should replace the forward function with your own logic. You may also want to override the blacklist and priority functions according to your needs.
 
@@ -38,7 +38,7 @@ class Neuron(BaseMinerNeuron):
     """
 
     def __init__(self, config=None):
-        super(Neuron, self).__init__(config=config)
+        super(Miner, self).__init__(config=config)
 
         # TODO(developer): Replace this with the spec version of your own subnet
         self.spec_version = template.__spec_version__
@@ -145,7 +145,7 @@ class Neuron(BaseMinerNeuron):
 
 # This is the main function, which runs the miner.
 if __name__ == "__main__":
-    with Neuron() as miner:
+    with Miner() as miner:
         while True:
             bt.logging.info("Miner running...", time.time())
             time.sleep(5)

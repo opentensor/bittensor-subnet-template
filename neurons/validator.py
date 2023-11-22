@@ -26,7 +26,7 @@ from template.validator import forward
 from template.base.validator import BaseValidatorNeuron
 
 
-class Neuron(BaseValidatorNeuron):
+class Validator(BaseValidatorNeuron):
     """
     Your validator neuron class. You should use this class to define your validator's behavior. In particular, you should replace the forward function with your own logic.
 
@@ -36,7 +36,7 @@ class Neuron(BaseValidatorNeuron):
     """
 
     def __init__(self, config=None):
-        super(Neuron, self).__init__(config=config)
+        super(Validator, self).__init__(config=config)
 
         # TODO(developer): Replace this with the spec version of your own subnet
         self.spec_version = template.__spec_version__
@@ -58,5 +58,5 @@ class Neuron(BaseValidatorNeuron):
 
 # The main function parses the configuration and runs the validator.
 if __name__ == "__main__":
-    with Neuron() as validator:
+    with Validator() as validator:
         validator.run()
