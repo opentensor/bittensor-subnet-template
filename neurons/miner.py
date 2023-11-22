@@ -40,10 +40,7 @@ class Miner(BaseMinerNeuron):
     def __init__(self, config=None):
         super(Miner, self).__init__(config=config)
 
-        # TODO(developer): Replace this with the spec version of your own subnet
-        self.spec_version = template.__spec_version__
-
-        # TODO(developer): Anything else specific to your use case you can do here
+        # TODO(developer): Anything specific to your use case you can do here
 
     async def forward(
         self, synapse: template.protocol.Dummy

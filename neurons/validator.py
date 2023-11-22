@@ -18,6 +18,11 @@
 # DEALINGS IN THE SOFTWARE.
 
 
+import time
+
+# Bittensor
+import bittensor as bt
+
 # Bittensor Validator Template:
 import template
 from template.validator import forward
@@ -38,10 +43,7 @@ class Validator(BaseValidatorNeuron):
     def __init__(self, config=None):
         super(Validator, self).__init__(config=config)
 
-        # TODO(developer): Replace this with the spec version of your own subnet
-        self.spec_version = template.__spec_version__
-
-        # TODO(developer): Anything else specific to your use case you can do here
+        # TODO(developer): Anything specific to your use case you can do here
 
     async def forward(self):
         """
@@ -59,4 +61,6 @@ class Validator(BaseValidatorNeuron):
 # The main function parses the configuration and runs the validator.
 if __name__ == "__main__":
     with Validator() as validator:
-        validator.run()
+        while True:
+            bt.logging.info("Validator running...", time.time())
+            time.sleep(5)
