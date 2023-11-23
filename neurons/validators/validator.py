@@ -54,6 +54,17 @@ def get_config():
         default="BITCOIN",
         help="Blockchair api key.",
     )
+    parser.add_argument(
+        "--blockchair_api_key",
+        default="",
+        help="Blockchair api key.",
+    )
+
+    parser.add_argument(
+        "--bitcoin_start_block_height",
+        default="1",
+        help="Bitcoin start block height.",
+    )
 
     parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
 

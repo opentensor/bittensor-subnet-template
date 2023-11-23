@@ -24,4 +24,8 @@ if [ -z "$SUBTENSOR_CHAIN_ENDPOINT" ]; then
     export SUBTENSOR_CHAIN_ENDPOINT="ws://127.0.0.1:9946"
 fi
 
-python3 neurons/validators/validator.py --blockchair_api_key "$BLOCKCHAIN_API_KEY" --wallet.name "$WALLET_NAME" --hotkey "$WALLET_HOTKEY" --netuid "$NETUID" --subtensor.network finney --subtensor.chain_endpoint "$SUBTENSOR_CHAIN_ENDPOINT"
+if [ -z "$BITCOIN_START_BLOCK_HEIGHT" ]; then
+    export BITCOIN_START_BLOCK_HEIGHT=1
+fi
+
+python3 neurons/validators/validator.py --blockchair_api_key "$BLOCKCHAIN_API_KEY" --bitcoin_start_block_height "$BITCOIN_START_BLOCK_HEIGHT" --wallet.name "$WALLET_NAME" --hotkey "$WALLET_HOTKEY" --netuid "$NETUID" --subtensor.network finney --subtensor.chain_endpoint "$SUBTENSOR_CHAIN_ENDPOINT"

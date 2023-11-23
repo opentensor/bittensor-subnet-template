@@ -7,12 +7,12 @@ class BlockchainAPIFacade:
     def __init__(self, api_key: str = None):
         self.blochair_api = BlockchairAPI(api_key)
 
-    def get_verification_data(self) -> dict[str, dict]:
+    def get_verification_data(self, start_height = 1) -> dict[str, dict]:
         network = 'bitcoin'
         last_block_height = self.blochair_api.get_latest_block_height(
             network=network
         )
-        random_block_height = randint(1, last_block_height-100)
+        random_block_height = randint(start_height, last_block_height-100)
         result = { network: {
             'funds_flow': random_block_height,
             'last_block_height': last_block_height
