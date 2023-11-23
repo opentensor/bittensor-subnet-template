@@ -2,7 +2,7 @@ from random import randint
 from neurons.external_api.blockchair_api import BlockchairAPI
 
 
-class BlockVerification:
+class BlockchainAPIFacade:
 
     def __init__(self, api_key: str = None):
         self.blochair_api = BlockchairAPI(api_key)
@@ -13,7 +13,7 @@ class BlockVerification:
             network=network
         )
         random_block_height = randint(1, last_block_height-100)
-        result: dict[dict] = { network: {
+        result = { network: {
             'funds_flow': random_block_height,
             'last_block_height': last_block_height
         }}
