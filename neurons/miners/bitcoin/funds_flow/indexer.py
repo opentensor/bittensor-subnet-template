@@ -108,7 +108,7 @@ if __name__ == "__main__":
     graph_creator = GraphCreator()
     graph_indexer = GraphIndexer()
 
-    start_height_str = os.getenv('START_BLOCK_HEIGHT', None)
+    start_height_str = os.getenv('BITCOIN_START_BLOCK_HEIGHT', None)
 
     retry_delay = 60
     # purpose of this indexer is to index FROM to infinity only, indexing previous block range will be covered by another indexer - indexer_patch.py which will be slowly adding previous blocks to the graph
