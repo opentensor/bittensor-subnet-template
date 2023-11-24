@@ -20,6 +20,15 @@ class MinerRegistry(Base):
     def __repr__(self):
         return f"<MinerRegistry(ip_address='{self.ip_address}', hot_key='{self.hot_key}, network='{self.network}', model_type='{self.model_type}', updated='{self.updated}')>"
 
+class MinerBlockRegistry(Base):
+    __table__ = "miner_block_registry"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    hot_key = Column(String, primary_key=True)
+    network = Column(String)
+    model_type = Column(String)
+    block_height = Column(Integer)
+    updated = Column(DateTime, default=datetime.datetime.utcnow)
 
 class MinerRegistryManager:
     def __init__(self, db_path="sqlite:///miner_registry.db"):
@@ -80,5 +89,54 @@ class MinerRegistryManager:
         except Exception as e:
             session.rollback()
             print(f"Error occurred: {e}")
+        finally:
+            session.close()
+
+    def store_miner_block_height(self, hot_key, network, model_type, block_height):
+        session = sessionmaker(bind=self.engine)()
+        try:
+            new_miner = MinerBlockRegistry(
+                hot_key=hot_key,
+                network=network,
+                model_type=model_type,
+                block_height=block_height
+            )
+            session.add(new_miner)
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            print(f"Error occurred: {e}")
+        finally:
+            session.close()
+
+    def calculate_cheat_factor(self, hot_key, network, model_type):
+        session = sessionmaker(bind=self.engine)()
+        try:
+            entries = (
+                session.query(MinerBlockRegistry.block_height)
+                .filter(
+                    MinerBlockRegistry.hot_key == hot_key,
+                    MinerBlockRegistry.network == network,
+                    MinerBlockRegistry.model_type == model_type
+                )
+                .order_by(MinerBlockRegistry.updated.desc())
+                .limit(1024)
+                .all()
+            )
+
+            if len(entries) < 1024:
+                return 0  # Default to 0 if not enough data
+
+            block_heights = [entry[0] for entry in entries]
+            counts = Counter(block_heights)
+            repeats = sum(count - 1 for count in counts.values() if count > 1)
+            total = len(block_heights)
+            cheat_factor = repeats / total
+
+            return cheat_factor
+
+        except Exception as e:
+            print(f"Error occurred: {e}")
+            return 0
         finally:
             session.close()

@@ -20,6 +20,16 @@ class BlockchainAPIFacade:
 
         return result
 
+    def are_all_samples_valid(self, network, data_samples):
+        for data_sample in data_samples:
+            data_sample_is_valid = self.blochair_api.verify_data_sample(
+                network=network,
+                input_result=data_sample,
+            )
+            if not data_sample_is_valid:
+                return False
+        return True
+
     def verify_data_sample(self, network, block_height, input_result):
         data_sample_is_valid = self.blochair_api.verify_data_sample(
             network=network,

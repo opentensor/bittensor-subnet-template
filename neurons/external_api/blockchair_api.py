@@ -19,7 +19,8 @@ class BlockchairAPI:
         else:
             raise Exception(f"Failed to fetch data: HTTP {response.status_code}")
 
-    def verify_data_sample(self, network, block_height, input_result):
+    def verify_data_sample(self, network, input_result):
+        block_height = int(input_result['block_height'])
         url = f"https://api.blockchair.com/{network.lower()}/dashboards/block/{block_height}?key={self.api_key}"
         response = requests.get(url)
         if response.status_code == 200:
@@ -39,6 +40,17 @@ class BlockchairAPI:
                 return False
         else:
             raise BlockchairAPIError(f"Failed to fetch data: HTTP {response.status_code}", response.status_code)
+
+    def are_all_samples_valid(self, network, data_samples):
+        for data_sample in data_samples:
+            data_sample_is_valid = self.verify_data_sample(
+                network=network,
+                input_result=data_sample,
+            )
+            if not data_sample_is_valid:
+                return False
+        return True
+
 
 class BlockchairAPIError(Exception):
     def __init__(self, message, code):

@@ -24,12 +24,13 @@ class MinerDiscoveryMetadata(BaseModel):
 
 class MinerDiscoveryOutput(BaseModel):
     metadata: MinerDiscoveryMetadata = None
-    data_sample: Dict = None
+    data_samples: List[Dict] = None
     block_height: int = None
+    start_block_height: int = None
 
 
 class MinerDiscovery(bt.Synapse):
-    random_block_height: dict[str, dict] = None
+    # random_block_height: dict[str, dict] = None
     output: MinerDiscoveryOutput = None
 
     def deserialize(self) -> MinerDiscoveryOutput:

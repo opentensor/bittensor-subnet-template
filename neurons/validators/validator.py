@@ -175,10 +175,30 @@ def main(config):
             filtered_axons = [metagraph.axons[i] for i in dendrites_to_query]
             bt.logging.info(f"filtered_axons: {filtered_axons}")
 
-            verification_data = blockchain_api_facade.get_verification_data()
+            #TODO: miner on discovery sends min and max block heights
+            #TODO: validator verifies that block heights are in range
+            #TODO: miner on discovery sends 10 data samples form that range
+
+            # Scoring and verification algorithm
+            #TODO: validator verifies that data samples are valid
+            #TODO: validator stores in db returned block heights, above 256 blocks checks for frauds
+
+            # Scoring algorithm
+            #TODO: validator score algorithm should take diff between max and min, higher diff is better
+            #TODO: validator score algorithm should take diff between max and last block height, lower diff is better
+
+            # work breakdown:
+            # start with miner discovery, send min, max indexed block heights, and random 10 data samples
+            # then move to validator, get_verification_data take network, block height then compare it with data sample, ALL valid OR Fraud!
+            # then modifi scoring (min, max, diff between max and last block height, diff between max and min)
+
+            # finetune scoring and weights, test localhost miner on mainnet, fix docs ask for emmissions 3% is game changes, as its 300K per month!
+
+            #verification_data = blockchain_api_facade.get_verification_data(int(config.bitcoin_start_block_height))
+
             responses = dendrite.query(
                 filtered_axons,
-                protocol.MinerDiscovery(random_block_height=verification_data),
+                protocol.MinerDiscovery(),
                 deserialize=True,
                 timeout = 60,
             )
@@ -190,37 +210,42 @@ def main(config):
 
             # Get miner distribution
             miner_distribution = build_miner_distribution(responses)
+            blockchain_block_height = blockchain_api_facade.get_latest_block_height(network=network)
 
             for index, response in enumerate(responses):
+
                 # Vars
                 output: MinerDiscoveryOutput = response
                 network = output.metadata.network
                 model_type = output.metadata.model_type
-                data_sample_block_height = output.block_height
-                data_sample = output.data_sample
+
+                start_block_height = output.start_block_height
+                last_block_height = output.block_height
+
+                data_samples = output.data_samples
                 axon_ip = metagraph.axons[index].ip
                 hot_key = metagraph.axons[index].hotkey
                 response_time = response.dendrite.process_time
 
-                last_block_height = verification_data[network]['last_block_height']
-
-                data_sample_is_valid = blockchain_api_facade.verify_data_sample(
-                    network=network,
-                    block_height=data_sample_block_height,
-                    input_result=data_sample,
-                )
+                data_samples_are_valid = blockchain_api_facade.are_all_samples_valid(network, data_samples)
+                cheat_factor = MinerRegistryManager().calculate_cheat_factor(hot_key=hot_key, network=network, model_type=model_type)
 
                 score = calculate_score(
-                    response,
-                    verification_data[network]['last_block_height'],
                     network,
+                    response,
+                    start_block_height,
+                    last_block_height,
+                    blockchain_block_height,
                     miner_distribution,
-                    data_sample_is_valid,
+                    data_samples_are_valid,
+                    cheat_factor
                 )
 
+                bt.logging.info(f"Start block height: {start_block_height}")
                 bt.logging.info(f"Last block height: {last_block_height}")
-                bt.logging.info(f"Data sample block height: {data_sample_block_height}")
-                bt.logging.info(f"Data sample is valid: {data_sample_is_valid}")
+                bt.logging.info(f"Data samples are valid: {data_samples_are_valid}")
+                bt.logging.info(f"Cheat factor: {cheat_factor}")
+                bt.logging.info(f"Score: {score}")
 
                 scores[index] = (
                     config.alpha * scores[index] + (1 - config.alpha) * score
@@ -233,6 +258,12 @@ def main(config):
                     model_type=model_type,
                     response_time=response_time,
                     score=scores[index],
+                )
+
+                MinerRegistryManager().store_miner_block_height(
+                    hot_key=hot_key,
+                    network=network,
+                    block_height=last_block_height,
                 )
 
             ## While loop end
