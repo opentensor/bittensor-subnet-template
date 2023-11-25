@@ -77,10 +77,10 @@ def index_blocks(_bitcoin_node, _graph_creator, _graph_indexer, start_height):
                 block_height += 1
 
                 # indexer flooding prevention
-                threshold = int(os.getenv('BLOCK_PROCESSING_TRANSACTION_THRESHOLD', 10))
-                if num_transactions < threshold:
-                    delay = float(os.getenv('BLOCK_PROCESSING_DELAY', .1))
-                    logger.info(f"Block tx count below {threshold}, slowing down indexing by {delay} seconds to prevent flooding.")
+                threshold = int(os.getenv('BLOCK_PROCESSING_TRANSACTION_THRESHOLD', 500))
+                if num_transactions > threshold:
+                    delay = float(os.getenv('BLOCK_PROCESSING_DELAY', 1))
+                    logger.info(f"Block tx count above {threshold}, slowing down indexing by {delay} seconds to prevent flooding.")
                     time.sleep(delay)
 
             else:
