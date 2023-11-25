@@ -40,16 +40,35 @@ class GraphSearch:
         with self.driver.session() as session:
             data_set = session.run(
                 """
-                MATCH (t:Transaction { block_height: $block_height })-[r:SENT]->(a:Address)
-                RETURN t.block_height AS block_height, SUM(r.value_satoshi) AS total_value_satoshi, COUNT(t) AS transaction_count
+                MATCH (t:Transaction { block_height: $block_height })
+                RETURN t.block_height AS block_height, COUNT(t) AS transaction_count
                 """,
                 block_height=block_height
             )
             result = data_set.single()
             return {
                 "block_height": result["block_height"],
-                "total_value_satoshi": result["total_value_satoshi"],
-                "transaction_count": result["transaction_count"],
+                "transaction_count": result["transaction_count"]
+            }
+
+    def get_block_range(self):
+        with self.driver.session() as session:
+            result = session.run(
+                """
+                MATCH (t:Transaction)
+                RETURN MAX(t.block_height) AS latest_block_height, MIN(t.block_height) AS start_block_height
+                """
+            )
+            single_result = result.single()
+            if single_result[0] is None:
+                return {
+                    'latest_block_height': 0,
+                    'start_block_height':0
+                }
+
+            return {
+                'latest_block_height': single_result[0],
+                'start_block_height': single_result[1]
             }
 
     def get_latest_block_number(self):

@@ -50,33 +50,26 @@ PROCESS_TIME_WEIGHT = 0.2
 BLOCKCHAIN_IMPORTANCE_WEIGHT = 0.1
 
 # Scoring function
-def calculate_score(network, response, start_block_height, last_block_height, blockchain_block_height, miner_distribution, data_samples_are_valid, cheat_factor):
-    if data_samples_are_valid:
+def calculate_score(network, process_time, start_block_height, last_block_height, blockchain_block_height, miner_distribution, data_samples_are_valid, cheat_factor):
+    if not data_samples_are_valid:
         return 0
 
     blockchain_size_weight = get_dynamic_weight(network, miner_distribution)
 
-    # Initialize score components
-    process_time_score = block_height_score = 0
-
     # Process time scoring logic
-    if response.dendrite:
-        process_time = response.dendrite.process_time
-        if process_time <= 0.1: # 0.1 second
-            process_time_score = 1  # Optimal response time
-        else:
-            # Decrease score based on how much process time exceeds 10ms
-            time_penalty = (process_time - 0.1) / (100 - 0.1)
-            process_time_score = 1 - time_penalty
+    if process_time <= 0.1: # 0.1 second
+        process_time_score = 1  # Optimal response time
+    else:
+        # Decrease score based on how much process time exceeds 10ms
+        time_penalty = (process_time - 0.1) / (100 - 0.1)
+        process_time_score = 1 - time_penalty
 
-    # Block height scoring logic
-    if response:
-        # Block height difference scoring logic
-        block_height_diff = abs(last_block_height - blockchain_block_height)
-        if block_height_diff > 100:
-            block_height_score = -2 * block_height_diff  # Heavy penalty if too far behind
-        else:
-            block_height_score = -block_height_diff / 100
+    # Block height difference scoring logic
+    block_height_diff = abs(last_block_height - blockchain_block_height)
+    if block_height_diff > 100:
+        block_height_score = -2 * block_height_diff  # Heavy penalty if too far behind
+    else:
+        block_height_score = -block_height_diff / 100
 
     # Block height recency scoring logic
     block_height_diff_recency = blockchain_block_height - start_block_height

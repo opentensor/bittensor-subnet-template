@@ -52,27 +52,6 @@ class GraphIndexer:
 
             return single_result[0]
 
-    def get_block_range(self):
-        with self.driver.session() as session:
-            result = session.run(
-                """
-                MATCH (t:Transaction)
-                RETURN MAX(t.block_height) AS latest_block_height, MIN(t.block_height) AS start_block_height
-                """
-            )
-            single_result = result.single()
-            if single_result[0] is None:
-                return {
-                    'latest_block_height': 0,
-                    'start_block_height':0
-                }
-
-            return {
-                'latest_block_height': single_result[0],
-                'start_block_height': single_result[1]
-            }
-
-
     from decimal import getcontext
 
     # Set the precision high enough to handle satoshis for Bitcoin transactions

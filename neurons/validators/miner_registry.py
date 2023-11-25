@@ -21,10 +21,10 @@ class MinerRegistry(Base):
         return f"<MinerRegistry(ip_address='{self.ip_address}', hot_key='{self.hot_key}, network='{self.network}', model_type='{self.model_type}', updated='{self.updated}')>"
 
 class MinerBlockRegistry(Base):
-    __table__ = "miner_block_registry"
+    __tablename__ = "miner_block_registry"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    hot_key = Column(String, primary_key=True)
+    hot_key = Column(String)
     network = Column(String)
     model_type = Column(String)
     block_height = Column(Integer)
@@ -109,6 +109,19 @@ class MinerRegistryManager:
         finally:
             session.close()
 
+    def clear_block_heights(self, hot_key, network, model_type):
+        session = sessionmaker(bind=self.engine)()
+        try:
+            session.query(MinerBlockRegistry).filter_by(
+                hot_key=hot_key, network=network, model_type=model_type
+            ).delete()
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            print(f"Error occurred: {e}")
+        finally:
+            session.close()
+
     def calculate_cheat_factor(self, hot_key, network, model_type):
         session = sessionmaker(bind=self.engine)()
         try:
@@ -120,19 +133,19 @@ class MinerRegistryManager:
                     MinerBlockRegistry.model_type == model_type
                 )
                 .order_by(MinerBlockRegistry.updated.desc())
-                .limit(1024)
+                .limit(256)
                 .all()
             )
 
-            if len(entries) < 1024:
-                return 0  # Default to 0 if not enough data
+            if len(entries) < 256:
+                return 0
 
             block_heights = [entry[0] for entry in entries]
+            from collections import Counter
             counts = Counter(block_heights)
             repeats = sum(count - 1 for count in counts.values() if count > 1)
             total = len(block_heights)
             cheat_factor = repeats / total
-
             return cheat_factor
 
         except Exception as e:

@@ -26,8 +26,7 @@ import traceback
 import bittensor as bt
 from insights import protocol
 from insights.protocol import MinerDiscoveryOutput
-from neurons.external_api.blockchair_api import BlockchairAPIError
-from neurons.validators.discovery import BlockchainAPIFacade
+from neurons.external_api.blockchair_api import BlockchairAPIError, BlockchairAPI
 from neurons.validators.miner_registry import MinerRegistryManager
 from neurons.validators.scoring import build_miner_distribution, calculate_score
 
@@ -52,11 +51,6 @@ def get_config():
     parser.add_argument(
         "--blockchair_api_key",
         default="BITCOIN",
-        help="Blockchair api key.",
-    )
-    parser.add_argument(
-        "--blockchair_api_key",
-        default="",
         help="Blockchair api key.",
     )
 
@@ -123,7 +117,7 @@ def main(config):
     total_dendrites_per_query = 25
     minimum_dendrites_per_query = 3
 
-    blockchain_api_facade = BlockchainAPIFacade(config.blockchair_api_key)
+    blockchain_api = BlockchairAPI(config.blockchair_api_key)
 
     while True:
         # Per 10 blocks, sync the subtensor state with the blockchain.
@@ -169,33 +163,10 @@ def main(config):
         dendrites_to_query = sample( filtered_uids, min( dendrites_per_query, len(filtered_uids) ) )
         bt.logging.info(f"dendrites_to_query:{dendrites_to_query}")
 
-
         try:
             # Filter metagraph.axons by indices saved in dendrites_to_query list
             filtered_axons = [metagraph.axons[i] for i in dendrites_to_query]
             bt.logging.info(f"filtered_axons: {filtered_axons}")
-
-            #TODO: miner on discovery sends min and max block heights
-            #TODO: validator verifies that block heights are in range
-            #TODO: miner on discovery sends 10 data samples form that range
-
-            # Scoring and verification algorithm
-            #TODO: validator verifies that data samples are valid
-            #TODO: validator stores in db returned block heights, above 256 blocks checks for frauds
-
-            # Scoring algorithm
-            #TODO: validator score algorithm should take diff between max and min, higher diff is better
-            #TODO: validator score algorithm should take diff between max and last block height, lower diff is better
-
-            # work breakdown:
-            # start with miner discovery, send min, max indexed block heights, and random 10 data samples
-            # then move to validator, get_verification_data take network, block height then compare it with data sample, ALL valid OR Fraud!
-            # then modifi scoring (min, max, diff between max and last block height, diff between max and min)
-
-            # finetune scoring and weights, test localhost miner on mainnet, fix docs ask for emmissions 3% is game changes, as its 300K per month!
-
-            #verification_data = blockchain_api_facade.get_verification_data(int(config.bitcoin_start_block_height))
-
             responses = dendrite.query(
                 filtered_axons,
                 protocol.MinerDiscovery(),
@@ -210,7 +181,9 @@ def main(config):
 
             # Get miner distribution
             miner_distribution = build_miner_distribution(responses)
-            blockchain_block_height = blockchain_api_facade.get_latest_block_height(network=network)
+
+            # Cache dictionary
+            block_height_cache = {}
 
             for index, response in enumerate(responses):
 
@@ -225,22 +198,26 @@ def main(config):
                 data_samples = output.data_samples
                 axon_ip = metagraph.axons[index].ip
                 hot_key = metagraph.axons[index].hotkey
-                response_time = response.dendrite.process_time
+                response_time = dendrite.synapse_history[index].dendrite.process_time
 
-                data_samples_are_valid = blockchain_api_facade.are_all_samples_valid(network, data_samples)
+                data_samples_are_valid = blockchain_api.are_all_samples_valid(network, data_samples)
                 cheat_factor = MinerRegistryManager().calculate_cheat_factor(hot_key=hot_key, network=network, model_type=model_type)
+
+                if network not in block_height_cache:
+                    block_height_cache[network] = blockchain_api.get_latest_block_height(network=network)
 
                 score = calculate_score(
                     network,
-                    response,
+                    response_time,
                     start_block_height,
                     last_block_height,
-                    blockchain_block_height,
+                    block_height_cache[network],
                     miner_distribution,
                     data_samples_are_valid,
                     cheat_factor
                 )
 
+                bt.logging.info(f" =========================================== {hot_key} ===========================================")
                 bt.logging.info(f"Start block height: {start_block_height}")
                 bt.logging.info(f"Last block height: {last_block_height}")
                 bt.logging.info(f"Data samples are valid: {data_samples_are_valid}")
@@ -263,6 +240,7 @@ def main(config):
                 MinerRegistryManager().store_miner_block_height(
                     hot_key=hot_key,
                     network=network,
+                    model_type=model_type,
                     block_height=last_block_height,
                 )
 
@@ -306,6 +284,8 @@ def main(config):
             bt.logging.success("Keyboard interrupt detected. Exiting validator.")
             exit()
 
+# Cache dictionary
+
 
 if __name__ == "__main__":
     config = get_config()
@@ -315,7 +295,7 @@ if __name__ == "__main__":
     --subtensor.network finney  # blockchain endpoint you want to connect
     --wallet.name <your miner wallet> # name of your wallet
     --wallet.hotkey <your miner hotkey> # hotkey name of your wallet
-    
+     """
     config.subtensor.chain_endpoint = "ws://127.0.0.1:9946"
     config.subtensor.network = "finney"
     config.wallet.hotkey = 'default'
@@ -324,14 +304,6 @@ if __name__ == "__main__":
     config.blockchair_api_key = "A___mw5wNljHQ4n0UAdM5Ivotp0Bsi93"
       
     config.subtensor.chain_endpoint = "ws://127.0.0.1:9946"
-    
-    
-    """
 
-    config.subtensor.network = "finney"
-    config.wallet.hotkey = 'default'
-    config.wallet.name = 'validator'
-    config.netuid = 15
-    config.blockchair_api_key = "A___mw5wNljHQ4n0UAdM5Ivotp0Bsi93"
 
     main(config)
