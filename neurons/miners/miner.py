@@ -249,25 +249,4 @@ def main(config):
 
 if __name__ == "__main__":
     config = get_config()
-
-    """ Uncomment for local debugging
-    python miner.py 
-    --netuid 1  # The subnet id you want to connect to
-    --subtensor.network finney  # blockchain endpoint you want to connect
-    --wallet.name <your miner wallet> # name of your wallet
-    --wallet.hotkey <your miner hotkey> # hotkey name of your wallet
-    os.environ["BITCOIN_NODE_RPC_URL"] = "http://bitcoinrpc:rpcpassword@localhost:18332"
-    
-    """
-
-    os.environ["GRAPH_DB_URL"] = "bolt://localhost:7687"
-    os.environ["BITCOIN_NODE_RPC_URL"] = "http://jezus667:jezus.jest.tu667@194.163.162.94:8332"
-
-    config.subtensor.chain_endpoint = "ws://127.0.0.1:9946"
-    config.subtensor.network = "finney"
-    config.wallet.hotkey = 'default'
-    config.wallet.name = 'miner'
-    config.netuid = 1
-
-
     main(config)
