@@ -268,7 +268,7 @@ if __name__ == "__main__":
     --wallet.hotkey <your miner hotkey> # hotkey name of your wallet
     os.environ["NODE_RPC_URL"] = "http://bitcoinrpc:rpcpassword@localhost:18332"
     
-    """
+    
 
     os.environ["GRAPH_DB_URL"] = "bolt://localhost:7687"
     config.blockchair_api_key = "A___mw5wNljHQ4n0UAdM5Ivotp0Bsi93"
@@ -279,6 +279,6 @@ if __name__ == "__main__":
     config.netuid = 1
 
 
-
+    """
 
     main(config)

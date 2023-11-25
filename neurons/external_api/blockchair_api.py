@@ -20,7 +20,7 @@ def create_session_with_retries():
 class BlockchairAPI:
     def __init__(self, api_key):
         if api_key is None:
-            self.api_key = os.getenv("BLOCKCHAIN_API_KEY", "A___mw5wNljHQ4n0UAdM5Ivotp0Bsi93")
+            self.api_key = os.getenv("BLOCKCHAIN_API_KEY", "")
         else:
             self.api_key = api_key
         self.session = create_session_with_retries()

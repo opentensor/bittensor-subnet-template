@@ -30,7 +30,6 @@ class MinerDiscoveryOutput(BaseModel):
 
 
 class MinerDiscovery(bt.Synapse):
-    # random_block_height: dict[str, dict] = None
     output: MinerDiscoveryOutput = None
 
     def deserialize(self) -> MinerDiscoveryOutput:

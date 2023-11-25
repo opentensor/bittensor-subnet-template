@@ -35,9 +35,6 @@ class MinerRegistryManager:
         self.engine = create_engine(db_path)
         Base.metadata.create_all(self.engine)
 
-    def get_miner_distribution(self):
-        pass
-
     # this method will be obsolete once we have a miner registry
     def get_miner_proportion(self, network, model_type):
         session = sessionmaker(bind=self.engine)()
