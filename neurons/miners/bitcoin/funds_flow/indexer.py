@@ -1,3 +1,4 @@
+import os
 import signal
 import time
 import traceback
@@ -19,17 +20,15 @@ def shutdown_handler(signum, frame):
     shutdown_flag = True
 
 
-def index_blocks(_bitcoin_node, _graph_creator, _graph_indexer):
+def index_blocks(_bitcoin_node, _graph_creator, _graph_indexer, start_height):
     global shutdown_flag
     skip_blocks = 6
 
     while not shutdown_flag:
-        start_height = _graph_indexer.get_latest_block_number() + 1
         current_block_height = _bitcoin_node.get_current_block_height() - 6
-
         if current_block_height - skip_blocks < 0:
             logger.info("Waiting min 6 for blocks to be mined.")
-            time.sleep(1)
+            time.sleep(10)
             continue
 
         if start_height > current_block_height:
@@ -38,7 +37,6 @@ def index_blocks(_bitcoin_node, _graph_creator, _graph_indexer):
             )
             time.sleep(10)
             continue
-
 
         block_height = start_height
         while block_height <= current_block_height - skip_blocks:
@@ -77,6 +75,14 @@ def index_blocks(_bitcoin_node, _graph_creator, _graph_indexer):
 
             if success:
                 block_height += 1
+
+                # indexer flooding prevention
+                threshold = int(os.getenv('BLOCK_PROCESSING_TRANSACTION_THRESHOLD', 10))
+                if num_transactions < threshold:
+                    delay = float(os.getenv('BLOCK_PROCESSING_DELAY', .1))
+                    logger.info(f"Block tx count below {threshold}, slowing down indexing by {delay} seconds to prevent flooding.")
+                    time.sleep(delay)
+
             else:
                 logger.error(f"Failed to index block {block_height}.")
                 time.sleep(30)
@@ -84,6 +90,9 @@ def index_blocks(_bitcoin_node, _graph_creator, _graph_indexer):
             if shutdown_flag:
                 logger.info(f"Finished indexing block {block_height} before shutdown.")
                 break
+
+            start_height += 1
+
 
 
 # Register the shutdown handler for SIGINT and SIGTERM
@@ -98,22 +107,29 @@ if __name__ == "__main__":
     graph_creator = GraphCreator()
     graph_indexer = GraphIndexer()
 
-    retry_delay = 60
+    start_height_str = os.getenv('BITCOIN_START_BLOCK_HEIGHT', None)
 
+    retry_delay = 60
+    # purpose of this indexer is to index FROM to infinity only, indexing previous block range will be covered by another indexer - indexer_patch.py which will be slowly adding previous blocks to the graph
     while True:
         try:
             logger.info("Starting indexer")
-            logger.info(
-                f"Current node block height: {bitcoin_node.get_current_block_height()}"
-            )
-            logger.info(
-                f"Latest indexed block height: {graph_indexer.get_latest_block_number()}"
-            )
+            graph_last_block_height = graph_indexer.get_latest_block_number() + 1
+            if start_height_str is not None:
+                start_height = int(start_height_str)
+                if graph_last_block_height > start_height:
+                    start_height = graph_last_block_height
+            else:
+                start_height = graph_last_block_height
+
+            logger.info(f"Starting from block height: {start_height}")
+            logger.info(f"Current node block height: {bitcoin_node.get_current_block_height()}")
+            logger.info(f"Latest indexed block height: {graph_last_block_height}")
 
             logger.info("Creating indexes...")
             graph_indexer.create_indexes()
             logger.info("Starting indexing blocks...")
-            index_blocks(bitcoin_node, graph_creator, graph_indexer)
+            index_blocks(bitcoin_node, graph_creator, graph_indexer, start_height)
             break
         except Exception as e:
             traceback.print_exc()
