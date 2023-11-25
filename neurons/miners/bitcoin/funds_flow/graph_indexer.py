@@ -48,7 +48,8 @@ class GraphIndexer:
             )
             single_result = result.single()
             if single_result[0] is None:
-                return 0
+               return 0
+
             return single_result[0]
 
     from decimal import getcontext

@@ -2,6 +2,8 @@ import argparse
 import itertools
 import os
 import sys
+from _decimal import Decimal
+
 import bittensor as bt
 from datetime import time
 from bitcoinrpc.authproxy import AuthServiceProxy

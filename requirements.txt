@@ -10,3 +10,4 @@ neo4j
 python-dotenv
 sqlalchemy
 requests
+urllib3

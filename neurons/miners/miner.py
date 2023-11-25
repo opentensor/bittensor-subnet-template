@@ -21,6 +21,8 @@ import time
 import argparse
 import traceback
 import typing
+from random import randint
+
 import bittensor as bt
 
 from insights import protocol
@@ -49,6 +51,13 @@ def get_config():
         default=MODEL_TYPE_FUNDS_FLOW,
         help="Set miner's supported model type.",
     )
+
+    parser.add_argument(
+        "--blockchair_api_key",
+        default="BITCOIN",
+        help="Blockchair api key.",
+    )
+
     parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
 
     bt.subtensor.add_args(parser)
@@ -124,17 +133,25 @@ def main(config):
     def miner_discovery(synapse: protocol.MinerDiscovery) -> protocol.MinerDiscovery:
         try:
             graph_search = get_graph_search(config.network, config.model_type)
-            block_height = synapse.random_block_height[config.network][config.model_type]
-            data_sample = graph_search.get_block_transaction(block_height=block_height)
-            last_block_height = graph_search.get_latest_block_number()
+
+            block_range = graph_search.get_block_range()
+            _latest_block_height = block_range['latest_block_height']
+            start_block_height = block_range['start_block_height']
+
+            data_samples: typing.List[typing.Dict] = []
+            for _ in range(10):
+                random_block_height = randint(start_block_height, _latest_block_height)
+                data_sample = graph_search.get_block_transaction(random_block_height)
+                data_samples.append(data_sample)
 
             synapse.output = protocol.MinerDiscoveryOutput(
                 metadata=MinerDiscoveryMetadata(
                     network=config.network,
                     model_type=config.model_type,
                 ),
-                data_sample=data_sample,
-                block_height=last_block_height,
+                start_block_height=start_block_height,
+                block_height=_latest_block_height,
+                data_samples=data_samples,
             )
             bt.logging.info(f"Serving miner discovery output: {synapse.output}")
 
@@ -249,12 +266,18 @@ if __name__ == "__main__":
     --wallet.name <your miner wallet> # name of your wallet
     --wallet.hotkey <your miner hotkey> # hotkey name of your wallet
     os.environ["NODE_RPC_URL"] = "http://bitcoinrpc:rpcpassword@localhost:18332"
+    
+    
+
     os.environ["GRAPH_DB_URL"] = "bolt://localhost:7687"
+    config.blockchair_api_key = "A___mw5wNljHQ4n0UAdM5Ivotp0Bsi93"
     config.subtensor.chain_endpoint = "ws://127.0.0.1:9946"
     config.subtensor.network = "finney"
     config.wallet.hotkey = 'default'
     config.wallet.name = 'miner'
     config.netuid = 1
+
+
     """
 
     main(config)
