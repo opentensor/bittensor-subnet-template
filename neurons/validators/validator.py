@@ -18,29 +18,17 @@
 
 import os
 import time
-from random import sample
-
 import torch
 import argparse
 import traceback
 import bittensor as bt
+from random import sample
 from insights import protocol
 from insights.protocol import MinerDiscoveryOutput
-from neurons.external_api.blockchair_api import BlockchairAPIError, BlockchairAPI
+from neurons.nodes.nodes import get_node
 from neurons.validators.miner_registry import MinerRegistryManager
-from neurons.validators.scoring import build_miner_distribution, calculate_score
-
-SCORES_FILE = "scores.pt"
-
-
-def get_scores_from_file(metagraph):
-    try:
-        scores = torch.load(SCORES_FILE)
-        bt.logging.info(f"Loaded scores from save file: {scores}")
-    except Exception as e:
-        scores = torch.zeros_like(metagraph.S, dtype=torch.float32)
-        bt.logging.info(f"Initialized all scores to 0")
-    return scores
+from neurons.validators.scoring import build_miner_distribution, calculate_score, setup_initial_scores, SCORES_FILE, \
+    verify_data_sample
 
 
 def get_config():
@@ -105,19 +93,15 @@ def main(config):
 
     my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
     bt.logging.info(f"Running validator on uid: {my_subnet_uid}")
-
     bt.logging.info("Building validation weights.")
-    scores = get_scores_from_file(metagraph)
-    scores = scores * (metagraph.total_stake < 1.024e3) # all nodes with more than 1e3 total stake are set to 0 (sets validators weights to 0)
-    scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids]) # set all nodes without ips set to 0
+
+    scores = setup_initial_scores(metagraph)
     bt.logging.info(f"Initial scores: {scores}")
 
     bt.logging.info("Starting validator loop.")
     step = 0
     total_dendrites_per_query = 25
     minimum_dendrites_per_query = 3
-
-    blockchain_api = BlockchairAPI(config.blockchair_api_key)
 
     while True:
         # Per 10 blocks, sync the subtensor state with the blockchain.
@@ -167,6 +151,7 @@ def main(config):
             # Filter metagraph.axons by indices saved in dendrites_to_query list
             filtered_axons = [metagraph.axons[i] for i in dendrites_to_query]
             bt.logging.info(f"filtered_axons: {filtered_axons}")
+
             responses = dendrite.query(
                 filtered_axons,
                 protocol.MinerDiscovery(),
@@ -200,11 +185,22 @@ def main(config):
                 hot_key = metagraph.axons[index].hotkey
                 response_time = dendrite.synapse_history[index].dendrite.process_time
 
-                data_samples_are_valid = blockchain_api.are_all_samples_valid(network, data_samples)
+                node = get_node(network)
+                data_samples_are_valid = True
+                for data_sample in data_samples:
+                    block_data = node.get_block_by_height(data_sample['block_height'])
+                    data_sample_is_valid = verify_data_sample(
+                        network=network,
+                        input_result=data_sample,
+                        block_data=block_data
+                    )
+                    if not data_sample_is_valid:
+                        return False
+
                 cheat_factor = MinerRegistryManager().calculate_cheat_factor(hot_key=hot_key, network=network, model_type=model_type)
 
                 if network not in block_height_cache:
-                    block_height_cache[network] = blockchain_api.get_latest_block_height(network=network)
+                    block_height_cache[network] = node.get_current_block_height()
 
                 score = calculate_score(
                     network,
@@ -271,11 +267,6 @@ def main(config):
             bt.logging.info(f"Saved weights to \"{SCORES_FILE}\"")
             time.sleep(bt.__blocktime__)
 
-        except BlockchairAPIError as e:
-            bt.logging.error(e)
-            traceback.print_exc()
-            time.sleep(bt.__blocktime__ * 12)
-
         except RuntimeError as e:
             bt.logging.error(e)
             traceback.print_exc()
@@ -284,26 +275,6 @@ def main(config):
             bt.logging.success("Keyboard interrupt detected. Exiting validator.")
             exit()
 
-# Cache dictionary
-
-
 if __name__ == "__main__":
     config = get_config()
-    """
-    python miner.py 
-    --netuid 1  # The subnet id you want to connect to
-    --subtensor.network finney  # blockchain endpoint you want to connect
-    --wallet.name <your miner wallet> # name of your wallet
-    --wallet.hotkey <your miner hotkey> # hotkey name of your wallet
-     """
-    config.subtensor.chain_endpoint = "ws://127.0.0.1:9946"
-    config.subtensor.network = "finney"
-    config.wallet.hotkey = 'default'
-    config.wallet.name = 'validator'
-    config.netuid = 1
-    config.blockchair_api_key = "A___mw5wNljHQ4n0UAdM5Ivotp0Bsi93"
-      
-    config.subtensor.chain_endpoint = "ws://127.0.0.1:9946"
-
-
     main(config)

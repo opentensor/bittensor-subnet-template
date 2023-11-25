@@ -36,8 +36,8 @@ if [ -z "$WAIT_FOR_SYNC" ]; then
     export WAIT_FOR_SYNC="True"
 fi
 
-if [ -z "$BLOCKCHAIR_API_KEY" ]; then
-    export BLOCKCHAIR_API_KEY=""
+if [ -z "$BITCOIN_NODE_RPC_URL" ]; then
+    export BITCOIN_NODE_RPC_URL="http://bitcoinrpc:rpcpassword@127.0.0.1:8332"
 fi
 
 

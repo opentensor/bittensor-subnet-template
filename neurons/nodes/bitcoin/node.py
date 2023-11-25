@@ -1,11 +1,7 @@
 import argparse
-import itertools
 import os
-import sys
-from _decimal import Decimal
 
 import bittensor as bt
-from datetime import time
 from bitcoinrpc.authproxy import AuthServiceProxy
 
 parser = argparse.ArgumentParser()
@@ -13,13 +9,9 @@ bt.logging.add_args(parser)
 
 class BitcoinNode:
     def __init__(self, node_rpc_url: str = None):
-        """
-        Args:
-            node_rpc_url:
-        """
         if node_rpc_url is None:
             self.node_rpc_url = (
-                os.environ.get("NODE_RPC_URL")
+                os.environ.get("BITCOIN_NODE_RPC_URL")
                 or "http://bitcoinrpc:rpcpassword@127.0.0.1:8332"
             )
         else:

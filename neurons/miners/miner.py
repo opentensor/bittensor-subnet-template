@@ -21,12 +21,10 @@ import time
 import argparse
 import traceback
 import typing
-from random import randint
-
 import bittensor as bt
-
+from random import randint
 from insights import protocol
-from neurons.external_api.blockchair_api import BlockchairAPI
+from neurons.nodes.nodes import get_node
 from neurons.miners.bitcoin.funds_flow.graph_indexer import GraphIndexer
 from neurons.miners.query import (
     execute_query_proxy,
@@ -37,6 +35,7 @@ from insights.protocol import (
     NETWORK_BITCOIN,
     MinerDiscoveryMetadata,
 )
+
 
 def get_config():
     parser = argparse.ArgumentParser()
@@ -50,12 +49,6 @@ def get_config():
         type=str,
         default=MODEL_TYPE_FUNDS_FLOW,
         help="Set miner's supported model type.",
-    )
-
-    parser.add_argument(
-        "--blockchair_api_key",
-        default="BITCOIN",
-        help="Blockchair api key.",
     )
 
     parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
@@ -101,17 +94,16 @@ def main(config):
     bt.logging.info(f"Waiting for graph model to sync with blockchain.")
     is_synced=False
     while not is_synced:
-        wait_for_sync = os.getenv('WAIT_FOR_SYNC', 'False')
+        wait_for_sync = os.getenv('WAIT_FOR_SYNC', 'True')
         if wait_for_sync == 'False':
             bt.logging.info(f"Skipping graph sync.")
             break
 
         try:
-            blockchair_api = BlockchairAPI(config.blockchair_api_key)
             graph_indexer = GraphIndexer(config.graph_db_url)
-
-            latest_block_height = blockchair_api.get_latest_block_height(config.network)
             if config.network == 'bitcoin':
+                node = get_node(config.network)
+                latest_block_height =  node.get_current_block_height()
                 current_block_height = graph_indexer.get_latest_block_number()
                 if latest_block_height - current_block_height < 100:
                     is_synced = True
@@ -258,26 +250,4 @@ def main(config):
 
 if __name__ == "__main__":
     config = get_config()
-
-    """ Uncomment for local debugging
-    python miner.py 
-    --netuid 1  # The subnet id you want to connect to
-    --subtensor.network finney  # blockchain endpoint you want to connect
-    --wallet.name <your miner wallet> # name of your wallet
-    --wallet.hotkey <your miner hotkey> # hotkey name of your wallet
-    os.environ["NODE_RPC_URL"] = "http://bitcoinrpc:rpcpassword@localhost:18332"
-    
-    
-
-    os.environ["GRAPH_DB_URL"] = "bolt://localhost:7687"
-    config.blockchair_api_key = "A___mw5wNljHQ4n0UAdM5Ivotp0Bsi93"
-    config.subtensor.chain_endpoint = "ws://127.0.0.1:9946"
-    config.subtensor.network = "finney"
-    config.wallet.hotkey = 'default'
-    config.wallet.name = 'miner'
-    config.netuid = 1
-
-
-    """
-
     main(config)
