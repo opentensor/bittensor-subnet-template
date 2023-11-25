@@ -1,19 +1,13 @@
 from neurons.miners.bitcoin.funds_flow.graph_search import (
     GraphSearch as BitcoinGraphSearch,
 )
-from neurons.miners.litecoin.funds_flow.graph_search import (
-    GraphSearch as LitecoinGraphSearch,
-)
-from insights.protocol import NETWORK_BITCOIN, MODEL_TYPE_FUNDS_FLOW, NETWORK_LITECOIN
 
+from insights.protocol import NETWORK_BITCOIN, MODEL_TYPE_FUNDS_FLOW, NETWORK_LITECOIN
 
 def get_graph_search(network, model_type):
     switch = {
         NETWORK_BITCOIN: {
             MODEL_TYPE_FUNDS_FLOW: lambda: BitcoinGraphSearch(),
-        },
-        NETWORK_LITECOIN: {
-            MODEL_TYPE_FUNDS_FLOW: lambda: LitecoinGraphSearch(),
         },
     }
 
@@ -27,7 +21,7 @@ def execute_query_proxy(network, model_type, query):
         return graph_search.execute_query(network, query)
     else:
         return (
-            graph_search  # This will be "Not found." if the graph_search is not found.
+            graph_search
         )
 
 def is_query_only(cypher_query):

@@ -1,6 +1,5 @@
 import unittest
 from random import randint
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from neurons.validators.miner_registry import Base, MinerRegistryManager

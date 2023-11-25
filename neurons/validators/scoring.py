@@ -1,36 +1,26 @@
+from insights.protocol import NETWORK_BITCOIN
 
-# this could got to ENV variable like BLOCKCHAIN_IMPORTANCE_BITCOIN = 0.4 OR maybe a config file?
+BLOCK_HEIGHT_DIFF_WEIGHT = 1
+BLOCK_HEIGHT_RECENCY_WEIGHT = 1
+CHEAT_FACTOR_WEIGHT = 4
+PROCESS_TIME_WEIGHT = 0.2
+BLOCKCHAIN_IMPORTANCE_WEIGHT = 0.1
 
 BLOCKCHAIN_IMPORTANCE = {
-    'bitcoin': 0.4,
-    'ethereum': 0.4,
-    'ltc': 0.05,
-    'doge': 0.15
+    'bitcoin': 0.5,
+    'ethereum': 0.5
 }
 
 def build_miner_distribution(responses):
-    """
-    Build a dictionary representing the distribution of miners across different networks.
-
-    :param responses: List of response objects.
-    :return: Dictionary with network names as keys and the count of miners as values.
-    """
     miner_distribution = {}
-
     for response in responses:
         if response is None:
             continue
-
-        # Extracting network information from the response
         network = response.metadata.network
-        # You can add more data extractions here if necessary
-
-        # Update the miner count for the network
         if network in miner_distribution:
             miner_distribution[network] += 1
         else:
             miner_distribution[network] = 1
-
     return miner_distribution
 
 def get_dynamic_weight(network, miner_distribution):
@@ -42,14 +32,6 @@ def get_dynamic_weight(network, miner_distribution):
     adjusted_weight = (1 - miner_percentage) * BLOCKCHAIN_IMPORTANCE.get(network, 0.1)
     return adjusted_weight
 
-# Constants for weightings
-BLOCK_HEIGHT_DIFF_WEIGHT = 1
-BLOCK_HEIGHT_RECENCY_WEIGHT = 1
-CHEAT_FACTOR_WEIGHT = 4
-PROCESS_TIME_WEIGHT = 0.2
-BLOCKCHAIN_IMPORTANCE_WEIGHT = 0.1
-
-# Scoring function
 def calculate_score(network, process_time, start_block_height, last_block_height, blockchain_block_height, miner_distribution, data_samples_are_valid, cheat_factor):
     if not data_samples_are_valid:
         return 0
@@ -88,3 +70,38 @@ def calculate_score(network, process_time, start_block_height, last_block_height
     normalized_score = total_score / max_possible_score
 
     return min(max(normalized_score, 0), 1)
+
+
+SCORES_FILE = "scores.pt"
+import torch
+import bittensor as bt
+
+def get_scores_from_file(metagraph):
+    try:
+        scores = torch.load(SCORES_FILE)
+        bt.logging.info(f"Loaded scores from save file: {scores}")
+    except Exception as e:
+        scores = torch.zeros_like(metagraph.S, dtype=torch.float32)
+        bt.logging.info(f"Initialized all scores to 0")
+    return scores
+
+def setup_initial_scores(metagraph):
+    scores = get_scores_from_file(metagraph)
+    scores = scores * (metagraph.total_stake < 1.024e3) # all nodes with more than 1e3 total stake are set to 0 (sets validators weights to 0)
+    scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids]) # set all nodes without ips set to 0
+    return scores
+
+def verify_data_sample(network, input_result, block_data):
+   if network == NETWORK_BITCOIN:
+        block_height = int(input_result['block_height'])
+        transactions = block_data["tx"]
+        num_transactions = len(transactions)
+        result = {
+            "block_height": block_height,
+            "transaction_count": num_transactions,
+        }
+        is_valid = result["transaction_count"] == input_result["transaction_count"]
+        return is_valid
+   else:
+        return False
+

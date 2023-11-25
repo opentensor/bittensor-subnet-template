@@ -1,9 +1,8 @@
 import signal
 import time
 import traceback
-
 from neurons.logging import setup_logger
-from neurons.miners.bitcoin.node import BitcoinNode
+from neurons.nodes.bitcoin.node import BitcoinNode
 from neurons.miners.bitcoin.funds_flow.graph_creator import GraphCreator
 from neurons.miners.bitcoin.funds_flow.graph_indexer import GraphIndexer
 
