@@ -44,8 +44,14 @@ def get_config():
 
     parser.add_argument(
         "--bitcoin_start_block_height",
-        default="1",
+        default=1,
         help="Bitcoin start block height.",
+    )
+
+    parser.add_argument(
+        "--bitcoin_cheat_factor_sample_size",
+        default=256,
+        help="Bitcoin sample size used for calculating cheat factor.",
     )
 
     parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
@@ -197,7 +203,7 @@ def main(config):
                     if not data_sample_is_valid:
                         return False
 
-                cheat_factor = MinerRegistryManager().calculate_cheat_factor(hot_key=hot_key, network=network, model_type=model_type)
+                cheat_factor = MinerRegistryManager().calculate_cheat_factor(hot_key=hot_key, network=network, model_type=model_type, sample_size=config.bitcoin_cheat_factor_sample_size)
 
                 if network not in block_height_cache:
                     block_height_cache[network] = node.get_current_block_height()

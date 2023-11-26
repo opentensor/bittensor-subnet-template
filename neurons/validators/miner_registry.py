@@ -119,7 +119,7 @@ class MinerRegistryManager:
         finally:
             session.close()
 
-    def calculate_cheat_factor(self, hot_key, network, model_type):
+    def calculate_cheat_factor(self, hot_key, network, model_type, sample_size=256):
         session = sessionmaker(bind=self.engine)()
         try:
             entries = (
@@ -130,11 +130,11 @@ class MinerRegistryManager:
                     MinerBlockRegistry.model_type == model_type
                 )
                 .order_by(MinerBlockRegistry.updated.desc())
-                .limit(256)
+                .limit(sample_size)
                 .all()
             )
 
-            if len(entries) < 256:
+            if len(entries) < sample_size:
                 return 0
 
             block_heights = [entry[0] for entry in entries]
