@@ -31,8 +31,10 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/blockchain_insights_base
+         IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/blockchain_insights_base
           VERSION=${{ github.event.inputs.version || github.event.release.tag_name }}
           VERSION_TAG="$IMAGE_NAME:$VERSION"
           docker build --tag $VERSION_TAG .
-          docker push $LATEST_TAG
+          docker tag $VERSION_TAG
+          docker push $VERSION_TAG
+          
