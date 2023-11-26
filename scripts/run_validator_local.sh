@@ -28,4 +28,4 @@ if [ -z "$BITCOIN_NODE_RPC_URL" ]; then
     export BITCOIN_NODE_RPC_URL="http://bitcoinrpc:rpcpassword@127.0.0.1:8332"
 fi
 
-python3 neurons/validators/validator.py --bitcoin_start_block_height "$BITCOIN_START_BLOCK_HEIGHT" --wallet.name "$WALLET_NAME" --hotkey "$WALLET_HOTKEY" --netuid "$NETUID" --subtensor.network finney --subtensor.chain_endpoint "$SUBTENSOR_CHAIN_ENDPOINT" --logging.debug
+python3 neurons/validators/validator.py --bitcoin_start_block_height "$BITCOIN_START_BLOCK_HEIGHT" --wallet.name "$WALLET_NAME" --hotkey "$WALLET_HOTKEY" --netuid "$NETUID" --subtensor.network finney --subtensor.chain_endpoint "$SUBTENSOR_CHAIN_ENDPOINT" --logging.debug --logging.trace
