@@ -1,7 +1,7 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
 # Copyright © 2023 aph5nt
-
+import concurrent
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
 # the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
@@ -178,17 +178,7 @@ def main(config):
                 response_time = response.axon.process_time
 
                 node = get_node(network)
-                data_samples_are_valid = True
-
-                for data_sample in data_samples:
-                    block_data = node.get_block_by_height(data_sample['block_height'])
-                    data_sample_is_valid = verify_data_sample(
-                        network=network,
-                        input_result=data_sample,
-                        block_data=block_data
-                    )
-                    if not data_sample_is_valid:
-                        return False
+                data_samples_are_valid = validate_all_data_samples(node, network, data_samples)
 
                 if len(data_samples) < 10:
                     data_samples_are_valid = False
@@ -266,14 +256,25 @@ def main(config):
             bt.logging.success("Keyboard interrupt detected. Exiting validator.")
             exit()
 
+def validate_data_sample(node, network, data_sample):
+    block_data = node.get_block_by_height(data_sample['block_height'])
+    return verify_data_sample(
+        network=network,
+        input_result=data_sample,
+        block_data=block_data
+    )
+
+def validate_all_data_samples(node, network, data_samples):
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        # Creating a future for each data sample validation
+        futures = [executor.submit(validate_data_sample, node, network, sample) for sample in data_samples]
+
+        for future in concurrent.futures.as_completed(futures):
+            if not future.result():
+                return False  # If any data sample is invalid, return False immediately
+    return True  # All data samples are valid
+
+
 if __name__ == "__main__":
     config = get_config()
-
-    config.subtensor.network = "finney"
-    config.wallet.hotkey = 'default'
-    config.wallet.name = 'validator'
-    config.netuid = 15
-    import os
-    os.environ["BITCOIN_NODE_RPC_URL"] = "http://daxtohujek446464:lubosztezhujek3446457@62.210.88.131:8332"
-
     main(config)

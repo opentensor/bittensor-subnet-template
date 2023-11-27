@@ -1,7 +1,7 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
 # Copyright © 2023 aphex5
-
+import concurrent
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
 # the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
@@ -122,6 +122,9 @@ def main(config):
     my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
     bt.logging.info(f"Running miner on uid: {my_subnet_uid}")
 
+    def get_data_sample(graph_search, block_height):
+        return graph_search.get_block_transaction(block_height)
+
     def miner_discovery(synapse: protocol.MinerDiscovery) -> protocol.MinerDiscovery:
         try:
             graph_search = get_graph_search(config.network, config.model_type)
@@ -131,10 +134,12 @@ def main(config):
             start_block_height = block_range['start_block_height']
 
             data_samples: typing.List[typing.Dict] = []
-            for _ in range(10):
-                random_block_height = randint(start_block_height, _latest_block_height)
-                data_sample = graph_search.get_block_transaction(random_block_height)
-                data_samples.append(data_sample)
+            block_heights = [randint(start_block_height, _latest_block_height) for _ in range(10)]
+
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                futures = [executor.submit(get_data_sample, graph_search, height) for height in block_heights]
+                for future in concurrent.futures.as_completed(futures):
+                    data_samples.append(future.result())
 
             synapse.output = protocol.MinerDiscoveryOutput(
                 metadata=MinerDiscoveryMetadata(
