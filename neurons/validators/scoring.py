@@ -33,10 +33,13 @@ def get_dynamic_weight(network, miner_distribution):
     return adjusted_weight
 
 def calculate_score(network, process_time, start_block_height, last_block_height, blockchain_block_height, miner_distribution, data_samples_are_valid, cheat_factor):
+    bt.logging.debug(f"Calculating score for network: {network}, process_time: {process_time}, start_block_height: {start_block_height}, last_block_height: {last_block_height}, blockchain_block_height: {blockchain_block_height}, miner_distribution: {miner_distribution}, data_samples_are_valid: {data_samples_are_valid}, cheat_factor: {cheat_factor}")
+
     if not data_samples_are_valid:
         return 0
 
     blockchain_size_weight = get_dynamic_weight(network, miner_distribution)
+    bt.logging.debug(f"Blockchain size weight: {blockchain_size_weight}")
 
     # Process time scoring logic
     process_time_score = 1
@@ -47,6 +50,8 @@ def calculate_score(network, process_time, start_block_height, last_block_height
             # Decrease score based on how much process time exceeds 10ms
             time_penalty = (process_time - 0.1) / (100 - 0.1)
             process_time_score = 1 - time_penalty
+    bt.logging.debug(f"Process time score: {process_time_score}")
+
 
     # Block height difference scoring logic
     block_height_diff = abs(last_block_height - blockchain_block_height)
@@ -54,6 +59,7 @@ def calculate_score(network, process_time, start_block_height, last_block_height
         block_height_score = -2 * block_height_diff  # Heavy penalty if too far behind
     else:
         block_height_score = -block_height_diff / 100
+    bt.logging.debug(f"Block height score: {block_height_score}")
 
     # Block height recency scoring logic
     block_height_diff_recency = blockchain_block_height - start_block_height
@@ -61,6 +67,7 @@ def calculate_score(network, process_time, start_block_height, last_block_height
         block_height_recency_score = 1 - (block_height_diff_recency / 50000)
     else:
         block_height_recency_score = 1
+    bt.logging.debug(f"Block height recency score: {block_height_recency_score}")
 
     # Calculate total score using weighted average
     total_score = (process_time_score * PROCESS_TIME_WEIGHT +
@@ -68,12 +75,19 @@ def calculate_score(network, process_time, start_block_height, last_block_height
                    blockchain_size_weight * BLOCKCHAIN_IMPORTANCE_WEIGHT +
                    block_height_recency_score * BLOCK_HEIGHT_RECENCY_WEIGHT+
                    cheat_factor * CHEAT_FACTOR_WEIGHT)
+    bt.logging.debug(f"Total score: {total_score}")
 
     # Normalize the score to be within 0 to 1 range
     max_possible_score = PROCESS_TIME_WEIGHT + BLOCK_HEIGHT_DIFF_WEIGHT + BLOCKCHAIN_IMPORTANCE_WEIGHT + BLOCK_HEIGHT_RECENCY_WEIGHT + CHEAT_FACTOR_WEIGHT
-    normalized_score = total_score / max_possible_score
+    bt.logging.debug(f"Max possible score: {max_possible_score}")
 
-    return min(max(normalized_score, 0), 1)
+    normalized_score = total_score / max_possible_score
+    bt.logging.debug(f"Normalized score: {normalized_score}")
+
+    normalized_score = min(max(normalized_score, 0), 1)
+    bt.logging.debug(f"Final normalized score: {normalized_score}")
+
+    return normalized_score
 
 
 SCORES_FILE = "scores.pt"

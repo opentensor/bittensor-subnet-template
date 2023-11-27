@@ -136,7 +136,6 @@ class MinerRegistryManager:
                 .all()
             )
 
-            print(f"Entries len: {len(entries)} SAMPLE SIZE: {sample_size} Sample size type: {type(sample_size)}")
             if len(entries) < sample_size:
                 return 0
 
