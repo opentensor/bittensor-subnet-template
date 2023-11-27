@@ -40,7 +40,31 @@ jobs:
           name: Black format check
           command: |
             . env/bin/activate
-            python -m black --exclude '(env|venv|.eggs)' --check .
+            black --line-length 79 --exclude '(env|venv|.eggs)' --check .
+
+  pylint:
+    resource_class: small
+    parameters:
+      python-version:
+        type: string
+    docker:
+      - image: cimg/python:<< parameters.python-version >>
+
+    steps:
+      - checkout
+
+      - run:
+          name: Install Pylint
+          command: |
+            python -m venv env/
+            . env/bin/activate
+            pip install pylint
+
+      - run:
+          name: Pylint check
+          command: |
+            . env/bin/activate
+            pylint --fail-on=W,E,F --exit-zero  ./
 
   check_compatibility:
     parameters:
@@ -131,10 +155,12 @@ workflows:
       - check_compatibility:
           python_version: "3.11"
           name: check-compatibility-3.11
-  
+
   pr-requirements:
     jobs:
       - black:
+          python-version: "3.8.12"
+      - pylint:
           python-version: "3.8.12"
       - build:
           matrix:

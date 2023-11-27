@@ -29,7 +29,7 @@ After installing `bittensor`, proceed as below:
 
 ```bash
 # In your project directory
-git clone https://github.com/opentensor/bittensor-subnet-template.git # TODO[owner]: Replace this with your custom repo URL
+git clone https://github.com/opentensor/bittensor-subnet-template.git # TODO(developer): Replace this with your custom repo URL
 cd bittensor-subnet-template # Enter your subnet template repo directory
 python -m pip install -e . # Install your subnet template package
 ```
