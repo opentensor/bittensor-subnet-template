@@ -179,8 +179,10 @@ def main(config):
             block_height_cache = {}
 
             for index, response in enumerate(responses):
-
                 bt.logging.debug(f"processing response: {response}")
+                if response.output is None:
+                    bt.logging.info(f"Response output is None. Skipping.")
+                    continue
 
                 # Vars
                 output: MinerDiscoveryOutput = response.output
@@ -288,4 +290,8 @@ def main(config):
 
 if __name__ == "__main__":
     config = get_config()
+    config.subtensor.network = "finney"
+    config.wallet.hotkey = 'default'
+    config.wallet.name = 'validator'
+    config.netuid = 15
     main(config)

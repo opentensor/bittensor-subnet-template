@@ -14,7 +14,7 @@ BLOCKCHAIN_IMPORTANCE = {
 def build_miner_distribution(responses):
     miner_distribution = {}
     for response in responses:
-        if response is None:
+        if response.output is None:
             continue
         network = response.output.metadata.network
         if network in miner_distribution:
