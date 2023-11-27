@@ -132,6 +132,8 @@ def main(config):
         # Remove the weights of miners that are not queryable.
         queryable_uids = queryable_uids * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in uids])
         active_miners = torch.sum(queryable_uids)
+        bt.logging.info(f"active_miners_queryable_uids:{queryable_uids}")
+        bt.logging.info(f"active_miners:{active_miners}")
         dendrites_per_query = total_dendrites_per_query
 
         # if there are no active miners, set active_miners to 1
@@ -178,8 +180,10 @@ def main(config):
 
             for index, response in enumerate(responses):
 
+                bt.logging.debug(f"processing response: {response}")
+
                 # Vars
-                output: MinerDiscoveryOutput = response
+                output: MinerDiscoveryOutput = response.output
                 network = output.metadata.network
                 model_type = output.metadata.model_type
 
@@ -189,7 +193,8 @@ def main(config):
                 data_samples = output.data_samples
                 axon_ip = metagraph.axons[index].ip
                 hot_key = metagraph.axons[index].hotkey
-                response_time = dendrite.synapse_history[index].dendrite.process_time
+
+                response_time = response.dendrite.process_time
 
                 node = get_node(network)
                 data_samples_are_valid = True

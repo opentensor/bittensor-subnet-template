@@ -39,12 +39,14 @@ def calculate_score(network, process_time, start_block_height, last_block_height
     blockchain_size_weight = get_dynamic_weight(network, miner_distribution)
 
     # Process time scoring logic
-    if process_time <= 0.1: # 0.1 second
-        process_time_score = 1  # Optimal response time
-    else:
-        # Decrease score based on how much process time exceeds 10ms
-        time_penalty = (process_time - 0.1) / (100 - 0.1)
-        process_time_score = 1 - time_penalty
+    process_time_score = 1
+    if process_time is not None:
+        if process_time <= 0.1: # 0.1 second
+            process_time_score = 1  # Optimal response time
+        else:
+            # Decrease score based on how much process time exceeds 10ms
+            time_penalty = (process_time - 0.1) / (100 - 0.1)
+            process_time_score = 1 - time_penalty
 
     # Block height difference scoring logic
     block_height_diff = abs(last_block_height - blockchain_block_height)
@@ -57,6 +59,8 @@ def calculate_score(network, process_time, start_block_height, last_block_height
     block_height_diff_recency = blockchain_block_height - start_block_height
     if block_height_diff_recency <= 50000:  # Approximately one year of data
         block_height_recency_score = 1 - (block_height_diff_recency / 50000)
+    else:
+        block_height_recency_score = 1
 
     # Calculate total score using weighted average
     total_score = (process_time_score * PROCESS_TIME_WEIGHT +

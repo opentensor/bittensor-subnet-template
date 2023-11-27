@@ -32,8 +32,8 @@ class MinerDiscoveryOutput(BaseModel):
 class MinerDiscovery(bt.Synapse):
     output: MinerDiscoveryOutput = None
 
-    def deserialize(self) -> MinerDiscoveryOutput:
-        return self.output
+    def deserialize(self):
+        return self
 
 
 class MinerQuery(bt.Synapse):
