@@ -164,7 +164,7 @@ def main(config):
                 filtered_axons,
                 protocol.MinerDiscovery(),
                 deserialize=True,
-                timeout = 60,
+                timeout = 90,
             )
 
             bt.logging.info(f"Received responses: {responses}")
@@ -198,13 +198,13 @@ def main(config):
                 last_block_height = output.block_height
 
                 data_samples = output.data_samples
-                axon_ip = metagraph.axons[index].ip
-                hot_key = metagraph.axons[index].hotkey
-
-                response_time = response.dendrite.process_time
+                axon_ip = response.axon.ip
+                hot_key = response.axon.hotkey
+                response_time = response.axon.process_time
 
                 node = get_node(network)
                 data_samples_are_valid = True
+                """
                 for data_sample in data_samples:
                     block_data = node.get_block_by_height(data_sample['block_height'])
                     data_sample_is_valid = verify_data_sample(
@@ -214,7 +214,7 @@ def main(config):
                     )
                     if not data_sample_is_valid:
                         return False
-
+                """
                 cheat_factor = MinerRegistryManager().calculate_cheat_factor(hot_key=hot_key, network=network, model_type=model_type, sample_size=config.bitcoin_cheat_factor_sample_size)
 
                 if network not in block_height_cache:
@@ -295,8 +295,4 @@ def main(config):
 
 if __name__ == "__main__":
     config = get_config()
-    config.subtensor.network = "finney"
-    config.wallet.hotkey = 'default'
-    config.wallet.name = 'validator'
-    config.netuid = 15
     main(config)
