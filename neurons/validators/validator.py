@@ -167,7 +167,7 @@ def main(config):
 
             if len(miner_distribution) == 0:
                 bt.logging.info(f"No miners found. Skipping.")
-                time.sleep(bt.__blocktime__ * 101)
+                time.sleep(bt.__blocktime__)
                 continue
 
             # Cache dictionary
