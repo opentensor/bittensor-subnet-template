@@ -154,7 +154,7 @@ def main(config):
                 filtered_axons,
                 protocol.MinerDiscovery(),
                 deserialize=True,
-                timeout = 90,
+                timeout = 120,
             )
 
             bt.logging.info(f"Received responses: {responses}")
@@ -204,6 +204,9 @@ def main(config):
                     )
                     if not data_sample_is_valid:
                         return False
+
+                if len(data_samples) < 10:
+                    data_samples_are_valid = False
 
                 cheat_factor = MinerRegistryManager().calculate_cheat_factor(hot_key=hot_key, network=network, model_type=model_type, sample_size=config.bitcoin_cheat_factor_sample_size)
 
