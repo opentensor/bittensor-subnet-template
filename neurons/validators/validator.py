@@ -175,6 +175,11 @@ def main(config):
             # Get miner distribution
             miner_distribution = build_miner_distribution(responses)
 
+            if len(miner_distribution) == 0:
+                bt.logging.info(f"No miners found. Skipping.")
+                time.sleep(bt.__blocktime__ * 101)
+                continue
+
             # Cache dictionary
             block_height_cache = {}
 
