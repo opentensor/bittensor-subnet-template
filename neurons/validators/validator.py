@@ -208,7 +208,8 @@ def main(config):
                 if len(data_samples) < 10:
                     data_samples_are_valid = False
 
-                cheat_factor = MinerRegistryManager().calculate_cheat_factor(hot_key=hot_key, network=network, model_type=model_type, sample_size=config.bitcoin_cheat_factor_sample_size)
+                bitcoin_cheat_factor_sample_size = int(config.bitcoin_cheat_factor_sample_size)
+                cheat_factor = MinerRegistryManager().calculate_cheat_factor(hot_key=hot_key, network=network, model_type=model_type, sample_size=bitcoin_cheat_factor_sample_size)
 
                 if network not in block_height_cache:
                     block_height_cache[network] = node.get_current_block_height()
