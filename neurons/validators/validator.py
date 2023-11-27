@@ -173,7 +173,7 @@ def main(config):
             responses = list(filter(lambda x: x is not None, responses))
 
             # Get miner distribution
-            miner_distribution = build_miner_distribution(responses)
+            miner_distribution = build_miner_distribution(responses.output)
 
             # Cache dictionary
             block_height_cache = {}
