@@ -16,7 +16,7 @@ def build_miner_distribution(responses):
     for response in responses:
         if response is None:
             continue
-        network = response.metadata.network
+        network = response.output.metadata.network
         if network in miner_distribution:
             miner_distribution[network] += 1
         else:
