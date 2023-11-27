@@ -1,3 +1,5 @@
+import traceback
+
 from sqlalchemy import create_engine, Column, String, DateTime, func, Integer, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -13,7 +15,7 @@ class MinerRegistry(Base):
     ip_address = Column(String)
     network = Column(String)
     model_type = Column(String)
-    response_time = Column(Integer)
+    response_time = Column(Float)
     score = Column(Float)
     updated = Column(DateTime, default=datetime.datetime.utcnow)
 
@@ -52,7 +54,7 @@ class MinerRegistryManager:
             proportion = matching_miners / total_miners if total_miners > 0 else 0
             return proportion
         except Exception as e:
-            print(f"Error occurred: {e}")
+            print(f"Error occurred: {traceback.format_exc()}")
             return 0
         finally:
             session.close()
@@ -85,7 +87,7 @@ class MinerRegistryManager:
             session.commit()
         except Exception as e:
             session.rollback()
-            print(f"Error occurred: {e}")
+            print(f"Error occurred: {traceback.format_exc()}")
         finally:
             session.close()
 
@@ -102,7 +104,7 @@ class MinerRegistryManager:
             session.commit()
         except Exception as e:
             session.rollback()
-            print(f"Error occurred: {e}")
+            print(f"Error occurred: {traceback.format_exc()}")
         finally:
             session.close()
 
@@ -115,7 +117,7 @@ class MinerRegistryManager:
             session.commit()
         except Exception as e:
             session.rollback()
-            print(f"Error occurred: {e}")
+            print(f"Error occurred: {traceback.format_exc()}")
         finally:
             session.close()
 
@@ -146,7 +148,7 @@ class MinerRegistryManager:
             return cheat_factor
 
         except Exception as e:
-            print(f"Error occurred: {e}")
+            print(f"Error occurred: {traceback.format_exc()}")
             return 0
         finally:
             session.close()
