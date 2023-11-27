@@ -27,8 +27,7 @@ from insights import protocol
 from insights.protocol import MinerDiscoveryOutput
 from neurons.nodes.nodes import get_node
 from neurons.validators.miner_registry import MinerRegistryManager
-from neurons.validators.scoring import build_miner_distribution, calculate_score, setup_initial_scores, SCORES_FILE, \
-    verify_data_sample
+from neurons.validators.scoring import build_miner_distribution, calculate_score, verify_data_sample
 
 
 def get_config():
@@ -91,19 +90,20 @@ def main(config):
     bt.logging.info(f"Running validator on uid: {my_subnet_uid}")
     bt.logging.info("Building validation weights.")
 
-    scores = setup_initial_scores(metagraph)
+    scores = torch.zeros_like(metagraph.S, dtype=torch.float32)
+    scores = scores * (metagraph.total_stake < 1.024e3) # all nodes with more than 1e3 total stake are set to 0 (sets validators weights to 0)
+    scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids]) # set all nodes without ips set to 0
     bt.logging.info(f"Initial scores: {scores}")
 
     bt.logging.info("Starting validator loop.")
     step = 0
-    total_dendrites_per_query = 25
-    minimum_dendrites_per_query = 3
 
     while True:
         # Per 10 blocks, sync the subtensor state with the blockchain.
         if step % 5 == 0:
-            metagraph.sync(subtensor = subtensor)
             bt.logging.info(f"🔄 Syncing metagraph with subtensor.")
+            metagraph.sync(subtensor = subtensor)
+
 
         # If there are more uids than scores, add more weights.
         # Get the uids of all miners in the network.
@@ -117,31 +117,21 @@ def main(config):
 
         # If there are less uids than scores, remove some weights.
         queryable_uids = (metagraph.total_stake < 1.024e3)
-        bt.logging.info(f"queryable_uids:{queryable_uids}")
+        bt.logging.debug(f"queryable_uids:{queryable_uids}")
 
         # Remove the weights of miners that are not queryable.
         queryable_uids = queryable_uids * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in uids])
         active_miners = torch.sum(queryable_uids)
-        bt.logging.info(f"active_miners_queryable_uids:{queryable_uids}")
-        bt.logging.info(f"active_miners:{active_miners}")
-        dendrites_per_query = total_dendrites_per_query
+        bt.logging.debug(f"active_miners_queryable_uids:{queryable_uids}")
+        bt.logging.debug(f"active_miners:{active_miners}")
 
-        # if there are no active miners, set active_miners to 1
-        if active_miners == 0:
-            active_miners = 1
-        # if there are less than dendrites_per_query * 3 active miners, set dendrites_per_query to active_miners / 3
-        if active_miners < total_dendrites_per_query * 3:
-            dendrites_per_query = int(active_miners / 3)
-        else:
-            dendrites_per_query = total_dendrites_per_query
-
-        # less than 3 set to 3
-        if dendrites_per_query < minimum_dendrites_per_query:
-            dendrites_per_query = minimum_dendrites_per_query
         # zip uids and queryable_uids, filter only the uids that are queryable, unzip, and get the uids
         zipped_uids = list(zip(uids, queryable_uids))
         filtered_uids = list(zip(*filter(lambda x: x[1], zipped_uids)))[0]
-        bt.logging.info(f"filtered_uids:{filtered_uids}")
+        bt.logging.debug(f"filtered_uids:{filtered_uids}")
+
+        # dendrites_per_query should be 34% of the total number of queryable uids, rounded up to the nearest integer
+        dendrites_per_query = max(1, int(0.34 * active_miners + 0.5))
         dendrites_to_query = sample( filtered_uids, min( dendrites_per_query, len(filtered_uids) ) )
         bt.logging.info(f"dendrites_to_query:{dendrites_to_query}")
 
@@ -157,17 +147,12 @@ def main(config):
                 timeout = 120,
             )
 
-            bt.logging.info(f"Received responses: {responses}")
-
-            # filter out None responses
-            responses = list(filter(lambda x: x is not None, responses))
-
             # Get miner distribution
             miner_distribution = build_miner_distribution(responses)
 
             if len(miner_distribution) == 0:
-                bt.logging.info(f"No miners found. Skipping.")
-                time.sleep(bt.__blocktime__)
+                bt.logging.info(f"No online miners found. Skipping.")
+                time.sleep(bt.__blocktime__ * 5)
                 continue
 
             # Cache dictionary
@@ -176,7 +161,7 @@ def main(config):
             for index, response in enumerate(responses):
                 bt.logging.debug(f"processing response: {response}")
                 if response.output is None:
-                    bt.logging.info(f"Response output is None. Skipping.")
+                    bt.logging.debug(f"Skipping response")
                     continue
 
                 # Vars
@@ -232,9 +217,7 @@ def main(config):
                 bt.logging.info(f"Cheat factor: {cheat_factor}")
                 bt.logging.info(f"Score: {score}")
 
-                scores[index] = (
-                    config.alpha * scores[index] + (1 - config.alpha) * score
-                )
+                scores[dendrites_to_query[index]] = config.alpha * scores[dendrites_to_query[index]] + (1 - config.alpha) * score
 
                 MinerRegistryManager().store_miner_metadata(
                     ip_address=axon_ip,
@@ -242,7 +225,7 @@ def main(config):
                     network=network,
                     model_type=model_type,
                     response_time=response_time,
-                    score=scores[index],
+                    score=scores[dendrites_to_query[index]],
                 )
 
                 MinerRegistryManager().store_miner_block_height(
@@ -273,10 +256,6 @@ def main(config):
 
             step += 1
             metagraph = subtensor.metagraph(config.netuid)
-
-            # storing scores to file
-            torch.save(scores, SCORES_FILE)
-            bt.logging.info(f"Saved weights to \"{SCORES_FILE}\"")
             time.sleep(bt.__blocktime__)
 
         except RuntimeError as e:
@@ -289,4 +268,12 @@ def main(config):
 
 if __name__ == "__main__":
     config = get_config()
+
+    config.subtensor.network = "finney"
+    config.wallet.hotkey = 'default'
+    config.wallet.name = 'validator'
+    config.netuid = 15
+    import os
+    os.environ["BITCOIN_NODE_RPC_URL"] = "http://daxtohujek446464:lubosztezhujek3446457@62.210.88.131:8332"
+
     main(config)
