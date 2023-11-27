@@ -36,17 +36,6 @@ def get_config():
     parser.add_argument(
         "--alpha", default=0.9, type=float, help="The weight moving average scoring.py."
     )
-    parser.add_argument(
-        "--blockchair_api_key",
-        default="BITCOIN",
-        help="Blockchair api key.",
-    )
-
-    parser.add_argument(
-        "--bitcoin_start_block_height",
-        default=1,
-        help="Bitcoin start block height.",
-    )
 
     parser.add_argument(
         "--bitcoin_cheat_factor_sample_size",
@@ -77,6 +66,7 @@ def get_config():
 
 
 def main(config):
+    bt.logging.info(f"Running validator with config: {config}")
     bt.logging.info("Setting up bittensor objects.")
 
     bt.logging(config=config, logging_dir=config.full_path)
@@ -204,7 +194,7 @@ def main(config):
 
                 node = get_node(network)
                 data_samples_are_valid = True
-                """
+
                 for data_sample in data_samples:
                     block_data = node.get_block_by_height(data_sample['block_height'])
                     data_sample_is_valid = verify_data_sample(
@@ -214,7 +204,7 @@ def main(config):
                     )
                     if not data_sample_is_valid:
                         return False
-                """
+
                 cheat_factor = MinerRegistryManager().calculate_cheat_factor(hot_key=hot_key, network=network, model_type=model_type, sample_size=config.bitcoin_cheat_factor_sample_size)
 
                 if network not in block_height_cache:
