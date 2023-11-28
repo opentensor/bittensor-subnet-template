@@ -27,7 +27,8 @@ from insights import protocol
 from insights.protocol import MinerDiscoveryOutput
 from neurons.nodes.nodes import get_node
 from neurons.validators.miner_registry import MinerRegistryManager
-from neurons.validators.scoring import build_miner_distribution, calculate_score, verify_data_sample
+from neurons.validators.scoring import build_miner_distribution, calculate_score, verify_data_sample, \
+    BLOCKCHAIN_IMPORTANCE
 
 
 def get_config():
@@ -147,8 +148,7 @@ def main(config):
                 timeout = 120,
             )
 
-            # Get miner distribution
-            miner_distribution = build_miner_distribution(responses)
+            miner_distribution = MinerRegistryManager().get_miner_distribution(BLOCKCHAIN_IMPORTANCE.keys())
 
             if len(miner_distribution) == 0:
                 bt.logging.info(f"No online miners found. Skipping.")

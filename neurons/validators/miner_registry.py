@@ -1,9 +1,12 @@
+import os
 import traceback
 
 from sqlalchemy import create_engine, Column, String, DateTime, func, Integer, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import datetime
+
+from neurons.validators.scoring import BLOCKCHAIN_IMPORTANCE
 
 Base = declarative_base()
 
@@ -33,7 +36,9 @@ class MinerBlockRegistry(Base):
     updated = Column(DateTime, default=datetime.datetime.utcnow)
 
 class MinerRegistryManager:
-    def __init__(self, db_path="sqlite:///miner_registry.db"):
+    def __init__(self, db_path="sqlite:////data/miner_registry.db"):
+        directory_path = os.path.dirname(db_path.replace("sqlite:///", ""))
+        os.makedirs(directory_path, exist_ok=True)
         self.engine = create_engine(db_path)
         Base.metadata.create_all(self.engine)
 
@@ -150,5 +155,31 @@ class MinerRegistryManager:
         except Exception as e:
             print(f"Error occurred: {traceback.format_exc()}")
             return 0
+        finally:
+            session.close()
+
+
+    def get_miner_distribution(self, all_networks):
+        session = sessionmaker(bind=self.engine)()
+        try:
+            # Initialize distribution with 1 for each network
+            miner_distribution = {network: 1 for network in all_networks}
+
+            # Query MinerRegistry, group by network, and count the number of miners in each group
+            distribution_query = (
+                session.query(MinerRegistry.network, func.count(MinerRegistry.network))
+                .group_by(MinerRegistry.network)
+                .all()
+            )
+
+            # Update the counts in miner_distribution based on the query results
+            for network, count in distribution_query:
+                miner_distribution[network] = max(count, 1)  # Ensures a minimum count of 1
+
+            return miner_distribution
+
+        except Exception as e:
+            print(f"Error occurred: {traceback.format_exc()}")
+            return {}
         finally:
             session.close()
