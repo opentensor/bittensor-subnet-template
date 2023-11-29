@@ -12,18 +12,6 @@ BLOCKCHAIN_IMPORTANCE = {
     'ethereum': 0.5
 }
 
-def build_miner_distribution(responses):
-    miner_distribution = {}
-    for response in responses:
-        if response.output is None:
-            continue
-        network = response.output.metadata.network
-        if network in miner_distribution:
-            miner_distribution[network] += 1
-        else:
-            miner_distribution[network] = 1
-    return miner_distribution
-
 def get_dynamic_weight(network, miner_distribution):
     # Ensure miner_distribution is not empty and contains valid data
     if not miner_distribution or not isinstance(miner_distribution, dict):

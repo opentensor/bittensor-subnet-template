@@ -27,7 +27,7 @@ from insights import protocol
 from insights.protocol import MinerDiscoveryOutput
 from neurons.nodes.nodes import get_node
 from neurons.validators.miner_registry import MinerRegistryManager
-from neurons.validators.scoring import build_miner_distribution, calculate_score, verify_data_sample, \
+from neurons.validators.scoring import calculate_score, verify_data_sample, \
     BLOCKCHAIN_IMPORTANCE
 
 
@@ -91,14 +91,32 @@ def main(config):
     bt.logging.info(f"Running validator on uid: {my_subnet_uid}")
     bt.logging.info("Building validation weights.")
 
-    scores = torch.zeros_like(metagraph.S, dtype=torch.float32)
+    # Restore weights, or initialize weights for each miner to 0.
+    scores_file = "scores.pt"
+    try:
+        scores = torch.load(scores_file)
+        bt.logging.info(f"Loaded scores from save file: {scores}")
+    except:
+        scores = torch.zeros_like(metagraph.S, dtype=torch.float32)
+        bt.logging.info(f"Initialized all scores to 0")
+
+
     scores = scores * (metagraph.total_stake < 1.024e3) # all nodes with more than 1e3 total stake are set to 0 (sets validators weights to 0)
     scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids]) # set all nodes without ips set to 0
     bt.logging.info(f"Initial scores: {scores}")
 
+    total_dendrites_per_query = 25
+    minimum_dendrites_per_query = 3
+    curr_block = subtensor.block
+    last_updated_block = curr_block - (curr_block % 100)
+    last_reset_weights_block = curr_block
+
+    bt.logging.debug(f"curr_block: {curr_block}, last_updated_block: {last_updated_block}, last_reset_weights_block: {last_reset_weights_block}")
+
     bt.logging.info("Starting validator loop.")
     step = 0
 
+    # Main loop
     while True:
         # Per 10 blocks, sync the subtensor state with the blockchain.
         if step % 5 == 0:
@@ -126,13 +144,23 @@ def main(config):
         bt.logging.debug(f"active_miners_queryable_uids:{queryable_uids}")
         bt.logging.debug(f"active_miners:{active_miners}")
 
+        # if there are no active miners, set active_miners to 1
+        if active_miners == 0:
+            active_miners = 1
+        # if there are less than dendrites_per_query * 3 active miners, set dendrites_per_query to active_miners / 3
+        if active_miners < total_dendrites_per_query * 3:
+            dendrites_per_query = int(active_miners / 3)
+        else:
+            dendrites_per_query = total_dendrites_per_query
+
+        # less than 3 set to 3
+        if dendrites_per_query < minimum_dendrites_per_query:
+            dendrites_per_query = minimum_dendrites_per_query
+
         # zip uids and queryable_uids, filter only the uids that are queryable, unzip, and get the uids
         zipped_uids = list(zip(uids, queryable_uids))
         filtered_uids = list(zip(*filter(lambda x: x[1], zipped_uids)))[0]
         bt.logging.debug(f"filtered_uids:{filtered_uids}")
-
-        # dendrites_per_query should be 34% of the total number of queryable uids, rounded up to the nearest integer
-        dendrites_per_query = max(1, int(0.34 * active_miners + 0.5))
         dendrites_to_query = sample( filtered_uids, min( dendrites_per_query, len(filtered_uids) ) )
         bt.logging.info(f"dendrites_to_query:{dendrites_to_query}")
 
@@ -149,11 +177,6 @@ def main(config):
             )
 
             miner_distribution = MinerRegistryManager().get_miner_distribution(BLOCKCHAIN_IMPORTANCE.keys())
-
-            if len(miner_distribution) == 0:
-                bt.logging.info(f"No online miners found. Skipping.")
-                time.sleep(bt.__blocktime__ * 5)
-                continue
 
             # Cache dictionary
             block_height_cache = {}
@@ -225,28 +248,50 @@ def main(config):
                     block_height=last_block_height,
                 )
 
-            ## While loop end
+                current_block = subtensor.block
+                if current_block - last_updated_block > 100:
+                    weights = scores / torch.sum(scores)
+                    bt.logging.info(f"Setting weights: {weights}")
+                    # Miners with higher scores (or weights) receive a larger share of TAO rewards on this subnet.
+                    (processed_uids,  processed_weights) = bt.utils.weight_utils.process_weights_for_netuid(
+                        uids=metagraph.uids,
+                        weights=weights,
+                        netuid=config.netuid,
+                        subtensor=subtensor
+                    )
+                    bt.logging.info(f"Processed weights: {processed_weights}")
+                    bt.logging.info(f"Processed uids: {processed_uids}")
+                    result = subtensor.set_weights(
+                        netuid = config.netuid, # Subnet to set weights on.
+                        wallet = wallet, # Wallet to sign set weights using hotkey.
+                        uids = processed_uids, # Uids of the miners to set weights for.
+                        weights = processed_weights, # Weights to set for the miners.
+                    )
+                    last_updated_block = current_block
+                    if result: bt.logging.success('✅ Successfully set weights.')
+                    else: bt.logging.error('Failed to set weights.')
+
+
+
             bt.logging.info(f"Scoring response: {scores}")
 
-            if (step + 1) % 10 == 0:
-                weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
-                bt.logging.info(f"Setting weights: {weights}")
-                result = subtensor.set_weights(
-                    netuid=config.netuid,
-                    wallet=wallet,
-                    uids=metagraph.uids,
-                    weights=weights,
-                    wait_for_inclusion=True,
-                )
-                if result:
-                    bt.logging.success("Successfully set weights.")
-                    time.sleep(bt.__blocktime__ * 101)
-                else:
-                    bt.logging.error("Failed to set weights.")
-
             step += 1
-            metagraph = subtensor.metagraph(config.netuid)
-            time.sleep(bt.__blocktime__)
+            current_block = subtensor.block
+
+            if last_reset_weights_block + 1800 < current_block:
+                bt.logging.trace(f"Clearing weights for validators and nodes without IPs")
+                last_reset_weights_block = current_block
+                # all nodes with more than 1e3 total stake are set to 0 (sets validtors weights to 0)
+                scores = scores * (metagraph.total_stake < 1.024e3)
+                # set all nodes without ips set to 0
+                scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids])
+
+                # Resync our local state with the latest state from the blockchain.
+                metagraph = subtensor.metagraph(config.netuid)
+                torch.save(scores, scores_file)
+                bt.logging.info(f"Saved weights to \"{scores_file}\"")
+                # Sleep for a duration equivalent to the block time (i.e., time between successive blocks).
+                time.sleep(bt.__blocktime__ * 10)
 
         except RuntimeError as e:
             bt.logging.error(e)
@@ -277,4 +322,5 @@ def validate_all_data_samples(node, network, data_samples):
 
 if __name__ == "__main__":
     config = get_config()
+
     main(config)
