@@ -173,7 +173,7 @@ def main(config):
                 filtered_axons,
                 protocol.MinerDiscovery(),
                 deserialize=True,
-                timeout = 120,
+                timeout = 60,
             )
 
             miner_distribution = MinerRegistryManager().get_miner_distribution(BLOCKCHAIN_IMPORTANCE.keys())
@@ -248,29 +248,29 @@ def main(config):
                     block_height=last_block_height,
                 )
 
-                current_block = subtensor.block
-                if current_block - last_updated_block > 100:
-                    weights = scores / torch.sum(scores)
-                    bt.logging.info(f"Setting weights: {weights}")
-                    # Miners with higher scores (or weights) receive a larger share of TAO rewards on this subnet.
-                    (processed_uids,  processed_weights) = bt.utils.weight_utils.process_weights_for_netuid(
-                        uids=metagraph.uids,
-                        weights=weights,
-                        netuid=config.netuid,
-                        subtensor=subtensor
-                    )
-                    bt.logging.info(f"Processed weights: {processed_weights}")
-                    bt.logging.info(f"Processed uids: {processed_uids}")
-                    result = subtensor.set_weights(
-                        netuid = config.netuid, # Subnet to set weights on.
-                        wallet = wallet, # Wallet to sign set weights using hotkey.
-                        uids = processed_uids, # Uids of the miners to set weights for.
-                        weights = processed_weights, # Weights to set for the miners.
-                    )
-                    last_updated_block = current_block
-                    if result: bt.logging.success('✅ Successfully set weights.')
-                    else: bt.logging.error('Failed to set weights.')
-
+            current_block = subtensor.block
+            if current_block - last_updated_block > 100:
+                bt.logging.info(f"Block difference is {current_block - last_updated_block}.")
+                weights = scores / torch.sum(scores)
+                bt.logging.info(f"Setting weights: {weights}")
+                # Miners with higher scores (or weights) receive a larger share of TAO rewards on this subnet.
+                (processed_uids,  processed_weights) = bt.utils.weight_utils.process_weights_for_netuid(
+                    uids=metagraph.uids,
+                    weights=weights,
+                    netuid=config.netuid,
+                    subtensor=subtensor
+                )
+                bt.logging.info(f"Processed weights: {processed_weights}")
+                bt.logging.info(f"Processed uids: {processed_uids}")
+                result = subtensor.set_weights(
+                    netuid = config.netuid, # Subnet to set weights on.
+                    wallet = wallet, # Wallet to sign set weights using hotkey.
+                    uids = processed_uids, # Uids of the miners to set weights for.
+                    weights = processed_weights, # Weights to set for the miners.
+                )
+                last_updated_block = current_block
+                if result: bt.logging.success('✅ Successfully set weights.')
+                else: bt.logging.error('Failed to set weights.')
 
             bt.logging.info(f"Scoring response: {scores}")
 
