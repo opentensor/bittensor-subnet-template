@@ -249,8 +249,8 @@ def main(config):
                 )
 
             current_block = subtensor.block
+            bt.logging.info(f"Block difference is {current_block - last_updated_block}.")
             if current_block - last_updated_block > 100:
-                bt.logging.info(f"Block difference is {current_block - last_updated_block}.")
                 weights = scores / torch.sum(scores)
                 bt.logging.info(f"Setting weights: {weights}")
                 # Miners with higher scores (or weights) receive a larger share of TAO rewards on this subnet.
