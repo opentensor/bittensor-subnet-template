@@ -276,11 +276,8 @@ def main(config):
 
             step += 1
 
-            # Resync our local state with the latest state from the blockchain.
-            metagraph = subtensor.metagraph(config.netuid)
             torch.save(scores, scores_file)
             bt.logging.info(f"Saved weights to \"{scores_file}\"")
-            # Sleep for a duration equivalent to the block time (i.e., time between successive blocks).
             time.sleep(bt.__blocktime__ * 10)
 
         except RuntimeError as e:

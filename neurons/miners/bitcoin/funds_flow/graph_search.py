@@ -1,4 +1,6 @@
 import os
+import typing
+
 from neo4j import GraphDatabase
 
 
@@ -49,6 +51,23 @@ class GraphSearch:
                 "block_height": result["block_height"],
                 "transaction_count": result["transaction_count"]
             }
+    def get_block_transactions(self, block_heights: typing.List[int]):
+        with self.driver.session() as session:
+            query = """
+                UNWIND $block_heights AS block_height
+                MATCH (t:Transaction { block_height: block_height })
+                RETURN block_height, COUNT(t) AS transaction_count
+            """
+            data_set = session.run(query, block_heights=block_heights)
+
+            results = []
+            for record in data_set:
+                results.append({
+                    "block_height": record["block_height"],
+                    "transaction_count": record["transaction_count"]
+                })
+
+            return results
 
     def get_block_range(self):
         with self.driver.session() as session:

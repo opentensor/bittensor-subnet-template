@@ -122,9 +122,6 @@ def main(config):
     my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
     bt.logging.info(f"Running miner on uid: {my_subnet_uid}")
 
-    def get_data_sample(graph_search, block_height):
-        return graph_search.get_block_transaction(block_height)
-
     def miner_discovery(synapse: protocol.MinerDiscovery) -> protocol.MinerDiscovery:
         try:
             graph_search = get_graph_search(config.network, config.model_type)
@@ -133,13 +130,8 @@ def main(config):
             _latest_block_height = block_range['latest_block_height']
             start_block_height = block_range['start_block_height']
 
-            data_samples: typing.List[typing.Dict] = []
             block_heights = [randint(start_block_height, _latest_block_height) for _ in range(10)]
-
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                futures = [executor.submit(get_data_sample, graph_search, height) for height in block_heights]
-                for future in concurrent.futures.as_completed(futures):
-                    data_samples.append(future.result())
+            data_samples = graph_search.get_block_transactions(block_heights)
 
             synapse.output = protocol.MinerDiscoveryOutput(
                 metadata=MinerDiscoveryMetadata(
