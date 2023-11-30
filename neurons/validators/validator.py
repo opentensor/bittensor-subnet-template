@@ -123,7 +123,6 @@ def main(config):
             bt.logging.info(f"🔄 Syncing metagraph with subtensor.")
             metagraph.sync(subtensor = subtensor)
 
-
         # If there are more uids than scores, add more weights.
         # Get the uids of all miners in the network.
         uids = metagraph.uids.tolist()
@@ -136,13 +135,9 @@ def main(config):
 
         # If there are less uids than scores, remove some weights.
         queryable_uids = (metagraph.total_stake < 1.024e3)
-        bt.logging.debug(f"queryable_uids:{queryable_uids}")
-
         # Remove the weights of miners that are not queryable.
         queryable_uids = queryable_uids * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in uids])
         active_miners = torch.sum(queryable_uids)
-        bt.logging.debug(f"active_miners_queryable_uids:{queryable_uids}")
-        bt.logging.debug(f"active_miners:{active_miners}")
 
         # if there are no active miners, set active_miners to 1
         if active_miners == 0:
@@ -160,14 +155,12 @@ def main(config):
         # zip uids and queryable_uids, filter only the uids that are queryable, unzip, and get the uids
         zipped_uids = list(zip(uids, queryable_uids))
         filtered_uids = list(zip(*filter(lambda x: x[1], zipped_uids)))[0]
-        bt.logging.debug(f"filtered_uids:{filtered_uids}")
         dendrites_to_query = sample( filtered_uids, min( dendrites_per_query, len(filtered_uids) ) )
-        bt.logging.info(f"dendrites_to_query:{dendrites_to_query}")
 
         try:
             # Filter metagraph.axons by indices saved in dendrites_to_query list
             filtered_axons = [metagraph.axons[i] for i in dendrites_to_query]
-            bt.logging.info(f"filtered_axons: {filtered_axons}")
+            bt.logging.info(f"filtered axons: {filtered_axons}")
 
             responses = dendrite.query(
                 filtered_axons,
@@ -182,9 +175,8 @@ def main(config):
             block_height_cache = {}
 
             for index, response in enumerate(responses):
-                bt.logging.debug(f"processing response: {response}")
                 if response.output is None:
-                    bt.logging.debug(f"Skipping response")
+                    bt.logging.debug(f"Skipping response from {axon_ip} / {hot_key}")
                     continue
 
                 # Vars
@@ -200,6 +192,8 @@ def main(config):
                 hot_key = response.axon.hotkey
                 response_time = response.axon.process_time
 
+                bt.logging.info(f"🔄 Processing response from {axon_ip} / {hot_key}")
+
                 node = get_node(network)
                 data_samples_are_valid = validate_all_data_samples(node, network, data_samples)
 
@@ -212,6 +206,7 @@ def main(config):
                 if network not in block_height_cache:
                     block_height_cache[network] = node.get_current_block_height()
 
+
                 score = calculate_score(
                     network,
                     response_time,
@@ -222,13 +217,6 @@ def main(config):
                     data_samples_are_valid,
                     cheat_factor
                 )
-
-                bt.logging.info(f" =========================================== {hot_key} ===========================================")
-                bt.logging.info(f"Start block height: {start_block_height}")
-                bt.logging.info(f"Last block height: {last_block_height}")
-                bt.logging.info(f"Data samples are valid: {data_samples_are_valid}")
-                bt.logging.info(f"Cheat factor: {cheat_factor}")
-                bt.logging.info(f"Score: {score}")
 
                 scores[dendrites_to_query[index]] = config.alpha * scores[dendrites_to_query[index]] + (1 - config.alpha) * score
 

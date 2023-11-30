@@ -36,12 +36,21 @@ def get_dynamic_weight(network, miner_distribution):
 
 def calculate_score(network, process_time, start_block_height, last_block_height, blockchain_block_height, miner_distribution, data_samples_are_valid, cheat_factor):
     # Initial logging for debugging purposes
-    bt.logging.info(f"Calculating score for network: {network}, process_time: {process_time}, start_block_height: {start_block_height}, last_block_height: {last_block_height}, blockchain_block_height: {blockchain_block_height}, miner_distribution: {miner_distribution}, data_samples_are_valid: {data_samples_are_valid}, cheat_factor: {cheat_factor}")
+    bt.logging.info(f"🔄 Calculating score for parameters:"
+                    f"network: {network}, "
+                    f"process_time: {process_time}, "
+                    f"start_block_height: {start_block_height}, "
+                    f"last_block_height: {last_block_height}, "
+                    f"blockchain_block_height: {blockchain_block_height},"
+                    f"miner_distribution: {miner_distribution}, "
+                    f"data_samples_are_valid: {data_samples_are_valid},"
+                    f"cheat_factor: {cheat_factor}")
 
     # Return a score of 0 if the data samples are not valid
     if not data_samples_are_valid:
         return 0
 
+    bt.logging.info(f"Partial results: ")
     # Calculate dynamic weight based on network and miner distribution
     blockchain_size_weight = get_dynamic_weight(network, miner_distribution)
     bt.logging.debug(f"Blockchain size weight: {blockchain_size_weight}")
