@@ -86,6 +86,9 @@ def main(config):
     bt.logging.info(f"Subtensor: {subtensor}")
     metagraph = subtensor.metagraph(config.netuid)
     bt.logging.info(f"Metagraph: {metagraph}")
+
+    last_updated_block = subtensor.block - 100
+
     if wallet.hotkey.ss58_address not in metagraph.hotkeys:
         bt.logging.error(
             f"\nYour miner: {wallet} is not registered to chain connection: {subtensor} \nRun btcli register and try again. "
