@@ -64,10 +64,20 @@ Update to the nightly version of Rust:
 
 ## 5. Initialize 
 
-This step initializes your local subtensor chain in development mode. This command will set up and run a local subtensor.
+These steps initialize your local subtensor chain in development mode. These commands will set up and run a local subtensor.
+
+Build the binary with the faucet feature enabled:
 
 ```bash
-./scripts/localnet.sh
+cargo build --release --features pow-faucet
+```
+
+**NOTE**: The `--features pow-faucet` option in the above is required if we want to use the command `btcli wallet faucet` [See the below Mint tokens step](#8-mint-tokens-from-faucet).
+
+Next, run the localnet script and turn off the attempt to build the binary (as we have already done this above):
+
+```bash
+BUILD_BINARY=0 ./scripts/localnet.sh 
 ```
 
 **NOTE**: Watch for any build or initialization outputs in this step. If you are building the project for the first time, this step will take a while to finish building, depending on your hardware.

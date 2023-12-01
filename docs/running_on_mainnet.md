@@ -105,7 +105,7 @@ The above command will show:
 
 ## 4. Purchasing a slot
 
-Using your TAO balance, you can register your subnet to the mainchain. This will create a new subnet on the mainchainchain and give you the owner permissions to it. The below command shows how to purchase a slot. 
+Using your TAO balance, you can register your subnet to the mainchain. This will create a new subnet on the mainchain and give you the owner permissions to it. The below command shows how to purchase a slot. 
 
 **NOTE**: Slots cost TAO to lock. You will get this TAO back when the subnet is dissolved.
 

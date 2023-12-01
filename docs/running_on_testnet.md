@@ -98,19 +98,7 @@ The above command will show:
 
 ## 4. (Optional) Get faucet tokens
    
-Create testnet faucet tokens if you don't have sufficient faucet tokens. The code below shows how to get faucet tokens.
-
-```bash
-btcli wallet faucet --wallet.name owner --subtensor.network test
-```
-
-The above will show:
-
-```bash
->> Balance: τ0.000000000 ➡ τ100.000000000
->> Balance: τ100.000000000 ➡ τ200.000000000
-...
-```
+Faucet is disabled on the testnet. Hence, if you don't have sufficient faucet tokens, ask the [Bittensor Discord community](https://discord.com/channels/799672011265015819/830068283314929684) for faucet tokens.
 
 ## 5. Purchase a slot
 
