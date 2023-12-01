@@ -1,8 +1,18 @@
 # Running Subnet Locally
 
-This tutorial will guide you through setting up a local blockchain (subtensor), creating a subnet, and run your incentive mechanism on the subnet.
+This tutorial will guide you through:
 
-**NOTE**: Running locally is sometimes synonymously referred as running on staging.
+- Setting up a local blockchain that is not connected to either Bittensor testchain or mainchain
+- Creating a subnet
+- Run your incentive mechanism on the subnet.
+
+## Local blockchain vs local subtensor node 
+
+Running a local blockchain is sometimes synonymously referred as running on staging. This is **different** from running a local subtensor node that connects to the Bittensor mainchain. 
+
+A local subtensor node will connect to the mainchain and sync with the mainchain, giving you your own access point to the mainchain. 
+
+Running a local blockchain spins up two authority nodes locally, not connected to any other nodes or testchain or mainchain. This tutorial is for running a local blockchain. 
 
 ## Prerequisites
 
