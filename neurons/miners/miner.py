@@ -171,6 +171,14 @@ def main(config):
         )
         return prirority
 
+    def blacklist_discovery(synapse: protocol.MinerQuery) -> typing.Tuple[bool, str]:
+        if synapse.dendrite.hotkey not in metagraph.hotkeys:
+            bt.logging.trace(
+                f"Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}"
+            )
+            return True, "Unrecognized hotkey"
+        return False, "All ok"
+
     def blacklist_execute_query(synapse: protocol.MinerQuery) -> typing.Tuple[bool, str]:
 
         if synapse.dendrite.hotkey not in metagraph.hotkeys:
@@ -203,11 +211,9 @@ def main(config):
     axon = bt.axon(wallet=wallet, config=config)
     bt.logging.info(f"Attaching forward function to axon.")
 
-    axon.attach(forward_fn=miner_discovery).attach(
-        forward_fn=execute_query,
-        blacklist_fn=blacklist_execute_query,
-        priority_fn=priority_execute_query,
-    )
+    axon.attach(forward_fn=miner_discovery,  blacklist_fn=blacklist_discovery, priority_fn=priority_execute_query).attach(
+        forward_fn=execute_query, blacklist_fn=blacklist_execute_query, priority_fn=priority_execute_query)
+
     bt.logging.info(
         f"Serving axon {axon} on network: {config.subtensor.chain_endpoint} with netuid: {config.netuid}"
     )
