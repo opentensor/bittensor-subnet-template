@@ -21,6 +21,7 @@ import time
 import argparse
 import traceback
 import typing
+import torch
 import bittensor as bt
 from random import randint
 from insights import protocol
@@ -230,22 +231,49 @@ def main(config):
     bt.logging.info(f"Starting axon server on port: {config.axon.port}")
 
     axon.start()
+    # Keep the miner alive
+    # This loop maintains the miner's operations until intentionally stopped.
     bt.logging.info(f"Starting main loop")
     step = 0
     while True:
         try:
-            if step % 5 == 0:
+            if subtensor.block - last_updated_block >= 100:
+                bt.logging.trace(f"Setting miner weight")
+                # find the uid that matches config.wallet.hotkey [meta.axons[N].hotkey == config.wallet.hotkey]
+                # set the weight of that uid to 1.0
+                uid = None
+                try:
+                    for _uid, axon in enumerate(metagraph.axons):
+                        if axon.hotkey == wallet.hotkey.ss58_address:
+                            # uid = axon.uid
+                            # uid doesnt exist ona xon
+                            uid = _uid
+                            break
+                    if uid is not None:
+                        # 0 weights for all uids
+                        weights = torch.Tensor([0.0] * len(metagraph.uids))
+                        # 1 weight for uid
+                        weights[uid] = 1.0
+                        (uids, processed_weights) = bt.utils.weight_utils.process_weights_for_netuid( uids = metagraph.uids, weights = weights, netuid=config.netuid, subtensor = subtensor)
+                        subtensor.set_weights(wallet = wallet, netuid = config.netuid, weights = processed_weights, uids = uids)
+                        last_updated_block = subtensor.block
+                        bt.logging.trace("🔄 Miner weight set!")
+                    else:
+                        bt.logging.warning(f"Could not find uid with hotkey {config.wallet.hotkey} to set weight")
+                except Exception as e:
+                    bt.logging.warning(f"Could not set miner weight: {e}")
+                    raise e
+            # Below: Periodically update our knowledge of the network graph.
+            if step % 60 == 0:
                 metagraph = subtensor.metagraph(config.netuid)
-                log = (
-                    f"Step:{step} | "
-                    f"Block:{metagraph.block.item()} | "
-                    f"Stake:{metagraph.S[my_subnet_uid]} | "
-                    f"Rank:{metagraph.R[my_subnet_uid]} | "
-                    f"Trust:{metagraph.T[my_subnet_uid]} | "
-                    f"Consensus:{metagraph.C[my_subnet_uid] } | "
-                    f"Incentive:{metagraph.I[my_subnet_uid]} | "
-                    f"Emission:{metagraph.E[my_subnet_uid]}"
-                )
+                log =  (f'Step:{step} | ' \
+                        f'Block:{metagraph.block.item()} | ' \
+                        f'Stake:{metagraph.S[my_subnet_uid]} | ' \
+                        f'Rank:{metagraph.R[my_subnet_uid]} | ' \
+                        f'Trust:{metagraph.T[my_subnet_uid]} | ' \
+                        f'Consensus:{metagraph.C[my_subnet_uid] } | ' \
+                        f'Incentive:{metagraph.I[my_subnet_uid]} | ' \
+                        f'Emission:{metagraph.E[my_subnet_uid]}')
                 bt.logging.info(log)
             step += 1
             time.sleep(1)
