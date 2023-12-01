@@ -163,7 +163,7 @@ def main(config):
 
         return synapse
 
-    def priority_execute_query(synapse: protocol.MinerQuery) -> float:
+    def priority_discovery(synapse: protocol.MinerDiscovery) -> float:
         caller_uid = metagraph.hotkeys.index(synapse.dendrite.hotkey)
         prirority = float(metagraph.S[caller_uid])
         bt.logging.trace(
@@ -171,13 +171,21 @@ def main(config):
         )
         return prirority
 
-    def blacklist_discovery(synapse: protocol.MinerQuery) -> typing.Tuple[bool, str]:
+    def blacklist_discovery(synapse: protocol.MinerDiscovery) -> typing.Tuple[bool, str]:
         if synapse.dendrite.hotkey not in metagraph.hotkeys:
             bt.logging.trace(
                 f"Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}"
             )
             return True, "Unrecognized hotkey"
         return False, "All ok"
+
+    def priority_execute_query(synapse: protocol.MinerQuery) -> float:
+        caller_uid = metagraph.hotkeys.index(synapse.dendrite.hotkey)
+        prirority = float(metagraph.S[caller_uid])
+        bt.logging.trace(
+            f"Prioritizing {synapse.dendrite.hotkey} with value: ", prirority
+        )
+        return prirority
 
     def blacklist_execute_query(synapse: protocol.MinerQuery) -> typing.Tuple[bool, str]:
 
@@ -211,7 +219,7 @@ def main(config):
     axon = bt.axon(wallet=wallet, config=config)
     bt.logging.info(f"Attaching forward function to axon.")
 
-    axon.attach(forward_fn=miner_discovery,  blacklist_fn=blacklist_discovery, priority_fn=priority_execute_query).attach(
+    axon.attach(forward_fn=miner_discovery,  blacklist_fn=blacklist_discovery, priority_fn=priority_discovery).attach(
         forward_fn=execute_query, blacklist_fn=blacklist_execute_query, priority_fn=priority_execute_query)
 
     bt.logging.info(
