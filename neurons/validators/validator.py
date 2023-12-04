@@ -176,7 +176,7 @@ def main(config):
 
             for index, response in enumerate(responses):
                 if response.output is None:
-                    bt.logging.debug(f"Skipping response from {axon_ip} / {hot_key}")
+                    bt.logging.debug(f"Skipping response")
                     continue
 
                 # Vars
