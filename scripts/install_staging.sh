@@ -1,8 +1,38 @@
-# Update your system packages
-sudo apt update 
+#!/bin/bash
 
-# Install additional required libraries and tools
-sudo apt install --assume-yes make build-essential git clang curl libssl-dev llvm libudev-dev protobuf-compiler
+# Update your system packages
+install_mac() {
+    # Ensure Homebrew is installed
+    which brew > /dev/null
+    if [ $? -ne 0 ]; then
+        echo "Installing Homebrew..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    fi
+
+    echo "Updating Homebrew packages..."
+    brew update
+
+    echo "Installing required packages..."
+    brew install make llvm curl libssl protobuf tmux
+}
+
+# Function to install packages on Ubuntu/Debian
+install_ubuntu() {
+    echo "Updating system packages..."
+    sudo apt update
+
+    echo "Installing required packages..."
+    sudo apt install --assume-yes make build-essential git clang curl libssl-dev llvm libudev-dev protobuf-compiler tmux
+}
+
+# Detect OS and call the appropriate function
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    install_mac
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    install_ubuntu
+else
+    echo "Unsupported operating system."
+fi
 
 # Install rust and cargo
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
