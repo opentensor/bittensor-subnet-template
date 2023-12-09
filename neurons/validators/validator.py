@@ -234,6 +234,7 @@ def main(config):
                     network=network,
                     model_type=model_type,
                     block_height=last_block_height,
+                    bitcoin_cheat_factor_sample_size=bitcoin_cheat_factor_sample_size
                 )
 
             current_block = subtensor.block

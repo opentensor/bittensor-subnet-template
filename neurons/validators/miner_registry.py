@@ -36,10 +36,8 @@ class MinerBlockRegistry(Base):
     updated = Column(DateTime, default=datetime.datetime.utcnow)
 
 class MinerRegistryManager:
-    def __init__(self, db_path="sqlite:////data/miner_registry.db"):
-        directory_path = os.path.dirname(db_path.replace("sqlite:///", ""))
-        os.makedirs(directory_path, exist_ok=True)
-        self.engine = create_engine(db_path)
+    def __init__(self):
+        self.engine = create_engine("sqlite:////data/miner_registry.db")
         Base.metadata.create_all(self.engine)
 
     # this method will be obsolete once we have a miner registry
@@ -96,7 +94,7 @@ class MinerRegistryManager:
         finally:
             session.close()
 
-    def store_miner_block_height(self, hot_key, network, model_type, block_height):
+    def store_miner_block_height(self, hot_key, network, model_type, block_height, bitcoin_cheat_factor_sample_size):
         session = sessionmaker(bind=self.engine)()
         try:
             new_miner = MinerBlockRegistry(
@@ -107,6 +105,23 @@ class MinerRegistryManager:
             )
             session.add(new_miner)
             session.commit()
+
+            # Count the number of records for the given hot_key
+            count = session.query(MinerBlockRegistry).filter_by(hot_key=hot_key).count()
+
+            # If count exceeds bitcoin_cheat_factor_sample_size, delete the oldest records
+            if count > bitcoin_cheat_factor_sample_size:
+                # Find the oldest records to delete
+                oldest_records = session.query(MinerBlockRegistry) \
+                    .filter_by(hot_key=hot_key) \
+                    .order_by(MinerBlockRegistry.block_height.asc()) \
+                    .limit(count - bitcoin_cheat_factor_sample_size)
+
+                for record in oldest_records:
+                    session.delete(record)
+
+                session.commit()
+
         except Exception as e:
             session.rollback()
             print(f"Error occurred: {traceback.format_exc()}")
