@@ -221,13 +221,21 @@ class BaseValidatorNeuron(BaseNeuron):
         bt.logging.trace("top10 values", raw_weights.sort()[0])
         bt.logging.trace("top10 uids", raw_weights.sort()[1])
 
+        # Convert to uint16 weights and uids for the chain.
+        uids, uint_weights = bt.utils.weight_utils.convert_weights_and_uids_for_emit(
+            uids=self.metagraph.uids.to("cpu"), weights=raw_weights.to("cpu")
+        )
+        bt.logging.debug("uint_weights", uint_weights)
+        bt.logging.debug("top10 uint values", uint_weights.sort()[0])
+
+
         # Process the raw weights to final_weights via subtensor limitations.
         (
             processed_weight_uids,
             processed_weights,
         ) = bt.utils.weight_utils.process_weights_for_netuid(
-            uids=self.metagraph.uids.to("cpu"),
-            weights=raw_weights.to("cpu"),
+            uids=uids,
+            weights=uint_weights,
             netuid=self.config.netuid,
             subtensor=self.subtensor,
             metagraph=self.metagraph,
