@@ -37,8 +37,6 @@ class MinerBlockRegistry(Base):
 
 class MinerRegistryManager:
     def __init__(self, db_path="sqlite:////data/miner_registry.db"):
-        directory_path = os.path.dirname(db_path.replace("sqlite:///", ""))
-        os.makedirs(directory_path, exist_ok=True)
         self.engine = create_engine(db_path)
         Base.metadata.create_all(self.engine)
 
