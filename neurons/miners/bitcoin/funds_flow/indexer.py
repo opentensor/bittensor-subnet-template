@@ -2,7 +2,7 @@ import os
 import signal
 import time
 import traceback
-from neurons.logging import setup_logger
+from neurons.setup_logger import setup_logger
 from neurons.nodes.bitcoin.node import BitcoinNode
 from neurons.miners.bitcoin.funds_flow.graph_creator import GraphCreator
 from neurons.miners.bitcoin.funds_flow.graph_indexer import GraphIndexer
