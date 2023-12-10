@@ -176,12 +176,7 @@ def main(config):
         return prirority
 
     def blacklist_discovery(synapse: protocol.MinerDiscovery) -> typing.Tuple[bool, str]:
-        if synapse.dendrite.hotkey not in metagraph.hotkeys:
-            bt.logging.trace(
-                f"Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}"
-            )
-            return True, "Unrecognized hotkey"
-        return False, "All ok"
+        return blacklist_discovery(metagraph, synapse)
 
     def priority_execute_query(synapse: protocol.MinerQuery) -> float:
         caller_uid = metagraph.hotkeys.index(synapse.dendrite.hotkey)
