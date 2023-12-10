@@ -38,7 +38,7 @@ jobs:
 
       - name: Run Unit Tests in Docker
         run: |
-          docker run --rm $VERSION_TAG python -m unittest discover
+          docker run --rm --entrypoint python $VERSION_TAG -m unittest discover 
 
       - name: Push Docker image
         run: |
