@@ -29,11 +29,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build Docker image
         run: |
-         IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/blockchain_insights_base
+          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/blockchain_insights_base
           VERSION=${{ github.event.inputs.version || github.event.release.tag_name }}
           VERSION_TAG="$IMAGE_NAME:$VERSION"
           docker build --tag $VERSION_TAG .
+
+      - name: Run Unit Tests in Docker
+        run: |
+          docker run --rm $VERSION_TAG python -m unittest discover
+
+      - name: Push Docker image
+        run: |
           docker push $VERSION_TAG
-          
