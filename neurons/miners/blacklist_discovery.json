@@ -1,0 +1,7 @@
+{
+    "whitelisted_hotkeys": [],
+    "blacklisted_hotkeys": [],
+    "stake_threshold": 10,
+    "max_requests": 10,
+    "min_request_period": 60
+}
