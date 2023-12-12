@@ -58,15 +58,15 @@ cd ../bittensor-subnet-template
 python -m pip install -e .
 
 # Create a coldkey for the owner role
-btcli wallet new_coldkey --wallet.name owner --no_password
+btcli wallet new_coldkey --wallet.name owner --no_password --no_prompt
 
 # Set up the miner's wallets
-btcli wallet new_coldkey --wallet.name miner --no_password
-btcli wallet new_hotkey --wallet.name miner --wallet.hotkey default
+btcli wallet new_coldkey --wallet.name miner --no_password --no_prompt
+btcli wallet new_hotkey --wallet.name miner --wallet.hotkey default --no_prompt
 
 # Set up the validator's wallets
-btcli wallet new_coldkey --wallet.name validator --no_password
-btcli wallet new_hotkey --wallet.name validator --wallet.hotkey default
+btcli wallet new_coldkey --wallet.name validator --no_password --no_prompt
+btcli wallet new_hotkey --wallet.name validator --wallet.hotkey default --no_prompt
 
 
 ## Setup localnet
@@ -81,16 +81,16 @@ tmux new-session -d -s localnet -n 'localnet'
 tmux send-keys -t localnet 'bash ../subtensor/setup_and_run.sh' C-m
 
 # Notify the user
-echo "localnet.sh is running in a detached tmux session named 'localnet'"
-echo "You can attach to this session with: tmux attach-session -t localnet"
+echo ">> localnet.sh is running in a detached tmux session named 'localnet'"
+echo ">> You can attach to this session with: tmux attach-session -t localnet"
 
 # Transfer tokens to miner and validator coldkeys
-export BT_owner_TOKEN_WALLET=$(cat ~/.bittensor/wallets/owner/coldkeypub.txt | grep -oP '"ss58Address": "\K[^"]+')
-export BT_miner_TOKEN_WALLET=$(cat ~/.bittensor/wallets/miner/coldkeypub.txt | grep -oP '"ss58Address": "\K[^"]+')
-export BT_validator_TOKEN_WALLET=$(cat ~/.bittensor/wallets/validator/coldkeypub.txt | grep -oP '"ss58Address": "\K[^"]+')
+export BT_OWNER_TOKEN_WALLET=$(cat ~/.bittensor/wallets/owner/coldkeypub.txt | grep -oP '"ss58Address": "\K[^"]+')
+export BT_MINER_TOKEN_WALLET=$(cat ~/.bittensor/wallets/miner/coldkeypub.txt | grep -oP '"ss58Address": "\K[^"]+')
+export BT_VALIDATOR_TOKEN_WALLET=$(cat ~/.bittensor/wallets/validator/coldkeypub.txt | grep -oP '"ss58Address": "\K[^"]+')
 
-btcli wallet transfer --subtensor.network ws://127.0.0.1:9946 --wallet.name owner --dest $BT_miner_TOKEN_WALLET --amount 1000 --no_prompt
-btcli wallet transfer --subtensor.network ws://127.0.0.1:9946 --wallet.name owner --dest $BT_validator_TOKEN_WALLET --amount 1000 --no_prompt
+btcli wallet transfer --subtensor.network ws://127.0.0.1:9946 --wallet.name owner --dest $BT_MINER_TOKEN_WALLET --amount 1000 --no_prompt
+btcli wallet transfer --subtensor.network ws://127.0.0.1:9946 --wallet.name owner --dest $BT_VALIDATOR_TOKEN_WALLET --amount 1000 --no_prompt
 
 # Register a subnet
 btcli subnet create --wallet.name owner --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946 --no_prompt
