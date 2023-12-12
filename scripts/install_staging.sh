@@ -75,7 +75,7 @@ cd ../subtensor
 
 # Start a new tmux session and create a new pane, but do not switch to it
 echo "export BT_DEFAULT_TOKEN_WALLET=\$(cat ~/.bittensor/wallets/owner/coldkeypub.txt | grep -oP '\"ss58Address\": \"\K[^\"]+')" > setup_and_run.sh
-echo "bash ./scripts/localnet.sh" >> setup_and_run.sh
+echo "FEATURES='pow-faucet runtime-benchmarks' BT_DEFAULT_TOKEN_WALLET=default bash scripts/localnet.sh" >> setup_and_run.sh
 chmod +x setup_and_run.sh
 tmux new-session -d -s localnet -n 'localnet'
 tmux send-keys -t localnet 'bash ../subtensor/setup_and_run.sh' C-m
