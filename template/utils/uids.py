@@ -26,9 +26,7 @@ def check_uid_availability(
     return True
 
 
-def get_random_uids(
-    self, k: int, exclude: List[int] = None
-) -> torch.LongTensor:
+def get_random_uids(self, k: int, exclude: List[int] = None) -> torch.LongTensor:
     """Returns k available random uids from the metagraph.
     Args:
         k (int): Number of uids to return.
@@ -59,5 +57,9 @@ def get_random_uids(
             [uid for uid in avail_uids if uid not in candidate_uids],
             k - len(candidate_uids),
         )
+    # Failsafe to ensure we don't sample more than available uids
+    if len(available_uids) < k:
+        k = len(available_uids)
+
     uids = torch.tensor(random.sample(available_uids, k))
     return uids
