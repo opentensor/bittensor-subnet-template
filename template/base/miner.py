@@ -201,7 +201,9 @@ class BaseMinerNeuron(BaseNeuron):
             )
 
         except Exception as e:
-            bt.logging.error(f"Failed to set weights on chain with exception: { e }")
+            bt.logging.error(
+                f"Failed to set weights on chain with exception: { e }"
+            )
 
         bt.logging.info(f"Set weights: {chain_weights}")
 
