@@ -55,7 +55,7 @@ class TestBlacklistDiscovery(unittest.TestCase):
         neuron_mock = MagicMock()
         neuron_mock.stake = MagicMock(return_value=15)
         stake_mock = MagicMock()
-        stake_mock.tao = 265
+        stake_mock.tao = 26500000
         neuron_mock.stake = stake_mock
 
         self.metagraph.neurons = { 0 : neuron_mock}
