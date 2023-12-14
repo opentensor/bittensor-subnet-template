@@ -29,8 +29,19 @@ class TestBlacklistDiscovery(unittest.TestCase):
 
     @patch('neurons.miners.blacklists.STAKE_THRESHOLD', new=10)
     def test_low_stake_hotkey(self):
-        self.synapse.dendrite.hotkey = 'low_stake_key'
-        self.metagraph.neurons = {'low_stake_key': MagicMock(stake=5)}
+        hotkey = 'low_stake_key'
+        uid = 0
+        self.synapse.dendrite.hotkey = hotkey
+
+        # Mocking the neuron with low stake
+        neuron_mock = MagicMock()
+        stake_mock = MagicMock()
+        stake_mock.tao = 5  # Setting the 'tao' attribute of the stake mock
+        neuron_mock.stake = stake_mock  # Assigning the stake mock to the neuron
+
+        self.metagraph.neurons = {uid: neuron_mock}
+        self.metagraph.axons = [MagicMock(hotkey=hotkey)]
+
         result = blacklist_discovery(self.metagraph, self.synapse)
         self.assertEqual(result, (True, "Blacklisted due to low stake: 5"))
 
@@ -41,9 +52,14 @@ class TestBlacklistDiscovery(unittest.TestCase):
         hotkey = 'frequent_key'
         self.synapse.dendrite.hotkey = hotkey
 
-        # Mocking the stake to be above the threshold
-        self.metagraph.neurons = {hotkey: MagicMock(stake=15)}
+        neuron_mock = MagicMock()
+        neuron_mock.stake = MagicMock(return_value=15)
+        stake_mock = MagicMock()
+        stake_mock.tao = 265
+        neuron_mock.stake = stake_mock
 
+        self.metagraph.neurons = { 0 : neuron_mock}
+        self.metagraph.axons = [MagicMock(hotkey=hotkey)]
         current_time = time.time()
         mock_request_timestamps[hotkey] = deque([current_time - 30, current_time - 20, current_time - 10], maxlen=3)
         result = blacklist_discovery(self.metagraph, self.synapse)
@@ -52,8 +68,18 @@ class TestBlacklistDiscovery(unittest.TestCase):
 
     @patch('neurons.miners.blacklists.request_timestamps', new_callable=lambda: {})
     def test_acceptable_request(self, mock_request_timestamps):
-        self.synapse.dendrite.hotkey = 'normal_key'
-        self.metagraph.neurons = {'normal_key': MagicMock(stake=15)}
+        hotkey = 'key'
+        uid = 0
+        self.synapse.dendrite.hotkey = hotkey
+
+        neuron_mock = MagicMock()
+        stake_mock = MagicMock()
+        stake_mock.tao = 3444445
+        neuron_mock.stake = stake_mock
+
+        self.metagraph.neurons = {uid: neuron_mock}
+        self.metagraph.axons = [MagicMock(hotkey=hotkey)]
+
         result = blacklist_discovery(self.metagraph, self.synapse)
         self.assertEqual(result, (False, "All ok"))
 
