@@ -1,7 +1,7 @@
 {
     "whitelisted_hotkeys": [],
-    "blacklisted_hotkeys": [],
+    "blacklisted_hotkeys": ["5GcBK8PDrVifV1xAf4Qkkk6KsbsmhDdX9atvk8vyKU8xdU63", "5CsvRJXuR955WojnGMdok1hbhffZyB4N5ocrv82f3p5A2zVp", "5Fq5v71D4LX8Db1xsmRSy6udQThcZ8sFDqxQFwnUZ1BuqY5A"],
     "stake_threshold": 10,
-    "max_requests": 10,
+    "max_requests": 32,
     "min_request_period": 60
 }
