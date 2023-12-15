@@ -32,7 +32,19 @@ def blacklist_discovery(metagraph, synapse: protocol.MinerDiscovery) -> typing.T
     if hotkey in WHITELISTED_KEYS:
         return False, "Whitelisted hotkey"
 
-    stake = metagraph.neurons[hotkey].stake if hotkey in metagraph.neurons else 0
+
+    uid = None
+    for _uid, _axon in enumerate(metagraph.axons):
+        if _axon.hotkey == hotkey:
+            uid = _uid
+            break
+
+    if uid is None:
+        return True, "Hotkey not found in metagraph"
+
+    stake = metagraph.neurons[uid].stake.tao
+    bt.logging.debug(f"Stake of {hotkey}: {stake}")
+
     if stake < STAKE_THRESHOLD:
         return True, f"Blacklisted due to low stake: {stake}"
 

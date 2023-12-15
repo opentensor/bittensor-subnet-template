@@ -25,6 +25,7 @@ import torch
 import bittensor as bt
 from random import randint
 from insights import protocol
+from neurons.miners import blacklists
 from neurons.nodes.nodes import get_node
 from neurons.miners.bitcoin.funds_flow.graph_indexer import GraphIndexer
 from neurons.miners.query import (
@@ -176,7 +177,7 @@ def main(config):
         return prirority
 
     def blacklist_discovery(synapse: protocol.MinerDiscovery) -> typing.Tuple[bool, str]:
-        return blacklist_discovery(metagraph, synapse)
+        return blacklists.blacklist_discovery(metagraph, synapse)
 
     def priority_execute_query(synapse: protocol.MinerQuery) -> float:
         caller_uid = metagraph.hotkeys.index(synapse.dendrite.hotkey)
