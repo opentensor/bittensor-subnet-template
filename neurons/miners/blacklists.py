@@ -39,6 +39,9 @@ def blacklist_discovery(metagraph, synapse: protocol.MinerDiscovery) -> typing.T
             uid = _uid
             break
 
+    if uid is None:
+        return True, "Hotkey not found in metagraph"
+
     stake = metagraph.neurons[uid].stake.tao
     bt.logging.debug(f"Stake of {hotkey}: {stake}")
 
