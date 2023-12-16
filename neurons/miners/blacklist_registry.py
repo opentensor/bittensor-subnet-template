@@ -18,8 +18,8 @@ class BlacklistRegistry(Base):
     __table_args__ = (Index('ix_ip_hotkey', 'ip_address', 'hot_key'),)
 
 class BlacklistRegistryManager:
-    def __init__(self):
-        self.engine = create_engine("sqlite:////data/blacklist_registry.db")
+    def __init__(self, connection_string="sqlite:////data/blacklist_registry.db"):
+        self.engine = create_engine(connection_string)
         Base.metadata.create_all(self.engine)
 
     def get_blacklist(self):

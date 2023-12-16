@@ -60,9 +60,9 @@ with codecs.open(
     version_string = version_match.group(1)
 
 setup(
-    name="blockchain_scraping_subnet",
+    name="blockchain_insights_subnet",
     version=version_string,
-    description="blockchain_scraping_subnet",
+    description="blockchain_insights_subnet",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/blockchain-insights/blockchain-data-subnet",
