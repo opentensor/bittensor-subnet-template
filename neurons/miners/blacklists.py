@@ -38,8 +38,8 @@ def load_blacklist_config(file_name):
         data = json.load(file)
         whitelist = set(data.get('whitelisted_hotkeys', []))
         blacklist = set(data.get('blacklisted_hotkeys', []))
-        stake_threshold = data.get('stake_threshold', 10)
-        max_requests = data.get('max_requests', 10)
+        stake_threshold = data.get('stake_threshold', 20000)
+        max_requests = data.get('max_requests', 32)
         min_request_period = data.get('min_request_period', 60)
         return whitelist, blacklist, stake_threshold, max_requests, min_request_period
 
