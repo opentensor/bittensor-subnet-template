@@ -2,13 +2,35 @@ import os
 import time
 import json
 import typing
+import requests
 import bittensor as bt
 from collections import deque
 from insights import protocol
 from neurons.miners.blacklist_registry import BlacklistRegistryManager
 
+last_update_time = 0
+update_interval = 3600
 
 def load_blacklist_config(file_name):
+    global last_update_time
+    current_time = time.time()
+
+    if current_time - last_update_time >= update_interval:
+        try:
+            url = 'https://ip-blocker.s3.fr-par.scw.cloud/blacklist_discovery.json'
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+
+            dir_path = os.path.dirname(os.path.abspath(__file__))
+            file_path = os.path.join(dir_path, file_name)
+            with open(file_path, 'w') as file:
+                json.dump(data, file)
+
+            last_update_time = current_time
+        except Exception as e:
+            bt.logging.error(f"Failed to update blacklist config: {e}")
+
     dir_path = os.path.dirname(os.path.abspath(__file__))
     file_path = os.path.join(dir_path, file_name)
 
@@ -23,7 +45,7 @@ def load_blacklist_config(file_name):
 
 WHITELISTED_KEYS, BLACKLISTED_KEYS, STAKE_THRESHOLD, MAX_REQUESTS, MIN_REQUEST_PERIOD = load_blacklist_config('blacklist_discovery.json')
 
-request_timestamps = {}   # Dictionary to hold request timestamps
+request_timestamps = {}
 
 def blacklist_discovery(metagraph, synapse: protocol.MinerDiscovery) -> typing.Tuple[bool, str]:
     hotkey = synapse.dendrite.hotkey
