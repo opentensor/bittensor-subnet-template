@@ -5,7 +5,7 @@ from neurons.miners.blacklist_registry import BlacklistRegistryManager
 class TestBlacklistRegistry(unittest.TestCase):
     def setUp(self):
         # Set up the test environment
-        self.manager = BlacklistRegistryManager("sqlite:///blacklist_registry.db")
+        self.manager = BlacklistRegistryManager("sqlite:///:memory:")
         self.manager.remove_all()
 
     def test_add_and_retrieve_blacklist(self):
