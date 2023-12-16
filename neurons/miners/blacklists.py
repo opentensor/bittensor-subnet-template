@@ -28,6 +28,7 @@ def load_blacklist_config(file_name):
                 json.dump(data, file)
 
             last_update_time = current_time
+            bt.logging.info(f"Updated blacklist config")
         except Exception as e:
             bt.logging.error(f"Failed to update blacklist config: {e}")
 
@@ -52,6 +53,7 @@ def blacklist_discovery(metagraph, synapse: protocol.MinerDiscovery) -> typing.T
 
     if hotkey in BLACKLISTED_KEYS:
         BlacklistRegistryManager().try_add_to_blacklist(synapse.dendrite.ip, hotkey)
+        bt.logging.debug(f"Blacklisted hotkey: {hotkey}")
         return True, "Blacklisted hotkey"
 
     if hotkey in WHITELISTED_KEYS:
@@ -66,12 +68,14 @@ def blacklist_discovery(metagraph, synapse: protocol.MinerDiscovery) -> typing.T
 
     if uid is None:
         BlacklistRegistryManager().try_add_to_blacklist(synapse.dendrite.ip, hotkey)
+        bt.logging.debug(f"Hotkey not found in metagraph: {hotkey}")
         return True, "Hotkey not found in metagraph"
 
     stake = metagraph.neurons[uid].stake.tao
     bt.logging.debug(f"Stake of {hotkey}: {stake}")
 
     if stake < STAKE_THRESHOLD:
+        bt.logging.debug(f"Blacklisted due to low stake: {stake}")
         return True, f"Blacklisted due to low stake: {stake}"
 
     # Rate Limiting Check
@@ -83,6 +87,7 @@ def blacklist_discovery(metagraph, synapse: protocol.MinerDiscovery) -> typing.T
         request_timestamps[hotkey].popleft()
 
     if len(request_timestamps[hotkey]) >= MAX_REQUESTS:
+        bt.logging.debug(f"Request rate exceeded for {hotkey}")
         return True, f"Request rate exceeded for {hotkey}"
 
     request_timestamps[hotkey].append(current_time)
