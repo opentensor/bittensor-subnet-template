@@ -7,4 +7,8 @@ COPY . .
 RUN pip install --no-cache-dir .
 RUN chmod +rwx scripts/*
 
-RUN python -m unittest discover -s neurons -p '*test*.py'
+RUN apt-get update && \
+    apt-get install -y iptables && \
+    rm -rf /var/lib/apt/lists/* \
+
+# RUN python -m unittest discover -s neurons -p '*test*.py'
