@@ -5,6 +5,8 @@ import typing
 import bittensor as bt
 from collections import deque
 from insights import protocol
+from neurons.miners.blacklist_registry import BlacklistRegistryManager
+
 
 def load_blacklist_config(file_name):
     dir_path = os.path.dirname(os.path.abspath(__file__))
@@ -27,6 +29,7 @@ def blacklist_discovery(metagraph, synapse: protocol.MinerDiscovery) -> typing.T
     hotkey = synapse.dendrite.hotkey
 
     if hotkey in BLACKLISTED_KEYS:
+        BlacklistRegistryManager().try_add_to_blacklist(synapse.dendrite.ip, hotkey)
         return True, "Blacklisted hotkey"
 
     if hotkey in WHITELISTED_KEYS:
@@ -40,6 +43,7 @@ def blacklist_discovery(metagraph, synapse: protocol.MinerDiscovery) -> typing.T
             break
 
     if uid is None:
+        BlacklistRegistryManager().try_add_to_blacklist(synapse.dendrite.ip, hotkey)
         return True, "Hotkey not found in metagraph"
 
     stake = metagraph.neurons[uid].stake.tao
