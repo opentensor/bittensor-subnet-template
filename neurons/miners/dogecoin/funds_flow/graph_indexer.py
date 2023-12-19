@@ -1,4 +1,7 @@
 import os
+
+from bitcoinrpc.authproxy import AuthServiceProxy
+
 from neurons.setup_logger import setup_logger
 from neo4j import GraphDatabase
 
@@ -12,6 +15,7 @@ class GraphIndexer:
         graph_db_url: str = None,
         graph_db_user: str = None,
         graph_db_password: str = None,
+        rpc: AuthServiceProxy = None,
     ):
         if graph_db_url is None:
             self.graph_db_url = (
@@ -34,6 +38,8 @@ class GraphIndexer:
             self.graph_db_url,
             auth=(self.graph_db_user, self.graph_db_password),
         )
+
+        self.bitcoin_rpc = rpc
 
     def close(self):
         self.driver.close()
@@ -85,6 +91,64 @@ class GraphIndexer:
                         print(
                             f"An exception occurred while creating index {index_name}: {e}"
                         )
+
+    def fetch_block_data(self, block_height):
+        """
+        Fetches block data using Bitcoin RPC AuthServiceProxy.
+
+        :param block_height: The height of the block to fetch.
+        :return: The block data.
+        """
+
+        # Ensure AuthServiceProxy object is available
+        if not hasattr(self, "bitcoin_rpc") or self.bitcoin_rpc is None:
+            raise Exception("Bitcoin RPC AuthServiceProxy is not configured")
+
+        try:
+            # Fetch block hash for the given height
+            block_hash = self.bitcoin_rpc.getblockhash(block_height)
+
+            # Fetch block data using the block hash
+            block_data = self.bitcoin_rpc.getblock(
+                block_hash, 2
+            )  # 2 for verbose mode (transaction details)
+            return block_data
+
+        except Exception as e:
+            logger.error(f"Error fetching block data: {e}")
+            return None
+
+    def store_block_data(self, block_data):
+        with self.driver.session() as session:
+            try:
+                block_node = session.run(
+                    "CREATE (b:Block {number: $number, hash: $hash}) RETURN b",
+                    number=block_data["height"],
+                    hash=block_data["hash"],
+                )
+                for tx in block_data["tx"]:
+                    tx_node = session.run(
+                        "CREATE (t:Transaction {hash: $hash}) RETURN t",
+                        hash=tx["hash"],
+                    )
+                    session.run(
+                        "MATCH (b:Block), (t:Transaction) WHERE b.hash = $block_hash AND t.hash = $tx_hash CREATE (b)-[:CONTAINS]->(t)",
+                        block_hash=block_data["hash"],
+                        tx_hash=tx["hash"],
+                    )
+            except Exception as e:
+                logger.error(f"Error storing block data: {e}")
+
+    def reverse_index_blocks(self, start_block):
+        current_block = start_block
+        while current_block >= 0:
+            block_data = self.fetch_block_data(current_block)
+            if block_data:
+                self.store_block_data(block_data)
+            else:
+                logger.error(f"Failed to fetch data for block {current_block}")
+
+            current_block -= 1  # Move to the previous block
 
     def create_graph_focused_on_money_flow(self, in_memory_graph, batch_size=8):
         block_node = in_memory_graph["block"]

@@ -2,6 +2,7 @@
 # Copyright © 2023 Yuma Rao
 # Copyright © 2023 aphex5
 import concurrent
+
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
 # the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
@@ -30,11 +31,13 @@ from neurons.nodes.nodes import get_node
 from neurons.miners.bitcoin.funds_flow.graph_indexer import GraphIndexer
 from neurons.miners.query import (
     execute_query_proxy,
-    get_graph_search, is_query_only,
+    get_graph_search,
+    is_query_only,
 )
 from insights.protocol import (
     MODEL_TYPE_FUNDS_FLOW,
     NETWORK_BITCOIN,
+    NETWORK_DOGE,
     MinerDiscoveryMetadata,
 )
 
@@ -97,25 +100,34 @@ def main(config):
         exit()
 
     bt.logging.info(f"Waiting for graph model to sync with blockchain.")
-    is_synced=False
+    is_synced = False
     while not is_synced:
-        wait_for_sync = os.getenv('WAIT_FOR_SYNC', 'True')
-        if wait_for_sync == 'False':
+        wait_for_sync = os.getenv("WAIT_FOR_SYNC", "True")
+        if wait_for_sync == "False":
             bt.logging.info(f"Skipping graph sync.")
             break
 
         try:
             graph_indexer = GraphIndexer(config.graph_db_url)
-            if config.network == 'bitcoin':
+            if config.network == "bitcoin":
                 node = get_node(config.network)
-                latest_block_height =  node.get_current_block_height()
+                latest_block_height = node.get_current_block_height()
                 current_block_height = graph_indexer.get_latest_block_number()
                 if latest_block_height - current_block_height < 100:
                     is_synced = True
                     bt.logging.info(f"Graph model is synced with blockchain.")
                 else:
-                    bt.logging.info(f"Graph Sync: {current_block_height}/{latest_block_height}")
+                    bt.logging.info(
+                        f"Graph Sync: {current_block_height}/{latest_block_height}"
+                    )
                     time.sleep(bt.__blocktime__ * 12)
+            elif config.network == "doge":
+                node = get_node(config.network)
+                latest_block_height = node.get_current_block_height()
+                current_block_height = graph_indexer.get_latest_block_number()
+                if latest_block_height - current_block_height < 100:
+                    is_synced = True
+                    bt.logging.info(f"Graph model is synced with blockchain.")
             else:
                 raise Exception("Unsupported blockchain network")
         except Exception as e:
@@ -132,10 +144,12 @@ def main(config):
             graph_search = get_graph_search(config.network, config.model_type)
 
             block_range = graph_search.get_block_range()
-            _latest_block_height = block_range['latest_block_height']
-            start_block_height = block_range['start_block_height']
+            _latest_block_height = block_range["latest_block_height"]
+            start_block_height = block_range["start_block_height"]
 
-            block_heights = [randint(start_block_height, _latest_block_height) for _ in range(10)]
+            block_heights = [
+                randint(start_block_height, _latest_block_height) for _ in range(10)
+            ]
             data_samples = graph_search.get_block_transactions(block_heights)
 
             synapse.output = protocol.MinerDiscoveryOutput(
@@ -176,7 +190,9 @@ def main(config):
         )
         return prirority
 
-    def blacklist_discovery(synapse: protocol.MinerDiscovery) -> typing.Tuple[bool, str]:
+    def blacklist_discovery(
+        synapse: protocol.MinerDiscovery,
+    ) -> typing.Tuple[bool, str]:
         return blacklists.blacklist_discovery(metagraph, synapse)
 
     def priority_execute_query(synapse: protocol.MinerQuery) -> float:
@@ -187,8 +203,9 @@ def main(config):
         )
         return prirority
 
-    def blacklist_execute_query(synapse: protocol.MinerQuery) -> typing.Tuple[bool, str]:
-
+    def blacklist_execute_query(
+        synapse: protocol.MinerQuery,
+    ) -> typing.Tuple[bool, str]:
         if synapse.dendrite.hotkey not in metagraph.hotkeys:
             bt.logging.trace(
                 f"Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}"
@@ -219,8 +236,15 @@ def main(config):
     axon = bt.axon(wallet=wallet, config=config)
     bt.logging.info(f"Attaching forward function to axon.")
 
-    axon.attach(forward_fn=miner_discovery,  blacklist_fn=blacklist_discovery, priority_fn=priority_discovery).attach(
-        forward_fn=execute_query, blacklist_fn=blacklist_execute_query, priority_fn=priority_execute_query)
+    axon.attach(
+        forward_fn=miner_discovery,
+        blacklist_fn=blacklist_discovery,
+        priority_fn=priority_discovery,
+    ).attach(
+        forward_fn=execute_query,
+        blacklist_fn=blacklist_execute_query,
+        priority_fn=priority_execute_query,
+    )
 
     bt.logging.info(
         f"Serving axon {axon} on network: {config.subtensor.chain_endpoint} with netuid: {config.netuid}"
@@ -253,26 +277,43 @@ def main(config):
                         weights = torch.Tensor([0.0] * len(metagraph.uids))
                         # 1 weight for uid
                         weights[uid] = 1.0
-                        (uids, processed_weights) = bt.utils.weight_utils.process_weights_for_netuid( uids = metagraph.uids, weights = weights, netuid=config.netuid, subtensor = subtensor)
-                        subtensor.set_weights(wallet = wallet, netuid = config.netuid, weights = processed_weights, uids = uids)
+                        (
+                            uids,
+                            processed_weights,
+                        ) = bt.utils.weight_utils.process_weights_for_netuid(
+                            uids=metagraph.uids,
+                            weights=weights,
+                            netuid=config.netuid,
+                            subtensor=subtensor,
+                        )
+                        subtensor.set_weights(
+                            wallet=wallet,
+                            netuid=config.netuid,
+                            weights=processed_weights,
+                            uids=uids,
+                        )
                         last_updated_block = subtensor.block
                         bt.logging.trace("🔄 Miner weight set!")
                     else:
-                        bt.logging.warning(f"Could not find uid with hotkey {config.wallet.hotkey} to set weight")
+                        bt.logging.warning(
+                            f"Could not find uid with hotkey {config.wallet.hotkey} to set weight"
+                        )
                 except Exception as e:
                     bt.logging.warning(f"Could not set miner weight: {e}")
                     raise e
             # Below: Periodically update our knowledge of the network graph.
             if step % 60 == 0:
                 metagraph = subtensor.metagraph(config.netuid)
-                log =  (f'Step:{step} | ' \
-                        f'Block:{metagraph.block.item()} | ' \
-                        f'Stake:{metagraph.S[my_subnet_uid]} | ' \
-                        f'Rank:{metagraph.R[my_subnet_uid]} | ' \
-                        f'Trust:{metagraph.T[my_subnet_uid]} | ' \
-                        f'Consensus:{metagraph.C[my_subnet_uid] } | ' \
-                        f'Incentive:{metagraph.I[my_subnet_uid]} | ' \
-                        f'Emission:{metagraph.E[my_subnet_uid]}')
+                log = (
+                    f"Step:{step} | "
+                    f"Block:{metagraph.block.item()} | "
+                    f"Stake:{metagraph.S[my_subnet_uid]} | "
+                    f"Rank:{metagraph.R[my_subnet_uid]} | "
+                    f"Trust:{metagraph.T[my_subnet_uid]} | "
+                    f"Consensus:{metagraph.C[my_subnet_uid] } | "
+                    f"Incentive:{metagraph.I[my_subnet_uid]} | "
+                    f"Emission:{metagraph.E[my_subnet_uid]}"
+                )
                 bt.logging.info(log)
             step += 1
             time.sleep(1)
