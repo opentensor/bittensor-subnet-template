@@ -58,7 +58,9 @@ cd ../bittensor-subnet-template
 python -m pip install -e .
 
 # Create a coldkey for the owner role
-btcli wallet new_coldkey --wallet.name owner --no_password --no_prompt
+wallet=${1:-owner}
+
+btcli wallet new_coldkey --wallet.name $wallet --no_password --no_prompt
 
 # Set up the miner's wallets
 btcli wallet new_coldkey --wallet.name miner --no_password --no_prompt
