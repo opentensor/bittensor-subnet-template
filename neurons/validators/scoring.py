@@ -1,5 +1,4 @@
 import bittensor as bt
-from insights.protocol import NETWORK_BITCOIN
 from neurons.remote_config import ValidatorConfig
 from neurons.validators.miner_registry import MinerRegistryManager
 
