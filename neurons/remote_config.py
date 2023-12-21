@@ -125,3 +125,6 @@ class ValidatorConfig(RemoteConfig):
 
     def get_cheat_factor_sample_size(self, network):
         return self.get_config_value(f'cheat_factor_sample_size.{network}', 128)
+
+    def get_block_height_recency_scale_factor(self, network):
+        return self.get_config_value(f'block_height_recency_scale_factor.{network}', 100)

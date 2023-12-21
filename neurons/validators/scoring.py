@@ -56,7 +56,7 @@ class Scorer:
         bt.logging.debug(f"Blockchain size weight: {blockchain_size_weight}")
 
         # Process time scoring logic: Higher score for lower process time
-        process_time_score = max(0, min(1, 2 - 10 * process_time))  # Ensuring the score is between 0 and 1
+        process_time_score = max(0, min(1, 1.5 - 0.05 * process_time)) # Ensuring the score is between 0 and 1
         bt.logging.debug(f"Process time score: {process_time_score}")
 
         # Block height difference scoring logic: Lower score for higher block height difference
@@ -66,7 +66,8 @@ class Scorer:
 
         # Block height recency scoring logic: Higher score for more recent data
         block_height_diff_recency = blockchain_block_height - start_block_height
-        block_height_recency_score = max(0, min(1, 1 - block_height_diff_recency / 50000))  # Normalizing score to be between 0 and 1
+        block_height_recency_score = max(0, min(1, 1 - block_height_diff_recency / self.config.get_block_height_recency_scale_factor(network)))
+        #block_height_recency_score = max(0, min(1, 1 - block_height_diff_recency / 50000))  # Normalizing score to be between 0 and 1
         bt.logging.debug(f"Block height recency score: {block_height_recency_score}")
 
         # Calculate total score using weighted average

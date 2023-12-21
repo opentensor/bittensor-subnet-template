@@ -101,7 +101,7 @@ def main(config):
     miner_config = MinerConfig()
     miner_config.load_and_get_config_values()
     blacklist_registry_manager = blacklists.BlacklistRegistryManager()
-    blacklist_discovery = blacklists.BlacklistDiscovery(miner_config, blacklist_registry_manager)
+    _blacklist_discovery = blacklists.BlacklistDiscovery(miner_config, blacklist_registry_manager)
 
 
     bt.logging.info(f"Waiting for graph model to sync with blockchain.")
@@ -185,7 +185,7 @@ def main(config):
         return prirority
 
     def blacklist_discovery(synapse: protocol.MinerDiscovery) -> typing.Tuple[bool, str]:
-        return  blacklist_discovery.blacklist_discovery(metagraph, synapse)
+        return  _blacklist_discovery.blacklist_discovery(metagraph, synapse)
 
     def priority_execute_query(synapse: protocol.MinerQuery) -> float:
         caller_uid = metagraph.hotkeys.index(synapse.dendrite.hotkey)
