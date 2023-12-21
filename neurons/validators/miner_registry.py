@@ -40,28 +40,6 @@ class MinerRegistryManager:
         self.engine = create_engine("sqlite:////data/miner_registry.db")
         Base.metadata.create_all(self.engine)
 
-    # this method will be obsolete once we have a miner registry
-    def get_miner_proportion(self, network, model_type):
-        session = sessionmaker(bind=self.engine)()
-        try:
-            total_miners = session.query(func.count(MinerRegistry.ip_address)).scalar()
-            matching_miners = (
-                session.query(func.count(MinerRegistry.ip_address))
-                .filter(
-                    MinerRegistry.network == network,
-                    MinerRegistry.model_type == model_type,
-                )
-                .scalar()
-            )
-
-            proportion = matching_miners / total_miners if total_miners > 0 else 0
-            return proportion
-        except Exception as e:
-            print(f"Error occurred: {traceback.format_exc()}")
-            return 0
-        finally:
-            session.close()
-
     def store_miner_metadata(self, hot_key, ip_address, network, model_type, response_time, score):
         session = sessionmaker(bind=self.engine)()
         try:

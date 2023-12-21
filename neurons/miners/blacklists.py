@@ -1,95 +1,59 @@
-import os
 import time
-import json
 import typing
-import requests
 import bittensor as bt
 from collections import deque
 from insights import protocol
 from neurons.miners.blacklist_registry import BlacklistRegistryManager
-
-last_update_time = 0
-update_interval = 3600
-
-def load_blacklist_config(file_name):
-    global last_update_time
-    current_time = time.time()
-
-    if current_time - last_update_time >= update_interval:
-        try:
-            url = 'https://ip-blocker.s3.fr-par.scw.cloud/blacklist_discovery.json'
-            response = requests.get(url, timeout=10)
-            response.raise_for_status()
-            data = response.json()
-
-            dir_path = os.path.dirname(os.path.abspath(__file__))
-            file_path = os.path.join(dir_path, file_name)
-            with open(file_path, 'w') as file:
-                json.dump(data, file)
-
-            last_update_time = current_time
-            bt.logging.info(f"Updated blacklist config")
-        except Exception as e:
-            bt.logging.error(f"Failed to update blacklist config: {e}")
-
-    dir_path = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(dir_path, file_name)
-
-    with open(file_path, 'r') as file:
-        data = json.load(file)
-        whitelist = set(data.get('whitelisted_hotkeys', []))
-        blacklist = set(data.get('blacklisted_hotkeys', []))
-        stake_threshold = data.get('stake_threshold', 20000)
-        max_requests = data.get('max_requests', 32)
-        min_request_period = data.get('min_request_period', 60)
-        return whitelist, blacklist, stake_threshold, max_requests, min_request_period
-
-WHITELISTED_KEYS, BLACKLISTED_KEYS, STAKE_THRESHOLD, MAX_REQUESTS, MIN_REQUEST_PERIOD = load_blacklist_config('blacklist_discovery.json')
+from neurons.remote_config import MinerConfig
 
 request_timestamps = {}
 
-def blacklist_discovery(metagraph, synapse: protocol.MinerDiscovery) -> typing.Tuple[bool, str]:
-    hotkey = synapse.dendrite.hotkey
+class BlacklistDiscovery:
+    def __init__(self, miner_config: MinerConfig, registry_manager: BlacklistRegistryManager):
+        self.blacklist_registry_manager = registry_manager
+        self.miner_config = miner_config
 
-    if hotkey in BLACKLISTED_KEYS:
-        BlacklistRegistryManager().try_add_to_blacklist(synapse.dendrite.ip, hotkey)
-        bt.logging.debug(f"Blacklisted hotkey: {hotkey}")
-        return True, "Blacklisted hotkey"
+    def blacklist_discovery(self, metagraph, synapse: protocol.MinerDiscovery) -> typing.Tuple[bool, str]:
+        hotkey = synapse.dendrite.hotkey
 
-    if hotkey in WHITELISTED_KEYS:
-        return False, "Whitelisted hotkey"
+        if hotkey in self.miner_config.blacklisted_keys:
+            self.blacklist_registry_manager.try_add_to_blacklist(synapse.dendrite.ip, hotkey)
+            bt.logging.debug(f"Blacklisted hotkey: {hotkey}")
+            return True, "Blacklisted hotkey"
 
+        uid = None
+        for _uid, _axon in enumerate(metagraph.axons):
+            if _axon.hotkey == hotkey:
+                uid = _uid
+                break
 
-    uid = None
-    for _uid, _axon in enumerate(metagraph.axons):
-        if _axon.hotkey == hotkey:
-            uid = _uid
-            break
+        if uid is None:
+            self.blacklist_registry_manager.try_add_to_blacklist(synapse.dendrite.ip, hotkey)
+            bt.logging.debug(f"Hotkey not found in metagraph: {hotkey}")
+            return True, "Hotkey not found in metagraph"
 
-    if uid is None:
-        BlacklistRegistryManager().try_add_to_blacklist(synapse.dendrite.ip, hotkey)
-        bt.logging.debug(f"Hotkey not found in metagraph: {hotkey}")
-        return True, "Hotkey not found in metagraph"
+        stake = metagraph.neurons[uid].stake.tao
+        bt.logging.debug(f"Stake of {hotkey}: {stake}")
 
-    stake = metagraph.neurons[uid].stake.tao
-    bt.logging.debug(f"Stake of {hotkey}: {stake}")
+        if stake < self.miner_config.stake_threshold:
+            bt.logging.debug("Denied due to low stake")
+            return True, f"Denied due to low stake: {stake}"
 
-    if stake < STAKE_THRESHOLD:
-        bt.logging.debug(f"Blacklisted due to low stake: {stake}")
-        return True, f"Blacklisted due to low stake: {stake}"
+        # Rate Limiting Check
+        current_time = time.time()
+        if hotkey not in request_timestamps:
+            request_timestamps[hotkey] = deque()
 
-    # Rate Limiting Check
-    current_time = time.time()
-    if hotkey not in request_timestamps:
-        request_timestamps[hotkey] = deque()
+        while request_timestamps[hotkey] and current_time - request_timestamps[hotkey][0] > self.miner_config.min_request_period:
+            request_timestamps[hotkey].popleft()
 
-    while request_timestamps[hotkey] and current_time - request_timestamps[hotkey][0] > MIN_REQUEST_PERIOD:
-        request_timestamps[hotkey].popleft()
+        if len(request_timestamps[hotkey]) >= self.miner_config.max_requests:
+            bt.logging.debug(f"Request rate exceeded for {hotkey}")
+            return True, f"Request rate exceeded for {hotkey}"
 
-    if len(request_timestamps[hotkey]) >= MAX_REQUESTS:
-        bt.logging.debug(f"Request rate exceeded for {hotkey}")
-        return True, f"Request rate exceeded for {hotkey}"
+        request_timestamps[hotkey].append(current_time)
 
-    request_timestamps[hotkey].append(current_time)
+        if hotkey in self.miner_config.whitelisted_keys:
+            return False, "Whitelisted hotkey"
 
-    return False, "All ok"
+        return True, "Not whitelisted"

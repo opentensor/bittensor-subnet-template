@@ -37,6 +37,7 @@ from insights.protocol import (
     NETWORK_BITCOIN,
     MinerDiscoveryMetadata,
 )
+from neurons.remote_config import MinerConfig
 
 
 def get_config():
@@ -95,6 +96,13 @@ def main(config):
             f"\nYour miner: {wallet} is not registered to chain connection: {subtensor} \nRun btcli register and try again. "
         )
         exit()
+
+    """ Building dependencies. """
+    miner_config = MinerConfig()
+    miner_config.load_and_get_config_values()
+    blacklist_registry_manager = blacklists.BlacklistRegistryManager()
+    blacklist_discovery = blacklists.BlacklistDiscovery(miner_config, blacklist_registry_manager)
+
 
     bt.logging.info(f"Waiting for graph model to sync with blockchain.")
     is_synced=False
@@ -177,7 +185,7 @@ def main(config):
         return prirority
 
     def blacklist_discovery(synapse: protocol.MinerDiscovery) -> typing.Tuple[bool, str]:
-        return blacklists.blacklist_discovery(metagraph, synapse)
+        return  blacklist_discovery.blacklist_discovery(metagraph, synapse)
 
     def priority_execute_query(synapse: protocol.MinerQuery) -> float:
         caller_uid = metagraph.hotkeys.index(synapse.dendrite.hotkey)

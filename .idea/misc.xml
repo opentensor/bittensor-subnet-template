@@ -3,7 +3,7 @@
   <component name="Black">
     <option name="enabledOnReformat" value="true" />
     <option name="enabledOnSave" value="true" />
-    <option name="sdkUUID" value="90a383a2-641d-488d-8997-4f1a049174ab" />
+    <option name="sdkName" value="Python 3.10.12 WSL (Ubuntu-22.04): (/root/.virtualenvs/blockchain-data-subnet/bin/python)" />
   </component>
   <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.10.12 WSL (Ubuntu-22.04): (/root/.virtualenvs/blockchain-data-subnet/bin/python)" project-jdk-type="Python SDK" />
 </project>

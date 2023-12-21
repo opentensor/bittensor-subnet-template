@@ -24,11 +24,11 @@ import traceback
 import bittensor as bt
 from random import sample
 from insights import protocol
-from insights.protocol import MinerDiscoveryOutput
+from insights.protocol import MinerDiscoveryOutput, NETWORK_BITCOIN
 from neurons.nodes.nodes import get_node
+from neurons.remote_config import ValidatorConfig
 from neurons.validators.miner_registry import MinerRegistryManager
-from neurons.validators.scoring import calculate_score, verify_data_sample, \
-    BLOCKCHAIN_IMPORTANCE
+from neurons.validators.scoring import Scorer
 
 
 def get_config():
@@ -113,6 +113,12 @@ def main(config):
 
     bt.logging.debug(f"curr_block: {curr_block}, last_updated_block: {last_updated_block}, last_reset_weights_block: {last_reset_weights_block}")
 
+    """ Building dependencies. """
+    validator_config = ValidatorConfig()
+    validator_config.load_and_get_config_values()
+    miner_registry_manager = MinerRegistryManager()
+    scorer = Scorer(validator_config, miner_registry_manager)
+
     bt.logging.info("Starting validator loop.")
     step = 0
 
@@ -166,10 +172,8 @@ def main(config):
                 filtered_axons,
                 protocol.MinerDiscovery(),
                 deserialize=True,
-                timeout = 100,
+                timeout = validator_config.discovery_timeout,
             )
-
-            miner_distribution = MinerRegistryManager().get_miner_distribution(BLOCKCHAIN_IMPORTANCE.keys())
 
             # Cache dictionary
             block_height_cache = {}
@@ -200,27 +204,23 @@ def main(config):
                 if len(data_samples) < 10:
                     data_samples_are_valid = False
 
-                bitcoin_cheat_factor_sample_size = int(config.bitcoin_cheat_factor_sample_size)
-                cheat_factor = MinerRegistryManager().calculate_cheat_factor(hot_key=hot_key, network=network, model_type=model_type, sample_size=bitcoin_cheat_factor_sample_size)
-
                 if network not in block_height_cache:
                     block_height_cache[network] = node.get_current_block_height()
 
-
-                score = calculate_score(
+                score = scorer.calculate_score(
                     network,
+                    hot_key,
+                    model_type,
                     response_time,
                     start_block_height,
                     last_block_height,
                     block_height_cache[network],
-                    miner_distribution,
                     data_samples_are_valid,
-                    cheat_factor
                 )
 
                 scores[dendrites_to_query[index]] = config.alpha * scores[dendrites_to_query[index]] + (1 - config.alpha) * score
 
-                MinerRegistryManager().store_miner_metadata(
+                miner_registry_manager.store_miner_metadata(
                     ip_address=axon_ip,
                     hot_key=hot_key,
                     network=network,
@@ -228,13 +228,12 @@ def main(config):
                     response_time=response_time,
                     score=scores[dendrites_to_query[index]],
                 )
-
-                MinerRegistryManager().store_miner_block_height(
+                miner_registry_manager.store_miner_block_height(
                     hot_key=hot_key,
                     network=network,
                     model_type=model_type,
                     block_height=last_block_height,
-                    bitcoin_cheat_factor_sample_size=bitcoin_cheat_factor_sample_size
+                    bitcoin_cheat_factor_sample_size=validator_config.get_cheat_factor_sample_size(network)
                 )
 
             current_block = subtensor.block
@@ -287,6 +286,20 @@ def validate_data_sample(node, network, data_sample):
         block_data=block_data
     )
 
+def verify_data_sample(network, input_result, block_data):
+   if network == NETWORK_BITCOIN:
+        block_height = int(input_result['block_height'])
+        transactions = block_data["tx"]
+        num_transactions = len(transactions)
+        result = {
+            "block_height": block_height,
+            "transaction_count": num_transactions,
+        }
+        is_valid = result["transaction_count"] == input_result["transaction_count"]
+        return is_valid
+   else:
+        return False
+
 def validate_all_data_samples(node, network, data_samples):
     with concurrent.futures.ThreadPoolExecutor() as executor:
         # Creating a future for each data sample validation
@@ -300,5 +313,4 @@ def validate_all_data_samples(node, network, data_samples):
 
 if __name__ == "__main__":
     config = get_config()
-
     main(config)
