@@ -84,11 +84,11 @@ class MinerConfig(RemoteConfig):
         self.load_remote_config()
 
         # Retrieve specific configuration values
-        self.stake_threshold = self.get_config_value('stake_threshold', 0.0)
-        self.min_request_period = self.get_config_value('min_request_period', 0.0)
-        self.max_requests = self.get_config_value('max_requests', 0.0)
-        self.blacklisted_keys = self.get_config_value('blacklisted_keys', [])
-        self.whitelisted_keys = self.get_config_value('whitelisted_keys', [])
+        self.stake_threshold = self.get_config_value('stake_threshold', 20000)
+        self.min_request_period = self.get_config_value('min_request_period', 60)
+        self.max_requests = self.get_config_value('max_requests', 128)
+        self.blacklisted_keys = self.get_config_value('blacklisted_keys', ["5GcBK8PDrVifV1xAf4Qkkk6KsbsmhDdX9atvk8vyKU8xdU63", "5CsvRJXuR955WojnGMdok1hbhffZyB4N5ocrv82f3p5A2zVp", "5Fq5v71D4LX8Db1xsmRSy6udQThcZ8sFDqxQFwnUZ1BuqY5A", "5CVS9d1NcQyWKUyadLevwGxg6LgBcF9Lik6NSnbe5q59jwhE", "5HeKSHGdsRCwVgyrHchijnZJnq4wiv6GqoDLNah8R5WMfnLB", "5FFM6Nvvm78GqyMratgXXvjbqZPi7SHgSQ81nyS96jBuUWgt", "5ED6jwDECEmNvSp98R2qyEUPHDv9pi14E6n3TS8CicD6YfhL"])
+        self.whitelisted_keys = self.get_config_value('whitelisted_keys', ["5FFApaS75bv5pJHfAp2FVLBj9ZaXuFDjEypsaBNc1wCfe52v", "5HK5tp6t2S59DywmHRWPBVJeJ86T61KjurYqeooqj8sREpeN", "5EhvL1FVkQPpMjZX4MAADcW42i3xPSF1KiCpuaxTYVr28sux", "5CXRfP2ekFhe62r7q3vppRajJmGhTi7vwvb2yr79jveZ282w", "5DvTpiniW9s3APmHRYn8FroUWyfnLtrsid5Mtn5EwMXHN2ed", "5F4tQyWrhfGVcNhoqeiNsR6KjD4wMZ2kfhLj4oHYuyHbZAc3", "5Hddm3iBFD2GLT5ik7LZnT3XJUnRnN8PoeCFgGQgawUVKNm8", "5HEo565WAy4Dbq3Sv271SAi7syBSofyfhhwRNjFNSM2gP9M2", "5FcXnzNo3mrqReTEY4ftkg5iXRBi61iyvM4W1bywZLRqfxAY", "5HNQURvmjjYhTSksi8Wfsw676b4owGwfLR2BFAQzG7H3HhYf", "5FLKnbMjHY8LarHZvk2q2RY9drWFbpxjAcR5x8tjr3GqtU6F", "5Gpt8XWFTXmKrRF1qaxcBQLvnPLpKi6Pt2XC4vVQR7gqNKtU"])
 
 class ValidatorConfig(RemoteConfig):
     def __init__(self):
@@ -107,11 +107,11 @@ class ValidatorConfig(RemoteConfig):
         self.load_remote_config()
 
         # Retrieve specific configuration values
-        self.process_time_weight = self.get_config_value('process_time_weight', 0.2)
-        self.block_height_diff_weight = self.get_config_value('block_height_diff_weight', 0.2)
-        self.block_height_recency_weight = self.get_config_value('block_height_recency_weight', 0.2)
+        self.process_time_weight = self.get_config_value('process_time_weight', 0.5)
+        self.block_height_diff_weight = self.get_config_value('block_height_diff_weight', 1.5)
+        self.block_height_recency_weight = self.get_config_value('block_height_recency_weight',  1.5)
         self.blockchain_importance_weight = self.get_config_value('blockchain_importance_weight', 0.2)
-        self.cheat_factor_weight = self.get_config_value('cheat_factor_weight', 0.2)
+        self.cheat_factor_weight = self.get_config_value('cheat_factor_weight', 3)
         self.discovery_timeout = self.get_config_value('discovery_timeout', 100)
 
     def get_network_importance(self, network):
