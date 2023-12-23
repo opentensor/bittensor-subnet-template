@@ -32,6 +32,10 @@ class Scorer:
 
     def calculate_score(self, network, hot_key, model_type, process_time, start_block_height, last_block_height, blockchain_block_height, data_samples_are_valid):
 
+        multiple_ips = self.miner_registry_manager.detect_and_print_multiple_ip_usage(hot_key)
+        if not multiple_ips:
+            return 0
+
         cheat_factor = self.miner_registry_manager.calculate_cheat_factor(hot_key=hot_key, network=network, model_type=model_type, sample_size=self.config.get_cheat_factor(network))
         miner_distribution = self.miner_registry_manager.get_miner_distribution(self.config.get_network_importance_keys())
 

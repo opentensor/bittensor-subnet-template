@@ -296,4 +296,20 @@ def main(config):
 
 if __name__ == "__main__":
     config = get_config()
+
+    # Check for an environment variable to enable local development
+    if os.getenv("MINER_LOCAL_MODE") == "True":
+        # Local development settings
+        config.subtensor.chain_endpoint = "ws://127.0.0.1:9946"
+        config.subtensor.network = "local"
+        config.wallet.hotkey = 'default'
+        config.wallet.name = 'miner'
+        config.netuid = 1
+
+        # set environment variables
+        os.environ['WAIT_FOR_SYNC'] = 'False'
+        os.environ['GRAPH_DB_URL'] = 'bolt://memgraph-funds-flow:7687'
+        os.environ['GRAPH_DB_USER'] = 'user'
+        os.environ['GRAPH_DB_PASSWORD'] = 'pwd'
+
     main(config)
