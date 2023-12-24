@@ -9,15 +9,11 @@ class Scorer:
 
 
     def get_dynamic_weight(self, network, miner_distribution):
-        # Ensure miner_distribution is not empty and contains valid data
-        if not miner_distribution or not isinstance(miner_distribution, dict):
-            raise ValueError("Invalid miner distribution data")
-
         total_miners = sum(miner_distribution.values())
 
         # Check to avoid division by zero if total_miners is zero
         if total_miners == 0:
-            raise ValueError("Total number of miners is zero, cannot compute weight")
+            return 0.01
 
         network_miners = miner_distribution.get(network, 0)
         # Calculate the percentage of miners for this network
@@ -30,10 +26,14 @@ class Scorer:
         # Ensure the adjusted weight is non-negative
         return max(0, adjusted_weight)
 
-    def calculate_score(self, network, hot_key, model_type, process_time, start_block_height, last_block_height, blockchain_block_height, data_samples_are_valid):
+    def calculate_score(self, network, hot_key, model_type, process_time, start_block_height, last_block_height, blockchain_block_height, data_samples_are_valid, run_id):
 
-        multiple_ips = self.miner_registry_manager.detect_and_print_multiple_ip_usage(hot_key)
-        if not multiple_ips:
+        multiple_ips = self.miner_registry_manager.detect_multiple_ip_usage(hot_key)
+        if multiple_ips:
+            return 0
+
+        multiple_run_ids = self.miner_registry_manager.detect_multiple_run_id(run_id)
+        if multiple_run_ids:
             return 0
 
         cheat_factor = self.miner_registry_manager.calculate_cheat_factor(hot_key=hot_key, network=network, model_type=model_type, sample_size=self.config.get_cheat_factor(network))

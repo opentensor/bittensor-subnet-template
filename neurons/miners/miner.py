@@ -23,7 +23,7 @@ import traceback
 import typing
 import torch
 import bittensor as bt
-from random import randint
+from random import sample
 from insights import protocol
 from neurons.miners import blacklists
 from neurons.nodes.nodes import get_node
@@ -143,8 +143,9 @@ def main(config):
             _latest_block_height = block_range['latest_block_height']
             start_block_height = block_range['start_block_height']
 
-            block_heights = [randint(start_block_height, _latest_block_height) for _ in range(10)]
+            block_heights = sample(range(start_block_height, _latest_block_height + 1), 10)
             data_samples = graph_search.get_block_transactions(block_heights)
+            run_id = graph_search.get_run_id()
 
             synapse.output = protocol.MinerDiscoveryOutput(
                 metadata=MinerDiscoveryMetadata(
@@ -154,6 +155,7 @@ def main(config):
                 start_block_height=start_block_height,
                 block_height=_latest_block_height,
                 data_samples=data_samples,
+                run_id=run_id
             )
             bt.logging.info(f"Serving miner discovery output: {synapse.output}")
 

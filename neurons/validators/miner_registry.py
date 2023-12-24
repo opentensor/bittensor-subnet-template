@@ -20,10 +20,8 @@ class MinerRegistry(Base):
     model_type = Column(String)
     response_time = Column(Float)
     score = Column(Float)
+    run_id = Column(String)
     updated = Column(DateTime, default=datetime.datetime.utcnow)
-
-    def __repr__(self):
-        return f"<MinerRegistry(ip_address='{self.ip_address}', hot_key='{self.hot_key}, network='{self.network}', model_type='{self.model_type}', updated='{self.updated}')>"
 
 class MinerBlockRegistry(Base):
     __tablename__ = "miner_block_registry"
@@ -40,7 +38,7 @@ class MinerRegistryManager:
         self.engine = create_engine("sqlite:////data/miner_registry.db")
         Base.metadata.create_all(self.engine)
 
-    def store_miner_metadata(self, hot_key, ip_address, network, model_type, response_time, score):
+    def store_miner_metadata(self, hot_key, ip_address, network, model_type, response_time, score, run_id):
         session = sessionmaker(bind=self.engine)()
         try:
             existing_miner = (
@@ -54,6 +52,7 @@ class MinerRegistryManager:
                 existing_miner.response_time = response_time
                 existing_miner.updated = datetime.datetime.utcnow()
                 existing_miner.score = score
+                existing_miner.run_id = run_id
             else:
                 new_miner = MinerRegistry(
                     ip_address=ip_address,
@@ -62,6 +61,7 @@ class MinerRegistryManager:
                     model_type=model_type,
                     response_time=response_time,
                     score=score,
+                    run_id=run_id,
                 )
                 session.add(new_miner)
 
@@ -151,7 +151,6 @@ class MinerRegistryManager:
         finally:
             session.close()
 
-
     def get_miner_distribution(self, all_networks):
         session = sessionmaker(bind=self.engine)()
         try:
@@ -177,7 +176,7 @@ class MinerRegistryManager:
         finally:
             session.close()
 
-    def detect_and_print_multiple_ip_usage(self, hot_key, period_hours=24):
+    def detect_multiple_ip_usage(self, hot_key, period_hours=24):
         session = sessionmaker(bind=self.engine)()
         try:
             # Current time
@@ -189,9 +188,10 @@ class MinerRegistryManager:
             # Query for repeated IP addresses (without ports) within the last 24 hours
             repeated_ips = (
                 session.query(
-                    func.split_part(MinerRegistry.ip_address, ':', 1).label('ip'),
-                    func.count(func.split_part(MinerRegistry.ip_address, ':', 1))
+                    MinerRegistry.ip_address.label('ip'),
+                    func.count(MinerRegistry.ip_address)
                 )
+
                 .filter(
                     MinerRegistry.hot_key == hot_key,
                     MinerRegistry.updated >= past_time
@@ -207,6 +207,36 @@ class MinerRegistryManager:
 
             if len(repeated_ips) == 0:
                 return False
+            return True
+
+        except Exception as e:
+            bt.logging.error(f"Error occurred: {traceback.format_exc()}")
+            return False
+        finally:
+            session.close()
+
+    def detect_multiple_run_id(self, run_id):
+        session = sessionmaker(bind=self.engine)()
+        try:
+            repeated_run_id = (
+                session.query(
+                    MinerRegistry.run_id.label('run_id'),
+                    func.count(MinerRegistry.run_id)
+                )
+                .filter(
+                    MinerRegistry.run_id == run_id
+                )
+                .group_by('run_id')
+                .having(func.count('run_id') > 1)
+                .all()
+            )
+
+            for run_id, count in repeated_run_id:
+                bt.logging.info(f"run_id {run_id} is used {count} times.")
+
+            if len(repeated_run_id) == 0:
+                return False
+
             return True
 
         except Exception as e:

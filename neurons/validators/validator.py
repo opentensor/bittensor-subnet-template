@@ -194,7 +194,8 @@ def main(config):
                 data_samples = output.data_samples
                 axon_ip = response.axon.ip
                 hot_key = response.axon.hotkey
-                response_time = response.axon.process_time
+                run_id = response.output.run_id
+                response_time = response.dendrite.process_time
 
                 bt.logging.info(f"🔄 Processing response from {axon_ip} / {hot_key}")
 
@@ -216,6 +217,7 @@ def main(config):
                     last_block_height,
                     block_height_cache[network],
                     data_samples_are_valid,
+                    run_id
                 )
 
                 scores[dendrites_to_query[index]] = config.alpha * scores[dendrites_to_query[index]] + (1 - config.alpha) * score
@@ -227,6 +229,7 @@ def main(config):
                     model_type=model_type,
                     response_time=response_time,
                     score=scores[dendrites_to_query[index]],
+                    run_id=run_id
                 )
                 miner_registry_manager.store_miner_block_height(
                     hot_key=hot_key,
