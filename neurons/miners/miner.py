@@ -311,7 +311,7 @@ if __name__ == "__main__":
 
         # set environment variables
         os.environ['WAIT_FOR_SYNC'] = 'False'
-        os.environ['GRAPH_DB_URL'] = 'bolt://memgraph-funds-flow:7687'
+        os.environ['GRAPH_DB_URL'] = 'bolt://localhost:7687'
         os.environ['GRAPH_DB_USER'] = 'user'
         os.environ['GRAPH_DB_PASSWORD'] = 'pwd'
 

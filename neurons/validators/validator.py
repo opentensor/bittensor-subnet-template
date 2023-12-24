@@ -279,6 +279,8 @@ def main(config):
             exit()
 
 def validate_data_sample(node, network, data_sample):
+
+    # TODO: bitcoin client does not need to be a singleton, it causes conflicts when used in multithreading
     block_data = node.get_block_by_height(data_sample['block_height'])
     return verify_data_sample(
         network=network,
@@ -327,8 +329,7 @@ if __name__ == "__main__":
         config.netuid = 1
 
         # set environment variables
-        os.environ['WAIT_FOR_SYNC'] = 'False'
-        os.environ['GRAPH_DB_URL'] = 'bolt://memgraph-funds-flow:7687'
+        os.environ['GRAPH_DB_URL'] = 'bolt://localhost:7687'
         os.environ['GRAPH_DB_USER'] = 'user'
         os.environ['GRAPH_DB_PASSWORD'] = 'pwd'
 

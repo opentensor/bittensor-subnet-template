@@ -16,7 +16,7 @@ class BlacklistDiscovery:
     def blacklist_discovery(self, metagraph, synapse: protocol.MinerDiscovery) -> typing.Tuple[bool, str]:
         hotkey = synapse.dendrite.hotkey
 
-        if hotkey in self.miner_config.blacklisted_keys:
+        if hotkey in self.miner_config.blacklisted_hotkeys:
             self.blacklist_registry_manager.try_add_to_blacklist(synapse.dendrite.ip, hotkey)
             bt.logging.debug(f"Blacklisted hotkey: {hotkey}")
             return True, "Blacklisted hotkey"
@@ -53,7 +53,7 @@ class BlacklistDiscovery:
 
         request_timestamps[hotkey].append(current_time)
 
-        if hotkey in self.miner_config.whitelisted_keys:
+        if hotkey in self.miner_config.whitelisted_hotkeys:
             return False, "Whitelisted hotkey"
 
         return True, "Not whitelisted"
