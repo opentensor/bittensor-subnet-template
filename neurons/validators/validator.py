@@ -180,64 +180,68 @@ def main(config):
 
             for index, response in enumerate(responses):
                 if response.output is None:
-                    bt.logging.debug(f"Skipping response")
+                    bt.logging.debug(f"Skipping response {response}")
                     continue
 
-                # Vars
-                output: MinerDiscoveryOutput = response.output
-                network = output.metadata.network
-                model_type = output.metadata.model_type
+                try:
+                    # Vars
+                    output: MinerDiscoveryOutput = response.output
+                    network = output.metadata.network
+                    model_type = output.metadata.model_type
 
-                start_block_height = output.start_block_height
-                last_block_height = output.block_height
+                    start_block_height = output.start_block_height
+                    last_block_height = output.block_height
 
-                data_samples = output.data_samples
-                axon_ip = response.axon.ip
-                hot_key = response.axon.hotkey
-                run_id = response.output.run_id
-                response_time = response.dendrite.process_time
+                    data_samples = output.data_samples
+                    axon_ip = response.axon.ip
+                    hot_key = response.axon.hotkey
+                    run_id = response.output.run_id
+                    response_time = response.dendrite.process_time
 
-                bt.logging.info(f"🔄 Processing response from {axon_ip} / {hot_key}")
+                    bt.logging.info(f"🔄 Processing response from {axon_ip} / {hot_key}")
 
-                node = get_node(network)
-                data_samples_are_valid = validate_all_data_samples(node, network, data_samples)
+                    node = get_node(network)
+                    data_samples_are_valid = validate_all_data_samples(node, network, data_samples)
 
-                if len(data_samples) < 10:
-                    data_samples_are_valid = False
+                    if len(data_samples) < 10:
+                        data_samples_are_valid = False
 
-                if network not in block_height_cache:
-                    block_height_cache[network] = node.get_current_block_height()
+                    if network not in block_height_cache:
+                        block_height_cache[network] = node.get_current_block_height()
 
-                score = scorer.calculate_score(
-                    network,
-                    hot_key,
-                    model_type,
-                    response_time,
-                    start_block_height,
-                    last_block_height,
-                    block_height_cache[network],
-                    data_samples_are_valid,
-                    run_id
-                )
+                    score = scorer.calculate_score(
+                        network,
+                        hot_key,
+                        model_type,
+                        response_time,
+                        start_block_height,
+                        last_block_height,
+                        block_height_cache[network],
+                        data_samples_are_valid,
+                        run_id
+                    )
 
-                scores[dendrites_to_query[index]] = config.alpha * scores[dendrites_to_query[index]] + (1 - config.alpha) * score
+                    scores[dendrites_to_query[index]] = config.alpha * scores[dendrites_to_query[index]] + (1 - config.alpha) * score
 
-                miner_registry_manager.store_miner_metadata(
-                    ip_address=axon_ip,
-                    hot_key=hot_key,
-                    network=network,
-                    model_type=model_type,
-                    response_time=response_time,
-                    score=scores[dendrites_to_query[index]],
-                    run_id=run_id
-                )
-                miner_registry_manager.store_miner_block_height(
-                    hot_key=hot_key,
-                    network=network,
-                    model_type=model_type,
-                    block_height=last_block_height,
-                    bitcoin_cheat_factor_sample_size=validator_config.get_cheat_factor_sample_size(network)
-                )
+                    miner_registry_manager.store_miner_metadata(
+                        ip_address=axon_ip,
+                        hot_key=hot_key,
+                        network=network,
+                        model_type=model_type,
+                        response_time=response_time,
+                        score=scores[dendrites_to_query[index]],
+                        run_id=run_id
+                    )
+                    miner_registry_manager.store_miner_block_height(
+                        hot_key=hot_key,
+                        network=network,
+                        model_type=model_type,
+                        block_height=last_block_height,
+                        bitcoin_cheat_factor_sample_size=validator_config.get_cheat_factor_sample_size(network)
+                    )
+                except Exception as e:
+                    bt.logging.error(e)
+                    traceback.print_exc()
 
             current_block = subtensor.block
             bt.logging.info(f"Block difference is {current_block - last_updated_block}.")
@@ -281,9 +285,11 @@ def main(config):
             bt.logging.success("Keyboard interrupt detected. Exiting validator.")
             exit()
 
-def validate_data_sample(node, network, data_sample):
+        except Exception as e:
+            bt.logging.error(e)
+            traceback.print_exc()
 
-    # TODO: bitcoin client does not need to be a singleton, it causes conflicts when used in multithreading
+def validate_data_sample(node, network, data_sample):
     block_data = node.get_block_by_height(data_sample['block_height'])
     return verify_data_sample(
         network=network,
