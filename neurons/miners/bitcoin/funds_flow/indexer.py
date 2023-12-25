@@ -132,7 +132,7 @@ if __name__ == "__main__":
             index_blocks(bitcoin_node, graph_creator, graph_indexer, start_height)
             break
         except Exception as e:
-            traceback.print_exc()
+            ## traceback.print_exc()
             logger.error(f"Retry failed with error: {e}")
             logger.info(f"Retrying in {retry_delay} seconds...")
             time.sleep(retry_delay)
