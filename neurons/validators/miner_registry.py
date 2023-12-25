@@ -215,7 +215,7 @@ class MinerRegistryManager:
         finally:
             session.close()
 
-    def detect_multiple_run_id(self, run_id, allowed_num =8):
+    def detect_multiple_run_id(self, run_id, allowed_num=9):
         session = sessionmaker(bind=self.engine)()
         try:
             repeated_run_id = (
