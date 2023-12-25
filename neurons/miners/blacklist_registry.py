@@ -3,6 +3,7 @@ from sqlalchemy import create_engine, Column, String, DateTime, func, Integer, F
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import datetime
+import bittensor as bt
 
 Base = declarative_base()
 
@@ -27,7 +28,7 @@ class BlacklistRegistryManager:
         try:
             return session.query(BlacklistRegistry).all()
         except Exception as e:
-            print(f"Error occurred: {traceback.format_exc()}")
+            bt.logging.error(f"Error occurred: {traceback.format_exc()}")
         finally:
             session.close()
 
@@ -37,7 +38,8 @@ class BlacklistRegistryManager:
             session.query(BlacklistRegistry).delete()
             session.commit()
         except Exception as e:
-            print(f"Error occurred: {traceback.format_exc()}")
+            session.rollback()
+            bt.logging.error(f"Error occurred: {traceback.format_exc()}")
         finally:
             session.close()
 
@@ -53,6 +55,7 @@ class BlacklistRegistryManager:
             session.add(blacklist)
             session.commit()
         except Exception as e:
-            print(f"Error occurred: {traceback.format_exc()}")
+            session.rollback()
+            bt.logging.error(f"Error occurred: {traceback.format_exc()}")
         finally:
             session.close()
