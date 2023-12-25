@@ -176,7 +176,7 @@ class MinerRegistryManager:
         finally:
             session.close()
 
-    def detect_multiple_ip_usage(self, hot_key, period_hours=24):
+    def detect_multiple_ip_usage(self, hot_key, period_hours=24, allowed_num=9):
         session = sessionmaker(bind=self.engine)()
         try:
             # Current time
@@ -197,7 +197,7 @@ class MinerRegistryManager:
                     MinerRegistry.updated >= past_time
                 )
                 .group_by('ip')
-                .having(func.count('ip') > 1)
+                .having(func.count('ip') > allowed_num)
                 .all()
             )
 
