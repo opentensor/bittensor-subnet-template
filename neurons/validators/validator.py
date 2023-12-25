@@ -198,6 +198,10 @@ def main(config):
                     run_id = response.output.run_id
                     response_time = response.dendrite.process_time
 
+                    if response.output.version is None:
+                        bt.logging.info("Skipping response with no version.")
+                        continue
+
                     bt.logging.info(f"🔄 Processing response from {axon_ip} / {hot_key}")
 
                     node = get_node(network)
