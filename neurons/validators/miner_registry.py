@@ -215,7 +215,7 @@ class MinerRegistryManager:
         finally:
             session.close()
 
-    def detect_multiple_run_id(self, run_id):
+    def detect_multiple_run_id(self, run_id, allowed_num =8):
         session = sessionmaker(bind=self.engine)()
         try:
             repeated_run_id = (
@@ -227,12 +227,12 @@ class MinerRegistryManager:
                     MinerRegistry.run_id == run_id
                 )
                 .group_by('run_id')
-                .having(func.count('run_id') > 1)
+                .having(func.count('run_id') > allowed_num)
                 .all()
             )
 
             for run_id, count in repeated_run_id:
-                bt.logging.info(f"run_id {run_id} is used {count} times.")
+                bt.logging.info(f"run_id {run_id} is used {count} times. allowed_num is max {allowed_num}")
 
             if len(repeated_run_id) == 0:
                 return False
