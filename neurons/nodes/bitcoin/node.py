@@ -19,10 +19,15 @@ class BitcoinNode:
 
     def get_current_block_height(self):
         rpc_connection = AuthServiceProxy(self.node_rpc_url)
-        return rpc_connection.getblockcount()
+        try:
+            return rpc_connection.getblockcount()
+        finally:
+            rpc_connection._AuthServiceProxy__conn.close()  # Close the connection
 
     def get_block_by_height(self, block_height):
         rpc_connection = AuthServiceProxy(self.node_rpc_url)
-        block_hash = rpc_connection.getblockhash(block_height)
-        block_data = rpc_connection.getblock(block_hash, 2)
-        return block_data
+        try:
+            block_hash = rpc_connection.getblockhash(block_height)
+            return rpc_connection.getblock(block_hash, 2)
+        finally:
+            rpc_connection._AuthServiceProxy__conn.close()  # Close the connection
