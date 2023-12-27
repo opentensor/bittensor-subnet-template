@@ -77,6 +77,7 @@ def get_config():
 
 
 def main(config):
+    print("Current Working Directory:", os.getcwd())
     bt.logging(config=config, logging_dir=config.full_path)
     bt.logging.info(
         f"Running miner for subnet: {config.netuid} on network: {config.subtensor.chain_endpoint} with config:"
@@ -305,7 +306,7 @@ if __name__ == "__main__":
     # Check for an environment variable to enable local development
     if os.getenv("MINER_LOCAL_MODE") == "True":
         # Local development settings
-        config.subtensor.chain_endpoint = "ws://127.0.0.1:9944"
+        config.subtensor.chain_endpoint = "ws://127.0.0.1:9946"
         config.subtensor.network = "local"
         config.wallet.hotkey = 'default'
         config.wallet.name = 'miner'

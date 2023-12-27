@@ -161,3 +161,17 @@ cython_debug/
 /neurons/validators/test_miner_data_samples.db
 /neurons/validators/miner_registry.db
 /*.db
+
+# PyCharm project settings
+
+/.idea/blockchain-data-subnet.iml
+/.idea/misc.xml
+
+# miner/validator-specific files (json, score)
+
+/neurons/miner.json
+/neurons/validator.json
+/neurons/validators/scores.pt
+
+
+
