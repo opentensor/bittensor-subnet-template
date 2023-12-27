@@ -1,1 +1,0 @@
-{"block_height_recency_scale_factor": {"bitcoin": 100}, "cheat_factor_weight": 3.0, "block_height_diff_weight": 6, "block_height_recency_weight": 1.5, "process_time_weight": 0.5, "blockchain_importance_weight": 0.2, "blockchain_importance": {"bitcoin": 0.5, "ethereum": 0.5}, "cheat_factor_sample_size": {"bitcoin": 1024}, "discovery_timeout": 100}
