@@ -319,5 +319,6 @@ if __name__ == "__main__":
         os.environ['GRAPH_DB_URL'] = 'bolt://localhost:7687'
         os.environ['GRAPH_DB_USER'] = 'user'
         os.environ['GRAPH_DB_PASSWORD'] = 'pwd'
+        os.environ['BT_AXON_PORT'] = '8191'
 
     main(config)

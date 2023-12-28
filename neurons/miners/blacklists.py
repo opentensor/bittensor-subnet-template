@@ -17,10 +17,11 @@ class BlacklistDiscovery:
 
     def blacklist_discovery(self, metagraph, synapse: protocol.MinerDiscovery) -> typing.Tuple[bool, str]:
         hotkey = synapse.dendrite.hotkey
+        bt.logging.info(f"Discovered 777")
 
         if hotkey in self.custom_miner_config.blacklisted_hotkeys:
             self.blacklist_registry_manager.try_add_to_blacklist(synapse.dendrite.ip, hotkey)
-            bt.logging.debug(f"Blacklisted hotkey: {hotkey}")
+            bt.logging.debug(f"Blacklisted hotkey (custom): {hotkey}")
             return True, "Blacklisted hotkey"
 
         if hotkey in self.miner_config.blacklisted_hotkeys:
