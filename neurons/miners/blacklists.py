@@ -5,16 +5,23 @@ from collections import deque
 from insights import protocol
 from neurons.miners.blacklist_registry import BlacklistRegistryManager
 from neurons.remote_config import MinerConfig
+from neurons.miners.custom_miner_config import CustomMinerConfig
 
 request_timestamps = {}
 
 class BlacklistDiscovery:
-    def __init__(self, miner_config: MinerConfig, registry_manager: BlacklistRegistryManager):
+    def __init__(self, miner_config: MinerConfig, custom_miner_config: CustomMinerConfig, registry_manager: BlacklistRegistryManager):
         self.blacklist_registry_manager = registry_manager
         self.miner_config = miner_config
+        self.custom_miner_config = custom_miner_config
 
     def blacklist_discovery(self, metagraph, synapse: protocol.MinerDiscovery) -> typing.Tuple[bool, str]:
         hotkey = synapse.dendrite.hotkey
+
+        if hotkey in self.custom_miner_config.blacklisted_hotkeys:
+            self.blacklist_registry_manager.try_add_to_blacklist(synapse.dendrite.ip, hotkey)
+            bt.logging.debug(f"Blacklisted hotkey: {hotkey}")
+            return True, "Blacklisted hotkey"
 
         if hotkey in self.miner_config.blacklisted_hotkeys:
             self.blacklist_registry_manager.try_add_to_blacklist(synapse.dendrite.ip, hotkey)

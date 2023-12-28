@@ -38,6 +38,7 @@ from insights.protocol import (
     MinerDiscoveryMetadata,
 )
 from neurons.remote_config import MinerConfig
+from neurons.miners.custom_miner_config import CustomMinerConfig
 
 
 def get_config():
@@ -100,9 +101,10 @@ def main(config):
 
     """ Building dependencies. """
     miner_config = MinerConfig()
+    config_miner_config = CustomMinerConfig()
     miner_config.load_and_get_config_values()
     blacklist_registry_manager = blacklists.BlacklistRegistryManager()
-    _blacklist_discovery = blacklists.BlacklistDiscovery(miner_config, blacklist_registry_manager)
+    _blacklist_discovery = blacklists.BlacklistDiscovery(miner_config, config_miner_config, blacklist_registry_manager)
 
 
     bt.logging.info(f"Waiting for graph model to sync with blockchain.")
