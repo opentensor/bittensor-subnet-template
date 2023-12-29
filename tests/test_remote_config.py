@@ -35,11 +35,6 @@ class TestConfigurations(unittest.TestCase):
         self.assertIsInstance(validator_config.block_height_recency_weight, float)
         self.assertIsNotNone(validator_config.blockchain_importance_weight)
         self.assertIsInstance(validator_config.blockchain_importance_weight, float)
-        self.assertIsNotNone(validator_config.cheat_factor_weight)
-        self.assertIsInstance(validator_config.cheat_factor_weight, float)
-
-        self.assertIsNotNone(validator_config.get_cheat_factor_sample_size('bitcoin'))
-        self.assertIsInstance(validator_config.get_cheat_factor_sample_size('bitcoin'), int)
 
     def tearDown(self):
         # Clean up any files created or modified during the tests

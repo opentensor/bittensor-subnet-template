@@ -28,6 +28,10 @@ class RemoteConfig:
         self.thread.daemon = True
         self.thread.start()
 
+    def dump_values(self):
+        attributes = {attr: getattr(self, attr) for attr in dir(self) if not attr.startswith('__') and not callable(getattr(self, attr))}
+        return attributes
+
     def _update_config_periodically(self):
         while not self.stop_event.is_set():
             self.load_remote_config()
@@ -104,38 +108,29 @@ class MinerConfig(RemoteConfig):
 class ValidatorConfig(RemoteConfig):
     def __init__(self):
         super().__init__()
-        self.cheat_factor_weight = None
         self.blockchain_importance_weight = None
         self.block_height_recency_weight = None
+        self.block_height_weight = None
         self.block_height_diff_weight = None
         self.process_time_weight = None
-        self.cheat_factor_sample_size = None
         self.discovery_timeout = None
-        self.config_url = os.getenv("VALIDATOR_REMOTE_CONFIG_URL", 'https://subnet-15-cfg.s3.fr-par.scw.cloud/validator.json')
+        self.config_url = os.getenv("VALIDATOR_REMOTE_CONFIG_URL", 'https://subnet-15-cfg.s3.fr-par.scw.cloud/validator2.json')
 
     def load_and_get_config_values(self):
         # Load remote configuration
         self.load_remote_config()
 
         # Retrieve specific configuration values
-        self.process_time_weight = self.get_config_value('process_time_weight', 0.5)
-        self.block_height_diff_weight = self.get_config_value('block_height_diff_weight', 1.5)
-        self.block_height_recency_weight = self.get_config_value('block_height_recency_weight',  1.5)
-        self.blockchain_importance_weight = self.get_config_value('blockchain_importance_weight', 0.2)
-        self.cheat_factor_weight = self.get_config_value('cheat_factor_weight', 3)
+        self.process_time_weight = self.get_config_value('process_time_weight', 1)
+        self.block_height_weight = self.get_config_value('block_height_weight', 1)
+        self.block_height_recency_weight = self.get_config_value('block_height_recency_weight',  1)
         self.discovery_timeout = self.get_config_value('discovery_timeout', 100)
 
     def get_network_importance(self, network):
-        return self.get_config_value(f'network_importance.{network}', 0.5)
+        return self.get_config_value(f'network_importance.{network}', 0.9)
 
     def get_network_importance_keys(self):
         return self.get_config_value('network_importance', {}).keys()
-
-    def get_cheat_factor(self, network):
-        return self.get_config_value(f'cheat_factor.{network}', 128)
-
-    def get_cheat_factor_sample_size(self, network):
-        return self.get_config_value(f'cheat_factor_sample_size.{network}', 128)
 
     def get_block_height_recency_scale_factor(self, network):
         return self.get_config_value(f'block_height_recency_scale_factor.{network}', 100)

@@ -1,0 +1,1 @@
+{"discovery_timeout": 100, "process_time_weight": 1, "block_height_weight": 1, "block_height_recency_weight": 1.5, "blockchain_importance": {"bitcoin": 0.9, "doge": 0.1}, "cheat_factor_sample_size": {"bitcoin": 1024}, "block_height_recency_scale_factor": {"bitcoin": 100}, "cheat_factor_weight": 1}
