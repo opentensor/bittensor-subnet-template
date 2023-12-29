@@ -6,28 +6,6 @@ class Scorer:
     def __init__(self, config: ValidatorConfig):
         self.config = config
 
-    def get_blockchain_importance_weight(self, network, miner_distribution):
-        weights = {}
-        total_miners = sum(miner_distribution.values())
-
-        for network in miner_distribution:
-            # Calculate miner distribution percentage
-            miner_percentage = (miner_distribution[network] / total_miners) if total_miners else 0
-
-            # Balancing factor to maintain proportion
-            balancing_factor = 1 - miner_percentage
-
-            # Calculate weight based on blockchain importance and balancing factor
-            weight = self.config.get_network_importance(network) * balancing_factor
-            weights[network] = weight
-
-        return weights[network]
-
-
-    # extract those parameters from the miner_registry_manager and pass as arguments
-    # refactor  miner_registry_manager and get those params in single session to db
-    # then i can test pure logic, with no db dependencies
-
     def calculate_score(self, network,  process_time, indexed_start_block_height, indexed_end_block_height, blockchain_last_block_height, data_samples_are_valid, miner_distribution, multiple_ips, multiple_run_ids):
         bt.logging.info(f"🔄 Calculating score for parameters:"
                         f"network: {network}, "
@@ -47,26 +25,22 @@ class Scorer:
 
         bt.logging.info(f"Partial results: ")
 
-        blockchain_importance_weight = self.get_blockchain_importance_weight(network, miner_distribution)
-
         process_time_score = self.calculate_process_time_score(process_time, self.config.discovery_timeout)
         block_height_score = self.calculate_block_height_score(indexed_start_block_height, indexed_end_block_height, blockchain_last_block_height)
         block_height_recency_score = self.calculate_block_height_recency_score(network, indexed_end_block_height, blockchain_last_block_height)
 
-        final_score = self.final_score(network, blockchain_importance_weight, process_time_score, block_height_score, block_height_recency_score)
+        final_score = self.final_score(process_time_score, block_height_score, block_height_recency_score)
         return final_score
 
-    def final_score(self, network, blockchain_importance_score, process_time_score, block_height_score, block_height_recency_score):
-        blockchain_importance_weight = self.config.get_network_importance(network)
+    def final_score(self, process_time_score, block_height_score, block_height_recency_score):
+
         total_score = (
-                blockchain_importance_score * blockchain_importance_weight +
                 process_time_score * self.config.process_time_weight +
                 block_height_score * self.config.block_height_weight +
                 block_height_recency_score * self.config.block_height_recency_weight
         )
 
         total_weights = (
-                blockchain_importance_weight +
                 self.config.process_time_weight +
                 self.config.block_height_weight +
                 self.config.block_height_recency_weight
