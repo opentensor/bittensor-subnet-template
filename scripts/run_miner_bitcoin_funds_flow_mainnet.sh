@@ -32,4 +32,12 @@ if [ -z "$BITCOIN_NODE_RPC_URL" ]; then
     export BITCOIN_NODE_RPC_URL="http://bitcoinrpc:rpcpassword@127.0.0.1:8332"
 fi
 
-python3 neurons/miners/miner.py --network bitcoin --model_type funds_flow --wallet.name "$WALLET_NAME" --wallet.hotkey "$WALLET_HOTKEY" --netuid 15 --subtensor.network finney --logging.debug --logging.trace
+if [ -z "$SUBTENSOR_URL" ]; then
+    export SUBTENSOR_URL=wss://51.158.60.18:9946
+fi
+
+if [ -z "$SUBTENSOR_NETWORK" ]; then
+    export SUBTENSOR_NETWORK=local
+fi
+
+python3 neurons/miners/miner.py --network bitcoin --model_type funds_flow --wallet.name "$WALLET_NAME" --wallet.hotkey "$WALLET_HOTKEY" --netuid 15 --subtensor.network "$SUBTENSOR_NETWORK" --subtensor.chain_endpoint "$SUBTENSOR_URL" --logging.debug --logging.trace
