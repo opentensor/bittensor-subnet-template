@@ -1,1 +1,0 @@
-{"discovery_timeout": 100, "process_time_weight": 1, "block_height_weight": 100, "block_height_recency_weight": 10, "blockchain_min_blocks": {"bitcoin": 51840}, "blockchain_importance": {"bitcoin": 1}, "block_height_recency_scale_factor": {"bitcoin": 100}}
