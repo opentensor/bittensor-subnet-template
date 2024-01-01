@@ -1,6 +1,4 @@
-import os
 import traceback
-
 from sqlalchemy import create_engine, Column, String, DateTime, func, Integer, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -9,7 +7,6 @@ import bittensor as bt
 
 
 Base = declarative_base()
-
 
 class MinerRegistry(Base):
     __tablename__ = "miner_registry"
@@ -21,16 +18,6 @@ class MinerRegistry(Base):
     response_time = Column(Float)
     score = Column(Float)
     run_id = Column(String)
-    updated = Column(DateTime, default=datetime.datetime.utcnow)
-
-class MinerBlockRegistry(Base):
-    __tablename__ = "miner_block_registry"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    hot_key = Column(String)
-    network = Column(String)
-    model_type = Column(String)
-    block_height = Column(Integer)
     updated = Column(DateTime, default=datetime.datetime.utcnow)
 
 class MinerRegistryManager:
@@ -69,85 +56,6 @@ class MinerRegistryManager:
         except Exception as e:
             session.rollback()
             bt.logging.error(f"Error occurred: {traceback.format_exc()}")
-        finally:
-            session.close()
-
-    def store_miner_block_height(self, hot_key, network, model_type, block_height, bitcoin_cheat_factor_sample_size):
-        session = sessionmaker(bind=self.engine)()
-        try:
-            new_miner = MinerBlockRegistry(
-                hot_key=hot_key,
-                network=network,
-                model_type=model_type,
-                block_height=block_height
-            )
-            session.add(new_miner)
-            session.commit()
-
-            # Count the number of records for the given hot_key
-            count = session.query(MinerBlockRegistry).filter_by(hot_key=hot_key).count()
-
-            # If count exceeds bitcoin_cheat_factor_sample_size, delete the oldest records
-            if count > bitcoin_cheat_factor_sample_size:
-                # Find the oldest records to delete
-                oldest_records = session.query(MinerBlockRegistry) \
-                    .filter_by(hot_key=hot_key) \
-                    .order_by(MinerBlockRegistry.block_height.asc()) \
-                    .limit(count - bitcoin_cheat_factor_sample_size)
-
-                for record in oldest_records:
-                    session.delete(record)
-
-                session.commit()
-
-        except Exception as e:
-            session.rollback()
-            bt.logging.error(f"Error occurred: {traceback.format_exc()}")
-        finally:
-            session.close()
-
-    def clear_block_heights(self, hot_key, network, model_type):
-        session = sessionmaker(bind=self.engine)()
-        try:
-            session.query(MinerBlockRegistry).filter_by(
-                hot_key=hot_key, network=network, model_type=model_type
-            ).delete()
-            session.commit()
-        except Exception as e:
-            session.rollback()
-            bt.logging.error(f"Error occurred: {traceback.format_exc()}")
-        finally:
-            session.close()
-
-    def calculate_cheat_factor(self, hot_key, network, model_type, sample_size=256):
-        session = sessionmaker(bind=self.engine)()
-        try:
-            entries = (
-                session.query(MinerBlockRegistry.block_height)
-                .filter(
-                    MinerBlockRegistry.hot_key == hot_key,
-                    MinerBlockRegistry.network == network,
-                    MinerBlockRegistry.model_type == model_type
-                )
-                .order_by(MinerBlockRegistry.updated.desc())
-                .limit(sample_size)
-                .all()
-            )
-
-            if len(entries) < sample_size:
-                return 0
-
-            block_heights = [entry[0] for entry in entries]
-            from collections import Counter
-            counts = Counter(block_heights)
-            repeats = sum(count - 1 for count in counts.values() if count > 1)
-            total = len(block_heights)
-            cheat_factor = repeats / total
-            return cheat_factor
-
-        except Exception as e:
-            bt.logging.error(f"Error occurred: {traceback.format_exc()}")
-            return 0
         finally:
             session.close()
 

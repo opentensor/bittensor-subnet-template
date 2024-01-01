@@ -156,9 +156,25 @@ def main(config):
                 block_height=_latest_block_height,
                 data_samples=data_samples,
                 run_id=run_id,
-                version=2,
+                version=3,
             )
             bt.logging.info(f"Serving miner discovery output: {synapse.output}")
+
+            return synapse
+        except Exception as e:
+            bt.logging.error(traceback.format_exc())
+            synapse.output = None
+            return synapse
+
+    def miner_random_block_check(synapse: protocol.MinerRandomBlockCheck) -> protocol.MinerRandomBlockCheck:
+        try:
+            graph_search = get_graph_search(config.network, config.model_type)
+            block_heights = synapse.blocks_to_check
+            data_samples = graph_search.get_block_transactions(block_heights)
+            synapse.output = protocol.MinerRandomBlockCheckOutput(
+                data_samples=data_samples,
+            )
+            bt.logging.info(f"Serving miner random block check output: {synapse.output}")
 
             return synapse
         except Exception as e:
@@ -231,7 +247,8 @@ def main(config):
     bt.logging.info(f"Attaching forward function to axon.")
 
     axon.attach(forward_fn=miner_discovery,  blacklist_fn=blacklist_discovery, priority_fn=priority_discovery).attach(
-        forward_fn=execute_query, blacklist_fn=blacklist_execute_query, priority_fn=priority_execute_query)
+        forward_fn=execute_query, blacklist_fn=blacklist_execute_query, priority_fn=priority_execute_query).attach(forward_fn=miner_random_block_check)
+
 
     bt.logging.info(
         f"Serving axon {axon} on network: {config.subtensor.chain_endpoint} with netuid: {config.netuid}"
@@ -317,5 +334,6 @@ if __name__ == "__main__":
         os.environ['GRAPH_DB_URL'] = 'bolt://localhost:7687'
         os.environ['GRAPH_DB_USER'] = 'user'
         os.environ['GRAPH_DB_PASSWORD'] = 'pwd'
+        os.environ['BT_AXON_PORT'] = '8191'
 
     main(config)

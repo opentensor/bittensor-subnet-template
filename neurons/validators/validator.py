@@ -24,7 +24,7 @@ import traceback
 import bittensor as bt
 from random import sample
 from insights import protocol
-from insights.protocol import MinerDiscoveryOutput, NETWORK_BITCOIN
+from insights.protocol import MinerDiscoveryOutput, NETWORK_BITCOIN, MinerRandomBlockCheckOutput
 from neurons.nodes.nodes import get_node
 from neurons.remote_config import ValidatorConfig
 from neurons.validators.miner_registry import MinerRegistryManager
@@ -35,12 +35,6 @@ def get_config():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--alpha", default=0.9, type=float, help="The weight moving average scoring.py."
-    )
-
-    parser.add_argument(
-        "--bitcoin_cheat_factor_sample_size",
-        default=256,
-        help="Bitcoin sample size used for calculating cheat factor.",
     )
 
     parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
@@ -117,7 +111,7 @@ def main(config):
     validator_config = ValidatorConfig()
     validator_config.load_and_get_config_values()
     miner_registry_manager = MinerRegistryManager()
-    scorer = Scorer(validator_config, miner_registry_manager)
+    scorer = Scorer(validator_config)
 
     bt.logging.info("Starting validator loop.")
     step = 0
@@ -188,21 +182,19 @@ def main(config):
                     output: MinerDiscoveryOutput = response.output
                     network = output.metadata.network
                     model_type = output.metadata.model_type
-
                     start_block_height = output.start_block_height
                     last_block_height = output.block_height
-
                     data_samples = output.data_samples
                     axon_ip = response.axon.ip
                     hot_key = response.axon.hotkey
                     run_id = response.output.run_id
                     response_time = response.dendrite.process_time
 
-                    if response.output.version is None:
+                    if response.output.version != 3:
                         bt.logging.info("Skipping response with no version.")
                         continue
 
-                    bt.logging.info(f"🔄 Processing response from {axon_ip} / {hot_key}")
+                    bt.logging.info(f"🔄 Processing response for {hot_key}@ {axon_ip}")
 
                     node = get_node(network)
                     data_samples_are_valid = validate_all_data_samples(node, network, data_samples)
@@ -213,17 +205,44 @@ def main(config):
                     if network not in block_height_cache:
                         block_height_cache[network] = node.get_current_block_height()
 
+                    miner_distribution = miner_registry_manager.get_miner_distribution(validator_config.get_network_importance_keys())
+                    multiple_ips = miner_registry_manager.detect_multiple_ip_usage(hot_key)
+                    multiple_run_ids = miner_registry_manager.detect_multiple_run_id(run_id)
+
                     score = scorer.calculate_score(
                         network,
-                        hot_key,
-                        model_type,
                         response_time,
                         start_block_height,
                         last_block_height,
                         block_height_cache[network],
                         data_samples_are_valid,
-                        run_id
+                        miner_distribution,
+                        multiple_ips,
+                        multiple_run_ids
                     )
+
+                    blocks_to_check = sample(range(start_block_height, last_block_height + 1), 10)
+                    random_block_response = dendrite.query(
+                        [response.axon],
+                        protocol.MinerRandomBlockCheck(blocks_to_check=blocks_to_check),
+                        deserialize=True,
+                        timeout = validator_config.discovery_timeout,
+                    )
+
+                    # take the first response
+                    random_block_response = random_block_response[0]
+                    if response.output is None:
+                        bt.logging.debug(f"Skipping response {response}")
+                        continue
+
+                    bt.logging.info(f"🔄 Processing random cross-check response for {hot_key}")
+                    blocks_to_check_output: MinerRandomBlockCheckOutput = random_block_response.output
+                    blocks_to_check_data_samples_are_valid = validate_all_data_samples(node, network, blocks_to_check_output.data_samples)
+                    if not blocks_to_check_data_samples_are_valid:
+                        score = 0
+                        bt.logging.info(f"🔄 Punishing {hot_key} for invalid data samples.")
+                    else:
+                        bt.logging.info(f"🔄 Rewarding {hot_key} for valid data samples.")
 
                     scores[dendrites_to_query[index]] = config.alpha * scores[dendrites_to_query[index]] + (1 - config.alpha) * score
 
@@ -236,19 +255,12 @@ def main(config):
                         score=scores[dendrites_to_query[index]],
                         run_id=run_id
                     )
-                    miner_registry_manager.store_miner_block_height(
-                        hot_key=hot_key,
-                        network=network,
-                        model_type=model_type,
-                        block_height=last_block_height,
-                        bitcoin_cheat_factor_sample_size=validator_config.get_cheat_factor_sample_size(network)
-                    )
                 except Exception as e:
                     bt.logging.error(e)
                     traceback.print_exc()
 
             current_block = subtensor.block
-            bt.logging.info(f"Block difference is {current_block - last_updated_block}.")
+
             if current_block - last_updated_block > 100:
                 weights = scores / torch.sum(scores)
                 bt.logging.info(f"Setting weights: {weights}")
@@ -278,7 +290,6 @@ def main(config):
             # Resync our local state with the latest state from the blockchain.
             metagraph = subtensor.metagraph(config.netuid)
             torch.save(scores, scores_file)
-            bt.logging.info(f"Saved weights to \"{scores_file}\"")
             time.sleep(bt.__blocktime__ * 10)
 
         except RuntimeError as e:

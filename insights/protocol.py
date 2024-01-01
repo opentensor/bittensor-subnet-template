@@ -30,13 +30,18 @@ class MinerDiscoveryOutput(BaseModel):
     run_id: str = None
     version: Optional[int] = None
 
-
 class MinerDiscovery(bt.Synapse):
     output: MinerDiscoveryOutput = None
 
     def deserialize(self):
         return self
 
+class MinerRandomBlockCheckOutput(BaseModel):
+    data_samples: List[Dict] = None
+
+class MinerRandomBlockCheck(bt.Synapse):
+    blocks_to_check: List[int] = None
+    output: MinerRandomBlockCheckOutput = None
 
 class MinerQuery(bt.Synapse):
     network: str = None
