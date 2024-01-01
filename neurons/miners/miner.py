@@ -25,6 +25,7 @@ import torch
 import bittensor as bt
 from random import sample
 from insights import protocol
+from neurons import VERSION
 from neurons.miners import blacklists
 from neurons.nodes.nodes import get_node
 from neurons.miners.bitcoin.funds_flow.graph_indexer import GraphIndexer
@@ -156,7 +157,7 @@ def main(config):
                 block_height=_latest_block_height,
                 data_samples=data_samples,
                 run_id=run_id,
-                version=3,
+                version=VERSION,
             )
             bt.logging.info(f"Serving miner discovery output: {synapse.output}")
 
@@ -302,6 +303,8 @@ def main(config):
                         f'Incentive:{metagraph.I[my_subnet_uid]} | ' \
                         f'Emission:{metagraph.E[my_subnet_uid]}')
                 bt.logging.info(log)
+
+            miner_config.load_and_get_config_values()
             step += 1
             time.sleep(1)
 

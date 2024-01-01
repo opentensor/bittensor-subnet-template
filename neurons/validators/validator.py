@@ -25,11 +25,11 @@ import bittensor as bt
 from random import sample
 from insights import protocol
 from insights.protocol import MinerDiscoveryOutput, NETWORK_BITCOIN, MinerRandomBlockCheckOutput
+from neurons import VERSION
 from neurons.nodes.nodes import get_node
 from neurons.remote_config import ValidatorConfig
 from neurons.validators.miner_registry import MinerRegistryManager
 from neurons.validators.scoring import Scorer
-
 
 def get_config():
     parser = argparse.ArgumentParser()
@@ -190,8 +190,16 @@ def main(config):
                     run_id = response.output.run_id
                     response_time = response.dendrite.process_time
 
-                    if response.output.version != 3:
-                        bt.logging.info("Skipping response with no version.")
+                    if response.output.version < VERSION and validator_config.grace_period:
+                        score = 0.1
+                        scores[dendrites_to_query[index]] = config.alpha * scores[dendrites_to_query[index]] + (1 - config.alpha) * score
+                        bt.logging.info(f"Miner is running an old version. Grace period is enabled. Score set to {score}.")
+                        continue
+
+                    elif response.output.version != VERSION:
+                        score = 0
+                        scores[dendrites_to_query[index]] = config.alpha * scores[dendrites_to_query[index]] + (1 - config.alpha) * score
+                        bt.logging.info(f"Miner is running an old version. Grace period is disabled. Score set to {score}")
                         continue
 
                     bt.logging.info(f"🔄 Processing response for {hot_key}@ {axon_ip}")
@@ -290,6 +298,7 @@ def main(config):
             # Resync our local state with the latest state from the blockchain.
             metagraph = subtensor.metagraph(config.netuid)
             torch.save(scores, scores_file)
+            validator_config.load_and_get_config_values()
             time.sleep(bt.__blocktime__ * 10)
 
         except RuntimeError as e:

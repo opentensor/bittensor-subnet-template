@@ -115,10 +115,10 @@ class ValidatorConfig(RemoteConfig):
         self.process_time_weight = None
         self.discovery_timeout = None
         self.blockchain_importance = None
+        self.grace_period = None
         self.config_url = os.getenv("VALIDATOR_REMOTE_CONFIG_URL", 'https://subnet-15-cfg.s3.fr-par.scw.cloud/validator2.json')
 
     def load_and_get_config_values(self):
-        # Load remote configuration
         self.load_remote_config()
 
         # Retrieve specific configuration values
@@ -128,6 +128,7 @@ class ValidatorConfig(RemoteConfig):
         self.discovery_timeout = self.get_config_value('discovery_timeout', 100)
         self.blockchain_importance = self.get_config_value('blockchain_importance', {"bitcoin": 0.9, "doge": 0.1})
         self.blockchain_importance_weight = self.get_config_value('blockchain_importance_weight', 50)
+        self.grace_period = self.get_config_value('grace_period', False)
 
     def get_blockchain_min_blocks(self, network):
         return self.get_config_value(f'blockchain_min_blocks.{network}', 51840)
