@@ -128,6 +128,10 @@ class ValidatorConfig(RemoteConfig):
         self.discovery_timeout = self.get_config_value('discovery_timeout', 100)
         self.blockchain_importance = self.get_config_value('blockchain_importance', {"bitcoin": 0.9, "doge": 0.1})
         self.blockchain_importance_weight = self.get_config_value('blockchain_importance_weight', 50)
+
+    def get_blockchain_min_blocks(self, network):
+        return self.get_config_value(f'blockchain_min_blocks.{network}', 51840)
+
     def get_network_importance(self, network):
         return self.get_config_value(f'network_importance.{network}', 0.9)
 

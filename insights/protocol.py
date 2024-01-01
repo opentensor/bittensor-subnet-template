@@ -39,7 +39,7 @@ class MinerDiscovery(bt.Synapse):
 class MinerRandomBlockCheckOutput(BaseModel):
     data_samples: List[Dict] = None
 
-class MinerRandomBlockCheck(BaseModel):
+class MinerRandomBlockCheck(bt.Synapse):
     blocks_to_check: List[int] = None
     output: MinerRandomBlockCheckOutput = None
 

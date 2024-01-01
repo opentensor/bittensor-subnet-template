@@ -156,7 +156,7 @@ def main(config):
                 block_height=_latest_block_height,
                 data_samples=data_samples,
                 run_id=run_id,
-                version=2,
+                version=3,
             )
             bt.logging.info(f"Serving miner discovery output: {synapse.output}")
 

@@ -111,7 +111,7 @@ def main(config):
     validator_config = ValidatorConfig()
     validator_config.load_and_get_config_values()
     miner_registry_manager = MinerRegistryManager()
-    scorer = Scorer(validator_config, miner_registry_manager)
+    scorer = Scorer(validator_config)
 
     bt.logging.info("Starting validator loop.")
     step = 0
@@ -190,11 +190,11 @@ def main(config):
                     run_id = response.output.run_id
                     response_time = response.dendrite.process_time
 
-                    if response.output.version is None:
+                    if response.output.version != 3:
                         bt.logging.info("Skipping response with no version.")
                         continue
 
-                    bt.logging.info(f"🔄 Processing response from {axon_ip} / {hot_key}")
+                    bt.logging.info(f"🔄 Processing response for {hot_key}@ {axon_ip}")
 
                     node = get_node(network)
                     data_samples_are_valid = validate_all_data_samples(node, network, data_samples)
@@ -221,7 +221,6 @@ def main(config):
                         multiple_run_ids
                     )
 
-                    ### Here we run punisher
                     blocks_to_check = sample(range(start_block_height, last_block_height + 1), 10)
                     random_block_response = dendrite.query(
                         [response.axon],
@@ -236,11 +235,14 @@ def main(config):
                         bt.logging.debug(f"Skipping response {response}")
                         continue
 
+                    bt.logging.info(f"🔄 Processing random cross-check response for {hot_key}")
                     blocks_to_check_output: MinerRandomBlockCheckOutput = random_block_response.output
                     blocks_to_check_data_samples_are_valid = validate_all_data_samples(node, network, blocks_to_check_output.data_samples)
                     if not blocks_to_check_data_samples_are_valid:
                         score = 0
-                        bt.logging.info(f"🔄 Punishing {axon_ip} / {hot_key} for invalid data samples.")
+                        bt.logging.info(f"🔄 Punishing {hot_key} for invalid data samples.")
+                    else:
+                        bt.logging.info(f"🔄 Rewarding {hot_key} for valid data samples.")
 
                     scores[dendrites_to_query[index]] = config.alpha * scores[dendrites_to_query[index]] + (1 - config.alpha) * score
 
@@ -258,7 +260,7 @@ def main(config):
                     traceback.print_exc()
 
             current_block = subtensor.block
-            bt.logging.info(f"Block difference is {current_block - last_updated_block}.")
+
             if current_block - last_updated_block > 100:
                 weights = scores / torch.sum(scores)
                 bt.logging.info(f"Setting weights: {weights}")
@@ -288,7 +290,6 @@ def main(config):
             # Resync our local state with the latest state from the blockchain.
             metagraph = subtensor.metagraph(config.netuid)
             torch.save(scores, scores_file)
-            bt.logging.info(f"Saved weights to \"{scores_file}\"")
             time.sleep(bt.__blocktime__ * 10)
 
         except RuntimeError as e:
