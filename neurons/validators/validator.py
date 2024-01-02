@@ -245,6 +245,10 @@ def main(config):
 
                     bt.logging.info(f"🔄 Processing random cross-check response for {hot_key}")
                     blocks_to_check_output: MinerRandomBlockCheckOutput = random_block_response.output
+                    if blocks_to_check_output is None:
+                        bt.logging.debug(f"Timeout for {hot_key}, skipping response")
+                        continue
+
                     blocks_to_check_data_samples_are_valid = validate_all_data_samples(node, network, blocks_to_check_output.data_samples)
                     if not blocks_to_check_data_samples_are_valid:
                         score = 0

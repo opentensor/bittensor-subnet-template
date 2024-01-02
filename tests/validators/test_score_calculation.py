@@ -15,7 +15,7 @@ class TestScoreCalculation(unittest.TestCase):
         cls.config.discovery_timeout = 100
         cls.config.process_time_weight = 1
         cls.config.block_height_weight = 100
-        cls.block_height_recency_weight = 1
+        cls.block_height_recency_weight = 10
 
         #cls.blockchain_importance = { "bitcoin": 0.9, "doge": 0.1 }
 
@@ -26,6 +26,8 @@ class TestScoreCalculation(unittest.TestCase):
         network_distribution = {'bitcoin': 256 }
         cases = [
             # block height score
+            ("bitcoin", 50, 769787, 823914, 823914, network_distribution),
+
             ("bitcoin", 10, 1, 790000, 800000, network_distribution),
             ("bitcoin", 10, 780000, 790000, 800000, network_distribution),
             ("bitcoin", 10, 700000, 790000, 800000, network_distribution),
