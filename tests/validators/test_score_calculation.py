@@ -13,9 +13,9 @@ class TestScoreCalculation(unittest.TestCase):
         time.sleep(5)
 
         cls.config.discovery_timeout = 100
-        cls.config.process_time_weight = 1
-        cls.config.block_height_weight = 100
-        cls.block_height_recency_weight = 10
+        cls.config.process_time_weight = 5
+        cls.config.block_height_weight = 90
+        cls.config.block_height_recency_weight = 5
 
         #cls.blockchain_importance = { "bitcoin": 0.9, "doge": 0.1 }
 
@@ -25,10 +25,7 @@ class TestScoreCalculation(unittest.TestCase):
     def generate_test_cases():
         network_distribution = {'bitcoin': 256 }
         cases = [
-            # block height score
-            ("bitcoin", 50, 769787, 823914, 823914, network_distribution),
 
-            ("bitcoin", 10, 1, 790000, 800000, network_distribution),
             ("bitcoin", 10, 780000, 790000, 800000, network_distribution),
             ("bitcoin", 10, 700000, 790000, 800000, network_distribution),
             ("bitcoin", 10, 600000, 790000, 800000, network_distribution),
@@ -43,6 +40,8 @@ class TestScoreCalculation(unittest.TestCase):
             ("bitcoin", 50, 600000, 750000, 800000, network_distribution),
             ("bitcoin", 75, 600000, 720000, 800000, network_distribution),
             ("bitcoin", 99, 600000, 700000, 800000, network_distribution),
+            
+
         ]
 
         cases.extend([
@@ -52,7 +51,15 @@ class TestScoreCalculation(unittest.TestCase):
             ("bitcoin", 93.75491285324097, 769787, 823375, 823387, {'bitcoin': 192}),
             ("bitcoin", 81.23294234275818, 769787, 782735, 823387, {'bitcoin': 192}),
             ("bitcoin", 4.6733479499816895, 822800, 823374, 823387, {'bitcoin': 191}),
-            ("bitcoin", 2.4628868103027344, 823260, 823374, 823386, {'bitcoin': 191})
+            ("bitcoin", 2.4628868103027344, 823260, 823374, 823386, {'bitcoin': 191}),
+            ("bitcoin", 55.28853988647461, 769787, 824154, 824166, {'bitcoin': 267}),
+            ("bitcoin", 8.211376428604126, 822800, 824154, 824166, {'bitcoin': 267}),
+
+            #recency
+            ("bitcoin", 42, 1, 200000, 800001, network_distribution),
+            ("bitcoin", 42, 200001, 400001, 800001, network_distribution),
+            ("bitcoin", 42, 400001, 600001, 800001, network_distribution),
+            ("bitcoin", 42, 600001, 800001, 800001, network_distribution),
         ])
 
         return cases
@@ -94,9 +101,9 @@ class TestScoreCalculation(unittest.TestCase):
 
         print("Summary:")
         df = pd.DataFrame(self.test_results)
-        print(df)
+        
         df_sorted = df.sort_values(by='calculated_score', ascending=False)
-        # print(df_sorted)
+        print(df)
 
         print("Weight values:")
         print(f"process_time_weight: {self.config.process_time_weight}")

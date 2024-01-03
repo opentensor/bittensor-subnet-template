@@ -42,16 +42,20 @@ class Scorer:
 
     def final_score(self, process_time_score, block_height_score, block_height_recency_score):
 
+        #return 0 if any score is 0
+        if process_time_score == 0 or block_height_recency_score == 0:
+            return 0
+
         total_score = (
-                process_time_score * self.config.process_time_weight +
-                block_height_score * self.config.block_height_weight +
-                block_height_recency_score * self.config.block_height_recency_weight
+            process_time_score * self.config.process_time_weight +
+            block_height_score * self.config.block_height_weight +
+            block_height_recency_score * self.config.block_height_recency_weight
         )
 
         total_weights = (
-                self.config.process_time_weight +
-                self.config.block_height_weight +
-                self.config.block_height_recency_weight
+            self.config.process_time_weight +
+            self.config.block_height_weight +
+            self.config.block_height_recency_weight
         )
 
         normalized_score = total_score / total_weights
@@ -65,29 +69,28 @@ class Scorer:
         process_time_score = max(0, 1 - factor)
         return process_time_score
 
+
     def calculate_block_height_recency_score(self, network, indexed_end_block_height, blockchain_block_height):
-        block_height_diff_recency = blockchain_block_height - indexed_end_block_height
-        block_height_recency_score = max(0, min(1, 1 - block_height_diff_recency / self.config.get_block_height_recency_scale_factor(network)))
-        return block_height_recency_score
+        recency_diff = blockchain_block_height - indexed_end_block_height
 
-    def calculate_block_height_score(self, network, indexed_start_block_height: int, indexed_end_block_height: int, blockchain_last_block_height: int):
+        recency_score = max(0, (1 - recency_diff / blockchain_block_height) ** self.config.get_blockchain_recency_weight(network))
+        
+        return recency_score
 
-        diff = indexed_end_block_height - indexed_start_block_height
+
+    def calculate_block_height_score(self, network, indexed_start_block_height: int, indexed_end_block_height: int, blockchain_block_height: int):
+
+        covered_blocks = indexed_end_block_height - indexed_start_block_height
+
         min_blocks = self.config.get_blockchain_min_blocks(network=network)
-        if diff < min_blocks:
+        if covered_blocks < min_blocks:
             return 0
 
-        # Coverage Percentage
-        total_blocks = blockchain_last_block_height
-        covered_blocks = indexed_end_block_height - indexed_start_block_height
-        coverage_percentage = covered_blocks / total_blocks
+        coverage_percentage = covered_blocks / blockchain_block_height
 
-        # Recency Score
-        recency_diff = blockchain_last_block_height - indexed_end_block_height
-        recency_score = max(0, min(1, 1 - (recency_diff / total_blocks)))
+        recency_score = self.calculate_block_height_recency_score(network, indexed_end_block_height, blockchain_block_height)
+        overall_score = 0.8 * coverage_percentage + 0.2 * recency_score
 
-        # Overall Score with Pareto Weights
-        block_height_score = 0.9 * coverage_percentage + 0.1 * recency_score
-        return block_height_score
+        return overall_score
 
 
