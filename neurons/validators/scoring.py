@@ -8,7 +8,7 @@ class Scorer:
 
     def calculate_score(self, network,  process_time, indexed_start_block_height, indexed_end_block_height, blockchain_last_block_height, data_samples_are_valid, miner_distribution, multiple_ips, multiple_run_ids):
         log =  (f'🔄 Network: {network} | ' \
-                f'Process time: {process_time} | ' \
+                f'Process time: {process_time:4f} | ' \
                 f'Indexed start block height: {indexed_start_block_height} | ' \
                 f'Indexed end block height: {indexed_end_block_height} | ' \
                 f'Blockchain last block height: {blockchain_last_block_height} | ' \
@@ -33,10 +33,10 @@ class Scorer:
         block_height_recency_score = self.calculate_block_height_recency_score(network, indexed_end_block_height, blockchain_last_block_height)
         final_score = self.final_score(process_time_score, block_height_score, block_height_recency_score)
 
-        log =  (f'🔄 Process time score: {process_time_score} | ' \
-                f'Block height score: {block_height_score} | ' \
-                f'Block height recency score: {block_height_recency_score} | ' \
-                f'Final score: {final_score} |')
+        log =  (f'🔄 Process time score: {process_time_score:.4f} | ' \
+                f'Block height score: {block_height_score:.4f} | ' \
+                f'Block height recency score: {block_height_recency_score:.4f} | ' \
+                f'Final score: {final_score:.4f} |')
         bt.logging.info(log)
         return final_score
 
@@ -62,7 +62,7 @@ class Scorer:
     def calculate_process_time_score(self, process_time, discovery_timeout):
         process_time = min(process_time, discovery_timeout)
         factor = (process_time / discovery_timeout) ** 2
-        process_time_score = round(max(0, 1 - factor), 4)
+        process_time_score = max(0, 1 - factor)
         return process_time_score
 
     def calculate_block_height_recency_score(self, network, indexed_end_block_height, blockchain_block_height):
@@ -87,8 +87,7 @@ class Scorer:
         recency_score = max(0, min(1, 1 - (recency_diff / total_blocks)))
 
         # Overall Score with Pareto Weights
-        overall_score = 0.9 * coverage_percentage + 0.1 * recency_score
-        block_height_score = round(overall_score, 4)
+        block_height_score = 0.9 * coverage_percentage + 0.1 * recency_score
         return block_height_score
 
 
