@@ -36,7 +36,7 @@ class TestScorer(unittest.TestCase):
                     block_height_recency_score=case["block_height_recency_score"],
                     blockchain_score = case['blockchain_score']
                 )
-                if case["process_time_score"] == 0 or case["block_height_recency_score"] == 0:
+                if case["process_time_score"] == 0 or case["block_height_recency_score"] == 0 or case["block_height_score"] == 0:
                     assert score == 0
                 else:
                     assert score != 0
