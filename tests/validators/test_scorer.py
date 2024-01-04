@@ -15,17 +15,17 @@ class TestScorer(unittest.TestCase):
         self.validator_config.block_height_weight = 0.7
         self.validator_config.process_time_weight = 0.1
         self.validator_config.discovery_timeout = 100
-        self.validator_config.blockchain_importance = None
+        self.validator_config.blockchain_importance = {'bitcoin': 0.9, 'doge': 0.1}
 
         self.scorer = Scorer(self.validator_config)
 
 
     def test_final_score(self):
         score_cases = [
-            {"process_time_score": 0, "block_height_score": 1, "block_height_recency_score": 1},
-            {"process_time_score": 1, "block_height_score": 0, "block_height_recency_score": 1},
-            {"process_time_score": 1, "block_height_score": 1, "block_height_recency_score": 0},
-            {"process_time_score": 1, "block_height_score": 1, "block_height_recency_score": 1},
+            {"process_time_score": 0, "block_height_score": 1, "block_height_recency_score": 1, "blockchain_score":1},
+            {"process_time_score": 1, "block_height_score": 0, "block_height_recency_score": 1, "blockchain_score":1},
+            {"process_time_score": 1, "block_height_score": 1, "block_height_recency_score": 0, "blockchain_score":1},
+            {"process_time_score": 1, "block_height_score": 1, "block_height_recency_score": 1, "blockchain_score":1},
         ]
 
         for case in score_cases:
@@ -33,7 +33,8 @@ class TestScorer(unittest.TestCase):
                 score = self.scorer.final_score(
                     process_time_score=case["process_time_score"],
                     block_height_score=case["block_height_score"],
-                    block_height_recency_score=case["block_height_recency_score"]
+                    block_height_recency_score=case["block_height_recency_score"],
+                    blockchain_score = case['blockchain_score']
                 )
                 if case["process_time_score"] == 0 or case["block_height_recency_score"] == 0:
                     assert score == 0
@@ -85,6 +86,20 @@ class TestScorer(unittest.TestCase):
             score1 = self.scorer.calculate_block_height_recency_score(network='bitcoin', indexed_end_block_height=5, blockchain_block_height=10)
             score2 = self.scorer.calculate_block_height_recency_score(network='bitcoin', indexed_end_block_height=4, blockchain_block_height=10)
             assert score1 > score2
+
+    def test_calculate_blockchain_weight(self):
+        with self.subTest(test_case="unique_blockchain_distribution_should_return_1"):
+            score = self.scorer.calculate_blockchain_weight("bitcoin", miner_distribution={'bitcoin':256})
+            assert score == 1
+        
+        with self.subTest(test_case="when_miner_are_under_represented_then_score_should_be_higher"):
+            score1 = self.scorer.calculate_blockchain_weight("bitcoin", miner_distribution={'bitcoin':1, 'doge': 99})
+            score2 = self.scorer.calculate_blockchain_weight("bitcoin", miner_distribution={'bitcoin':50, 'doge': 50})
+            assert score1 > score2
+        with self.subTest(test_case="when_miner_are_over_represented_then_score_should_be_same"):
+            score1 = self.scorer.calculate_blockchain_weight("bitcoin", miner_distribution={'bitcoin':91, 'doge': 9})
+            score2 = self.scorer.calculate_blockchain_weight("bitcoin", miner_distribution={'bitcoin':95, 'doge': 5})
+            assert score1 == score2
 
 if __name__ == '__main__':
     unittest.main()

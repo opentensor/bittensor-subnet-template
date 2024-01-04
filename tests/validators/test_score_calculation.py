@@ -14,10 +14,10 @@ class TestScoreCalculation(unittest.TestCase):
 
         cls.config.discovery_timeout = 100
         cls.config.process_time_weight = 5
-        cls.config.block_height_weight = 90
+        cls.config.block_height_weight = 88
         cls.config.block_height_recency_weight = 5
-
-        #cls.blockchain_importance = { "bitcoin": 0.9, "doge": 0.1 }
+        cls.config.blockchain_importance_weight = 2
+        cls.blockchain_importance = { "bitcoin": 0.9, "doge": 0.1 }
 
         cls.test_results = []
 
@@ -109,9 +109,9 @@ class TestScoreCalculation(unittest.TestCase):
         print(f"process_time_weight: {self.config.process_time_weight}")
         print(f"block_height_weight: {self.config.block_height_weight}")
         print(f"block_height_recency_weight: {self.config.block_height_recency_weight}")
+        print(f"blockchain_importance_weight: {self.config.blockchain_importance_weight}")
+
         print(f"discovery_timeout: {self.config.discovery_timeout}")
 
 if __name__ == '__main__':
     unittest.main()
-
-# start_block_height: 823827, last_block_height: 823852, blockchain_block_height: 823864,
