@@ -44,7 +44,6 @@ class Scorer:
 
     def final_score(self, process_time_score, block_height_score, block_height_recency_score, blockchain_score):
 
-        #return 0 if any score is 0
         if process_time_score == 0 or block_height_recency_score == 0:
             return 0
 
