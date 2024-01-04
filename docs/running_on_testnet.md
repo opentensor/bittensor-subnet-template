@@ -106,7 +106,7 @@ Using the test TAO from the previous step you can register your subnet on the te
 
 The below command shows how to purchase a slot. 
 
-**NOTE**: Slots cost TAO, and you will not get this TAO back. Instead, this TAO is recycled back into your incentive mechanism, to be later mined.
+**NOTE**: Slots cost TAO to lock. You will get this TAO back when the subnet is deregistered.
 
 ```bash
 btcli subnet create --subtensor.network test 
