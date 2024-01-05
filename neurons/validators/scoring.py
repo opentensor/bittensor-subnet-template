@@ -91,6 +91,9 @@ class Scorer:
 
         coverage_percentage = covered_blocks / blockchain_block_height
 
+        #Amplifying the impact of small values.
+        coverage_percentage = coverage_percentage ** 0.6
+
         recency_score = self.calculate_block_height_recency_score(network, indexed_end_block_height, blockchain_block_height)
         overall_score = 0.8 * coverage_percentage + 0.2 * recency_score
 
