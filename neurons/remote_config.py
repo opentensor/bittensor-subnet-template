@@ -120,7 +120,7 @@ class ValidatorConfig(RemoteConfig):
 
         self.grace_period = None
         
-        self.config_url = os.getenv("VALIDATOR_REMOTE_CONFIG_URL", 'https://subnet-15-cfg.s3.fr-par.scw.cloud/validator2.json')
+        self.config_url = os.getenv("VALIDATOR_REMOTE_CONFIG_URL", 'https://subnet-15-cfg.s3.fr-par.scw.cloud/validator3.json')
 
 
     def load_and_get_config_values(self):
