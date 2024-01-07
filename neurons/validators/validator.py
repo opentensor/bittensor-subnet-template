@@ -360,6 +360,7 @@ if __name__ == "__main__":
     if os.getenv("VALIDATOR_TEST_MODE") == "True":
         # Local development settings
         config.subtensor.network = 'test'
+        config.subtensor.chain_endpoint = None
         config.wallet.hotkey = 'default'
         config.wallet.name = 'validator'
         config.netuid = 59

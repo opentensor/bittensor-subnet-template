@@ -327,6 +327,7 @@ if __name__ == "__main__":
     if os.getenv("MINER_TEST_MODE") == "True":
         # Local development settings
         config.subtensor.network = 'test'
+        config.subtensor.chain_endpoint = None
         config.wallet.hotkey = 'default'
         config.wallet.name = 'miner'
         config.netuid = 59
