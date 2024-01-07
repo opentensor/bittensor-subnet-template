@@ -324,7 +324,7 @@ if __name__ == "__main__":
     config = get_config()
 
     # Check for an environment variable to enable local development
-    if os.getenv("MINER_LOCAL_MODE") == "True":
+    if os.getenv("MINER_TEST_MODE") == "True":
         # Local development settings
         config.subtensor.network = 'test'
         config.wallet.hotkey = 'default'

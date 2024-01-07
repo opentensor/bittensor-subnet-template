@@ -357,7 +357,7 @@ if __name__ == "__main__":
     config = get_config()
 
     # Check for an environment variable to enable local development
-    if os.getenv("VALIDATOR_LOCAL_MODE") == "True":
+    if os.getenv("VALIDATOR_TEST_MODE") == "True":
         # Local development settings
         config.subtensor.network = 'test'
         config.wallet.hotkey = 'default'
