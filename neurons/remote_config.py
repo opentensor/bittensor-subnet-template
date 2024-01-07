@@ -108,15 +108,20 @@ class MinerConfig(RemoteConfig):
 class ValidatorConfig(RemoteConfig):
     def __init__(self):
         super().__init__()
-        self.blockchain_importance_weight = None
-        self.block_height_recency_weight = None
-        self.block_height_weight = None
-        self.block_height_diff_weight = None
         self.process_time_weight = None
+        self.block_height_weight = None
+        self.block_height_recency_weight = None
+        self.blockchain_importance_weight = None
+        
         self.discovery_timeout = None
+
         self.blockchain_importance = None
+        self.blockchain_recency_weight = None
+
         self.grace_period = None
-        self.config_url = os.getenv("VALIDATOR_REMOTE_CONFIG_URL", 'https://subnet-15-cfg.s3.fr-par.scw.cloud/validator2.json')
+        
+        self.config_url = os.getenv("VALIDATOR_REMOTE_CONFIG_URL", 'https://subnet-15-cfg.s3.fr-par.scw.cloud/validator3.json')
+
 
     def load_and_get_config_values(self):
         self.load_remote_config()
@@ -125,19 +130,27 @@ class ValidatorConfig(RemoteConfig):
         self.process_time_weight = self.get_config_value('process_time_weight', 1)
         self.block_height_weight = self.get_config_value('block_height_weight', 1)
         self.block_height_recency_weight = self.get_config_value('block_height_recency_weight',  1)
+        self.blockchain_importance_weight = self.get_config_value('blockchain_importance_weight', 1)
+        
         self.discovery_timeout = self.get_config_value('discovery_timeout', 100)
+
         self.blockchain_importance = self.get_config_value('blockchain_importance', {"bitcoin": 0.9, "doge": 0.1})
-        self.blockchain_importance_weight = self.get_config_value('blockchain_importance_weight', 50)
+        self.blockchain_recency_weight = self.get_config_value('blockchain_recency_weight',  {"bitcoin": 2, "doge": 2})
+
         self.grace_period = self.get_config_value('grace_period', False)
+
 
     def get_blockchain_min_blocks(self, network):
         return self.get_config_value(f'blockchain_min_blocks.{network}', 51840)
 
+
     def get_network_importance(self, network):
         return self.get_config_value(f'network_importance.{network}', 0.9)
+
 
     def get_network_importance_keys(self):
         return self.get_config_value('network_importance', {}).keys()
 
-    def get_block_height_recency_scale_factor(self, network):
-        return self.get_config_value(f'block_height_recency_scale_factor.{network}', 100)
+
+    def get_blockchain_recency_weight(self, network):
+        return self.get_config_value(f'blockchain_recency_weight.{network}', 2)
