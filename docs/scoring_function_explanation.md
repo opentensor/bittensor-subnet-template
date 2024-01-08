@@ -50,8 +50,7 @@ Our scoring function is implemented through a set of Python functions to assess 
 
 The `Block Height Coverage` function evaluates the coverage of indexed blocks within a blockchain. It considers the number of blocks covered, the minimum required blocks. The final score is a combination of coverage percentage and recency score.
 
-The graph below illustrate the function:
-
+The function is illustrated in the graph below
 <p align="center">
   <img src="./imgs/scoring/block_height_function.png" />
 </p>
@@ -60,7 +59,7 @@ The graph below illustrate the function:
 
 `Recency of Block` measures the difference between the indexed end block height and the current blockchain block height. The final recency score is based on this difference.
 
-The graph below illustrate the function:
+The function is illustrated in the graph below
 
 <p align="center">
   <img src="./imgs/scoring/recency_score_function.png" />
@@ -70,7 +69,7 @@ The graph below illustrate the function:
 
 The `Response Time` function calculates the response time score based on the process time and discovery timeout. It considers the ratio of process time to timeout and squares it to emphasize the impact of longer processing times.
 
-The graph below illustrate the function:
+The function is illustrated in the graph below
 
 <p align="center">
   <img src="./imgs/scoring/process_time_function.png" />
@@ -81,7 +80,7 @@ The graph below illustrate the function:
 
 The `Weight Based on the Mined Blockchain` function assigns a weight to the blockchain based on its importance and distribution among miners. The overall score is a combination of the network's importance and the distribution score.
 
-The graph below illustrate the function:
+The function is illustrated in the graph below
 
 <p align="center">
   <img src="./imgs/scoring/blockchain_weight.png" />
