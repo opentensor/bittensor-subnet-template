@@ -6,7 +6,7 @@ from bitcoinrpc.authproxy import AuthServiceProxy
 
 parser = argparse.ArgumentParser()
 bt.logging.add_args(parser)
-
+ 
 class BitcoinNode:
     def __init__(self, node_rpc_url: str = None):
         if node_rpc_url is None:

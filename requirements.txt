@@ -11,3 +11,4 @@ python-dotenv
 sqlalchemy
 requests
 urllib3
+web3

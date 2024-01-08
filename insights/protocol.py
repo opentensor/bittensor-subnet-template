@@ -14,6 +14,8 @@ NETWORK_DASH = "dash"
 NETWORK_ZCASH = "zcash"
 NETWORK_BITCOIN_CASH = "bitcoin_cash"
 
+# EVM Compatible networks
+NETWORK_ETHEREUM = "ethereum"
 
 class MinerDiscoveryMetadata(BaseModel):
     network: str = None
