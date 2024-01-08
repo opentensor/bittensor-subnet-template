@@ -160,6 +160,7 @@ def main(config):
         try:
             # Filter metagraph.axons by indices saved in dendrites_to_query list
             filtered_axons = [metagraph.axons[i] for i in dendrites_to_query]
+            ip_per_hotkey = count_ip_per_hotkey(filtered_axons)
             bt.logging.info(f"filtered axons: {filtered_axons}")
 
             responses = dendrite.query(
@@ -214,7 +215,7 @@ def main(config):
                         block_height_cache[network] = node.get_current_block_height()
 
                     miner_distribution = miner_registry_manager.get_miner_distribution(validator_config.get_network_importance_keys())
-                    multiple_ips = miner_registry_manager.detect_multiple_ip_usage(hot_key)
+                    multiple_ips = ip_per_hotkey[hot_key] > 9
                     multiple_run_ids = miner_registry_manager.detect_multiple_run_id(run_id)
 
                     score = scorer.calculate_score(
@@ -317,6 +318,19 @@ def main(config):
             bt.logging.error(e)
             traceback.print_exc()
 
+def count_ip_per_hotkey(filtered_axons):
+    ip_count = {}
+    for axon in filtered_axons:
+        hotkey = axon.hotkey
+        ip = axon.ip
+        if hotkey not in ip_count:
+            ip_count[hotkey] = set()
+        ip_count[hotkey].add(ip)
+    # Count the number of unique IPs for each hotkey
+    for hotkey in ip_count:
+        ip_count[hotkey] = len(ip_count[hotkey])
+    return ip_count
+
 def validate_data_sample(node, network, data_sample):
     block_data = node.get_block_by_height(data_sample['block_height'])
     return verify_data_sample(
@@ -359,11 +373,10 @@ if __name__ == "__main__":
     # Check for an environment variable to enable local development
     if os.getenv("VALIDATOR_TEST_MODE") == "True":
         # Local development settings
-        config.subtensor.network = 'test'
-        config.subtensor.chain_endpoint = None
+        config.subtensor.chain_endpoint = "ws://163.172.164.213:9944"
         config.wallet.hotkey = 'default'
         config.wallet.name = 'validator'
-        config.netuid = 59
+        config.netuid = 1
 
         # set environment variables
         os.environ['GRAPH_DB_URL'] = 'bolt://localhost:7687'

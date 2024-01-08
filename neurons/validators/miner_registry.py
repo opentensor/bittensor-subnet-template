@@ -84,45 +84,6 @@ class MinerRegistryManager:
         finally:
             session.close()
 
-    def detect_multiple_ip_usage(self, hot_key, period_hours=24, allowed_num=9):
-        session = sessionmaker(bind=self.engine)()
-        try:
-            # Current time
-            current_time = datetime.datetime.utcnow()
-
-            # Time 24 hours ago (or the specified period)
-            past_time = current_time - datetime.timedelta(hours=period_hours)
-
-            # Query for repeated IP addresses (without ports) within the last 24 hours
-            repeated_ips = (
-                session.query(
-                    MinerRegistry.ip_address.label('ip'),
-                    func.count(MinerRegistry.ip_address)
-                )
-
-                .filter(
-                    MinerRegistry.hot_key == hot_key,
-                    MinerRegistry.updated >= past_time
-                )
-                .group_by('ip')
-                .having(func.count('ip') > allowed_num)
-                .all()
-            )
-
-            # Print the repeated IP addresses
-            for ip, count in repeated_ips:
-                bt.logging.info(f"IP Address {ip} is used {count} times in the last {period_hours} hours.")
-
-            if len(repeated_ips) == 0:
-                return False
-            return True
-
-        except Exception as e:
-            bt.logging.error(f"Error occurred: {traceback.format_exc()}")
-            return False
-        finally:
-            session.close()
-
     def detect_multiple_run_id(self, run_id, allowed_num=9):
         session = sessionmaker(bind=self.engine)()
         try:

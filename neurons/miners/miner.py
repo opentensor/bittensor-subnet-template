@@ -266,9 +266,6 @@ def main(config):
     while True:
         try:
             if subtensor.block - last_updated_block >= 100:
-                bt.logging.trace(f"Setting miner weight")
-                # find the uid that matches config.wallet.hotkey [meta.axons[N].hotkey == config.wallet.hotkey]
-                # set the weight of that uid to 1.0
                 uid = None
                 try:
                     for _uid, axon in enumerate(metagraph.axons):
@@ -278,16 +275,17 @@ def main(config):
                             uid = _uid
                             break
                     if uid is not None:
-                        # 0 weights for all uids
-                        weights = torch.Tensor([0.0] * len(metagraph.uids))
-                        # 1 weight for uid
-                        weights[uid] = 1.0
-                        (uids, processed_weights) = bt.utils.weight_utils.process_weights_for_netuid( uids = metagraph.uids, weights = weights, netuid=config.netuid, subtensor = subtensor)
-                        subtensor.set_weights(wallet = wallet, netuid = config.netuid, weights = processed_weights, uids = uids)
+                        if config.miner_set_weights:
+                            weights = torch.Tensor([0.0] * len(metagraph.uids))
+                            weights[uid] = 1.0
+                            (uids, processed_weights) = bt.utils.weight_utils.process_weights_for_netuid( uids = metagraph.uids, weights = weights, netuid=config.netuid, subtensor = subtensor)
+                            subtensor.set_weights(wallet = wallet, netuid = config.netuid, weights = processed_weights, uids = uids)
+                            bt.logging.trace("🔄 Miner weight set!")
+
                         last_updated_block = subtensor.block
-                        bt.logging.trace("🔄 Miner weight set!")
+
                     else:
-                        bt.logging.warning(f"Could not find uid with hotkey {config.wallet.hotkey} to set weight")
+                        bt.logging.warning(f"The miner hotkey {config.wallet.hotkey} has been deregistered from the network.")
                 except Exception as e:
                     bt.logging.warning(f"Could not set miner weight: {e}")
                     raise e
@@ -326,11 +324,12 @@ if __name__ == "__main__":
     # Check for an environment variable to enable local development
     if os.getenv("MINER_TEST_MODE") == "True":
         # Local development settings
-        config.subtensor.network = 'test'
-        config.subtensor.chain_endpoint = None
+        config.subtensor.chain_endpoint = "ws://163.172.164.213:9944"
         config.wallet.hotkey = 'default'
         config.wallet.name = 'miner'
-        config.netuid = 59
+        config.netuid = 1
+
+        config.miner_set_weights = True
 
         # set environment variables
         os.environ['WAIT_FOR_SYNC'] = 'False'
