@@ -2,6 +2,7 @@
 # Copyright © 2023 Yuma Rao
 # Copyright © 2023 aph5nt
 import concurrent
+import json
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
 # the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
@@ -25,10 +26,9 @@ import bittensor as bt
 from random import sample
 from insights import protocol
 from insights.protocol import MinerDiscoveryOutput, NETWORK_BITCOIN, MinerRandomBlockCheckOutput
-from neurons import VERSION
+from neurons import VERSION, MAX_MULTIPLE_IPS, MAX_MULTIPLE_RUN_ID, get_network_by_id
 from neurons.nodes.nodes import get_node
 from neurons.remote_config import ValidatorConfig
-from neurons.validators.miner_registry import MinerRegistryManager
 from neurons.validators.scoring import Scorer
 
 def get_config():
@@ -110,7 +110,6 @@ def main(config):
     """ Building dependencies. """
     validator_config = ValidatorConfig()
     validator_config.load_and_get_config_values()
-    miner_registry_manager = MinerRegistryManager()
     scorer = Scorer(validator_config)
 
     bt.logging.info("Starting validator loop.")
@@ -158,11 +157,14 @@ def main(config):
         dendrites_to_query = sample( filtered_uids, min( dendrites_per_query, len(filtered_uids) ) )
 
         try:
-            # Filter metagraph.axons by indices saved in dendrites_to_query list
             filtered_axons = [metagraph.axons[i] for i in dendrites_to_query]
             ip_per_hotkey = count_ip_per_hotkey(filtered_axons)
-            bt.logging.info(f"filtered axons: {filtered_axons}")
+            miners_metadata = get_miners_metadata(subtensor, metagraph)
+            run_id_per_hotkey = count_run_id_per_hotkey(miners_metadata)
+            miner_distribution = get_miner_distributions(miners_metadata, validator_config.get_network_importance_keys())
+            block_height_cache = {}
 
+            bt.logging.info(f"filtered axons: {filtered_axons}")
             responses = dendrite.query(
                 filtered_axons,
                 protocol.MinerDiscovery(),
@@ -170,16 +172,12 @@ def main(config):
                 timeout = validator_config.discovery_timeout,
             )
 
-            # Cache dictionary
-            block_height_cache = {}
-
             for index, response in enumerate(responses):
                 if response.output is None:
                     bt.logging.debug(f"Skipping response {response}")
                     continue
 
                 try:
-                    # Vars
                     output: MinerDiscoveryOutput = response.output
                     network = output.metadata.network
                     model_type = output.metadata.model_type
@@ -214,9 +212,8 @@ def main(config):
                     if network not in block_height_cache:
                         block_height_cache[network] = node.get_current_block_height()
 
-                    miner_distribution = miner_registry_manager.get_miner_distribution(validator_config.get_network_importance_keys())
-                    multiple_ips = ip_per_hotkey[hot_key] > 9
-                    multiple_run_ids = miner_registry_manager.detect_multiple_run_id(run_id)
+                    multiple_ips = ip_per_hotkey[hot_key] > MAX_MULTIPLE_IPS
+                    multiple_run_ids = run_id_per_hotkey[hot_key] > MAX_MULTIPLE_RUN_ID
 
                     score = scorer.calculate_score(
                         network,
@@ -259,15 +256,6 @@ def main(config):
 
                     scores[dendrites_to_query[index]] = config.alpha * scores[dendrites_to_query[index]] + (1 - config.alpha) * score
 
-                    miner_registry_manager.store_miner_metadata(
-                        ip_address=axon_ip,
-                        hot_key=hot_key,
-                        network=network,
-                        model_type=model_type,
-                        response_time=response_time,
-                        score=scores[dendrites_to_query[index]],
-                        run_id=run_id
-                    )
                 except Exception as e:
                     bt.logging.error(e)
                     traceback.print_exc()
@@ -317,6 +305,44 @@ def main(config):
         except Exception as e:
             bt.logging.error(e)
             traceback.print_exc()
+
+
+def get_miners_metadata(subtensor, metagraph):
+    miners_metadata = {}
+    for axon in metagraph.axons:
+        if not axon.is_serving:
+            continue
+        hotkey = axon.hotkey
+        uid = subtensor.get_uid_for_hotkey_on_subnet(hotkey, config.netuid)
+        metadata_json = subtensor.get_commitment(config.netuid, uid)
+        metadata = json.loads(metadata_json)
+        miners_metadata[hotkey] = metadata
+
+    return miners_metadata
+
+def get_miner_distributions(miners_metadata, network_importance_keys):
+    miner_distribution = {}
+    for network in network_importance_keys:
+        miner_distribution[network] = 0
+
+    for hotkey in miners_metadata:
+        metadata = miners_metadata[hotkey]
+        network = get_network_by_id(metadata['n'])
+        if network in network_importance_keys:
+            miner_distribution[network] += 1
+
+    return miner_distribution
+
+def count_run_id_per_hotkey(metadata):
+    run_id_count = {}
+    for hotkey in metadata:
+        if hotkey not in run_id_count:
+            run_id_count[hotkey] = set()
+        run_id_count[hotkey].add(metadata[hotkey]['ri'])
+    # Count the number of unique run_ids for each hotkey
+    for hotkey in run_id_count:
+        run_id_count[hotkey] = len(run_id_count[hotkey])
+    return run_id_count
 
 def count_ip_per_hotkey(filtered_axons):
     ip_count = {}

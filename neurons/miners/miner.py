@@ -2,6 +2,7 @@
 # Copyright © 2023 Yuma Rao
 # Copyright © 2023 aphex5
 import concurrent
+import json
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
 # the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
@@ -21,11 +22,14 @@ import time
 import argparse
 import traceback
 import typing
+import socket
+
+import docker
 import torch
 import bittensor as bt
 from random import sample
 from insights import protocol
-from neurons import VERSION
+from neurons import VERSION, get_model_id, get_network_id
 from neurons.miners import blacklists
 from neurons.nodes.nodes import get_node
 from neurons.miners.bitcoin.funds_flow.graph_indexer import GraphIndexer
@@ -135,6 +139,41 @@ def main(config):
 
     my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
     bt.logging.info(f"Running miner on uid: {my_subnet_uid}")
+
+    def store_miner_metadata():
+        def get_docker_image_version():
+            try:
+                container_id = socket.gethostname()
+                client = docker.from_env()
+                container = client.containers.get(container_id)
+                image_details = container.image.tags
+                image_details = [x for x in image_details if x != 'latest']
+                if len(image_details) > 0:
+                    return image_details[0]
+                else:
+                    bt.logging.error(f"Could not find docker container with id: {container_id}")
+                    return 'not found'
+            except docker.errors.NotFound as e:
+                bt.logging.error(f"Could not find docker container with id: {container_id}")
+                return 'not found'
+
+        graph_search = get_graph_search(config.network, config.model_type)
+        run_id = graph_search.get_run_id()
+        docker_image = get_docker_image_version()
+        metadata = {
+            'n': get_network_id(config.network),
+            'mt': get_model_id(config.model_type),
+            'v': VERSION,
+            'di': docker_image,
+            'ri': run_id,
+        }
+        metadata_json = json.dumps(metadata)
+        try:
+            metagraph.sync(subtensor = subtensor)
+            subtensor.commit(wallet, my_subnet_uid, metadata_json)
+            bt.logging.info(f"Stored miner metadata: {metadata}")
+        except bt.errors.MetadataError as e:
+            bt.logging.error(f"Failed to store miner metadata: {e}")
 
     def miner_discovery(synapse: protocol.MinerDiscovery) -> protocol.MinerDiscovery:
         try:
@@ -250,7 +289,6 @@ def main(config):
     axon.attach(forward_fn=miner_discovery,  blacklist_fn=blacklist_discovery, priority_fn=priority_discovery).attach(
         forward_fn=execute_query, blacklist_fn=blacklist_execute_query, priority_fn=priority_execute_query).attach(forward_fn=miner_random_block_check)
 
-
     bt.logging.info(
         f"Serving axon {axon} on network: {config.subtensor.chain_endpoint} with netuid: {config.netuid}"
     )
@@ -266,12 +304,13 @@ def main(config):
     while True:
         try:
             if subtensor.block - last_updated_block >= 100:
+                store_miner_metadata()
+
+            if subtensor.block - last_updated_block >= 100:
                 uid = None
                 try:
                     for _uid, axon in enumerate(metagraph.axons):
                         if axon.hotkey == wallet.hotkey.ss58_address:
-                            # uid = axon.uid
-                            # uid doesnt exist ona xon
                             uid = _uid
                             break
                     if uid is not None:
@@ -289,7 +328,7 @@ def main(config):
                 except Exception as e:
                     bt.logging.warning(f"Could not set miner weight: {e}")
                     raise e
-            # Below: Periodically update our knowledge of the network graph.
+
             if step % 60 == 0:
                 metagraph = subtensor.metagraph(config.netuid)
                 log =  (f'Step:{step} | ' \
