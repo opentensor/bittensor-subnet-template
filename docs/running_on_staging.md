@@ -200,7 +200,7 @@ Register your subnet validator and subnet miner on the subnet. This gives your t
 Register the subnet miner:
 
 ```bash
-btcli subnet recycle_register --wallet.name miner --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946
+btcli subnet register --wallet.name miner --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946
 ```
 
 Follow the below prompts:
@@ -215,7 +215,7 @@ Register the subnet validator:
 
 ```bash
 
-btcli subnet recycle_register --wallet.name validator --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946
+btcli subnet register --wallet.name validator --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946
 ```
 
 Follow the below prompts:
