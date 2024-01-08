@@ -145,11 +145,11 @@ class ValidatorConfig(RemoteConfig):
 
 
     def get_network_importance(self, network):
-        return self.get_config_value(f'network_importance.{network}', 0.9)
+        return self.get_config_value(f'blockchain_importance.{network}', 0.9)
 
 
     def get_network_importance_keys(self):
-        return self.get_config_value('network_importance', {}).keys()
+        return self.get_config_value('blockchain_importance', {}).keys()
 
 
     def get_blockchain_recency_weight(self, network):

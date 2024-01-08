@@ -25,8 +25,9 @@ import traceback
 import bittensor as bt
 from random import sample
 from insights import protocol
-from insights.protocol import MinerDiscoveryOutput, NETWORK_BITCOIN, MinerRandomBlockCheckOutput
-from neurons import VERSION, MAX_MULTIPLE_IPS, MAX_MULTIPLE_RUN_ID, get_network_by_id
+from insights.protocol import MinerDiscoveryOutput, NETWORK_BITCOIN, MinerRandomBlockCheckOutput, MAX_MULTIPLE_IPS, \
+    MAX_MULTIPLE_RUN_ID, get_network_by_id
+from neurons import VERSION
 from neurons.nodes.nodes import get_node
 from neurons.remote_config import ValidatorConfig
 from neurons.validators.scoring import Scorer
@@ -190,7 +191,7 @@ def main(config):
                     response_time = response.dendrite.process_time
 
                     if response.output.version < VERSION and validator_config.grace_period:
-                        score = 0.1
+                        score = 0.5
                         scores[dendrites_to_query[index]] = config.alpha * scores[dendrites_to_query[index]] + (1 - config.alpha) * score
                         bt.logging.info(f"Miner is running an old version. Grace period is enabled. Score set to {score}.")
                         continue
