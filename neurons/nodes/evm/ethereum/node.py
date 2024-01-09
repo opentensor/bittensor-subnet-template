@@ -42,3 +42,15 @@ class EthereumNode:
             logger.error(f"RPC Provider with Error: {e}")
         finally:
             web3.provider = None # Close the connection
+
+    def get_transaction_by_hash(self, tx_hash): # get the transaction details from tx hash
+        web3 = Web3(Web3.HTTPProvider(self.node_rpc_url))
+        try:
+            if web3.is_connected:
+                return web3.eth.get_transaction(tx_hash)
+            else:
+                logger.info(f("RPC Provider disconnected."))
+        except Exception as e:
+            logger.error(f"RPC Provider with Error: {e}")
+        finally:
+            web3.provider = None # Close the connection
