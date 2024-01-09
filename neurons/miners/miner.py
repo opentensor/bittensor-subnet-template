@@ -33,6 +33,7 @@ from bittensor.extrinsics.serving import get_metadata
 
 from insights import protocol
 from neurons import VERSION
+from neurons.docker_utils import get_docker_image_version
 from neurons.miners import blacklists
 from neurons.nodes.nodes import get_node
 from neurons.miners.bitcoin.funds_flow.graph_indexer import GraphIndexer
@@ -142,43 +143,34 @@ def main(config):
     my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
     bt.logging.info(f"Running miner on uid: {my_subnet_uid}")
 
+
     def store_miner_metadata():
-        def get_docker_image_version():
-            try:
-                container_id = socket.gethostname()
-                client = docker.from_env()
-                container = client.containers.get(container_id)
-                image_details = container.image.tags
-                image_details = [x for x in image_details if x != 'latest']
-                if len(image_details) > 0:
-                    return image_details[0]
-                else:
-                    bt.logging.error(f"Could not find docker container with id: {container_id}")
-                    return 'not found'
-            except docker.errors.NotFound as e:
-                bt.logging.error(f"Could not find docker container with id: {container_id}")
-                return 'not found'
+        def get_json_metadata():
+            graph_search = get_graph_search(config.network, config.model_type)
+            run_id = graph_search.get_run_id()
+            docker_image = get_docker_image_version()
+            metadata = {
+                'b': subtensor.block,
+                'n': get_network_id(config.network),
+                'mt': get_model_id(config.model_type),
+                'v': VERSION,
+                'di': docker_image,
+                'ri': run_id,
+            }
+            metadata_json = json.dumps(metadata)
+            return (metadata, metadata_json)
 
-
-        graph_search = get_graph_search(config.network, config.model_type)
-        run_id = graph_search.get_run_id()
-        docker_image = get_docker_image_version()
-        metadata = {
-            'b': subtensor.block,
-            'n': get_network_id(config.network),
-            'mt': get_model_id(config.model_type),
-            'v': VERSION,
-            'di': docker_image,
-            'ri': run_id,
-        }
-        metadata_json = json.dumps(metadata)
         try:
-            uid = subtensor.get_uid_for_hotkey_on_subnet(wallet.hotkey.ss58_address, my_subnet_uid)
-            current_metadata_json = subtensor.get_commitment(my_subnet_uid, uid)
-            if current_metadata_json is None:
-                subtensor.commit(wallet, my_subnet_uid, metadata_json)
-                bt.logging.info(f"Stored miner metadata: {metadata}")
-                return
+            current_metadata_json = None
+            try:
+                current_metadata_json = subtensor.get_commitment(config.netuid, my_subnet_uid)
+                if current_metadata_json is None:
+                    metadata, metadata_json = get_json_metadata()
+                    subtensor.commit(wallet, config.netuid, metadata_json)
+                    bt.logging.info(f"Stored miner metadata: {metadata}")
+                    return
+            except TypeError as e:
+                pass
 
             metadata = json.loads(current_metadata_json)
             if 'b' not in metadata: metadata['b'] = int(0)
@@ -186,7 +178,8 @@ def main(config):
                 bt.logging.info(f"Miner metadata already stored: {metadata}")
                 return
 
-            subtensor.commit(wallet, my_subnet_uid, metadata_json)
+            metadata, metadata_json = get_json_metadata()
+            subtensor.commit(wallet, config.netuid, metadata_json)
             bt.logging.info(f"Stored miner metadata: {metadata}")
         except bt.errors.MetadataError as e:
             bt.logging.error(f"Failed to store miner metadata: {e}")
