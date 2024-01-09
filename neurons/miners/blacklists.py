@@ -1,25 +1,64 @@
+import json
+import threading
 import time
 import typing
 import bittensor as bt
 from collections import deque
 from insights import protocol
+from neurons import VERSION
 from neurons.miners.blacklist_registry import BlacklistRegistryManager
 from neurons.remote_config import MinerConfig
 
 request_timestamps = {}
 
 class BlacklistDiscovery:
-    def __init__(self, miner_config: MinerConfig, registry_manager: BlacklistRegistryManager):
+    def __init__(self, metagraph, subtensor, config, miner_config: MinerConfig, registry_manager: BlacklistRegistryManager):
+        self.subtensor = subtensor
+        self.config = config
+        self.metagraph = metagraph
         self.blacklist_registry_manager = registry_manager
         self.miner_config = miner_config
+        self.validator_metadata = {}
+        # run background thread to update validators metadata
+
+    def set_validator_metadata(self):
+        try:
+            for neuron in self.metagraph.neurons:
+                if neuron.axon_info.ip == '0.0.0.0':
+                    metadata_json = self.subtensor.get_commitment(self.config.netuid, neuron.uid)
+                    if metadata_json is not None:
+                        metadata = json.loads(metadata_json)
+                        self.validator_metadata[neuron.hotkey] = metadata
+            bt.logging.info(f"Updated validator metadata")
+        except Exception as e:
+            bt.logging.error(f"Error while updating validator metadata {e}")
+            time.sleep(10)
+
+    def run_validator_metadata_updater(self):
+        def updater():
+            time.sleep(300)
+            while True:
+                self.set_validator_metadata()
+                time.sleep(300)
+
+        thread = threading.Thread(target=updater)
+        thread.daemon = True
+        thread.start()
 
     def blacklist_discovery(self, metagraph, synapse: protocol.MinerDiscovery) -> typing.Tuple[bool, str]:
         hotkey = synapse.dendrite.hotkey
 
+        # Score 2.0+ validator need to have equal version with miner
+        if self.validator_metadata[hotkey]:
+            if self.validator_metadata[hotkey]['v'] == VERSION:
+                return True, f"Blacklisted hotkey: {hotkey}, because of old version"
+        else:
+            # Score 1.0 validator will be blacklisted
+            return True, f"Blacklisted hotkey: {hotkey}, because of no metadata"
+
         if hotkey in self.miner_config.blacklisted_hotkeys:
             self.blacklist_registry_manager.try_add_to_blacklist(synapse.dendrite.ip, hotkey)
-            bt.logging.debug(f"Blacklisted hotkey: {hotkey}")
-            return True, "Blacklisted hotkey"
+            return True, f"Blacklisted hotkey: {hotkey}"
 
         uid = None
         for _uid, _axon in enumerate(metagraph.axons):
@@ -29,14 +68,12 @@ class BlacklistDiscovery:
 
         if uid is None:
             self.blacklist_registry_manager.try_add_to_blacklist(synapse.dendrite.ip, hotkey)
-            bt.logging.debug(f"Hotkey not found in metagraph: {hotkey}")
-            return True, "Hotkey not found in metagraph"
+            return True, f"Hotkey not found in metagraph: {hotkey}"
 
         stake = metagraph.neurons[uid].stake.tao
         bt.logging.debug(f"Stake of {hotkey}: {stake}")
 
         if stake < self.miner_config.stake_threshold:
-            bt.logging.debug("Denied due to low stake")
             return True, f"Denied due to low stake: {stake}"
 
         # Rate Limiting Check
@@ -48,7 +85,6 @@ class BlacklistDiscovery:
             request_timestamps[hotkey].popleft()
 
         if len(request_timestamps[hotkey]) >= self.miner_config.max_requests:
-            bt.logging.debug(f"Request rate exceeded for {hotkey}")
             return True, f"Request rate exceeded for {hotkey}"
 
         request_timestamps[hotkey].append(current_time)

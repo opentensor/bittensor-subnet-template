@@ -138,7 +138,9 @@ def main(config):
     miner_config = MinerConfig()
     miner_config.load_and_get_config_values()
     blacklist_registry_manager = blacklists.BlacklistRegistryManager()
-    _blacklist_discovery = blacklists.BlacklistDiscovery(miner_config, blacklist_registry_manager)
+    _blacklist_discovery = blacklists.BlacklistDiscovery(metagraph, subtensor, config, miner_config, blacklist_registry_manager)
+    _blacklist_discovery.set_validator_metadata()
+    _blacklist_discovery.run_validator_metadata_updater()
 
     my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
     bt.logging.info(f"Running miner on uid: {my_subnet_uid}")

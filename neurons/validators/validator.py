@@ -191,12 +191,13 @@ def main(config):
                     run_id = response.output.run_id
                     response_time = response.dendrite.process_time
 
+                    # This is for old miners that did not update their version
                     if response.output.version < VERSION and validator_config.grace_period:
                         score = 0.5
                         scores[dendrites_to_query[index]] = config.alpha * scores[dendrites_to_query[index]] + (1 - config.alpha) * score
                         bt.logging.info(f"Miner is running an old version. Grace period is enabled. Score set to {score}.")
                         continue
-
+                    # This is for olf miners that did not update their version after the grace period
                     elif response.output.version != VERSION:
                         score = 0
                         scores[dendrites_to_query[index]] = config.alpha * scores[dendrites_to_query[index]] + (1 - config.alpha) * score
