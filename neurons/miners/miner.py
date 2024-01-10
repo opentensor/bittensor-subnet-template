@@ -47,6 +47,7 @@ from insights.protocol import (
     MinerDiscoveryMetadata, get_network_id, get_model_id,
 )
 from neurons.remote_config import MinerConfig
+from neurons.storage import store_miner_metadata
 
 
 def get_config():
@@ -138,56 +139,16 @@ def main(config):
     miner_config = MinerConfig()
     miner_config.load_and_get_config_values()
     blacklist_registry_manager = blacklists.BlacklistRegistryManager()
-    _blacklist_discovery = blacklists.BlacklistDiscovery(miner_config, blacklist_registry_manager)
+    _blacklist_discovery = blacklists.BlacklistDiscovery(metagraph, subtensor, config, miner_config, blacklist_registry_manager)
+    _blacklist_discovery.set_validator_metadata()
+    _blacklist_discovery.run_validator_metadata_updater()
 
     my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
     bt.logging.info(f"Running miner on uid: {my_subnet_uid}")
 
-
-    def store_miner_metadata():
-        def get_json_metadata():
-            graph_search = get_graph_search(config.network, config.model_type)
-            run_id = graph_search.get_run_id()
-            docker_image = get_docker_image_version()
-            metadata = {
-                'b': subtensor.block,
-                'n': get_network_id(config.network),
-                'mt': get_model_id(config.model_type),
-                'v': VERSION,
-                'di': docker_image,
-                'ri': run_id,
-            }
-            metadata_json = json.dumps(metadata)
-            return (metadata, metadata_json)
-
-        try:
-            current_metadata_json = None
-            try:
-                current_metadata_json = subtensor.get_commitment(config.netuid, my_subnet_uid)
-                if current_metadata_json is None:
-                    metadata, metadata_json = get_json_metadata()
-                    subtensor.commit(wallet, config.netuid, metadata_json)
-                    bt.logging.info(f"Stored miner metadata: {metadata}")
-                    return
-            except TypeError as e:
-                pass
-
-            metadata = json.loads(current_metadata_json)
-            if 'b' not in metadata: metadata['b'] = int(0)
-            if subtensor.block - metadata['b'] < 100:
-                bt.logging.info(f"Miner metadata already stored: {metadata}")
-                return
-
-            metadata, metadata_json = get_json_metadata()
-            subtensor.commit(wallet, config.netuid, metadata_json)
-            bt.logging.info(f"Stored miner metadata: {metadata}")
-        except bt.errors.MetadataError as e:
-            bt.logging.error(f"Failed to store miner metadata: {e}")
-
     def miner_discovery(synapse: protocol.MinerDiscovery) -> protocol.MinerDiscovery:
         try:
             graph_search = get_graph_search(config.network, config.model_type)
-
             block_range = graph_search.get_block_range()
             _latest_block_height = block_range['latest_block_height']
             start_block_height = block_range['start_block_height']
@@ -312,9 +273,9 @@ def main(config):
     while True:
         try:
             if subtensor.block - last_updated_block >= 100:
-                store_miner_metadata()
+                graph_search = get_graph_search(config.network, config.model_type)
+                store_miner_metadata(config, my_subnet_uid, graph_search, wallet, subtensor)
 
-            if subtensor.block - last_updated_block >= 100:
                 uid = None
                 try:
                     for _uid, axon in enumerate(metagraph.axons):
@@ -372,7 +333,7 @@ if __name__ == "__main__":
     if os.getenv("MINER_TEST_MODE") == "True":
         # Local development settings
         config.subtensor.chain_endpoint = "ws://163.172.164.213:9944"
-        config.wallet.hotkey = 'default'
+        config.wallet.hotkey = 'default2'
         config.wallet.name = 'miner'
         config.netuid = 1
 
