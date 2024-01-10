@@ -8,6 +8,7 @@ from insights import protocol
 from neurons import VERSION
 from neurons.miners.blacklist_registry import BlacklistRegistryManager
 from neurons.remote_config import MinerConfig
+from neurons.storage import get_validator_metadata
 
 request_timestamps = {}
 
@@ -19,26 +20,20 @@ class BlacklistDiscovery:
         self.blacklist_registry_manager = registry_manager
         self.miner_config = miner_config
         self.validator_metadata = {}
-        # run background thread to update validators metadata
 
     def set_validator_metadata(self):
-        try:
-            for neuron in self.metagraph.neurons:
-                if neuron.axon_info.ip == '0.0.0.0':
-                    metadata_json = self.subtensor.get_commitment(self.config.netuid, neuron.uid)
-                    if metadata_json is not None:
-                        metadata = json.loads(metadata_json)
-                        self.validator_metadata[neuron.hotkey] = metadata
-            bt.logging.info(f"Updated validator metadata")
-        except Exception as e:
-            bt.logging.error(f"Error while updating validator metadata {e}")
-            time.sleep(10)
+        self.validator_metadata = get_validator_metadata(self.config, self.subtensor, self.metagraph)
 
     def run_validator_metadata_updater(self):
         def updater():
             time.sleep(300)
             while True:
-                self.set_validator_metadata()
+                try:
+                    self.validator_metadata = get_validator_metadata(self.config, self.subtensor, self.metagraph)
+                    bt.logging.info(f"Updated validator metadata")
+                except Exception as e:
+                    bt.logging.error(f"Error while updating validator metadata {e}")
+                    time.sleep(10)
                 time.sleep(300)
 
         thread = threading.Thread(target=updater)
@@ -48,9 +43,13 @@ class BlacklistDiscovery:
     def blacklist_discovery(self, metagraph, synapse: protocol.MinerDiscovery) -> typing.Tuple[bool, str]:
         hotkey = synapse.dendrite.hotkey
 
+        if self.validator_metadata is None:
+            bt.logging.error(f"Validator metadata is None")
+            return True, f"Blacklisted hotkey: {hotkey}, because of no metadata"
+
         # Score 2.0+ validator need to have equal version with miner
         if self.validator_metadata[hotkey]:
-            if self.validator_metadata[hotkey]['v'] == VERSION:
+            if self.validator_metadata[hotkey].v != VERSION:
                 return True, f"Blacklisted hotkey: {hotkey}, because of old version"
         else:
             # Score 1.0 validator will be blacklisted

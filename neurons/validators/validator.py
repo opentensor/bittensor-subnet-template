@@ -28,9 +28,9 @@ from insights import protocol
 from insights.protocol import MinerDiscoveryOutput, NETWORK_BITCOIN, MinerRandomBlockCheckOutput, MAX_MULTIPLE_IPS, \
     MAX_MULTIPLE_RUN_ID, get_network_by_id
 from neurons import VERSION
-from neurons.docker_utils import get_docker_image_version
 from neurons.nodes.nodes import get_node
 from neurons.remote_config import ValidatorConfig
+from neurons.storage import store_validator_metadata, get_miners_metadata
 from neurons.validators.scoring import Scorer
 
 def get_config():
@@ -86,17 +86,7 @@ def main(config):
     my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
     bt.logging.info(f"Running validator on uid: {my_subnet_uid}")
     bt.logging.info("Building validation weights.")
-
-    # Restore weights, or initialize weights for each miner to 0.
-    scores_file = "scores.pt"
-    try:
-        scores = torch.load(scores_file)
-        bt.logging.info(f"Loaded scores from save file: {scores}")
-    except:
-        scores = torch.zeros_like(metagraph.S, dtype=torch.float32)
-        bt.logging.info(f"Initialized all scores to 0")
-
-
+    scores = torch.zeros_like(metagraph.S, dtype=torch.float32)
     scores = scores * (metagraph.total_stake < 1.024e3) # all nodes with more than 1e3 total stake are set to 0 (sets validators weights to 0)
     scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids]) # set all nodes without ips set to 0
     bt.logging.info(f"Initial scores: {scores}")
@@ -116,6 +106,8 @@ def main(config):
 
     bt.logging.info("Starting validator loop.")
     step = 0
+
+    store_validator_metadata(config, wallet, subtensor)
 
     # Main loop
     while True:
@@ -160,8 +152,8 @@ def main(config):
 
         try:
             filtered_axons = [metagraph.axons[i] for i in dendrites_to_query]
-            ip_per_hotkey = count_ip_per_hotkey(filtered_axons)
-            miners_metadata = get_miners_metadata(subtensor, metagraph)
+            ip_per_hotkey = count_hotkeys_per_ip(filtered_axons)
+            miners_metadata = get_miners_metadata(config, subtensor, metagraph)
             run_id_per_hotkey = count_run_id_per_hotkey(miners_metadata)
             miner_distribution = get_miner_distributions(miners_metadata, validator_config.get_network_importance_keys())
             block_height_cache = {}
@@ -179,6 +171,10 @@ def main(config):
                     bt.logging.debug(f"Skipping response {response}")
                     continue
 
+                if miners_metadata[response.axon.hotkey] is None:
+                    bt.logging.debug(f"Skipping response {response} because of no metadata")
+                    continue
+
                 try:
                     output: MinerDiscoveryOutput = response.output
                     network = output.metadata.network
@@ -193,7 +189,7 @@ def main(config):
 
                     # This is for old miners that did not update their version
                     if response.output.version < VERSION and validator_config.grace_period:
-                        score = 0.5
+                        score = 0.15
                         scores[dendrites_to_query[index]] = config.alpha * scores[dendrites_to_query[index]] + (1 - config.alpha) * score
                         bt.logging.info(f"Miner is running an old version. Grace period is enabled. Score set to {score}.")
                         continue
@@ -215,7 +211,7 @@ def main(config):
                     if network not in block_height_cache:
                         block_height_cache[network] = node.get_current_block_height()
 
-                    multiple_ips = ip_per_hotkey[hot_key] > MAX_MULTIPLE_IPS
+                    multiple_ips = ip_per_hotkey[axon_ip] > MAX_MULTIPLE_IPS
                     multiple_run_ids = run_id_per_hotkey[hot_key] > MAX_MULTIPLE_RUN_ID
 
                     score = scorer.calculate_score(
@@ -265,10 +261,9 @@ def main(config):
 
             current_block = subtensor.block
 
-            if subtensor.block - last_updated_block >= 100:
-                store_validator_metadata(subtensor, wallet, my_subnet_uid, config.netuid)
+            if current_block - last_updated_block >= 100:
+                store_validator_metadata(config, wallet, subtensor)
 
-            if current_block - last_updated_block > 100:
                 weights = scores / torch.sum(scores)
                 bt.logging.info(f"Setting weights: {weights}")
                 # Miners with higher scores (or weights) receive a larger share of TAO rewards on this subnet.
@@ -296,8 +291,6 @@ def main(config):
 
             # Resync our local state with the latest state from the blockchain.
             metagraph = subtensor.metagraph(config.netuid)
-            torch.save(scores, scores_file)
-            store_validator_metadata(subtensor, wallet, my_subnet_uid, config.netuid)
             validator_config.load_and_get_config_values()
             time.sleep(bt.__blocktime__ * 10)
 
@@ -313,20 +306,6 @@ def main(config):
             bt.logging.error(e)
             traceback.print_exc()
 
-
-def get_miners_metadata(subtensor, metagraph):
-    miners_metadata = {}
-    for axon in metagraph.axons:
-        if not axon.is_serving:
-            continue
-        hotkey = axon.hotkey
-        uid = subtensor.get_uid_for_hotkey_on_subnet(hotkey, config.netuid)
-        metadata_json = subtensor.get_commitment(config.netuid, uid)
-        metadata = json.loads(metadata_json)
-        miners_metadata[hotkey] = metadata
-
-    return miners_metadata
-
 def get_miner_distributions(miners_metadata, network_importance_keys):
     miner_distribution = {}
     for network in network_importance_keys:
@@ -334,7 +313,7 @@ def get_miner_distributions(miners_metadata, network_importance_keys):
 
     for hotkey in miners_metadata:
         metadata = miners_metadata[hotkey]
-        network = get_network_by_id(metadata['n'])
+        network = get_network_by_id(metadata.n)
         if network in network_importance_keys:
             miner_distribution[network] += 1
 
@@ -345,24 +324,20 @@ def count_run_id_per_hotkey(metadata):
     for hotkey in metadata:
         if hotkey not in run_id_count:
             run_id_count[hotkey] = set()
-        run_id_count[hotkey].add(metadata[hotkey]['ri'])
+        run_id_count[hotkey].add(metadata[hotkey].ri)
     # Count the number of unique run_ids for each hotkey
     for hotkey in run_id_count:
         run_id_count[hotkey] = len(run_id_count[hotkey])
     return run_id_count
 
-def count_ip_per_hotkey(filtered_axons):
-    ip_count = {}
+def count_hotkeys_per_ip(filtered_axons):
+    hotkey_count_per_ip = {}
+
     for axon in filtered_axons:
-        hotkey = axon.hotkey
         ip = axon.ip
-        if hotkey not in ip_count:
-            ip_count[hotkey] = set()
-        ip_count[hotkey].add(ip)
-    # Count the number of unique IPs for each hotkey
-    for hotkey in ip_count:
-        ip_count[hotkey] = len(ip_count[hotkey])
-    return ip_count
+        hotkey_count_per_ip[ip] = hotkey_count_per_ip.get(ip, 0) + 1
+
+    return hotkey_count_per_ip
 
 def validate_data_sample(node, network, data_sample):
     block_data = node.get_block_by_height(data_sample['block_height'])
@@ -397,40 +372,6 @@ def validate_all_data_samples(node, network, data_samples):
     return True  # All data samples are valid
 
 
-def store_validator_metadata(subtensor, wallet, uid, netuid):
-    def get_json_metadata():
-        docker_image = get_docker_image_version()
-        metadata = {
-            'b': subtensor.block,
-            'v': VERSION,
-            'di': docker_image,
-        }
-        metadata_json = json.dumps(metadata)
-        return (metadata, metadata_json)
-
-    try:
-        current_metadata_json = None
-        try:
-            current_metadata_json = subtensor.get_commitment(netuid, uid)
-            if current_metadata_json is None:
-                metadata, metadata_json = get_json_metadata()
-                subtensor.commit(wallet, netuid, metadata_json)
-                bt.logging.info(f"Stored validator metadata: {metadata}")
-                return
-        except TypeError as e:
-            pass
-
-        if current_metadata_json is not None:
-            metadata = json.loads(current_metadata_json)
-            if subtensor.block - metadata['b'] < 100:
-                bt.logging.info(f"Validator metadata already stored: {metadata}")
-                return
-
-        metadata, metadata_json = get_json_metadata()
-        subtensor.commit(wallet, netuid, metadata_json)
-        bt.logging.info(f"Stored validator metadata: {metadata}")
-    except bt.errors.MetadataError as e:
-        bt.logging.error(f"Failed to store validator metadata: {e}")
 
 if __name__ == "__main__":
     from dotenv import load_dotenv
@@ -442,7 +383,7 @@ if __name__ == "__main__":
     if os.getenv("VALIDATOR_TEST_MODE") == "True":
         # Local development settings
         config.subtensor.chain_endpoint = "ws://163.172.164.213:9944"
-        config.wallet.hotkey = 'default'
+        config.wallet.hotkey = 'default2'
         config.wallet.name = 'validator'
         config.netuid = 1
 
