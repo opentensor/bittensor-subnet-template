@@ -273,9 +273,15 @@ def main(config):
     while True:
         try:
             if subtensor.block - last_updated_block >= 100:
-                graph_search = get_graph_search(config.network, config.model_type)
-                store_miner_metadata(config, my_subnet_uid, graph_search, wallet, subtensor)
+                if step % 60 != 0:
+                    try:
+                        graph_search = get_graph_search(config.network, config.model_type)
+                        store_miner_metadata(config, my_subnet_uid, graph_search, wallet, subtensor)
+                    except Exception as e:
+                        bt.logging.error(f"Could not store miner metadata: {e} {traceback.format_exc()}")
+                        pass
 
+            if subtensor.block - last_updated_block >= 100:
                 uid = None
                 try:
                     for _uid, axon in enumerate(metagraph.axons):

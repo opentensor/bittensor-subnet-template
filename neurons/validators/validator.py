@@ -91,7 +91,7 @@ def main(config):
     scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids]) # set all nodes without ips set to 0
     bt.logging.info(f"Initial scores: {scores}")
 
-    total_dendrites_per_query = 25
+    total_dendrites_per_query = 52
     minimum_dendrites_per_query = 3
     curr_block = subtensor.block
     last_updated_block = curr_block - (curr_block % 100)
@@ -264,7 +264,17 @@ def main(config):
             if current_block - last_updated_block >= 100:
                 store_validator_metadata(config, wallet, subtensor)
 
-                weights = scores / torch.sum(scores)
+                if torch.isnan(scores).any():
+                    bt.logging.warning(
+                        f"Scores contain NaN values. This may be due to a lack of responses from miners, or a bug in your reward functions."
+                    )
+
+
+                weights = torch.nn.functional.normalize(
+                    scores / torch.sum(scores), p=1, dim=0
+                )
+
+                # weights = scores / torch.sum(scores)
                 bt.logging.info(f"Setting weights: {weights}")
                 # Miners with higher scores (or weights) receive a larger share of TAO rewards on this subnet.
                 (processed_uids,  processed_weights) = bt.utils.weight_utils.process_weights_for_netuid(

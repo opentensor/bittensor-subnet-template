@@ -93,8 +93,8 @@ def get_validator_metadata(config, subtensor, metagraph):
     for neuron in metagraph.neurons:
         if neuron.axon_info.ip == '0.0.0.0':
             hotkey = neuron.hotkey
-            uid = subtensor.get_uid_for_hotkey_on_subnet(hotkey, config.netuid)
             try:
+                uid = subtensor.get_uid_for_hotkey_on_subnet(hotkey, config.netuid)
                 metadata_str = subtensor.get_commitment(config.netuid, uid)
                 if metadata_str is not None:
                     validator_metadata[hotkey] = ValidatorMetadata.from_compact(metadata_str)

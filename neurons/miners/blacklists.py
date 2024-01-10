@@ -1,6 +1,7 @@
 import json
 import threading
 import time
+import traceback
 import typing
 import bittensor as bt
 from collections import deque
@@ -29,10 +30,12 @@ class BlacklistDiscovery:
             time.sleep(300)
             while True:
                 try:
-                    self.validator_metadata = get_validator_metadata(self.config, self.subtensor, self.metagraph)
+                    validator_metadata = get_validator_metadata(self.config, self.subtensor, self.metagraph)
+                    if len(validator_metadata) > 0:
+                        self.validator_metadata = validator_metadata
                     bt.logging.info(f"Updated validator metadata")
                 except Exception as e:
-                    bt.logging.error(f"Error while updating validator metadata {e}")
+                    bt.logging.error(f"Error while updating validator metadata {e} {traceback.format_exc()}")
                     time.sleep(10)
                 time.sleep(300)
 
