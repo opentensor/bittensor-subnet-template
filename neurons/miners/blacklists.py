@@ -33,7 +33,6 @@ class BlacklistDiscovery:
                     validator_metadata = get_validator_metadata(self.config, self.subtensor, self.metagraph)
                     if len(validator_metadata) > 0:
                         self.validator_metadata = validator_metadata
-                    bt.logging.info(f"Updated validator metadata")
                 except Exception as e:
                     bt.logging.error(f"Error while updating validator metadata {e} {traceback.format_exc()}")
                     time.sleep(10)
@@ -51,7 +50,7 @@ class BlacklistDiscovery:
             return True, f"Blacklisted hotkey: {hotkey}, because of no metadata"
 
         # Score 2.0+ validator need to have equal version with miner
-        if self.validator_metadata[hotkey]:
+        if hotkey in self.validator_metadata:
             if self.validator_metadata[hotkey].v != VERSION:
                 return True, f"Blacklisted hotkey: {hotkey}, because of old version"
         else:
