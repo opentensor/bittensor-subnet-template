@@ -33,7 +33,6 @@ class BlacklistDiscovery:
                     validator_metadata = get_validator_metadata(self.config, self.subtensor, self.metagraph)
                     if len(validator_metadata) > 0:
                         self.validator_metadata = validator_metadata
-                    bt.logging.info(f"Updated validator metadata")
                 except Exception as e:
                     bt.logging.error(f"Error while updating validator metadata {e} {traceback.format_exc()}")
                     time.sleep(10)

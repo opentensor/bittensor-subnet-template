@@ -86,10 +86,11 @@ def store_validator_metadata(config, wallet, subtensor):
         subtensor.commit(wallet, config.netuid, metadata.to_compact())
         bt.logging.info(f"Stored validator metadata: {metadata}")
     except bt.errors.MetadataError as e:
-        bt.logging.warning(f"Skipping storing miner metadata")
+        bt.logging.warning(f"Skipping storing validator metadata")
 
 def get_validator_metadata(config, subtensor, metagraph):
     validator_metadata = {}
+    bt.logging.info(f"Getting validator metadata...")
     for neuron in metagraph.neurons:
         if neuron.axon_info.ip == '0.0.0.0':
             hotkey = neuron.hotkey
@@ -98,7 +99,9 @@ def get_validator_metadata(config, subtensor, metagraph):
                 metadata_str = subtensor.get_commitment(config.netuid, uid)
                 if metadata_str is not None:
                     validator_metadata[hotkey] = ValidatorMetadata.from_compact(metadata_str)
+                    bt.logging.info(f"Updated validator metadata for: {validator_metadata[hotkey]}")
             except Exception as e:
-                pass
+                bt.logging.warning(f"Error while getting validator metadata for {hotkey}")
 
+    bt.logging.info(f"Got validator metadata: {validator_metadata}")
     return validator_metadata
