@@ -50,7 +50,7 @@ class BlacklistDiscovery:
             return True, f"Blacklisted hotkey: {hotkey}, because of no metadata"
 
         # Score 2.0+ validator need to have equal version with miner
-        if self.validator_metadata[hotkey]:
+        if hotkey in self.validator_metadata:
             if self.validator_metadata[hotkey].v != VERSION:
                 return True, f"Blacklisted hotkey: {hotkey}, because of old version"
         else:
