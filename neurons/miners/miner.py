@@ -139,7 +139,7 @@ def main(config):
     miner_config = MinerConfig()
     miner_config.load_and_get_config_values()
     blacklist_registry_manager = blacklists.BlacklistRegistryManager()
-    _blacklist_discovery = blacklists.BlacklistDiscovery(metagraph, subtensor, config, miner_config, blacklist_registry_manager)
+    _blacklist_discovery = blacklists.BlacklistDiscovery(config, metagraph, miner_config, blacklist_registry_manager)
     _blacklist_discovery.set_validator_metadata()
     _blacklist_discovery.run_validator_metadata_updater()
 
@@ -305,7 +305,7 @@ def main(config):
                     raise e
 
             if step % 60 == 0:
-                metagraph = subtensor.metagraph(config.netuid)
+                metagraph.sync(subtensor = subtensor)
                 log =  (f'Step:{step} | '
                         f'Block:{metagraph.block.item()} | '
                         f'Stake:{metagraph.S[my_subnet_uid]} | '
@@ -342,7 +342,8 @@ if __name__ == "__main__":
         config.wallet.hotkey = 'default2'
         config.wallet.name = 'miner'
         config.netuid = 1
-
+        config.logging.debug = True
+        config.logging.trace = True
         config.miner_set_weights = True
 
         # set environment variables

@@ -14,16 +14,12 @@ from neurons.storage import get_validator_metadata
 request_timestamps = {}
 
 class BlacklistDiscovery:
-    def __init__(self, metagraph, subtensor, config, miner_config: MinerConfig, registry_manager: BlacklistRegistryManager):
-        self.subtensor = subtensor
-        self.config = config
+    def __init__(self, config, metagraph, miner_config: MinerConfig, registry_manager: BlacklistRegistryManager):
         self.metagraph = metagraph
+        self.config = config
         self.blacklist_registry_manager = registry_manager
         self.miner_config = miner_config
         self.validator_metadata = {}
-
-    def set_validator_metadata(self):
-        self.validator_metadata = get_validator_metadata(self.config, self.metagraph)
 
     def set_validator_metadata(self):
         self.validator_metadata = get_validator_metadata(self.config, self.metagraph)
@@ -33,8 +29,8 @@ class BlacklistDiscovery:
             time.sleep(300)
             while True:
                 try:
-                    bt.logging.info("Getting validator metadata...")
-                    validator_metadata = get_validator_metadata(self.config, self.subtensor, self.metagraph)
+                    bt.logging.info(f"Getting validator metadata at {self.metagraph.block.item()} block")
+                    validator_metadata = get_validator_metadata(self.config, self.metagraph)
                     if len(validator_metadata) > 0:
                         self.validator_metadata = validator_metadata
                 except Exception as e:
