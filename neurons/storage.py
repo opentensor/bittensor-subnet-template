@@ -44,7 +44,7 @@ class ValidatorMetadata(Metadata):
             data_dict[key] = value.strip("'")
         return ValidatorMetadata(**data_dict)
 
-def store_miner_metadata(config, uid, graph_search, wallet, subtensor):
+def store_miner_metadata(config, graph_search, wallet):
     def get_metadata():
         run_id = graph_search.get_run_id()
         docker_image = get_docker_image_version()
@@ -57,6 +57,8 @@ def store_miner_metadata(config, uid, graph_search, wallet, subtensor):
             ri=run_id,
         )
 
+    subtensor = bt.subtensor(config=config)
+
     try:
         metadata = get_metadata()
         subtensor.commit(wallet, config.netuid, Metadata.to_compact(metadata))
@@ -64,13 +66,14 @@ def store_miner_metadata(config, uid, graph_search, wallet, subtensor):
     except bt.errors.MetadataError as e:
         bt.logging.warning(f"Skipping storing miner metadata")
 
-def get_miners_metadata(config, subtensor, metagraph):
+def get_miners_metadata(config, metagraph):
     miners_metadata = {}
 
     bt.logging.info(f"Getting miner metadata for {len(metagraph.axons)} axons")
 
     def process_miner(axon):
         hotkey = axon.hotkey
+        subtensor = bt.subtensor(config=config)
         while True:
             try:
                 uid = subtensor.get_uid_for_hotkey_on_subnet(hotkey, config.netuid)
@@ -103,7 +106,10 @@ def get_miners_metadata(config, subtensor, metagraph):
 
     return miners_metadata
 
-def store_validator_metadata(config, wallet, subtensor):
+def store_validator_metadata(config, wallet):
+
+    subtensor = bt.subtensor(config=config)
+
     try:
         docker_image = get_docker_image_version()
         metadata =  ValidatorMetadata(
@@ -116,11 +122,12 @@ def store_validator_metadata(config, wallet, subtensor):
     except bt.errors.MetadataError as e:
         bt.logging.warning(f"Skipping storing validator metadata")
 
-def get_validator_metadata(config, subtensor, metagraph):
+def get_validator_metadata(config, metagraph):
     validator_metadata = {}
 
     def process_neuron(neuron):
         hotkey = neuron.hotkey
+        subtensor = bt.subtensor(config=config)
         while True:
             try:
                 uid = subtensor.get_uid_for_hotkey_on_subnet(hotkey, config.netuid)
