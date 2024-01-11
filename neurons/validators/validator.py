@@ -18,6 +18,7 @@ import json
 # DEALINGS IN THE SOFTWARE.
 
 import os
+import threading
 import time
 import torch
 import argparse
@@ -70,7 +71,6 @@ def main(config):
     subtensor = bt.subtensor(config=config)
     dendrite = bt.dendrite(wallet=wallet)
     metagraph = subtensor.metagraph(config.netuid)
-    metagraph.sync(subtensor = subtensor)
 
     bt.logging.info(f"Wallet: {wallet}")
     bt.logging.info(f"Subtensor: {subtensor}")
@@ -108,6 +108,7 @@ def main(config):
     step = 0
 
     store_validator_metadata(config, wallet)
+    miners_metadata = get_miners_metadata(config, metagraph)
 
     # Main loop
     while True:
@@ -153,7 +154,6 @@ def main(config):
         try:
             filtered_axons = [metagraph.axons[i] for i in dendrites_to_query]
             ip_per_hotkey = count_hotkeys_per_ip(filtered_axons)
-            miners_metadata = get_miners_metadata(config, metagraph)
             run_id_per_hotkey = count_run_id_per_hotkey(miners_metadata)
             miner_distribution = get_miner_distributions(miners_metadata, validator_config.get_network_importance_keys())
             block_height_cache = {}
@@ -264,15 +264,8 @@ def main(config):
             if current_block - last_updated_block >= 100:
                 store_validator_metadata(config, wallet)
 
-                if torch.isnan(scores).any():
-                    bt.logging.warning(
-                        f"Scores contain NaN values. This may be due to a lack of responses from miners, or a bug in your reward functions."
-                    )
-
-
-                weights = torch.nn.functional.normalize(
-                    scores / torch.sum(scores), p=1, dim=0
-                )
+                weights = torch.nn.functional.normalize(scores / torch.sum(scores), p=1, dim=0)
+                weights = torch.where(torch.isnan(weights), torch.zeros_like(weights), weights)
 
                 # weights = scores / torch.sum(scores)
                 bt.logging.info(f"Setting weights: {weights}")
@@ -295,13 +288,11 @@ def main(config):
                 if result: bt.logging.success('✅ Successfully set weights.')
                 else: bt.logging.error('Failed to set weights.')
 
-            bt.logging.info(f"Scoring response: {scores}")
+                miners_metadata = get_miners_metadata(config, metagraph)
 
             step += 1
-
-            # Resync our local state with the latest state from the blockchain.
-            metagraph = subtensor.metagraph(config.netuid)
             validator_config.load_and_get_config_values()
+            bt.logging.info(f"Scoring response: {scores}")
             time.sleep(bt.__blocktime__ * 10)
 
         except RuntimeError as e:

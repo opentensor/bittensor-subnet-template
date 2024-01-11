@@ -6,6 +6,7 @@ from typing import Optional
 import bittensor as bt
 import websocket
 from pydantic import BaseModel
+from websocket import WebSocketConnectionClosedException
 
 from insights.protocol import get_network_id, get_model_id
 from neurons import VERSION
@@ -73,18 +74,21 @@ def get_miners_metadata(config, metagraph):
 
     def process_miner(axon):
         hotkey = axon.hotkey
-        subtensor = bt.subtensor(config=config)
+        _subtensor = bt.subtensor(config=config)
         while True:
             try:
-                uid = subtensor.get_uid_for_hotkey_on_subnet(hotkey, config.netuid)
-                metadata_str = subtensor.get_commitment(config.netuid, uid)
+                uid = _subtensor.get_uid_for_hotkey_on_subnet(hotkey, config.netuid)
+                metadata_str = _subtensor.get_commitment(config.netuid, uid)
                 if metadata_str is not None:
                     return hotkey, MinerMetadata.from_compact(metadata_str)
-            except websocket._exceptions.WebSocketConnectionClosedException as e:
+            except WebSocketConnectionClosedException as e:
                 bt.logging.debug(f"WebSocket Error for {hotkey}: {e}. Retrying...")
                 time.sleep(bt.__blocktime__)
             except TimeoutError as e:
                 bt.logging.debug(f"Timeout Error for {hotkey}: {e}. Retrying...")
+                time.sleep(bt.__blocktime__)
+            except AttributeError as e:
+                bt.logging.debug(f"Connection Error for {hotkey}: {e}. Retrying...")
                 time.sleep(bt.__blocktime__)
             except Exception as e:
                 if "int() argument must be a string" in str(e.args):
@@ -124,23 +128,25 @@ def store_validator_metadata(config, wallet):
 
 def get_validator_metadata(config, metagraph):
     validator_metadata = {}
-
     def process_neuron(neuron):
+        bt.logging.debug(f"Starting processing neuron {neuron}")
         hotkey = neuron.hotkey
-        subtensor = bt.subtensor(config=config)
         while True:
             try:
-                uid = subtensor.get_uid_for_hotkey_on_subnet(hotkey, config.netuid)
-                metadata_str = subtensor.get_commitment(config.netuid, uid)
+                _subtensor = bt.subtensor(config=config)
+                uid = _subtensor.get_uid_for_hotkey_on_subnet(hotkey, config.netuid)
+                metadata_str = _subtensor.get_commitment(config.netuid, uid)
                 if metadata_str is not None:
                     metadata = ValidatorMetadata.from_compact(metadata_str)
-                    bt.logging.info(f"Updated validator metadata for: {metadata}")
                     return hotkey, metadata
             except websocket._exceptions.WebSocketConnectionClosedException as e:
                 bt.logging.debug(f"WebSocket Error for {hotkey}: {e}. Retrying...")
                 time.sleep(bt.__blocktime__)
             except TimeoutError as e:
                 bt.logging.debug(f"Timeout Error for {hotkey}: {e}. Retrying...")
+                time.sleep(bt.__blocktime__)
+            except AttributeError as e:
+                bt.logging.debug(f"Connection Error for {hotkey}: {e}. Retrying...")
                 time.sleep(bt.__blocktime__)
             except Exception as e:
                 if "int() argument must be a string" in str(e.args):
