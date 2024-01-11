@@ -1,8 +1,8 @@
-import json
 import threading
 import time
 import traceback
 import typing
+
 import bittensor as bt
 from collections import deque
 from insights import protocol
@@ -25,11 +25,15 @@ class BlacklistDiscovery:
     def set_validator_metadata(self):
         self.validator_metadata = get_validator_metadata(self.config, self.subtensor, self.metagraph)
 
+    def set_validator_metadata(self):
+        self.validator_metadata = get_validator_metadata(self.config, self.subtensor, self.metagraph)
+
     def run_validator_metadata_updater(self):
         def updater():
             time.sleep(300)
             while True:
                 try:
+                    bt.logging.info("Getting validator metadata...")
                     validator_metadata = get_validator_metadata(self.config, self.subtensor, self.metagraph)
                     if len(validator_metadata) > 0:
                         self.validator_metadata = validator_metadata
