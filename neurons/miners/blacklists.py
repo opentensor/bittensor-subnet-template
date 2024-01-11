@@ -23,10 +23,10 @@ class BlacklistDiscovery:
         self.validator_metadata = {}
 
     def set_validator_metadata(self):
-        self.validator_metadata = get_validator_metadata(self.config, self.subtensor, self.metagraph)
+        self.validator_metadata = get_validator_metadata(self.config, self.metagraph)
 
     def set_validator_metadata(self):
-        self.validator_metadata = get_validator_metadata(self.config, self.subtensor, self.metagraph)
+        self.validator_metadata = get_validator_metadata(self.config, self.metagraph)
 
     def run_validator_metadata_updater(self):
         def updater():

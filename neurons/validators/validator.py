@@ -107,7 +107,7 @@ def main(config):
     bt.logging.info("Starting validator loop.")
     step = 0
 
-    store_validator_metadata(config, wallet, subtensor)
+    store_validator_metadata(config, wallet)
 
     # Main loop
     while True:
@@ -153,7 +153,7 @@ def main(config):
         try:
             filtered_axons = [metagraph.axons[i] for i in dendrites_to_query]
             ip_per_hotkey = count_hotkeys_per_ip(filtered_axons)
-            miners_metadata = get_miners_metadata(config, subtensor, metagraph)
+            miners_metadata = get_miners_metadata(config, metagraph)
             run_id_per_hotkey = count_run_id_per_hotkey(miners_metadata)
             miner_distribution = get_miner_distributions(miners_metadata, validator_config.get_network_importance_keys())
             block_height_cache = {}
@@ -262,7 +262,7 @@ def main(config):
             current_block = subtensor.block
 
             if current_block - last_updated_block >= 100:
-                store_validator_metadata(config, wallet, subtensor)
+                store_validator_metadata(config, wallet)
 
                 if torch.isnan(scores).any():
                     bt.logging.warning(
