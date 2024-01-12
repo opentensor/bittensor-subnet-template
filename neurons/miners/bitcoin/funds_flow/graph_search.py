@@ -106,4 +106,3 @@ class GraphSearch:
             if single_result[0] is None:
                 return 0
             return single_result[0]
-

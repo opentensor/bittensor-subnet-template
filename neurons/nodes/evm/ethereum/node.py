@@ -54,3 +54,16 @@ class EthereumNode:
             logger.error(f"RPC Provider with Error: {e}")
         finally:
             web3.provider = None # Close the connection
+    
+    def get_balance_by_address(self, address): # get the balance from address
+        web3 = Web3(Web3.HTTPProvider(self.node_rpc_url))
+        try:
+            if web3.is_connected:
+                return web3.eth.get_balance(address)
+            else:
+                logger.info(f("RPC Provider disconnected."))
+        except Exception as e:
+            logger.error(f"RPC Provider with Error: {e}")
+        finally:
+            web3.provider = None # Close the connection
+
