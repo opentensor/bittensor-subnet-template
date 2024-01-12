@@ -77,60 +77,6 @@ def store_miner_metadata(config, graph_search, wallet):
     except bt.errors.MetadataError as e:
         bt.logging.warning(f"Skipping storing miner metadata")
 
-def get_miners_metadata(config, metagraph):
-    miners_metadata = {}
-    bt.logging.info(f"Getting miner metadata for {len(metagraph.axons)} axons")
-
-    def process_miner(axon):
-        hotkey = axon.hotkey
-
-        _subtensor = bt.subtensor(config=config)
-
-        def get_commitment(netuid: int, uid: int, block: Optional[int] = None) -> str:
-            metadata = serving.get_metadata(_subtensor, netuid, hotkey, block)
-            if metadata is None:
-                return None
-            commitment = metadata["info"]["fields"][0]
-            hex_data = commitment[list(commitment.keys())[0]][2:]
-            return bytes.fromhex(hex_data).decode()
-
-        _subtensor.get_commitment = get_commitment
-
-        while True:
-            try:
-                metadata_str = _subtensor.get_commitment(config.netuid, 0)
-                if metadata_str is None:
-                    return None
-                return hotkey, MinerMetadata.from_compact(metadata_str)
-            except WebSocketConnectionClosedException as e:
-                bt.logging.debug(f"WebSocket Error for {hotkey}: {e}. Retrying...")
-                time.sleep(bt.__blocktime__)
-            except TimeoutError as e:
-                bt.logging.debug(f"Timeout Error for {hotkey}: {e}. Retrying...")
-                time.sleep(bt.__blocktime__)
-            except AttributeError as e:
-                bt.logging.debug(f"Connection Error for {hotkey}: {e}. Retrying...")
-                time.sleep(bt.__blocktime__)
-            except Exception as e:
-                if "int() argument must be a string" in str(e.args):
-                    bt.logging.debug(f"Error while getting miner metadata {e}  Retrying...")
-                    time.sleep(bt.__blocktime__)
-                else:
-                    bt.logging.warning(f"Error while getting miner metadata for {hotkey}, Skipping...")
-                    return None
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-        future_to_axon = {executor.submit(process_miner, axon): axon for axon in metagraph.axons if axon.is_serving}
-        for future in concurrent.futures.as_completed(future_to_axon):
-            result = future.result()
-            if result:
-                hotkey, metadata = result
-                miners_metadata[hotkey] = metadata
-
-    bt.logging.info(f"Got miner metadata for {len(miners_metadata)}/{len(metagraph.axons)}: {miners_metadata}")
-
-    return miners_metadata
-
 def store_validator_metadata(config, wallet):
 
     subtensor = bt.subtensor(config=config)
@@ -147,62 +93,68 @@ def store_validator_metadata(config, wallet):
     except bt.errors.MetadataError as e:
         bt.logging.warning(f"Skipping storing validator metadata")
 
+def get_miners_metadata(config, metagraph):
+    miners_metadata = {}
+    bt.logging.info(f"Getting miner metadata for {len(metagraph.axons)} axons")
+
+    subtensor = bt.subtensor(config=config)
+    for axon in metagraph.axons:
+        if axon.is_serving:
+            hotkey = axon.hotkey
+
+            def get_commitment(netuid: int, uid: int, block: Optional[int] = None) -> str:
+                metadata = serving.get_metadata(subtensor, netuid, hotkey, block)
+                if metadata is None:
+                    return None
+                commitment = metadata["info"]["fields"][0]
+                hex_data = commitment[list(commitment.keys())[0]][2:]
+                return bytes.fromhex(hex_data).decode()
+
+            subtensor.get_commitment = get_commitment
+
+            try:
+                metadata_str = subtensor.get_commitment(config.netuid, 0)
+                if metadata_str is None:
+                    continue
+                metadata = MinerMetadata.from_compact(metadata_str)
+                miners_metadata[hotkey] = metadata
+            except:
+                bt.logging.warning(f"Error while getting validator metadata for {hotkey}, Skipping...")
+                continue
+
+    bt.logging.info(f"Got miner metadata for {len(miners_metadata)}/{len(metagraph.axons)}: {miners_metadata}")
+
+    return miners_metadata
+
 def get_validator_metadata(config, metagraph):
     validator_metadata = {}
 
-    def process_neuron(neuron):
-        bt.logging.debug(f"Starting processing neuron {neuron.hotkey}")
-        hotkey = neuron.hotkey
-        uid = neuron.uid
+    subtensor = bt.subtensor(config=config)
 
-        _subtensor = bt.subtensor(config=config)
+    for neuron in metagraph.neurons:
+        if neuron.axon_info.ip == '0.0.0.0':
+            hotkey = neuron.hotkey
+            uid = neuron.uid
 
-        def get_commitment(netuid: int, uid: int, block: Optional[int] = None) -> str:
-            metadata = serving.get_metadata(_subtensor, netuid, hotkey, block)
-            if metadata is None:
-                return None
-            commitment = metadata["info"]["fields"][0]
-            hex_data = commitment[list(commitment.keys())[0]][2:]
-            return bytes.fromhex(hex_data).decode()
+            def get_commitment(netuid: int, uid: int, block: Optional[int] = None) -> str:
+                metadata = serving.get_metadata(subtensor, netuid, hotkey, block)
+                if metadata is None:
+                    return None
+                commitment = metadata["info"]["fields"][0]
+                hex_data = commitment[list(commitment.keys())[0]][2:]
+                return bytes.fromhex(hex_data).decode()
 
-        _subtensor.get_commitment = get_commitment
+            subtensor.get_commitment = get_commitment
 
-        while True:
             try:
-                metadata_str = _subtensor.get_commitment(config.netuid, uid)
+                metadata_str = subtensor.get_commitment(config.netuid, uid)
                 if metadata_str is None:
-                    return None
+                    continue
                 metadata = ValidatorMetadata.from_compact(metadata_str)
-                return hotkey, metadata
-            except WebSocketConnectionClosedException as e:
-                bt.logging.debug(f"WebSocket Error for {hotkey}: {e}. Retrying...")
-                time.sleep(bt.__blocktime__)
-            except TimeoutError as e:
-                bt.logging.debug(f"Timeout Error for {hotkey}: {e}. Retrying...")
-                time.sleep(bt.__blocktime__)
-            except AttributeError as e:
-                bt.logging.debug(f"Connection Error for {hotkey}: {e}. Retrying...")
-                time.sleep(bt.__blocktime__)
-            except Exception as e:
-                if "int() argument must be a string" in str(e.args):
-                    bt.logging.debug(f"Error while getting validator metadata {e}  Retrying...")
-                    time.sleep(bt.__blocktime__)
-                else:
-                    bt.logging.warning(f"Error while getting validator metadata for {hotkey}, Skipping...")
-                    return None
-        bt.logging.debug(f"Finished processing neuron {neuron.hotkey}")
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-        future_to_neuron = {
-            executor.submit(process_neuron, neuron): neuron for neuron in metagraph.neurons
-            if neuron.axon_info.ip == '0.0.0.0'
-        }
-        for future in concurrent.futures.as_completed(future_to_neuron):
-            result = future.result()
-            if result:
-                hotkey, metadata = result
-                if result:
-                    validator_metadata[hotkey] = metadata
+                validator_metadata[hotkey] = metadata
+            except:
+                bt.logging.warning(f"Error while getting validator metadata for {hotkey}, Skipping...")
+                continue
 
     bt.logging.info(f"Got validator metadata: {validator_metadata}")
     return validator_metadata

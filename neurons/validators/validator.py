@@ -91,7 +91,7 @@ def main(config):
     scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids]) # set all nodes without ips set to 0
     bt.logging.info(f"Initial scores: {scores}")
 
-    total_dendrites_per_query = 52
+    total_dendrites_per_query = 24
     minimum_dendrites_per_query = 3
     curr_block = subtensor.block
     last_updated_block = curr_block - (curr_block % 100)
