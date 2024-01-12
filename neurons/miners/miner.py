@@ -305,7 +305,7 @@ def main(config):
                     raise e
 
             if step % 60 == 0:
-                metagraph.sync(subtensor = subtensor)
+                metagraph = subtensor.metagraph(config.netuid)
                 log =  (f'Step:{step} | '
                         f'Block:{metagraph.block.item()} | '
                         f'Stake:{metagraph.S[my_subnet_uid]} | '

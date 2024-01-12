@@ -26,7 +26,7 @@ class BlacklistDiscovery:
 
     def run_validator_metadata_updater(self):
         def updater():
-            time.sleep(300)
+            time.sleep(600)
             while True:
                 try:
                     bt.logging.info(f"Getting validator metadata at {self.metagraph.block.item()} block")

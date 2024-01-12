@@ -95,13 +95,12 @@ def store_validator_metadata(config, wallet):
 
 def get_miners_metadata(config, metagraph):
     miners_metadata = {}
-    bt.logging.info(f"Getting miner metadata for {len(metagraph.axons)} axons")
+    bt.logging.info(f"Getting miner's metadata")
 
     subtensor = bt.subtensor(config=config)
     for axon in metagraph.axons:
         if axon.is_serving:
             hotkey = axon.hotkey
-
             def get_commitment(netuid: int, uid: int, block: Optional[int] = None) -> str:
                 metadata = serving.get_metadata(subtensor, netuid, hotkey, block)
                 if metadata is None:
@@ -111,7 +110,6 @@ def get_miners_metadata(config, metagraph):
                 return bytes.fromhex(hex_data).decode()
 
             subtensor.get_commitment = get_commitment
-
             try:
                 metadata_str = subtensor.get_commitment(config.netuid, 0)
                 if metadata_str is None:
@@ -121,8 +119,6 @@ def get_miners_metadata(config, metagraph):
             except:
                 bt.logging.warning(f"Error while getting validator metadata for {hotkey}, Skipping...")
                 continue
-
-    bt.logging.info(f"Got miner metadata for {len(miners_metadata)}/{len(metagraph.axons)}: {miners_metadata}")
 
     return miners_metadata
 
