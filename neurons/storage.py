@@ -129,7 +129,7 @@ def store_validator_metadata(config, wallet):
 def get_validator_metadata(config, metagraph):
     validator_metadata = {}
     def process_neuron(neuron):
-        bt.logging.debug(f"Starting processing neuron {neuron}")
+        bt.logging.debug(f"Starting processing neuron {neuron.hotkey}")
         hotkey = neuron.hotkey
         while True:
             try:
@@ -155,6 +155,7 @@ def get_validator_metadata(config, metagraph):
                 else:
                     bt.logging.warning(f"Error while getting validator metadata for {hotkey}, Skipping...")
                     return None
+        bt.logging.debug(f"Finished processing neuron {neuron.hotkey}")
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         future_to_neuron = {
