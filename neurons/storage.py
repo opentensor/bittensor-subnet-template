@@ -119,7 +119,7 @@ def get_miners_metadata(config, metagraph):
                     bt.logging.warning(f"Error while getting miner metadata for {hotkey}, Skipping...")
                     return None
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
         future_to_axon = {executor.submit(process_miner, axon): axon for axon in metagraph.axons if axon.is_serving}
         for future in concurrent.futures.as_completed(future_to_axon):
             result = future.result()
@@ -192,7 +192,7 @@ def get_validator_metadata(config, metagraph):
                     return None
         bt.logging.debug(f"Finished processing neuron {neuron.hotkey}")
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
         future_to_neuron = {
             executor.submit(process_neuron, neuron): neuron for neuron in metagraph.neurons
             if neuron.axon_info.ip == '0.0.0.0'
