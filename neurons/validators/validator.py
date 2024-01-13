@@ -185,9 +185,10 @@ def main(config):
                     bt.logging.info(f"Miner is running an old version. Grace period is disabled. Score set to {score}")
                     continue
 
-                if miners_metadata[response.axon.hotkey] is None:
+                if response.axon.hotkey not in miners_metadata or miners_metadata[response.axon.hotkey] is None:
                     bt.logging.debug(f"Skipping response {response} because of no metadata")
                     continue
+
 
                 try:
                     output: MinerDiscoveryOutput = response.output
