@@ -3,6 +3,8 @@ import docker
 import bittensor as bt
 
 def get_docker_image_version():
+    return 'n/a'
+    """ temporary disable docker image version
     try:
         container_id = socket.gethostname()
         client = docker.from_env()
@@ -20,3 +22,4 @@ def get_docker_image_version():
     except Exception as e:
         bt.logging.error(f"Could not get docker image version: {e}")
         return 'n/a'
+    """
