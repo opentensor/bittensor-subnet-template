@@ -154,5 +154,5 @@ def get_validator_metadata(config, metagraph):
                 bt.logging.warning(f"Error while getting validator metadata for {hotkey}, Skipping...")
                 continue
 
-    bt.logging.info(f"validators metadata: {validator_metadata}")
+    bt.logging.info(f"Validators metadata: {validator_metadata}")
     return validator_metadata
