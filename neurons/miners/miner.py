@@ -146,6 +146,9 @@ def main(config):
     my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
     bt.logging.info(f"Running miner on uid: {my_subnet_uid}")
 
+    graph_search = get_graph_search(config.network, config.model_type)
+    store_miner_metadata(config, graph_search, wallet)
+
     def miner_discovery(synapse: protocol.MinerDiscovery) -> protocol.MinerDiscovery:
         try:
             graph_search = get_graph_search(config.network, config.model_type)
