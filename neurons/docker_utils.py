@@ -17,3 +17,6 @@ def get_docker_image_version():
     except docker.errors.NotFound as e:
         bt.logging.error(f"Could not find docker container with id: {container_id}")
         return 'n/a'
+    except Exception as e:
+        bt.logging.error(f"Could not get docker image version: {e}")
+        return 'n/a'
