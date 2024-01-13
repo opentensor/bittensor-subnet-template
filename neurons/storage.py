@@ -132,6 +132,8 @@ def get_validator_metadata(config, metagraph):
             hotkey = neuron.hotkey
             uid = neuron.uid
 
+            bt.logging.info(f"Getting validator metadata for {hotkey}")
+
             def get_commitment(netuid: int, uid: int, block: Optional[int] = None) -> str:
                 metadata = serving.get_metadata(subtensor, netuid, hotkey, block)
                 if metadata is None:
@@ -152,5 +154,5 @@ def get_validator_metadata(config, metagraph):
                 bt.logging.warning(f"Error while getting validator metadata for {hotkey}, Skipping...")
                 continue
 
-    bt.logging.info(f"Got validator metadata: {validator_metadata}")
+    bt.logging.info(f"validators metadata: {validator_metadata}")
     return validator_metadata
