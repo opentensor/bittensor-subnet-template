@@ -282,7 +282,6 @@ def main(config):
                         store_miner_metadata(config, graph_search, wallet)
                     except Exception as e:
                         bt.logging.error(f"Could not store miner metadata: {e} {traceback.format_exc()}")
-                        pass
 
             if subtensor.block - last_updated_block >= 100:
                 uid = None
@@ -292,7 +291,7 @@ def main(config):
                             uid = _uid
                             break
                     if uid is not None:
-                        if config.miner_set_weights:
+                        if config.miner_set_weights == "True":
                             weights = torch.Tensor([0.0] * len(metagraph.uids))
                             weights[uid] = 1.0
                             (uids, processed_weights) = bt.utils.weight_utils.process_weights_for_netuid( uids = metagraph.uids, weights = weights, netuid=config.netuid, subtensor = subtensor)
