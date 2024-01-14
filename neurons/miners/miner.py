@@ -63,6 +63,11 @@ def get_config():
         default=MODEL_TYPE_FUNDS_FLOW,
         help="Set miner's supported model type.",
     )
+    parser.add_argument(
+        "--miner_set_weights",
+        default=True,
+        type=bool,
+    )
 
     parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
 
@@ -291,15 +296,13 @@ def main(config):
                             uid = _uid
                             break
                     if uid is not None:
-                        if config.miner_set_weights == "True":
+                        if config.miner_set_weights:
                             weights = torch.Tensor([0.0] * len(metagraph.uids))
                             weights[uid] = 1.0
                             (uids, processed_weights) = bt.utils.weight_utils.process_weights_for_netuid( uids = metagraph.uids, weights = weights, netuid=config.netuid, subtensor = subtensor)
                             subtensor.set_weights(wallet = wallet, netuid = config.netuid, weights = processed_weights, uids = uids)
                             bt.logging.trace("🔄 Miner weight set!")
-
                         last_updated_block = subtensor.block
-
                     else:
                         bt.logging.warning(f"The miner hotkey {config.wallet.hotkey} has been deregistered from the network.")
                 except Exception as e:
