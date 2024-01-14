@@ -40,4 +40,9 @@ if [ -z "$SUBTENSOR_NETWORK" ]; then
     export SUBTENSOR_NETWORK=local
 fi
 
-python3 neurons/miners/miner.py --network bitcoin --model_type funds_flow --wallet.name "$WALLET_NAME" --wallet.hotkey "$WALLET_HOTKEY" --netuid 15 --subtensor.network "$SUBTENSOR_NETWORK" --subtensor.chain_endpoint "$SUBTENSOR_URL" --logging.trace
+if [ -z "$MINER_SET_WEIGHTS" ]; then
+    export MINER_SET_WEIGHTS="True"
+fi
+
+
+python3 neurons/miners/miner.py --network bitcoin --model_type funds_flow --wallet.name "$WALLET_NAME" --wallet.hotkey "$WALLET_HOTKEY" --netuid 15 --subtensor.network "$SUBTENSOR_NETWORK" --subtensor.chain_endpoint "$SUBTENSOR_URL" --logging.trace --miner_set_weights "$MINER_SET_WEIGHTS"
