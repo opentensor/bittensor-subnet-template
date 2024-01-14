@@ -3,13 +3,14 @@ import os
 
 import bittensor as bt
 from web3 import Web3
+from neurons.nodes.abstract_node import Node
 from neurons.setup_logger import setup_logger
 
 parser = argparse.ArgumentParser()
 bt.logging.add_args(parser)
 logger = setup_logger("EvmNode")
  
-class EthereumNode:
+class EthereumNode(Node):
     def __init__(self, node_rpc_url: str = None):
         if node_rpc_url is None:
             self.node_rpc_url = (
