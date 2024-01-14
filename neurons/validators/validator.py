@@ -71,6 +71,7 @@ def main(config):
     subtensor = bt.subtensor(config=config)
     dendrite = bt.dendrite(wallet=wallet)
     metagraph = subtensor.metagraph(config.netuid)
+    metagraph.sync(subtensor = subtensor)
 
     bt.logging.info(f"Wallet: {wallet}")
     bt.logging.info(f"Subtensor: {subtensor}")
@@ -290,11 +291,14 @@ def main(config):
                 if result: bt.logging.success('✅ Successfully set weights.')
                 else: bt.logging.error('Failed to set weights.')
 
-                miners_metadata = get_miners_metadata(config, metagraph)
-
             step += 1
+
+            # Resync our local state with the latest state from the blockchain.
+            metagraph = subtensor.metagraph(config.netuid)
+            miners_metadata = get_miners_metadata(config, metagraph)
             validator_config.load_and_get_config_values()
             bt.logging.info(f"Scoring response: {scores}")
+            bt.logging.info(f"Miners metadata items: {len(miners_metadata)}")
             time.sleep(bt.__blocktime__ * 10)
 
         except RuntimeError as e:

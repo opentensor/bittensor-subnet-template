@@ -1,12 +1,8 @@
-import concurrent
-import time
 from typing import Optional
 
 import bittensor as bt
 from bittensor.extrinsics import serving
 from pydantic import BaseModel
-from websocket import WebSocketConnectionClosedException
-
 from insights.protocol import get_network_id, get_model_id
 from neurons import VERSION
 from neurons.docker_utils import get_docker_image_version
@@ -95,7 +91,7 @@ def store_validator_metadata(config, wallet):
 
 def get_miners_metadata(config, metagraph):
     miners_metadata = {}
-    bt.logging.info(f"Getting miner's metadata")
+    bt.logging.info(f"Getting miners metadata")
 
     subtensor = bt.subtensor(config=config)
     for axon in metagraph.axons:
