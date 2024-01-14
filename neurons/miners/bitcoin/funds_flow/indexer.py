@@ -3,9 +3,11 @@ import signal
 import time
 import traceback
 from neurons.setup_logger import setup_logger
-from neurons.nodes.bitcoin.node import BitcoinNode
+from neurons.nodes.factory import NodeFactory
 from neurons.miners.bitcoin.funds_flow.graph_creator import GraphCreator
 from neurons.miners.bitcoin.funds_flow.graph_indexer import GraphIndexer
+
+from insights.protocol import NETWORK_BITCOIN
 
 # Global flag to signal shutdown
 shutdown_flag = False
@@ -103,7 +105,7 @@ if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
 
-    bitcoin_node = BitcoinNode()
+    bitcoin_node = NodeFactory.create_node(NETWORK_BITCOIN)
     graph_creator = GraphCreator()
     graph_indexer = GraphIndexer()
 

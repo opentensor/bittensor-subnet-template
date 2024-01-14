@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import List
 from decimal import Decimal
 
-from neurons.nodes.evm.ethereum.node import EthereumNode
+from neurons.nodes.implementations.ethereum import EthereumNode
 
 @dataclass
 class Block:

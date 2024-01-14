@@ -3,8 +3,6 @@ from neo4j import GraphDatabase
 from decimal import Decimal
 
 from neurons.setup_logger import setup_logger
-from neurons.nodes.evm.ethereum.node import EthereumNode
-from neurons.miners.ethereum.funds_flow.graph_creator import GraphCreator
 
 logger = setup_logger("EthereumGraphIndexer")
 

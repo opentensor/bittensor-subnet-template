@@ -35,7 +35,7 @@ from insights import protocol
 from neurons import VERSION
 from neurons.docker_utils import get_docker_image_version
 from neurons.miners import blacklists
-from neurons.nodes.nodes import get_node
+from neurons.nodes.factory import NodeFactory
 from neurons.miners.bitcoin.funds_flow.graph_indexer import GraphIndexer
 from neurons.miners.query import (
     execute_query_proxy,
@@ -96,8 +96,8 @@ def wait_for_blocks_sync(config):
 
         try:
             graph_indexer = GraphIndexer(config.graph_db_url)
-            if config.network == 'bitcoin':
-                node = get_node(config.network)
+            if config.network == NETWORK_BITCOIN:
+                node = NodeFactory.create_node(config.network)
                 latest_block_height =  node.get_current_block_height()
                 current_block_height = graph_indexer.get_latest_block_number()
                 if latest_block_height - current_block_height < 100:
@@ -342,7 +342,7 @@ if __name__ == "__main__":
     if os.getenv("MINER_TEST_MODE") == "True":
         # Local development settings
         config.subtensor.chain_endpoint = "ws://163.172.164.213:9944"
-        config.wallet.hotkey = 'default2'
+        config.wallet.hotkey = 'default'
         config.wallet.name = 'miner'
         config.netuid = 1
         config.logging.debug = True

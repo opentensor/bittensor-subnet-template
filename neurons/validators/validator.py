@@ -26,10 +26,10 @@ import traceback
 import bittensor as bt
 from random import sample
 from insights import protocol
-from insights.protocol import MinerDiscoveryOutput, NETWORK_BITCOIN, MinerRandomBlockCheckOutput, MAX_MULTIPLE_IPS, \
+from insights.protocol import MinerDiscoveryOutput, MinerRandomBlockCheckOutput, MAX_MULTIPLE_IPS, \
     MAX_MULTIPLE_RUN_ID, get_network_by_id
 from neurons import VERSION
-from neurons.nodes.nodes import get_node
+from neurons.nodes.factory import NodeFactory
 from neurons.remote_config import ValidatorConfig
 from neurons.storage import store_validator_metadata, get_miners_metadata
 from neurons.validators.scoring import Scorer
@@ -205,11 +205,8 @@ def main(config):
 
                     bt.logging.info(f"🔄 Processing response for {hot_key}@ {axon_ip}")
 
-                    node = get_node(network)
-                    data_samples_are_valid = validate_all_data_samples(node, network, data_samples)
-
-                    if len(data_samples) < 10:
-                        data_samples_are_valid = False
+                    node = NodeFactory.create_node(network)
+                    data_samples_are_valid = node.validate_all_data_samples(data_samples)
 
                     if network not in block_height_cache:
                         block_height_cache[network] = node.get_current_block_height()
@@ -249,12 +246,12 @@ def main(config):
                         bt.logging.debug(f"Timeout for {hot_key}, skipping response")
                         continue
 
-                    blocks_to_check_data_samples_are_valid = validate_all_data_samples(node, network, blocks_to_check_output.data_samples)
-                    if not blocks_to_check_data_samples_are_valid:
+                    blocks_to_check_data_samples_are_valid = node.validate_all_data_samples(blocks_to_check_output.data_samples)
+                    if blocks_to_check_data_samples_are_valid:
+                        bt.logging.info(f"🔄 Rewarding {hot_key} for valid data samples.")
+                    else:
                         score = 0
                         bt.logging.info(f"🔄 Punishing {hot_key} for invalid data samples.")
-                    else:
-                        bt.logging.info(f"🔄 Rewarding {hot_key} for valid data samples.")
 
                     scores[dendrites_to_query[index]] = config.alpha * scores[dendrites_to_query[index]] + (1 - config.alpha) * score
 
@@ -313,6 +310,7 @@ def main(config):
             bt.logging.error(e)
             traceback.print_exc()
 
+
 def get_miner_distributions(miners_metadata, network_importance_keys):
     miner_distribution = {}
     for network in network_importance_keys:
@@ -346,39 +344,6 @@ def count_hotkeys_per_ip(filtered_axons):
 
     return hotkey_count_per_ip
 
-def validate_data_sample(node, network, data_sample):
-    block_data = node.get_block_by_height(data_sample['block_height'])
-    return verify_data_sample(
-        network=network,
-        input_result=data_sample,
-        block_data=block_data
-    )
-
-def verify_data_sample(network, input_result, block_data):
-   if network == NETWORK_BITCOIN:
-        block_height = int(input_result['block_height'])
-        transactions = block_data["tx"]
-        num_transactions = len(transactions)
-        result = {
-            "block_height": block_height,
-            "transaction_count": num_transactions,
-        }
-        is_valid = result["transaction_count"] == input_result["transaction_count"]
-        return is_valid
-   else:
-        return False
-
-def validate_all_data_samples(node, network, data_samples):
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        # Creating a future for each data sample validation
-        futures = [executor.submit(validate_data_sample, node, network, sample) for sample in data_samples]
-
-        for future in concurrent.futures.as_completed(futures):
-            if not future.result():
-                return False  # If any data sample is invalid, return False immediately
-    return True  # All data samples are valid
-
-
 
 if __name__ == "__main__":
     from dotenv import load_dotenv
@@ -390,13 +355,18 @@ if __name__ == "__main__":
     if os.getenv("VALIDATOR_TEST_MODE") == "True":
         # Local development settings
         config.subtensor.chain_endpoint = "ws://163.172.164.213:9944"
-        config.wallet.hotkey = 'default2'
+        config.wallet.hotkey = 'default'
         config.wallet.name = 'validator'
         config.netuid = 1
+        config.logging.debug = True
+        config.logging.trace = True
+        config.miner_set_weights = True
 
         # set environment variables
+        os.environ['WAIT_FOR_SYNC'] = 'False'
         os.environ['GRAPH_DB_URL'] = 'bolt://localhost:7687'
         os.environ['GRAPH_DB_USER'] = 'user'
         os.environ['GRAPH_DB_PASSWORD'] = 'pwd'
+        os.environ['BT_AXON_PORT'] = '8191'
 
     main(config)
