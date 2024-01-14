@@ -355,13 +355,18 @@ if __name__ == "__main__":
     if os.getenv("VALIDATOR_TEST_MODE") == "True":
         # Local development settings
         config.subtensor.chain_endpoint = "ws://163.172.164.213:9944"
-        config.wallet.hotkey = 'default2'
+        config.wallet.hotkey = 'default'
         config.wallet.name = 'validator'
         config.netuid = 1
+        config.logging.debug = True
+        config.logging.trace = True
+        config.miner_set_weights = True
 
         # set environment variables
+        os.environ['WAIT_FOR_SYNC'] = 'False'
         os.environ['GRAPH_DB_URL'] = 'bolt://localhost:7687'
         os.environ['GRAPH_DB_USER'] = 'user'
         os.environ['GRAPH_DB_PASSWORD'] = 'pwd'
+        os.environ['BT_AXON_PORT'] = '8191'
 
     main(config)
