@@ -87,7 +87,7 @@ def store_validator_metadata(config, wallet):
         subtensor.commit(wallet, config.netuid, metadata.to_compact())
         bt.logging.info(f"Stored validator metadata: {metadata}")
     except bt.errors.MetadataError as e:
-        bt.logging.warning(f"Skipping storing validator metadata")
+        bt.logging.warning(f"Skipping storing validator metadata, error: {e}")
 
 def get_miners_metadata(config, metagraph):
     miners_metadata = {}
@@ -124,31 +124,30 @@ def get_validator_metadata(config, metagraph):
     subtensor = bt.subtensor(config=config)
 
     for neuron in metagraph.neurons:
-        if neuron.axon_info.ip == '0.0.0.0':
-            hotkey = neuron.hotkey
-            uid = neuron.uid
+        hotkey = neuron.hotkey
+        uid = neuron.uid
 
-            bt.logging.info(f"Getting validator metadata for {hotkey}")
+        bt.logging.info(f"Getting validator metadata for {hotkey}")
 
-            def get_commitment(netuid: int, uid: int, block: Optional[int] = None) -> str:
-                metadata = serving.get_metadata(subtensor, netuid, hotkey, block)
-                if metadata is None:
-                    return None
-                commitment = metadata["info"]["fields"][0]
-                hex_data = commitment[list(commitment.keys())[0]][2:]
-                return bytes.fromhex(hex_data).decode()
+        def get_commitment(netuid: int, uid: int, block: Optional[int] = None) -> str:
+            metadata = serving.get_metadata(subtensor, netuid, hotkey, block)
+            if metadata is None:
+                return None
+            commitment = metadata["info"]["fields"][0]
+            hex_data = commitment[list(commitment.keys())[0]][2:]
+            return bytes.fromhex(hex_data).decode()
 
-            subtensor.get_commitment = get_commitment
+        subtensor.get_commitment = get_commitment
 
-            try:
-                metadata_str = subtensor.get_commitment(config.netuid, uid)
-                if metadata_str is None:
-                    continue
-                metadata = ValidatorMetadata.from_compact(metadata_str)
-                validator_metadata[hotkey] = metadata
-            except:
-                bt.logging.warning(f"Error while getting validator metadata for {hotkey}, Skipping...")
+        try:
+            metadata_str = subtensor.get_commitment(config.netuid, uid)
+            if metadata_str is None:
                 continue
+            metadata = ValidatorMetadata.from_compact(metadata_str)
+            validator_metadata[hotkey] = metadata
+        except:
+            bt.logging.warning(f"Error while getting validator metadata for {hotkey}, Skipping...")
+            continue
 
     bt.logging.info(f"Validators metadata: {validator_metadata}")
     return validator_metadata
