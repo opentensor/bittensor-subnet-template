@@ -55,6 +55,10 @@ class GraphCreator:
 
         ethereum_node = EthereumNode()
         
+        transactions = block_data["transactions"]
+
+        tx_data = get_transaction_from_hash(transactions);
+        
         for tx_hash in block_data["transactions"]:
             tx_data = ethereum_node.get_transaction_by_hash(tx_hash) # retrieve transaction details from transaction hash
             

@@ -67,7 +67,7 @@ class GraphIndexer:
 
             index_creation_statements = {
                 "Address-balance": "CREATE INDEX ON :Address(balance);",
-                "Address-timestamp": "CREATE INDEX ON :Address(balance);",
+                "Address-timestamp": "CREATE INDEX ON :Address(timestamp);",
                 "Address-address": "CREATE INDEX ON :Address(address);",
                 "SENT-value": "CREATE INDEX ON :SENT(value)",
                 "SENT-symbol": "CREATE INDEX ON :SENT(symbol)",
@@ -131,7 +131,7 @@ class GraphIndexer:
                                 "timestamp": tx.timestamp,
                                 "symbol": tx.symbol
                             }
-                            for tx in batch_transactions
+                            for tx in batch_transactions 
                         ]
                     )
 
