@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List
 from decimal import Decimal
+import asyncio
 
 from neurons.nodes.evm.ethereum.node import EthereumNode
 
@@ -38,7 +39,7 @@ class GraphCreator:
     def create_in_memory_graph_from_block(self, block_data):
         from dotenv import load_dotenv
         load_dotenv()
-
+        
         block_number = int(block_data["number"])
         block_hash = block_data["hash"].hex()
         timestamp = int(block_data["timestamp"])
@@ -56,42 +57,42 @@ class GraphCreator:
         ethereum_node = EthereumNode()
         
         transactions = block_data["transactions"]
+        loop = asyncio.get_event_loop()
+        rpcTxResponses = loop.run_until_complete(ethereum_node.get_transaction(transactions)) # wait till all tx details requests resolved
 
-        tx_data = get_transaction_from_hash(transactions);
-        
-        for tx_hash in block_data["transactions"]:
-            tx_data = ethereum_node.get_transaction_by_hash(tx_hash) # retrieve transaction details from transaction hash
-            
+        for resp in rpcTxResponses:
+            tx_data = resp["result"]
+
             from_address = tx_data["from"]
-            from_address_balance = ethereum_node.get_balance_by_address(from_address)
-
             to_address = tx_data["to"]
-            to_address_balance = ethereum_node.get_balance_by_address(to_address)
+            loop = asyncio.get_event_loop()
+            addresses = [from_address, to_address]
+            balance = loop.run_until_complete(ethereum_node.get_balance_by_addresses(addresses)) # wait till all address balance requests resolved
 
             from_account = Account(
                 address = from_address,
                 timestamp = timestamp,
-                balance = from_address_balance
+                balance = balance[0]["result"] # from_address_balance
             )
 
             to_account = Account(
                 address = to_address,
                 timestamp = timestamp,
-                balance = to_address_balance
+                balance = balance[1]["result"] # to_address_balance
             )
 
             transaction = Transaction(
-                block_hash = tx_data["blockHash"].hex(),
+                block_hash = tx_data["blockHash"],
                 block_number = tx_data["blockNumber"],
-                tx_hash = tx_data["hash"].hex(),
+                tx_hash = tx_data["hash"],
                 timestamp = tx_data.get("timestamp", timestamp),
-                gas_amount = int(tx_data.get("gas", 0)),
-                gas_price_wei = int(tx_data.get("gasPrice", 0)),
+                gas_amount = int(tx_data.get("gas", 0), 0),
+                gas_price_wei = int(tx_data.get("gasPrice", 0), 0),
                 from_account = from_account,
                 to_account = to_account,
-                value_wei = int(tx_data.get("value", 0)),
+                value_wei = int(tx_data.get("value", 0), 0),
                 symbol = "ETH" # for now, we assume only original transactions not smart contract executions, so the symbol is "ETH"
             )
             block.transactions.append(transaction)
-                
+        
         return {"block": block}
