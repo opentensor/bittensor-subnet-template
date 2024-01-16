@@ -2,6 +2,7 @@
 # Copyright © 2023 Yuma Rao
 # Copyright © 2023 aph5nt
 import concurrent
+import json
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
 # the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
@@ -17,6 +18,7 @@ import concurrent
 # DEALINGS IN THE SOFTWARE.
 
 import os
+import threading
 import time
 import torch
 import argparse
@@ -24,11 +26,12 @@ import traceback
 import bittensor as bt
 from random import sample
 from insights import protocol
-from insights.protocol import MinerDiscoveryOutput, NETWORK_BITCOIN, MinerRandomBlockCheckOutput
+from insights.protocol import MinerDiscoveryOutput, MinerRandomBlockCheckOutput, MAX_MULTIPLE_IPS, \
+    MAX_MULTIPLE_RUN_ID, get_network_by_id
 from neurons import VERSION
-from neurons.nodes.nodes import get_node
+from neurons.nodes.factory import NodeFactory
 from neurons.remote_config import ValidatorConfig
-from neurons.validators.miner_registry import MinerRegistryManager
+from neurons.storage import store_validator_metadata, get_miners_metadata
 from neurons.validators.scoring import Scorer
 
 def get_config():
@@ -84,22 +87,12 @@ def main(config):
     my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
     bt.logging.info(f"Running validator on uid: {my_subnet_uid}")
     bt.logging.info("Building validation weights.")
-
-    # Restore weights, or initialize weights for each miner to 0.
-    scores_file = "scores.pt"
-    try:
-        scores = torch.load(scores_file)
-        bt.logging.info(f"Loaded scores from save file: {scores}")
-    except:
-        scores = torch.zeros_like(metagraph.S, dtype=torch.float32)
-        bt.logging.info(f"Initialized all scores to 0")
-
-
+    scores = torch.zeros_like(metagraph.S, dtype=torch.float32)
     scores = scores * (metagraph.total_stake < 1.024e3) # all nodes with more than 1e3 total stake are set to 0 (sets validators weights to 0)
     scores = scores * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in metagraph.uids]) # set all nodes without ips set to 0
     bt.logging.info(f"Initial scores: {scores}")
 
-    total_dendrites_per_query = 25
+    total_dendrites_per_query = 24
     minimum_dendrites_per_query = 3
     curr_block = subtensor.block
     last_updated_block = curr_block - (curr_block % 100)
@@ -110,11 +103,13 @@ def main(config):
     """ Building dependencies. """
     validator_config = ValidatorConfig()
     validator_config.load_and_get_config_values()
-    miner_registry_manager = MinerRegistryManager()
     scorer = Scorer(validator_config)
 
     bt.logging.info("Starting validator loop.")
     step = 0
+
+    store_validator_metadata(config, wallet)
+    miners_metadata = get_miners_metadata(config, metagraph)
 
     # Main loop
     while True:
@@ -158,10 +153,13 @@ def main(config):
         dendrites_to_query = sample( filtered_uids, min( dendrites_per_query, len(filtered_uids) ) )
 
         try:
-            # Filter metagraph.axons by indices saved in dendrites_to_query list
             filtered_axons = [metagraph.axons[i] for i in dendrites_to_query]
-            bt.logging.info(f"filtered axons: {filtered_axons}")
+            ip_per_hotkey = count_hotkeys_per_ip(filtered_axons)
+            run_id_per_hotkey = count_run_id_per_hotkey(miners_metadata)
+            miner_distribution = get_miner_distributions(miners_metadata, validator_config.get_network_importance_keys())
+            block_height_cache = {}
 
+            bt.logging.info(f"filtered axons: {filtered_axons}")
             responses = dendrite.query(
                 filtered_axons,
                 protocol.MinerDiscovery(),
@@ -169,16 +167,31 @@ def main(config):
                 timeout = validator_config.discovery_timeout,
             )
 
-            # Cache dictionary
-            block_height_cache = {}
-
             for index, response in enumerate(responses):
                 if response.output is None:
                     bt.logging.debug(f"Skipping response {response}")
                     continue
 
+                ## GRACE PERIOD
+                # This is for old miners that did not update their version
+                if response.output.version < VERSION and validator_config.grace_period:
+                    score = 0.15
+                    scores[dendrites_to_query[index]] = config.alpha * scores[dendrites_to_query[index]] + (1 - config.alpha) * score
+                    bt.logging.info(f"Miner is running an old version. Grace period is enabled. Score set to {score}.")
+                    continue
+                # This is for olf miners that did not update their version after the grace period
+                elif response.output.version != VERSION:
+                    score = 0
+                    scores[dendrites_to_query[index]] = config.alpha * scores[dendrites_to_query[index]] + (1 - config.alpha) * score
+                    bt.logging.info(f"Miner is running an old version. Grace period is disabled. Score set to {score}")
+                    continue
+
+                if response.axon.hotkey not in miners_metadata or miners_metadata[response.axon.hotkey] is None:
+                    bt.logging.debug(f"Skipping response {response} because of no metadata")
+                    continue
+
+
                 try:
-                    # Vars
                     output: MinerDiscoveryOutput = response.output
                     network = output.metadata.network
                     model_type = output.metadata.model_type
@@ -190,32 +203,16 @@ def main(config):
                     run_id = response.output.run_id
                     response_time = response.dendrite.process_time
 
-                    if response.output.version < VERSION and validator_config.grace_period:
-                        score = 0.1
-                        scores[dendrites_to_query[index]] = config.alpha * scores[dendrites_to_query[index]] + (1 - config.alpha) * score
-                        bt.logging.info(f"Miner is running an old version. Grace period is enabled. Score set to {score}.")
-                        continue
-
-                    elif response.output.version != VERSION:
-                        score = 0
-                        scores[dendrites_to_query[index]] = config.alpha * scores[dendrites_to_query[index]] + (1 - config.alpha) * score
-                        bt.logging.info(f"Miner is running an old version. Grace period is disabled. Score set to {score}")
-                        continue
-
                     bt.logging.info(f"🔄 Processing response for {hot_key}@ {axon_ip}")
 
-                    node = get_node(network)
-                    data_samples_are_valid = validate_all_data_samples(node, network, data_samples)
-
-                    if len(data_samples) < 10:
-                        data_samples_are_valid = False
+                    node = NodeFactory.create_node(network)
+                    data_samples_are_valid = node.validate_all_data_samples(data_samples)
 
                     if network not in block_height_cache:
                         block_height_cache[network] = node.get_current_block_height()
 
-                    miner_distribution = miner_registry_manager.get_miner_distribution(validator_config.get_network_importance_keys())
-                    multiple_ips = miner_registry_manager.detect_multiple_ip_usage(hot_key)
-                    multiple_run_ids = miner_registry_manager.detect_multiple_run_id(run_id)
+                    multiple_ips = ip_per_hotkey[axon_ip] > MAX_MULTIPLE_IPS
+                    multiple_run_ids = run_id_per_hotkey[hot_key] > MAX_MULTIPLE_RUN_ID
 
                     score = scorer.calculate_score(
                         network,
@@ -249,32 +246,28 @@ def main(config):
                         bt.logging.debug(f"Timeout for {hot_key}, skipping response")
                         continue
 
-                    blocks_to_check_data_samples_are_valid = validate_all_data_samples(node, network, blocks_to_check_output.data_samples)
-                    if not blocks_to_check_data_samples_are_valid:
+                    blocks_to_check_data_samples_are_valid = node.validate_all_data_samples(blocks_to_check_output.data_samples)
+                    if blocks_to_check_data_samples_are_valid:
+                        bt.logging.info(f"🔄 Rewarding {hot_key} for valid data samples.")
+                    else:
                         score = 0
                         bt.logging.info(f"🔄 Punishing {hot_key} for invalid data samples.")
-                    else:
-                        bt.logging.info(f"🔄 Rewarding {hot_key} for valid data samples.")
 
                     scores[dendrites_to_query[index]] = config.alpha * scores[dendrites_to_query[index]] + (1 - config.alpha) * score
 
-                    miner_registry_manager.store_miner_metadata(
-                        ip_address=axon_ip,
-                        hot_key=hot_key,
-                        network=network,
-                        model_type=model_type,
-                        response_time=response_time,
-                        score=scores[dendrites_to_query[index]],
-                        run_id=run_id
-                    )
                 except Exception as e:
                     bt.logging.error(e)
                     traceback.print_exc()
 
             current_block = subtensor.block
 
-            if current_block - last_updated_block > 100:
-                weights = scores / torch.sum(scores)
+            if current_block - last_updated_block >= 100:
+                store_validator_metadata(config, wallet)
+
+                weights = torch.nn.functional.normalize(scores / torch.sum(scores), p=1, dim=0)
+                weights = torch.where(torch.isnan(weights), torch.zeros_like(weights), weights)
+
+                # weights = scores / torch.sum(scores)
                 bt.logging.info(f"Setting weights: {weights}")
                 # Miners with higher scores (or weights) receive a larger share of TAO rewards on this subnet.
                 (processed_uids,  processed_weights) = bt.utils.weight_utils.process_weights_for_netuid(
@@ -295,14 +288,14 @@ def main(config):
                 if result: bt.logging.success('✅ Successfully set weights.')
                 else: bt.logging.error('Failed to set weights.')
 
-            bt.logging.info(f"Scoring response: {scores}")
-
             step += 1
 
             # Resync our local state with the latest state from the blockchain.
             metagraph = subtensor.metagraph(config.netuid)
-            torch.save(scores, scores_file)
+            miners_metadata = get_miners_metadata(config, metagraph)
             validator_config.load_and_get_config_values()
+            bt.logging.info(f"Scoring response: {scores}")
+            bt.logging.info(f"Miners metadata items: {len(miners_metadata)}")
             time.sleep(bt.__blocktime__ * 10)
 
         except RuntimeError as e:
@@ -317,37 +310,39 @@ def main(config):
             bt.logging.error(e)
             traceback.print_exc()
 
-def validate_data_sample(node, network, data_sample):
-    block_data = node.get_block_by_height(data_sample['block_height'])
-    return verify_data_sample(
-        network=network,
-        input_result=data_sample,
-        block_data=block_data
-    )
 
-def verify_data_sample(network, input_result, block_data):
-   if network == NETWORK_BITCOIN:
-        block_height = int(input_result['block_height'])
-        transactions = block_data["tx"]
-        num_transactions = len(transactions)
-        result = {
-            "block_height": block_height,
-            "transaction_count": num_transactions,
-        }
-        is_valid = result["transaction_count"] == input_result["transaction_count"]
-        return is_valid
-   else:
-        return False
+def get_miner_distributions(miners_metadata, network_importance_keys):
+    miner_distribution = {}
+    for network in network_importance_keys:
+        miner_distribution[network] = 0
 
-def validate_all_data_samples(node, network, data_samples):
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        # Creating a future for each data sample validation
-        futures = [executor.submit(validate_data_sample, node, network, sample) for sample in data_samples]
+    for hotkey in miners_metadata:
+        metadata = miners_metadata[hotkey]
+        network = get_network_by_id(metadata.n)
+        if network in network_importance_keys:
+            miner_distribution[network] += 1
 
-        for future in concurrent.futures.as_completed(futures):
-            if not future.result():
-                return False  # If any data sample is invalid, return False immediately
-    return True  # All data samples are valid
+    return miner_distribution
+
+def count_run_id_per_hotkey(metadata):
+    run_id_count = {}
+    for hotkey in metadata:
+        if hotkey not in run_id_count:
+            run_id_count[hotkey] = set()
+        run_id_count[hotkey].add(metadata[hotkey].ri)
+    # Count the number of unique run_ids for each hotkey
+    for hotkey in run_id_count:
+        run_id_count[hotkey] = len(run_id_count[hotkey])
+    return run_id_count
+
+def count_hotkeys_per_ip(filtered_axons):
+    hotkey_count_per_ip = {}
+
+    for axon in filtered_axons:
+        ip = axon.ip
+        hotkey_count_per_ip[ip] = hotkey_count_per_ip.get(ip, 0) + 1
+
+    return hotkey_count_per_ip
 
 
 if __name__ == "__main__":
@@ -359,15 +354,19 @@ if __name__ == "__main__":
     # Check for an environment variable to enable local development
     if os.getenv("VALIDATOR_TEST_MODE") == "True":
         # Local development settings
-        config.subtensor.network = 'test'
-        config.subtensor.chain_endpoint = None
+        config.subtensor.chain_endpoint = "ws://163.172.164.213:9944"
         config.wallet.hotkey = 'default'
         config.wallet.name = 'validator'
-        config.netuid = 59
+        config.netuid = 1
+        config.logging.debug = True
+        config.logging.trace = True
+        config.miner_set_weights = True
 
         # set environment variables
+        os.environ['WAIT_FOR_SYNC'] = 'False'
         os.environ['GRAPH_DB_URL'] = 'bolt://localhost:7687'
         os.environ['GRAPH_DB_USER'] = 'user'
         os.environ['GRAPH_DB_PASSWORD'] = 'pwd'
+        os.environ['BT_AXON_PORT'] = '8191'
 
     main(config)

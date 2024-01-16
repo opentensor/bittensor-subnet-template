@@ -4,15 +4,39 @@ from pydantic import BaseModel
 
 # Model types
 MODEL_TYPE_FUNDS_FLOW = "funds_flow"
-MODEL_TYPE_FUNDS_FLOW_V1 = "funds_flow-v1.0"
+MODEL_TYPE_FUNDS_FLOW_ID = 1
+def get_model_id(model_type):
+    if model_type == MODEL_TYPE_FUNDS_FLOW:
+        return MODEL_TYPE_FUNDS_FLOW_ID
 
 # Networks
 NETWORK_BITCOIN = "bitcoin"
-NETWORK_LITECOIN = "litecoin"
+NETWORK_BITCOIN_ID = 1
 NETWORK_DOGE = "doge"
-NETWORK_DASH = "dash"
-NETWORK_ZCASH = "zcash"
-NETWORK_BITCOIN_CASH = "bitcoin_cash"
+NETWORK_DOGE_ID = 2
+
+def get_network_by_id(id):
+    if id == NETWORK_BITCOIN_ID:
+        return NETWORK_BITCOIN
+    if id == NETWORK_DOGE_ID:
+        return NETWORK_DOGE
+    return None
+def get_network_id(network):
+    if network == NETWORK_BITCOIN:
+        return NETWORK_BITCOIN_ID
+    if network == NETWORK_DOGE:
+        return NETWORK_DOGE_ID
+    return None
+
+# Default settings for miners
+MAX_MULTIPLE_RUN_ID = 9
+MAX_MULTIPLE_IPS = 9
+
+
+
+
+
+
 
 # EVM Compatible networks
 NETWORK_ETHEREUM = "ethereum"
