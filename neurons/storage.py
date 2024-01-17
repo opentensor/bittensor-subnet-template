@@ -118,36 +118,36 @@ def get_miners_metadata(config, metagraph):
 
     return miners_metadata
 
-def get_validator_metadata(config, metagraph):
-    validator_metadata = {}
 
+def get_validator_metadata(config, metagraph, miner_config):
+    validator_metadata = {}
     subtensor = bt.subtensor(config=config)
 
     for neuron in metagraph.neurons:
-        hotkey = neuron.hotkey
-        uid = neuron.uid
+        if float(neuron.stake) > miner_config.stake_threshold:
+            hotkey = neuron.hotkey
+            uid = neuron.uid
 
-        bt.logging.info(f"Getting validator metadata for {hotkey}")
+            bt.logging.info(f"Getting validator metadata for {hotkey}")
 
-        def get_commitment(netuid: int, uid: int, block: Optional[int] = None) -> str:
-            metadata = serving.get_metadata(subtensor, netuid, hotkey, block)
-            if metadata is None:
-                return None
-            commitment = metadata["info"]["fields"][0]
-            hex_data = commitment[list(commitment.keys())[0]][2:]
-            return bytes.fromhex(hex_data).decode()
+            def get_commitment(netuid: int, uid: int, block: Optional[int] = None) -> str:
+                metadata = serving.get_metadata(subtensor, netuid, hotkey, block)
+                if metadata is None:
+                    return None
+                commitment = metadata["info"]["fields"][0]
+                hex_data = commitment[list(commitment.keys())[0]][2:]
+                return bytes.fromhex(hex_data).decode()
 
-        subtensor.get_commitment = get_commitment
+            subtensor.get_commitment = get_commitment
 
-        try:
-            metadata_str = subtensor.get_commitment(config.netuid, uid)
-            if metadata_str is None:
+            try:
+                metadata_str = subtensor.get_commitment(config.netuid, uid)
+                if metadata_str is None:
+                    continue
+                metadata = ValidatorMetadata.from_compact(metadata_str)
+                validator_metadata[hotkey] = metadata
+            except Exception as e:
+                bt.logging.warning(f"Error while getting validator metadata for {hotkey}, Skipping...")
                 continue
-            metadata = ValidatorMetadata.from_compact(metadata_str)
-            validator_metadata[hotkey] = metadata
-        except:
-            bt.logging.warning(f"Error while getting validator metadata for {hotkey}, Skipping...")
-            continue
 
     bt.logging.info(f"Validators metadata: {validator_metadata}")
-    return validator_metadata
