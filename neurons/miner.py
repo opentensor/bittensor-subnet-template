@@ -21,6 +21,7 @@ import time
 import typing
 import bittensor as bt
 
+from insights import protocol
 # Bittensor Miner Template:
 import template
 
@@ -61,7 +62,22 @@ class Miner(BaseMinerNeuron):
         # TODO(developer): Replace with actual implementation logic.
         synapse.dummy_output = synapse.dummy_input * 2
         return synapse
+    
+    async def miner_random_block_check(self, synapse: protocol.MinerRandomBlockCheck) -> protocol.MinerRandomBlockCheck:
+            try:
+                graph_search = get_graph_search(config.network, config.model_type)
+                block_heights = synapse.blocks_to_check
+                data_samples = graph_search.get_block_transactions(block_heights)
+                synapse.output = protocol.MinerRandomBlockCheckOutput(
+                    data_samples=data_samples,
+                )
+                bt.logging.info(f"Serving miner random block check output: {synapse.output}")
 
+                return synapse
+            except Exception as e:
+                bt.logging.error(traceback.format_exc())
+                synapse.output = None
+                return synapse
     async def blacklist(
         self, synapse: template.protocol.Dummy
     ) -> typing.Tuple[bool, str]:

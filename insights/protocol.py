@@ -5,41 +5,38 @@ from pydantic import BaseModel
 # Model types
 MODEL_TYPE_FUNDS_FLOW = "funds_flow"
 MODEL_TYPE_FUNDS_FLOW_ID = 1
-def get_model_id(model_type):
-    if model_type == MODEL_TYPE_FUNDS_FLOW:
-        return MODEL_TYPE_FUNDS_FLOW_ID
 
 # Networks
 NETWORK_BITCOIN = "bitcoin"
 NETWORK_BITCOIN_ID = 1
 NETWORK_DOGE = "doge"
 NETWORK_DOGE_ID = 2
-
-def get_network_by_id(id):
-    if id == NETWORK_BITCOIN_ID:
-        return NETWORK_BITCOIN
-    if id == NETWORK_DOGE_ID:
-        return NETWORK_DOGE
-    return None
-def get_network_id(network):
-    if network == NETWORK_BITCOIN:
-        return NETWORK_BITCOIN_ID
-    if network == NETWORK_DOGE:
-        return NETWORK_DOGE_ID
-    return None
+NETWORK_ETHEREUM = "ethereum"
+NETWORK_ETHEREUM_ID = 3
 
 # Default settings for miners
 MAX_MULTIPLE_RUN_ID = 9
 MAX_MULTIPLE_IPS = 9
 
+def get_network_by_id(id):
+    return {
+        NETWORK_BITCOIN_ID: NETWORK_BITCOIN,
+        NETWORK_DOGE_ID: NETWORK_DOGE,
+        NETWORK_ETHEREUM_ID: NETWORK_ETHEREUM
+    }.get(id)
+
+def get_network_id(network):
+    return {
+        NETWORK_BITCOIN : NETWORK_BITCOIN_ID,
+        NETWORK_DOGE : NETWORK_DOGE_ID,
+        NETWORK_ETHEREUM: NETWORK_ETHEREUM_ID
+    }.get(network)
 
 
-
-
-
-
-# EVM Compatible networks
-NETWORK_ETHEREUM = "ethereum"
+def get_model_id(model_type):
+    return {
+        MODEL_TYPE_FUNDS_FLOW: MODEL_TYPE_FUNDS_FLOW_ID
+    }.get(model_type)
 
 class MinerDiscoveryMetadata(BaseModel):
     network: str = None
@@ -56,7 +53,7 @@ class MinerDiscoveryOutput(BaseModel):
     run_id: str = None
     version: Optional[int] = None
 
-class MinerDiscovery(bt.Synapse):
+class  MinerDiscovery(bt.Synapse):
     output: MinerDiscoveryOutput = None
 
     def deserialize(self):

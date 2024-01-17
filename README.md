@@ -13,34 +13,12 @@
 [Discord](https://discord.gg/bittensor) • [Subnet](https://taostats.io/subnets/netuid-15/) • [Research](https://bittensor.com/whitepaper)
 </div>
 
-<<<<<<< HEAD
 ### Table of Contents <!-- omit in toc -->
 - [Overview](#Blockchain-insights-overview)
 - [Instalation & Configuration](#instalation)
 - [Development Roadmap](#Project-roadmap)
 - [High Level Architecture](#High-level-architecture)
 - [License](#license)
-=======
----
-- [Quickstarter template](#quickstarter-template)
-- [Introduction](#introduction)
-  - [Example](#example)
-- [Installation](#installation)
-  - [Before you proceed](#before-you-proceed)
-  - [Install](#install)
-- [Writing your own incentive mechanism](#writing-your-own-incentive-mechanism)
-- [Subnet Links](#subnet-links)
-- [License](#license)
-
----
-## Quickstarter template
-
-This template contains all the required installation instructions, scripts, and files and functions for:
-- Building Bittensor subnets.
-- Creating custom incentive mechanisms and running these mechanisms on the subnets. 
-
-In order to simplify the building of subnets, this template abstracts away the complexity of the underlying blockchain and other boilerplate code. While the default behavior of the template is sufficient for a simple subnet, you should customize the template in order to meet your specific requirements.
->>>>>>> upstream/main
 ---
 
 ## Blockchain Insights Overview

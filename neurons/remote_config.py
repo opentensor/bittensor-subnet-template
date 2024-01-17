@@ -138,7 +138,7 @@ class ValidatorConfig(RemoteConfig):
         self.blockchain_recency_weight = self.get_config_value('blockchain_recency_weight',  {"bitcoin": 2, "doge": 2})
 
         self.grace_period = self.get_config_value('grace_period', False)
-
+        return self
 
     def get_blockchain_min_blocks(self, network):
         return self.get_config_value(f'blockchain_min_blocks.{network}', 51840)
@@ -148,7 +148,7 @@ class ValidatorConfig(RemoteConfig):
         return self.get_config_value(f'blockchain_importance.{network}', 0.9)
 
 
-    def get_network_importance_keys(self):
+    def get_networks(self):
         return self.get_config_value('blockchain_importance', {}).keys()
 
 

@@ -64,6 +64,6 @@ def get_random_uids(
             [uid for uid in avail_uids if uid not in candidate_uids],
             k - len(candidate_uids),
         )
-    print(available_uids)
+
     uids = torch.tensor(random.sample(available_uids, k))
     return uids
