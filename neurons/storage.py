@@ -151,3 +151,4 @@ def get_validator_metadata(config, metagraph, miner_config):
                 continue
 
     bt.logging.info(f"Validators metadata: {validator_metadata}")
+    return validator_metadata
