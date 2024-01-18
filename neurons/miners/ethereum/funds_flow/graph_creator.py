@@ -3,7 +3,7 @@ from typing import List
 from decimal import Decimal
 import asyncio
 
-from neurons.nodes.evm.ethereum import EthereumNode
+from neurons.nodes.evm.ethereum.node import EthereumNode
 
 @dataclass
 class Block:
@@ -62,7 +62,6 @@ class GraphCreator:
 
         for resp in rpcTxResponses:
             tx_data = resp["result"]
-
             from_address = tx_data["from"]
             to_address = tx_data["to"]
             loop = asyncio.get_event_loop()
