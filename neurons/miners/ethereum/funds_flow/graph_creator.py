@@ -3,7 +3,7 @@ from typing import List
 from decimal import Decimal
 import asyncio
 
-from neurons.nodes.implementations.ethereum import EthereumNode
+from neurons.nodes.evm.ethereum import EthereumNode
 
 @dataclass
 class Block:
