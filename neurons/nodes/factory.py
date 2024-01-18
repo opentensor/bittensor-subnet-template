@@ -1,6 +1,6 @@
 from insights.protocol import NETWORK_BITCOIN, NETWORK_ETHEREUM
-from neurons.nodes.bitcoin import BitcoinNode
-from neurons.nodes.evm.ethereum import EthereumNode
+from neurons.nodes.bitcoin.node import BitcoinNode
+from neurons.nodes.evm.ethereum.node import EthereumNode
 
 
 class NodeFactory:
