@@ -4,7 +4,7 @@ echo $(pwd)
 export PYTHONPATH=$(pwd)
 
 if [ -z "$BITCOIN_NODE_RPC_URL" ]; then
-    export BITCOIN_NODE_RPC_URL="http://bitcoinrpc:rpcpassword@127.0.0.1:8332"
+    export BITCOIN_NODE_RPC_URL="http://dogecoin:rpcpassword@127.0.0.1:22555"
 fi
 
 if [ -z "$GRAPH_DB_URL" ]; then
@@ -20,7 +20,7 @@ if [ -z "$GRAPH_DB_PASSWORD" ]; then
 fi
 
 if [ -z "$NETWORK" ]; then
-    export NETWORK="bitcoin"
+    export NETWORK="doge"
 fi
 
 python3 neurons/miners/bitcoin/funds_flow/indexer.py

@@ -4,6 +4,7 @@ import time
 import traceback
 from neurons.setup_logger import setup_logger
 from neurons.nodes.bitcoin.node import BitcoinNode
+from neurons.nodes.dogecoin.node import DogecoinNode
 from neurons.miners.bitcoin.funds_flow.graph_creator import GraphCreator
 from neurons.miners.bitcoin.funds_flow.graph_indexer import GraphIndexer
 
@@ -20,12 +21,12 @@ def shutdown_handler(signum, frame):
     shutdown_flag = True
 
 
-def index_blocks(_bitcoin_node, _graph_creator, _graph_indexer, start_height):
+def index_blocks(_rpc_node, _graph_creator, _graph_indexer, start_height):
     global shutdown_flag
     skip_blocks = 6
 
     while not shutdown_flag:
-        current_block_height = _bitcoin_node.get_current_block_height() - 6
+        current_block_height = _rpc_node.get_current_block_height() - 6
         if current_block_height - skip_blocks < 0:
             logger.info("Waiting min 6 for blocks to be mined.")
             time.sleep(10)
@@ -40,14 +41,14 @@ def index_blocks(_bitcoin_node, _graph_creator, _graph_indexer, start_height):
 
         block_height = start_height
         while block_height <= current_block_height - skip_blocks:
-            block = _bitcoin_node.get_block_by_height(block_height)
+            block = _rpc_node.get_block_by_height(block_height)
             num_transactions = len(block["tx"])
             start_time = time.time()
             in_memory_graph = _graph_creator.create_in_memory_graph_from_block(block)
             success = _graph_indexer.create_graph_focused_on_money_flow(in_memory_graph)
             end_time = time.time()
             time_taken = end_time - start_time
-            node_block_height = bitcoin_node.get_current_block_height()
+            node_block_height = rpc_node.get_current_block_height()
             progress = block_height / node_block_height * 100
             formatted_num_transactions = "{:>4}".format(num_transactions)
             formatted_time_taken = "{:6.2f}".format(time_taken)
@@ -103,7 +104,17 @@ if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
 
-    bitcoin_node = BitcoinNode()
+    rpc_node = None
+    network = os.getenv('NETWORK')
+
+    if network == 'bitcoin':
+        rpc_node = BitcoinNode()
+    elif network == 'doge':
+        rpc_node = DogecoinNode()
+    else:
+        logger.error(f"Network {network} not supported, exiting..")
+        exit()
+
     graph_creator = GraphCreator()
     graph_indexer = GraphIndexer()
 
@@ -123,13 +134,13 @@ if __name__ == "__main__":
                 start_height = graph_last_block_height
 
             logger.info(f"Starting from block height: {start_height}")
-            logger.info(f"Current node block height: {bitcoin_node.get_current_block_height()}")
+            logger.info(f"Current node block height: {rpc_node.get_current_block_height()}")
             logger.info(f"Latest indexed block height: {graph_last_block_height}")
 
             logger.info("Creating indexes...")
             graph_indexer.create_indexes()
             logger.info("Starting indexing blocks...")
-            index_blocks(bitcoin_node, graph_creator, graph_indexer, start_height)
+            index_blocks(rpc_node, graph_creator, graph_indexer, start_height)
             break
         except Exception as e:
             ## traceback.print_exc()
