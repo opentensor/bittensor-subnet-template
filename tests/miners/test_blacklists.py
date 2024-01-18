@@ -13,7 +13,7 @@ class TestBlacklistDiscovery(unittest.TestCase):
         self.blacklist_discovery = BlacklistDiscovery(self.miner_config, self.registry_manager)
 
         self.metagraph = MagicMock()
-        self.synapse = MagicMock(spec=protocol.MinerDiscovery)
+        self.synapse = MagicMock(spec=protocol.Discovery)
         self.synapse.dendrite = MagicMock()
         self.synapse.dendrite.ip = "127.0.0.1"
 

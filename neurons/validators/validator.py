@@ -111,7 +111,7 @@ class Validator(BaseValidatorNeuron):
         blocks_to_check = random.sample(range(start_block_height, last_block_height + 1), k=k)
         random_block_response = self.dendrite.query(
             [axon],
-            protocol.MinerRandomBlockCheck(blocks_to_check=blocks_to_check),
+            protocol.BlockCheck(blocks_to_check=blocks_to_check),
             deserialize=True,
             timeout = self.validator_config.discovery_timeout,
         )
@@ -184,7 +184,7 @@ class Validator(BaseValidatorNeuron):
         bt.logging.info(f"filtered axons: {filtered_axons}")
         responses = self.dendrite.query(
             filtered_axons,
-            protocol.MinerDiscovery(),
+            protocol.Discovery(),
             deserialize=True,
             timeout = self.validator_config.discovery_timeout,
         )

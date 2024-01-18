@@ -149,7 +149,7 @@ def main(config):
     graph_search = get_graph_search(config.network, config.model_type)
     store_miner_metadata(config, graph_search, wallet)
 
-    def miner_discovery(synapse: protocol.MinerDiscovery) -> protocol.MinerDiscovery:
+    def miner_discovery(synapse: protocol.Discovery) -> protocol.Discovery:
         try:
             graph_search = get_graph_search(config.network, config.model_type)
             block_range = graph_search.get_block_range()
@@ -179,7 +179,7 @@ def main(config):
             synapse.output = None
             return synapse
 
-    def miner_random_block_check(synapse: protocol.MinerRandomBlockCheck) -> protocol.MinerRandomBlockCheck:
+    def miner_random_block_check(synapse: protocol.BlockCheck) -> protocol.BlockCheck:
         try:
             graph_search = get_graph_search(config.network, config.model_type)
             block_heights = synapse.blocks_to_check
@@ -195,7 +195,7 @@ def main(config):
             synapse.output = None
             return synapse
 
-    def execute_query(synapse: protocol.MinerQuery) -> protocol.MinerQuery:
+    def execute_query(synapse: protocol.Query) -> protocol.Query:
         try:
             synapse.output = execute_query_proxy(
                 network=synapse.network,
@@ -208,7 +208,7 @@ def main(config):
 
         return synapse
 
-    def priority_discovery(synapse: protocol.MinerDiscovery) -> float:
+    def priority_discovery(synapse: protocol.Discovery) -> float:
         caller_uid = metagraph.hotkeys.index(synapse.dendrite.hotkey)
         prirority = float(metagraph.S[caller_uid])
         bt.logging.trace(
@@ -216,10 +216,10 @@ def main(config):
         )
         return prirority
 
-    def blacklist_discovery(synapse: protocol.MinerDiscovery) -> typing.Tuple[bool, str]:
+    def blacklist_discovery(synapse: protocol.Discovery) -> typing.Tuple[bool, str]:
         return  _blacklist_discovery.blacklist_discovery(metagraph, synapse)
 
-    def priority_execute_query(synapse: protocol.MinerQuery) -> float:
+    def priority_execute_query(synapse: protocol.Query) -> float:
         caller_uid = metagraph.hotkeys.index(synapse.dendrite.hotkey)
         prirority = float(metagraph.S[caller_uid])
         bt.logging.trace(
@@ -227,7 +227,7 @@ def main(config):
         )
         return prirority
 
-    def blacklist_execute_query(synapse: protocol.MinerQuery) -> typing.Tuple[bool, str]:
+    def blacklist_execute_query(synapse: protocol.Query) -> typing.Tuple[bool, str]:
 
         if synapse.dendrite.hotkey not in metagraph.hotkeys:
             bt.logging.trace(

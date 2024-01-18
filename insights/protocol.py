@@ -38,6 +38,7 @@ def get_model_id(model_type):
         MODEL_TYPE_FUNDS_FLOW: MODEL_TYPE_FUNDS_FLOW_ID
     }.get(model_type)
 
+
 class MinerDiscoveryMetadata(BaseModel):
     network: str = None
     model_type: str = None
@@ -53,7 +54,7 @@ class MinerDiscoveryOutput(BaseModel):
     run_id: str = None
     version: Optional[int] = None
 
-class  MinerDiscovery(bt.Synapse):
+class  Discovery(bt.Synapse):
     output: MinerDiscoveryOutput = None
 
     def deserialize(self):
@@ -62,11 +63,11 @@ class  MinerDiscovery(bt.Synapse):
 class MinerRandomBlockCheckOutput(BaseModel):
     data_samples: List[Dict] = None
 
-class MinerRandomBlockCheck(bt.Synapse):
+class BlockCheck(bt.Synapse):
     blocks_to_check: List[int] = None
     output: MinerRandomBlockCheckOutput = None
 
-class MinerQuery(bt.Synapse):
+class Query(bt.Synapse):
     network: str = None
     model_type: str = None
     query: str = None

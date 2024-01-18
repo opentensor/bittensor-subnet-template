@@ -42,7 +42,7 @@ class BlacklistDiscovery:
         thread.daemon = True
         thread.start()
 
-    def blacklist_discovery(self, metagraph, synapse: protocol.MinerDiscovery) -> typing.Tuple[bool, str]:
+    def blacklist_discovery(self, metagraph, synapse: protocol.Discovery) -> typing.Tuple[bool, str]:
         hotkey = synapse.dendrite.hotkey
 
         if self.validator_metadata is None:
