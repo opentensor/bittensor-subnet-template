@@ -264,7 +264,7 @@ def main(config):
 
             current_block = subtensor.block
 
-            if current_block - last_updated_block >= 100:
+            if current_block - last_updated_block > 100:
                 store_validator_metadata(config, wallet, my_subnet_uid)
 
                 weights = torch.nn.functional.normalize(scores / torch.sum(scores), p=1, dim=0)
@@ -296,7 +296,6 @@ def main(config):
             # Resync our local state with the latest state from the blockchain.
             metagraph = subtensor.metagraph(config.netuid)
             miners_metadata = get_miners_metadata(config, metagraph)
-            validator_config.load_and_get_config_values()
             bt.logging.info(f"Scoring response: {scores}")
             bt.logging.info(f"Miners metadata items: {len(miners_metadata)}")
             time.sleep(bt.__blocktime__ * 10)

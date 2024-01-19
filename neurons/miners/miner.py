@@ -273,7 +273,7 @@ def main(config):
     step = 0
     while True:
         try:
-            if subtensor.block - last_updated_block >= 100:
+            if subtensor.block - last_updated_block > 100:
                 if step % 60 != 0:
                     try:
                         graph_search = get_graph_search(config.network, config.model_type)

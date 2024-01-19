@@ -33,6 +33,7 @@ class RemoteConfig:
         return attributes
 
     def _update_config_periodically(self):
+        time.sleep(UPDATE_INTERVAL)
         while not self.stop_event.is_set():
             self.load_remote_config()
             time.sleep(UPDATE_INTERVAL)
