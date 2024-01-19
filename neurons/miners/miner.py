@@ -22,18 +22,11 @@ import time
 import argparse
 import traceback
 import typing
-import socket
-
-import docker
 import torch
 import bittensor as bt
 from random import sample
-
-from bittensor.extrinsics.serving import get_metadata
-
 from insights import protocol
 from neurons import VERSION
-from neurons.docker_utils import get_docker_image_version
 from neurons.miners import blacklists
 from neurons.nodes.nodes import get_node
 from neurons.miners.bitcoin.funds_flow.graph_indexer import GraphIndexer
@@ -44,7 +37,7 @@ from neurons.miners.query import (
 from insights.protocol import (
     MODEL_TYPE_FUNDS_FLOW,
     NETWORK_BITCOIN,
-    MinerDiscoveryMetadata, get_network_id, get_model_id,
+    MinerDiscoveryMetadata
 )
 from neurons.remote_config import MinerConfig
 from neurons.storage import store_miner_metadata
@@ -345,7 +338,7 @@ if __name__ == "__main__":
         # Local development settings
         config.subtensor.chain_endpoint = "ws://163.172.164.213:9944"
         config.wallet.hotkey = 'default2'
-        config.wallet.name = 'miner'
+        config.wallet.name = 'validator'
         config.netuid = 1
         config.logging.debug = True
         config.logging.trace = True

@@ -108,7 +108,7 @@ def main(config):
     bt.logging.info("Starting validator loop.")
     step = 0
 
-    store_validator_metadata(config, wallet)
+    store_validator_metadata(config, wallet, my_subnet_uid)
     miners_metadata = get_miners_metadata(config, metagraph)
 
     # Main loop
@@ -265,7 +265,7 @@ def main(config):
             current_block = subtensor.block
 
             if current_block - last_updated_block >= 100:
-                store_validator_metadata(config, wallet)
+                store_validator_metadata(config, wallet, my_subnet_uid)
 
                 weights = torch.nn.functional.normalize(scores / torch.sum(scores), p=1, dim=0)
                 weights = torch.where(torch.isnan(weights), torch.zeros_like(weights), weights)
@@ -386,7 +386,7 @@ if __name__ == "__main__":
 
     config = get_config()
 
-    # Check for an environment variable to enable local development
+    ## Check for an environment variable to enable local development
     if os.getenv("VALIDATOR_TEST_MODE") == "True":
         # Local development settings
         config.subtensor.chain_endpoint = "ws://163.172.164.213:9944"
