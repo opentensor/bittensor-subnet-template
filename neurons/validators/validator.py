@@ -154,6 +154,8 @@ def main(config):
 
         try:
             filtered_axons = [metagraph.axons[i] for i in dendrites_to_query]
+            filtered_axons = list(filter(lambda x: x.hotkey != wallet.hotkey.ss58_address, filtered_axons))
+
             ip_per_hotkey = count_hotkeys_per_ip(filtered_axons)
             run_id_per_hotkey = count_run_id_per_hotkey(miners_metadata)
             miner_distribution = get_miner_distributions(miners_metadata, validator_config.get_network_importance_keys())
