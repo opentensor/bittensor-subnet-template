@@ -39,33 +39,33 @@ def get_model_id(model_type):
     }.get(model_type)
 
 
-class MinerDiscoveryMetadata(BaseModel):
+class DiscoveryMetadata(BaseModel):
     network: str = None
     model_type: str = None
     graph_schema: Optional[Dict] = None
     #TODO: implement method for getting graph schema from miner
 
 
-class MinerDiscoveryOutput(BaseModel):
-    metadata: MinerDiscoveryMetadata = None
+class DiscoveryOutput(BaseModel):
+    metadata: DiscoveryMetadata = None
     data_samples: List[Dict] = None
     block_height: int = None
     start_block_height: int = None
     run_id: str = None
     version: Optional[int] = None
 
-class  Discovery(bt.Synapse):
-    output: MinerDiscoveryOutput = None
+class Discovery(bt.Synapse):
+    output: DiscoveryOutput = None
 
     def deserialize(self):
         return self
 
-class MinerRandomBlockCheckOutput(BaseModel):
+class BlockCheckOutput(BaseModel):
     data_samples: List[Dict] = None
 
 class BlockCheck(bt.Synapse):
     blocks_to_check: List[int] = None
-    output: MinerRandomBlockCheckOutput = None
+    output: BlockCheckOutput = None
 
 class Query(bt.Synapse):
     network: str = None

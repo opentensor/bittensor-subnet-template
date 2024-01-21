@@ -24,7 +24,7 @@ import torch
 import bittensor as bt
 
 from insights import protocol
-from insights.protocol import MinerDiscoveryOutput, MinerRandomBlockCheckOutput, MAX_MULTIPLE_IPS, \
+from insights.protocol import DiscoveryOutput, BlockCheckOutput, MAX_MULTIPLE_IPS, \
     MAX_MULTIPLE_RUN_ID
 
 from neurons import VERSION
@@ -121,11 +121,11 @@ class Validator(BaseValidatorNeuron):
             bt.logging.debug(f"Skipping response {random_block_response}")
             return None
         
-        blocks_to_check_output: MinerRandomBlockCheckOutput = random_block_response.output
+        blocks_to_check_output: BlockCheckOutput = random_block_response.output
         return node.validate_all_data_samples(blocks_to_check_output.data_samples)
 
 
-    def get_reward(self, response: MinerDiscoveryOutput, ip_per_hotkey=None, run_id_per_hotkey=None, miner_distribution=None):
+    def get_reward(self, response: DiscoveryOutput, ip_per_hotkey=None, run_id_per_hotkey=None, miner_distribution=None):
         if response.output.version < VERSION and self.validator_config.grace_period:
             score = 0.15
             bt.logging.info(f"Miner is running an old version. Grace period is enabled. Score set to {score}.")
@@ -135,7 +135,7 @@ class Validator(BaseValidatorNeuron):
             bt.logging.info(f"Miner is running an old version. Grace period is disabled. Score set to {score}")
             return score
 
-        output: MinerDiscoveryOutput = response.output
+        output: DiscoveryOutput = response.output
         network = output.metadata.network
         start_block_height = output.start_block_height
         last_block_height = output.block_height
@@ -230,6 +230,7 @@ class Validator(BaseValidatorNeuron):
 if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
+    
     with Validator() as validator:
         while True:
             bt.logging.info("Validator running...", time.time())
