@@ -15,9 +15,9 @@ class MinerMetadata(Metadata):
     b: int
     v: int
     di: str
-    n: int
-    mt: int
-    ri: str
+    n: Optional[int]
+    mt: Optional[int]
+    ri: Optional[str]
 
     @staticmethod
     def from_compact(compact_str):
@@ -73,7 +73,7 @@ def store_miner_metadata(config, graph_search, wallet):
     except bt.errors.MetadataError as e:
         bt.logging.warning(f"Skipping storing miner metadata")
 
-def store_validator_metadata(config, wallet):
+def store_validator_metadata(config, wallet, uid):
 
     subtensor = bt.subtensor(config=config)
 
@@ -84,10 +84,30 @@ def store_validator_metadata(config, wallet):
             v=VERSION,
             di=docker_image,
         )
+
+        hotkey= wallet.hotkey.ss58_address
+
+        def get_commitment(netuid: int, uid: int, block: Optional[int] = None) -> str:
+            metadata = serving.get_metadata(subtensor, netuid, hotkey, block)
+            if metadata is None:
+                return None
+            commitment = metadata["info"]["fields"][0]
+            hex_data = commitment[list(commitment.keys())[0]][2:]
+            return bytes.fromhex(hex_data).decode()
+
+        subtensor.get_commitment = get_commitment
+
+        existing_commitment = subtensor.get_commitment(config.netuid, uid)
+        if existing_commitment is not None:
+            dual_miner = MinerMetadata.from_compact(existing_commitment)
+            if dual_miner.ri is not None:
+                bt.logging.info(f"Skipping storing validator metadata, as this is a dual hotkey for miner and validator: {metadata}")
+                return
+
         subtensor.commit(wallet, config.netuid, metadata.to_compact())
         bt.logging.info(f"Stored validator metadata: {metadata}")
     except bt.errors.MetadataError as e:
-        bt.logging.warning(f"Skipping storing validator metadata")
+        bt.logging.warning(f"Skipping storing validator metadata, error: {e}")
 
 def get_miners_metadata(config, metagraph):
     miners_metadata = {}
@@ -118,13 +138,13 @@ def get_miners_metadata(config, metagraph):
 
     return miners_metadata
 
-def get_validator_metadata(config, metagraph):
-    validator_metadata = {}
 
+def get_validator_metadata(config, metagraph, miner_config):
+    validator_metadata = {}
     subtensor = bt.subtensor(config=config)
 
     for neuron in metagraph.neurons:
-        if neuron.axon_info.ip == '0.0.0.0':
+        if float(neuron.stake) > miner_config.stake_threshold:
             hotkey = neuron.hotkey
             uid = neuron.uid
 
@@ -146,7 +166,7 @@ def get_validator_metadata(config, metagraph):
                     continue
                 metadata = ValidatorMetadata.from_compact(metadata_str)
                 validator_metadata[hotkey] = metadata
-            except:
+            except Exception as e:
                 bt.logging.warning(f"Error while getting validator metadata for {hotkey}, Skipping...")
                 continue
 

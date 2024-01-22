@@ -42,7 +42,9 @@ def index_blocks(_ethereum_node, _graph_creator, _graph_indexer, start_height):
             num_transactions = len(block["transactions"])
             start_time = time.time()
             in_memory_graph = _graph_creator.create_in_memory_graph_from_block(block)
+            print(f"start_time: {start_time} - {time.time()}")
             success = _graph_indexer.create_graph_focused_on_funds_flow(in_memory_graph)
+            print(f"- {time.time()}\n\n")
             end_time = time.time()
             time_taken = end_time - start_time
             node_block_height = ethereum_node.get_current_block_height()

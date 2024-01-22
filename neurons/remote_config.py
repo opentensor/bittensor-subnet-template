@@ -33,6 +33,7 @@ class RemoteConfig:
         return attributes
 
     def _update_config_periodically(self):
+        time.sleep(UPDATE_INTERVAL)
         while not self.stop_event.is_set():
             self.load_remote_config()
             time.sleep(UPDATE_INTERVAL)
@@ -99,7 +100,7 @@ class MinerConfig(RemoteConfig):
         self.load_remote_config()
 
         # Retrieve specific configuration values
-        self.stake_threshold = self.get_config_value('stake_threshold', 20000)
+        self.stake_threshold = self.get_config_value('stake_threshold', 5000)
         self.min_request_period = self.get_config_value('min_request_period', 60)
         self.max_requests = self.get_config_value('max_requests', 128)
         self.blacklisted_hotkeys = self.get_config_value('blacklisted_hotkeys', ["5GcBK8PDrVifV1xAf4Qkkk6KsbsmhDdX9atvk8vyKU8xdU63", "5CsvRJXuR955WojnGMdok1hbhffZyB4N5ocrv82f3p5A2zVp", "5Fq5v71D4LX8Db1xsmRSy6udQThcZ8sFDqxQFwnUZ1BuqY5A", "5CVS9d1NcQyWKUyadLevwGxg6LgBcF9Lik6NSnbe5q59jwhE", "5HeKSHGdsRCwVgyrHchijnZJnq4wiv6GqoDLNah8R5WMfnLB", "5FFM6Nvvm78GqyMratgXXvjbqZPi7SHgSQ81nyS96jBuUWgt", "5ED6jwDECEmNvSp98R2qyEUPHDv9pi14E6n3TS8CicD6YfhL"])

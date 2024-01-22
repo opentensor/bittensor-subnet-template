@@ -17,7 +17,6 @@ from template.base.miner import BaseMinerNeuron
 from neurons.miners import blacklist
 from insights.protocol import MODEL_TYPE_FUNDS_FLOW, NETWORK_BITCOIN
 from neurons import VERSION
-
 from neurons.storage import store_miner_metadata
 from neurons.remote_config import MinerConfig
 from neurons.miners.bitcoin.funds_flow.graph_indexer import GraphIndexer
