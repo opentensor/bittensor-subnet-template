@@ -9,10 +9,7 @@ import bittensor as bt
 
 from insights import protocol
 
-from neurons.miners.query import (
-    execute_query_proxy,
-    get_graph_search,
-)
+from neurons.miners.query import get_graph_search
 
 # import base miner class which takes care of most of the boilerplate
 from template.base.miner import BaseMinerNeuron
@@ -51,6 +48,7 @@ class Miner(BaseMinerNeuron):
         )
 
         parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
+        parser.add_argument("--mode", type=str, default="prod", help="(staging|testnet|prod)")
 
         
         bt.subtensor.add_args(parser)
@@ -61,42 +59,31 @@ class Miner(BaseMinerNeuron):
         config = bt.config(parser)
 
         bt.logging.info(f"running in {config.mode} mode")
-        common_settings = {
-                'wallet.hotkey': 'default',
-                'wallet.name': 'miner',
-                'logging.debug': True,
-                'logging.trace': True,
-                'miner_set_weights': True,
-                'WAIT_FOR_SYNC': 'False',
-                'GRAPH_DB_URL': 'bolt://localhost:7687',
-                'GRAPH_DB_USER': 'user',
-                'GRAPH_DB_PASSWORD': 'pwd',
-                'BT_AXON_PORT': '8191'
-            }
-
+        if config.mode != 'prod':
+            config.logging.debug = True
+            config.logging.trace = True
+            config.miner_set_weights = True
+            config.wallet.hotkey = 'default'
+            config.wallet.name = 'miner'
+            config.wait_for_sync = bool(os.environ.get('WAIT_FOR_SYNC', 'False'))
         if config.mode == 'staging':
-            staging_settings = {
-                'subtensor.chain_endpoint': 'ws://163.172.164.213:9944',
-                'netuid': 1
-            }
-            config.update(common_settings)
-            config.update(staging_settings)
-
+            config.subtensor.chain_endpoint = "ws://163.172.164.213:9944"
+            config.netuid = 1
         elif config.mode == 'testnet':
-            testnet_settings = {
-                'subtensor.network': 'test',
-                'subtensor.chain_endpoint': None,
-                'netuid': 59
-            }
-            config.update(common_settings)
-            config.update(testnet_settings)
+            config.subtensor.network = 'test'
+            config.netuid = 59
+
+        config.wait_for_sync = bool(os.environ.get('WAIT_FOR_SYNC', 'False'))
+        config.graph_db_url = os.environ.get('GRAPH_DB_URL', 'bolt://localhost:7687')
+        config.graph_db_user = os.environ.get('GRAPH_DB_USER', 'user')
+        config.graph_db_password = os.environ.get('GRAPH_DB_PASSWORD', 'pwd')
         return config
     
     def __init__(self, config=None):
         config = Miner.get_config()
-        self.wait_for_blocks_sync()
         
         super(Miner, self).__init__(config=config)
+        
 
         self.request_timestamps: dict = {}
         
@@ -105,46 +92,21 @@ class Miner(BaseMinerNeuron):
         bt.logging.info(f"Attaching forwards functions to miner axon.")
         self.axon.attach(
             forward_fn=self.block_check,
-            blacklist_fn=self.base_blacklist,
-            priority_fn=self.base_priority,
+            blacklist_fn=self.block_check_blacklist,
+            priority_fn=self.block_check_priority,
         ).attach(
             forward_fn=self.discovery,
             blacklist_fn=self.discovery_blacklist,
-            priority_fn=self.base_priority,
+            priority_fn=self.discovery_priority,
         ).attach(
             forward_fn=self.query,
             blacklist_fn=self.query_blacklist,
-            priority_fn=self.base_priority,
+            priority_fn=self.query_priority,
         )
         bt.logging.info(f"Axon created: {self.axon}")
 
-        self.graph_search = get_graph_search(config.network, config.model_type)
+        self.graph_search = get_graph_search(config)
 
-    def wait_for_blocks_sync(self):
-        bt.logging.info(f"Waiting for graph model to sync with blockchain.")
-        is_synced=False
-        while not is_synced:
-            wait_for_sync = os.getenv('WAIT_FOR_SYNC', 'True')
-            if wait_for_sync == 'False':
-                bt.logging.info(f"Skipping graph sync.")
-                break
-
-            try:
-                graph_indexer = GraphIndexer(self.config.graph_db_url)
-                node = NodeFactory.create_node(self.config.network)
-                latest_block_height =  node.get_current_block_height()
-                current_block_height = graph_indexer.get_latest_block_number()
-                if latest_block_height - current_block_height < 100:
-                    is_synced = True
-                    bt.logging.info(f"Graph model is synced with blockchain.")
-                else:
-                    bt.logging.info(f"Graph Sync: {current_block_height}/{latest_block_height}")
-                    time.sleep(bt.__blocktime__ * 12)
-            except Exception as e:
-                bt.logging.error(traceback.format_exc())
-                time.sleep(bt.__blocktime__ * 12)
-                bt.logging.info(f"Failed to connect with graph database. Retrying...")
-                continue
     
     async def block_check(self, synapse: protocol.BlockCheck) -> protocol.BlockCheck:
         try:
@@ -195,7 +157,7 @@ class Miner(BaseMinerNeuron):
             synapse.output = None
         return synapse
 
-    async def base_blacklist(self, synapse: bt.Synapse) -> typing.Tuple[bool, str]:
+    async def block_check_blacklist(self, synapse: protocol.BlockCheck) -> typing.Tuple[bool, str]:
         return blacklist.base_blacklist(self, synapse=synapse)
 
     async def discovery_blacklist(self, synapse: protocol.Discovery) -> typing.Tuple[bool, str]:
@@ -217,6 +179,15 @@ class Miner(BaseMinerNeuron):
         )
         return prirority
     
+    async def block_check_priority(self, synapse: protocol.BlockCheck) -> float:
+        return self.base_priority(self, synapse=synapse)
+
+    async def discovery_priority(self, synapse: protocol.Discovery) -> float:
+        return self.base_priority(self, synapse=synapse)
+
+    async def query_priority(self, synapse: protocol.Query) -> float:
+        return self.base_priority(self, synapse=synapse)
+
     def resync_metagraph(self):
         super(Miner, self).resync_metagraph()
 
@@ -225,8 +196,38 @@ class Miner(BaseMinerNeuron):
         store_miner_metadata(self.config, self.graph_search, self.wallet)
 
 
+def wait_for_blocks_sync():
+        config = Miner.get_config()
+        bt.logging.info(f"Waiting for graph model to sync with blockchain.")
+        is_synced=False
+        while not is_synced:
+            
+            if config.wait_for_sync:
+                bt.logging.info(f"Skipping graph sync.")
+                break
+
+            try:
+                graph_indexer = GraphIndexer(config.graph_db_url,config.graph_db_user, config.graph_db_password)
+                node = NodeFactory.create_node(config.network)
+                latest_block_height =  node.get_current_block_height()
+                current_block_height = graph_indexer.get_latest_block_number()
+                if latest_block_height - current_block_height < 100:
+                    is_synced = True
+                    bt.logging.info(f"Graph model is synced with blockchain.")
+                else:
+                    bt.logging.info(f"Graph Sync: {current_block_height}/{latest_block_height}")
+                    time.sleep(bt.__blocktime__ * 12)
+            except Exception as e:
+                bt.logging.error(traceback.format_exc())
+                time.sleep(bt.__blocktime__ * 12)
+                bt.logging.info(f"Failed to connect with graph database. Retrying...")
+                continue
+
 # This is the main function, which runs the miner.
 if __name__ == "__main__":
+
+
+    wait_for_blocks_sync()
     with Miner() as miner:
         while True:
             bt.logging.info("Miner running...", time.time())

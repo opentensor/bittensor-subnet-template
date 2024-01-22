@@ -9,30 +9,13 @@ logger = setup_logger("GraphIndexer")
 class GraphIndexer:
     def __init__(
         self,
-        graph_db_url: str = None,
-        graph_db_user: str = None,
-        graph_db_password: str = None,
+        url: str = None,
+        user: str = None,
+        password: str = None,
     ):
-        if graph_db_url is None:
-            self.graph_db_url = (
-                os.environ.get("GRAPH_DB_URL") or "bolt://localhost:7687"
-            )
-        else:
-            self.graph_db_url = graph_db_url
-
-        if graph_db_user is None:
-            self.graph_db_user = os.environ.get("GRAPH_DB_USER") or ""
-        else:
-            self.graph_db_user = graph_db_user
-
-        if graph_db_password is None:
-            self.graph_db_password = os.environ.get("GRAPH_DB_PASSWORD") or ""
-        else:
-            self.graph_db_password = graph_db_password
-
         self.driver = GraphDatabase.driver(
-            self.graph_db_url,
-            auth=(self.graph_db_user, self.graph_db_password),
+            url,
+            auth=(user, password),
         )
 
     def close(self):

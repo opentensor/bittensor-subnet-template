@@ -201,3 +201,6 @@ class BaseMinerNeuron(BaseNeuron):
 
         # Sync the metagraph.
         self.metagraph.sync(subtensor=self.subtensor)
+
+    async def forward(self, synapse: bt.Synapse) -> bt.Synapse:
+        raise NotImplementedError()
