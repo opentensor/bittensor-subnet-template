@@ -16,6 +16,7 @@ def check_uid_availability(
         bool: True if uid is available, False otherwise
     """
     # Filter non serving axons.
+
     if not metagraph.axons[uid].is_serving:
         return False
     if metagraph.validator_permit[uid]:
@@ -55,6 +56,6 @@ def get_random_uids(
             if uid_is_not_excluded:
                 candidate_uids.append(uid)
 
-    k = min(len(candidate_uids), k)
+    k = max(1, min(len(candidate_uids), k))
     uids = torch.tensor(random.sample(candidate_uids, k))
     return uids

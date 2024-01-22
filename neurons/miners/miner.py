@@ -190,12 +190,13 @@ class Miner(BaseMinerNeuron):
 
     def resync_metagraph(self):
         super(Miner, self).resync_metagraph()
-
-        #reload our config
         self.miner_config = MinerConfig().load_and_get_config_values()
+
+    def save_state(self):
+        bt.logging.info("save_state(): Storing miner metadata")
         store_miner_metadata(self.config, self.graph_search, self.wallet)
 
-
+    
 def wait_for_blocks_sync():
         config = Miner.get_config()
         bt.logging.info(f"Waiting for graph model to sync with blockchain.")
@@ -231,4 +232,4 @@ if __name__ == "__main__":
     with Miner() as miner:
         while True:
             bt.logging.info("Miner running...", time.time())
-            time.sleep(5)
+            time.sleep(bt.__blocktime__*10)
