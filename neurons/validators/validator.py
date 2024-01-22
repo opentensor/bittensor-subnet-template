@@ -89,7 +89,7 @@ class Validator(BaseValidatorNeuron):
         
         self.validator_uid = self.metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
         bt.logging.info(f"Running validator on uid: {self.validator_uid}")
-        store_validator_metadata(self.config, self.wallet)
+        store_validator_metadata(self.config, self.wallet, self.validator_uid)
 
     def should_set_weights(self) -> bool:
         if self.step == 0:
@@ -237,4 +237,4 @@ if __name__ == "__main__":
     with Validator() as validator:
         while True:
             bt.logging.info("Validator running...", time.time())
-            time.sleep(bt.__blocktime__ * 10)
+            time.sleep(10)
