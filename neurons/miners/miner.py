@@ -22,18 +22,11 @@ import time
 import argparse
 import traceback
 import typing
-import socket
-
-import docker
 import torch
 import bittensor as bt
 from random import sample
-
-from bittensor.extrinsics.serving import get_metadata
-
 from insights import protocol
 from neurons import VERSION
-from neurons.docker_utils import get_docker_image_version
 from neurons.miners import blacklists
 from neurons.nodes.factory import NodeFactory
 from neurons.miners.bitcoin.funds_flow.graph_indexer import GraphIndexer
@@ -44,7 +37,7 @@ from neurons.miners.query import (
 from insights.protocol import (
     MODEL_TYPE_FUNDS_FLOW,
     NETWORK_BITCOIN,
-    MinerDiscoveryMetadata, get_network_id, get_model_id,
+    MinerDiscoveryMetadata
 )
 from neurons.remote_config import MinerConfig
 from neurons.storage import store_miner_metadata
@@ -62,6 +55,11 @@ def get_config():
         type=str,
         default=MODEL_TYPE_FUNDS_FLOW,
         help="Set miner's supported model type.",
+    )
+    parser.add_argument(
+        "--miner_set_weights",
+        default=True,
+        type=bool,
     )
 
     parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
@@ -275,14 +273,13 @@ def main(config):
     step = 0
     while True:
         try:
-            if subtensor.block - last_updated_block >= 100:
+            if subtensor.block - last_updated_block > 100:
                 if step % 60 != 0:
                     try:
                         graph_search = get_graph_search(config.network, config.model_type)
                         store_miner_metadata(config, graph_search, wallet)
                     except Exception as e:
                         bt.logging.error(f"Could not store miner metadata: {e} {traceback.format_exc()}")
-                        pass
 
             if subtensor.block - last_updated_block >= 100:
                 uid = None
@@ -298,9 +295,7 @@ def main(config):
                             (uids, processed_weights) = bt.utils.weight_utils.process_weights_for_netuid( uids = metagraph.uids, weights = weights, netuid=config.netuid, subtensor = subtensor)
                             subtensor.set_weights(wallet = wallet, netuid = config.netuid, weights = processed_weights, uids = uids)
                             bt.logging.trace("🔄 Miner weight set!")
-
                         last_updated_block = subtensor.block
-
                     else:
                         bt.logging.warning(f"The miner hotkey {config.wallet.hotkey} has been deregistered from the network.")
                 except Exception as e:

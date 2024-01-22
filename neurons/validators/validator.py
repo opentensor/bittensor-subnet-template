@@ -108,7 +108,7 @@ def main(config):
     bt.logging.info("Starting validator loop.")
     step = 0
 
-    store_validator_metadata(config, wallet)
+    store_validator_metadata(config, wallet, my_subnet_uid)
     miners_metadata = get_miners_metadata(config, metagraph)
 
     # Main loop
@@ -154,6 +154,8 @@ def main(config):
 
         try:
             filtered_axons = [metagraph.axons[i] for i in dendrites_to_query]
+            filtered_axons = list(filter(lambda x: x.hotkey != wallet.hotkey.ss58_address, filtered_axons))
+
             ip_per_hotkey = count_hotkeys_per_ip(filtered_axons)
             run_id_per_hotkey = count_run_id_per_hotkey(miners_metadata)
             miner_distribution = get_miner_distributions(miners_metadata, validator_config.get_network_importance_keys())
@@ -261,8 +263,8 @@ def main(config):
 
             current_block = subtensor.block
 
-            if current_block - last_updated_block >= 100:
-                store_validator_metadata(config, wallet)
+            if current_block - last_updated_block > 100:
+                store_validator_metadata(config, wallet, my_subnet_uid)
 
                 weights = torch.nn.functional.normalize(scores / torch.sum(scores), p=1, dim=0)
                 weights = torch.where(torch.isnan(weights), torch.zeros_like(weights), weights)
@@ -293,7 +295,6 @@ def main(config):
             # Resync our local state with the latest state from the blockchain.
             metagraph = subtensor.metagraph(config.netuid)
             miners_metadata = get_miners_metadata(config, metagraph)
-            validator_config.load_and_get_config_values()
             bt.logging.info(f"Scoring response: {scores}")
             bt.logging.info(f"Miners metadata items: {len(miners_metadata)}")
             time.sleep(bt.__blocktime__ * 10)
@@ -351,7 +352,7 @@ if __name__ == "__main__":
 
     config = get_config()
 
-    # Check for an environment variable to enable local development
+    ## Check for an environment variable to enable local development
     if os.getenv("VALIDATOR_TEST_MODE") == "True":
         # Local development settings
         config.subtensor.chain_endpoint = "ws://163.172.164.213:9944"

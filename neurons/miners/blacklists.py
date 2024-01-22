@@ -22,7 +22,7 @@ class BlacklistDiscovery:
         self.validator_metadata = {}
 
     def set_validator_metadata(self):
-        self.validator_metadata = get_validator_metadata(self.config, self.metagraph)
+        self.validator_metadata = get_validator_metadata(self.config, self.metagraph, self.miner_config)
 
     def run_validator_metadata_updater(self):
         def updater():
@@ -30,7 +30,7 @@ class BlacklistDiscovery:
             while True:
                 try:
                     bt.logging.info(f"Getting validator metadata at {self.metagraph.block.item()} block")
-                    validator_metadata = get_validator_metadata(self.config, self.metagraph)
+                    validator_metadata = get_validator_metadata(self.config, self.metagraph, self.miner_config)
                     if len(validator_metadata) > 0:
                         self.validator_metadata = validator_metadata
                 except Exception as e:
