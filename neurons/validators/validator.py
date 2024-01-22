@@ -66,6 +66,7 @@ class Validator(BaseValidatorNeuron):
             config.logging.debug = True
             config.logging.trace = True
             config.miner_set_weights = True
+            config.neuron={'vpermit_tao_limit' : 0}
         elif config.mode == 'testnet':
             config.subtensor.network = 'test'
             config.subtensor.chain_endpoint = None
@@ -75,6 +76,8 @@ class Validator(BaseValidatorNeuron):
             config.logging.debug = True
             config.logging.trace = True
             config.miner_set_weights = True
+            config.neuron={'vpermit_tao_limit' : 0}
+
         return config
 
     def __init__(self, config=None):
@@ -173,7 +176,7 @@ class Validator(BaseValidatorNeuron):
         return score
 
     async def forward(self):
-        available_uids = get_random_uids(self, 1)#k=self.config.neuron.sample_size)
+        available_uids = get_random_uids(self, self.config.neuron.sample_size)
 
         filtered_axons = [self.metagraph.axons[uid] for uid in available_uids]
         

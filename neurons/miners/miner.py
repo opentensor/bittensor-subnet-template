@@ -107,6 +107,7 @@ class Miner(BaseMinerNeuron):
 
         self.graph_search = get_graph_search(config)
 
+
     
     async def block_check(self, synapse: protocol.BlockCheck) -> protocol.BlockCheck:
         try:
@@ -167,7 +168,7 @@ class Miner(BaseMinerNeuron):
         return blacklist.query_blacklist(self, synapse=synapse)
 
 
-    async def base_priority(self, synapse: bt.Synapse) -> float:
+    def base_priority(self, synapse: bt.Synapse) -> float:
         caller_uid = self.metagraph.hotkeys.index(
             synapse.dendrite.hotkey
         ) 
