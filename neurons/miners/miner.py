@@ -56,11 +56,6 @@ def get_config():
         default=MODEL_TYPE_FUNDS_FLOW,
         help="Set miner's supported model type.",
     )
-    parser.add_argument(
-        "--miner_set_weights",
-        default=True,
-        type=bool,
-    )
 
     parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
 
@@ -266,7 +261,7 @@ def main(config):
 
     axon.serve(netuid=config.netuid, subtensor=subtensor)
     bt.logging.info(f"Starting axon server on port: {config.axon.port}")
-
+    metagraph.sync(subtensor=subtensor)
     axon.start()
     bt.logging.info(f"Starting main loop")
 
@@ -289,7 +284,8 @@ def main(config):
                             uid = _uid
                             break
                     if uid is not None:
-                        if config.miner_set_weights:
+                        miner_set_weights = os.getenv('MINER_SET_WEIGHTS', 'True')
+                        if miner_set_weights == 'True':
                             weights = torch.Tensor([0.0] * len(metagraph.uids))
                             weights[uid] = 1.0
                             (uids, processed_weights) = bt.utils.weight_utils.process_weights_for_netuid( uids = metagraph.uids, weights = weights, netuid=config.netuid, subtensor = subtensor)
@@ -342,7 +338,6 @@ if __name__ == "__main__":
         config.netuid = 1
         config.logging.debug = True
         config.logging.trace = True
-        config.miner_set_weights = True
 
         # set environment variables
         os.environ['WAIT_FOR_SYNC'] = 'False'
