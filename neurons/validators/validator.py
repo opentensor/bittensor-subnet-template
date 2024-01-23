@@ -129,7 +129,9 @@ def main(config):
             del new_scores
 
         # If there are less uids than scores, remove some weights.
-        queryable_uids = (metagraph.total_stake < 1.024e3)
+        queryable_uids = (metagraph.total_stake >= 0)
+        bt.logging.debug(f"queryable_uids:{queryable_uids}")
+
         # Remove the weights of miners that are not queryable.
         queryable_uids = queryable_uids * torch.Tensor([metagraph.neurons[uid].axon_info.ip != '0.0.0.0' for uid in uids])
         active_miners = torch.sum(queryable_uids)
@@ -154,8 +156,6 @@ def main(config):
 
         try:
             filtered_axons = [metagraph.axons[i] for i in dendrites_to_query]
-            filtered_axons = list(filter(lambda x: x.hotkey != wallet.hotkey.ss58_address, filtered_axons))
-
             ip_per_hotkey = count_hotkeys_per_ip(filtered_axons)
             run_id_per_hotkey = count_run_id_per_hotkey(miners_metadata)
             miner_distribution = get_miner_distributions(miners_metadata, validator_config.get_network_importance_keys())
