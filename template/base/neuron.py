@@ -99,6 +99,8 @@ class BaseNeuron(ABC):
         )
         self.step = 0
 
+        self.load_state()
+
     @abstractmethod
     async def forward(self, synapse: bt.Synapse) -> bt.Synapse:
         ...

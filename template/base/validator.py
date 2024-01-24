@@ -19,6 +19,7 @@
 
 
 import copy
+import os
 import torch
 import asyncio
 import threading
@@ -338,6 +339,10 @@ class BaseValidatorNeuron(BaseNeuron):
     def load_state(self):
         """Loads the state of the validator from a file."""
         bt.logging.info("Loading validator state.")
+
+        if not os.path.exists(self.config.neuron.full_path + "/state.pt"):
+            bt.logging.warning("No saved state found")
+            return
 
         # Load the state of the validator from file.
         state = torch.load(self.config.neuron.full_path + "/state.pt")
