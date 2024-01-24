@@ -106,6 +106,10 @@ class Miner(BaseMinerNeuron):
 
         self.graph_search = get_graph_search(config)
 
+        bt.logging.info("Storing miner metadata")
+        store_miner_metadata(self.config, self.graph_search, self.wallet)
+        self.miner_config = MinerConfig().load_and_get_config_values()        
+
 
     
     async def block_check(self, synapse: protocol.BlockCheck) -> protocol.BlockCheck:
@@ -134,7 +138,7 @@ class Miner(BaseMinerNeuron):
             synapse.output = protocol.DiscoveryOutput(
                 metadata=protocol.DiscoveryMetadata(
                     network=self.config.network,
-                    model_type=self.model_type,
+                    model_type=self.config.model_type,
                 ),
                 start_block_height=start_block,
                 block_height=last_block,
@@ -180,39 +184,37 @@ class Miner(BaseMinerNeuron):
         return prirority
     
     async def block_check_priority(self, synapse: protocol.BlockCheck) -> float:
-        return self.base_priority(self, synapse=synapse)
+        return self.base_priority(synapse=synapse)
 
     async def discovery_priority(self, synapse: protocol.Discovery) -> float:
-        return self.base_priority(self, synapse=synapse)
+        return self.base_priority(synapse=synapse)
 
     async def query_priority(self, synapse: protocol.Query) -> float:
-        return self.base_priority(self, synapse=synapse)
+        return self.base_priority(synapse=synapse)
 
     def resync_metagraph(self):
         super(Miner, self).resync_metagraph()
-        self.miner_config = MinerConfig().load_and_get_config_values()
-
-    def save_state(self):
-        bt.logging.info("save_state(): Storing miner metadata")
-        store_miner_metadata(self.config, self.graph_search, self.wallet)
+        self.miner_config = MinerConfig().load_and_get_config_values()        
 
     
 def wait_for_blocks_sync():
-        config = Miner.get_config()
-        bt.logging.info(f"Waiting for graph model to sync with blockchain.")
         is_synced=False
-        while not is_synced:
-            
-            if config.wait_for_sync:
-                bt.logging.info(f"Skipping graph sync.")
-                break
 
+        config = Miner.get_config()
+        if not config.wait_for_sync:
+            bt.logging.info(f"Skipping graph sync.")
+            return is_synced
+        
+        bt.logging.info(f"Waiting for graph model to sync with blockchain.")
+        while not is_synced:
             try:
                 graph_indexer = GraphIndexer(config.graph_db_url,config.graph_db_user, config.graph_db_password)
                 node = NodeFactory.create_node(config.network)
-                latest_block_height =  node.get_current_block_height()
+
+                latest_block_height = node.get_current_block_height()
                 current_block_height = graph_indexer.get_latest_block_number()
-                if latest_block_height - current_block_height < 100:
+                delta = latest_block_height - current_block_height
+                if delta < 100:
                     is_synced = True
                     bt.logging.info(f"Graph model is synced with blockchain.")
                 else:
@@ -223,6 +225,7 @@ def wait_for_blocks_sync():
                 time.sleep(bt.__blocktime__ * 12)
                 bt.logging.info(f"Failed to connect with graph database. Retrying...")
                 continue
+        return is_synced
 
 # This is the main function, which runs the miner.
 if __name__ == "__main__":

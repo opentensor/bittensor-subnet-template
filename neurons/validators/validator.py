@@ -66,7 +66,6 @@ class Validator(BaseValidatorNeuron):
             config.logging.debug = True
             config.logging.trace = True
             config.miner_set_weights = True
-            config.neuron={'vpermit_tao_limit' : 0}
         elif config.mode == 'testnet':
             config.subtensor.network = 'test'
             config.subtensor.chain_endpoint = None
@@ -76,7 +75,6 @@ class Validator(BaseValidatorNeuron):
             config.logging.debug = True
             config.logging.trace = True
             config.miner_set_weights = True
-            config.neuron={'vpermit_tao_limit' : 0}
 
         return config
 
@@ -86,6 +84,8 @@ class Validator(BaseValidatorNeuron):
         
         bt.logging.info("load_state()")
         self.load_state()
+        self.validator_config = ValidatorConfig().load_and_get_config_values()
+
 
     def should_set_weights(self) -> bool:
         if self.step == 0:
@@ -108,20 +108,17 @@ class Validator(BaseValidatorNeuron):
 
     def cross_validate(self, axon, node, start_block_height, last_block_height, k=10):
         blocks_to_check = random.sample(range(start_block_height, last_block_height + 1), k=k)
-        random_block_response = self.dendrite.query(
-            [axon],
+        response = self.dendrite.query(
+            axon,
             protocol.BlockCheck(blocks_to_check=blocks_to_check),
             deserialize=True,
             timeout = self.validator_config.discovery_timeout,
         )
-
-        random_block_response = random_block_response[0]
-        if random_block_response.output is None or random_block_response.output:
-            bt.logging.debug(f"Skipping response {random_block_response}")
+        if response.output is None or len(response.output.data_samples)==0 or response.output.data_samples[0] is None:
+            bt.logging.debug(f"Skipping response {response}")
             return None
         
-        blocks_to_check_output: BlockCheckOutput = random_block_response.output
-        return node.validate_all_data_samples(blocks_to_check_output.data_samples)
+        return node.validate_all_data_samples(response.output.data_samples)
 
 
     def get_reward(self, response: DiscoveryOutput, ip_per_hotkey=None, run_id_per_hotkey=None, miner_distribution=None):
@@ -180,7 +177,6 @@ class Validator(BaseValidatorNeuron):
         run_id_per_hotkey = count_run_id_per_hotkey(self.miners_metadata)
         miner_distribution = get_miner_distributions(self.miners_metadata, self.validator_config.get_networks())
         
-        bt.logging.info(f"filtered axons: {filtered_axons}")
         responses = self.dendrite.query(
             filtered_axons,
             protocol.Discovery(),
@@ -204,7 +200,8 @@ class Validator(BaseValidatorNeuron):
                                 run_id_per_hotkey=run_id_per_hotkey,
                                 miner_distribution=miner_distribution) for response in valid_responses
             ]
-            
+            bt.logging.info(f'rewards {rewards}, {valid_uids}')
+
             # Remove None reward as they represent timeout cross validation
             filtered_data = [(reward, uid) for reward, uid in zip(rewards, valid_uids) if reward is not None]
             rewards, valid_uids = zip(*filtered_data)
@@ -239,3 +236,8 @@ if __name__ == "__main__":
         while True:
             bt.logging.info("Validator running...", time.time())
             time.sleep(10)
+
+
+# validator should restore weight, but remove non existing miners
+# cf. subnet 3
+

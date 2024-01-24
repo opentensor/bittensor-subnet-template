@@ -82,8 +82,8 @@ def discovery_blacklist(self, synapse: protocol.Discovery) -> typing.Tuple[bool,
     stake = self.metagraph.neurons[uid].stake.tao
     bt.logging.debug(f"Stake of {hotkey}: {stake}")
 
-    if stake < self.miner_config.stake_threshold:
-        return True, f"Denied due to low stake: {stake}"
+    if stake < self.miner_config.stake_threshold and self.config.mode == 'prod':
+        return True, f"Denied due to low stake: {stake}<{self.miner_config.stake_threshold}"
 
     # Rate Limiting Check
     time_window = self.miner_config.min_request_period
@@ -131,6 +131,6 @@ def base_blacklist(self, synapse: bt.Synapse) -> typing.Tuple[bool, str]:
     
     if hotkey in self.miner_config.blacklisted_hotkeys:
         return True, f"Blacklisted hotkey: {hotkey}"
-    if hotkey not in self.miner_config.whitelisted_hotkeys:
+    if hotkey not in self.miner_config.whitelisted_hotkeys and self.config.mode == 'prod':
         return True, f"Not Whitelisted hotkey: {hotkey}"
     return False, "Hotkey recognized!"

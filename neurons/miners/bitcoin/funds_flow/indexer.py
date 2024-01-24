@@ -104,11 +104,12 @@ signal.signal(signal.SIGTERM, shutdown_handler)
 if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
-
+    url: str = os.environ['GRAPH_DB_URL']
+    user: str = os.environ['GRAPH_DB_USER']
+    password: str = os.environ['GRAPH_DB_PASSWORD']
     bitcoin_node = NodeFactory.create_node(NETWORK_BITCOIN)
     graph_creator = GraphCreator()
-    graph_indexer = GraphIndexer()
-
+    graph_indexer = GraphIndexer(url, user, password)
     start_height_str = os.getenv('BITCOIN_START_BLOCK_HEIGHT', None)
 
     retry_delay = 60
