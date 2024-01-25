@@ -27,7 +27,6 @@ from insights import protocol
 from insights.protocol import DiscoveryOutput, BlockCheckOutput, MAX_MULTIPLE_IPS, \
     MAX_MULTIPLE_RUN_ID
 
-from neurons import VERSION
 from neurons.remote_config import ValidatorConfig
 from neurons.nodes.factory import NodeFactory
 from neurons.storage import store_validator_metadata, get_miners_metadata
@@ -86,26 +85,6 @@ class Validator(BaseValidatorNeuron):
         self.load_state()
         self.validator_config = ValidatorConfig().load_and_get_config_values()
 
-
-    def should_set_weights(self) -> bool:
-        if self.step == 0:
-            return False
-
-        if self.config.neuron.disable_set_weights:
-            return False
-
-        return (
-            self.block - self.metagraph.last_update[self.uid]
-        ) > 100
-
-    def should_sync_metagraph(self):
-        """
-        Check if enough epoch blocks have elapsed since the last checkpoint to sync.
-        """
-        return (
-            self.block - self.metagraph.last_update[self.uid]
-        ) > 5
-
     def cross_validate(self, axon, node, start_block_height, last_block_height, k=10):
         blocks_to_check = random.sample(range(start_block_height, last_block_height + 1), k=k)
         response = self.dendrite.query(
@@ -122,11 +101,11 @@ class Validator(BaseValidatorNeuron):
 
 
     def get_reward(self, response: DiscoveryOutput, ip_per_hotkey=None, run_id_per_hotkey=None, miner_distribution=None):
-        if response.output.version < VERSION and self.validator_config.grace_period:
+        if response.output.version < protocol.VERSION and self.validator_config.grace_period:
             score = 0.15
             bt.logging.info(f"Miner is running an old version. Grace period is enabled. Score set to {score}.")
             return score
-        if response.output.version != VERSION and not self.validator_config.grace_period:            
+        if response.output.version != protocol.VERSION and not self.validator_config.grace_period:            
             score = 0
             bt.logging.info(f"Miner is running an old version. Grace period is disabled. Score set to {score}")
             return score
@@ -234,8 +213,8 @@ if __name__ == "__main__":
     
     with Validator() as validator:
         while True:
-            bt.logging.info("Validator running...", time.time())
-            time.sleep(10)
+            bt.logging.info("Validator running")
+            time.sleep(bt.__blocktime__*10)
 
 
 # validator should restore weight, but remove non existing miners

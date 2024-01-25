@@ -2,6 +2,10 @@ from typing import Optional, List, Dict
 import bittensor as bt
 from pydantic import BaseModel
 
+# protocol version
+VERSION = 4
+
+
 # Model types
 MODEL_TYPE_FUNDS_FLOW = "funds_flow"
 MODEL_TYPE_FUNDS_FLOW_ID = 1
@@ -54,20 +58,23 @@ class DiscoveryOutput(BaseModel):
     run_id: str = None
     version: Optional[int] = None
 
-class Discovery(bt.Synapse):
+class BlockCheckOutput(BaseModel):
+    data_samples: List[Dict] = None
+
+class BaseSynapse(bt.Synapse):
+    version: int = VERSION
+
+class Discovery(BaseSynapse):
     output: DiscoveryOutput = None
 
     def deserialize(self):
         return self
 
-class BlockCheckOutput(BaseModel):
-    data_samples: List[Dict] = None
-
-class BlockCheck(bt.Synapse):
+class BlockCheck(BaseSynapse):
     blocks_to_check: List[int] = None
     output: BlockCheckOutput = None
 
-class Query(bt.Synapse):
+class Query(BaseSynapse):
     network: str = None
     model_type: str = None
     query: str = None

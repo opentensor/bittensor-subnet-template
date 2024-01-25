@@ -9,7 +9,7 @@ import bittensor as bt
 
 from insights import protocol
 
-from neurons.miners.query import get_graph_search
+from neurons.miners.query import get_graph_search, get_graph_indexer
 
 # import base miner class which takes care of most of the boilerplate
 from template.base.miner import BaseMinerNeuron
@@ -19,7 +19,6 @@ from insights.protocol import MODEL_TYPE_FUNDS_FLOW, NETWORK_BITCOIN
 from neurons import VERSION
 from neurons.storage import store_miner_metadata
 from neurons.remote_config import MinerConfig
-from neurons.miners.bitcoin.funds_flow.graph_indexer import GraphIndexer
 from neurons.nodes.factory import NodeFactory
 
 class Miner(BaseMinerNeuron):
@@ -208,7 +207,7 @@ def wait_for_blocks_sync():
         bt.logging.info(f"Waiting for graph model to sync with blockchain.")
         while not is_synced:
             try:
-                graph_indexer = GraphIndexer(config.graph_db_url,config.graph_db_user, config.graph_db_password)
+                graph_indexer = get_graph_indexer(config)
                 node = NodeFactory.create_node(config.network)
 
                 latest_block_height = node.get_current_block_height()
@@ -234,5 +233,6 @@ if __name__ == "__main__":
     wait_for_blocks_sync()
     with Miner() as miner:
         while True:
-            bt.logging.info("Miner running...", time.time())
+            bt.logging.info("Miner running")
             time.sleep(bt.__blocktime__*10)
+
