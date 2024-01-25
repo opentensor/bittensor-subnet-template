@@ -31,11 +31,11 @@ def query_blacklist(self, synapse: protocol.Query) -> typing.Tuple[bool, str]:
         if is_blacklist:
             return is_blacklist, message
         
-        if  self.config.blockchain != synapse.network:
+        if  self.config.network != synapse.network:
             bt.logging.trace(
                 f"Blacklisting hot key {hotkey} because of wrong blockchain"
             )
-            return True, "Blockchain not supported."
+            return True, "Network not supported."
         if self.config.model_type != synapse.model_type:
             bt.logging.trace(
                 f"Blacklisting hot key {hotkey} because of wrong model type"
@@ -71,12 +71,13 @@ def discovery_blacklist(self, synapse: protocol.Discovery) -> typing.Tuple[bool,
     if is_blacklist:
         return is_blacklist, message
     
-    uid = None
+    axon_uid = None
     for uid, _axon in enumerate(self.metagraph.axons):  # noqa: B007
         if _axon.hotkey == hotkey:
+            axon_uid=uid
             break
     
-    if uid is None:
+    if axon_uid is None:
         return True, f"Blacklisted a non registered hotkey's request from {hotkey}"
     
     stake = self.metagraph.neurons[uid].stake.tao
@@ -129,8 +130,10 @@ def base_blacklist(self, synapse: bt.Synapse) -> typing.Tuple[bool, str]:
         )
         return True, "Unrecognized hotkey"
     
+    if synapse.version != protocol.VERSION:
+        return True, f"Blacklisted: Protocol Version differs miner_version={protocol.VERSION} validator_version={synapse.version} for hotkey: {hotkey}"
     if hotkey in self.miner_config.blacklisted_hotkeys:
         return True, f"Blacklisted hotkey: {hotkey}"
     if hotkey not in self.miner_config.whitelisted_hotkeys and self.config.mode == 'prod':
         return True, f"Not Whitelisted hotkey: {hotkey}"
-    return False, "Hotkey recognized!"
+    return False, "Hotkey recognized"
