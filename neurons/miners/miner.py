@@ -71,7 +71,7 @@ class Miner(BaseMinerNeuron):
             config.subtensor.network = 'test'
             config.netuid = 59
 
-        config.wait_for_sync = bool(os.environ.get('WAIT_FOR_SYNC', 'False'))
+        config.wait_for_sync = os.environ.get('WAIT_FOR_SYNC', 'False')=='True'
         config.graph_db_url = os.environ.get('GRAPH_DB_URL', 'bolt://localhost:7687')
         config.graph_db_user = os.environ.get('GRAPH_DB_USER', 'user')
         config.graph_db_password = os.environ.get('GRAPH_DB_PASSWORD', 'pwd')
@@ -194,7 +194,6 @@ class Miner(BaseMinerNeuron):
     def resync_metagraph(self):
         super(Miner, self).resync_metagraph()
         self.miner_config = MinerConfig().load_and_get_config_values()        
-
     
 def wait_for_blocks_sync():
         is_synced=False
@@ -228,7 +227,8 @@ def wait_for_blocks_sync():
 
 # This is the main function, which runs the miner.
 if __name__ == "__main__":
-
+    from dotenv import load_dotenv
+    load_dotenv()
 
     wait_for_blocks_sync()
     with Miner() as miner:

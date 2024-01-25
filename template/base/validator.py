@@ -47,7 +47,14 @@ class BaseValidatorNeuron(BaseNeuron):
 
         # Set up initial scoring weights for validation
         bt.logging.info("Building validation weights.")
-        self.scores = torch.zeros_like(self.metagraph.S, dtype=torch.float32)
+        try:
+           self.load_state()
+           bt.logging.info("Scores loaded from file")
+
+        except:
+            self.scores = torch.zeros_like(self.metagraph.S, dtype=torch.float32)
+            bt.logging.info(f"Initialized all scores to 0")
+
 
         # Init sync with the network. Updates the metagraph.
         self.sync()
@@ -336,10 +343,7 @@ class BaseValidatorNeuron(BaseNeuron):
 
     def load_state(self):
         """Loads the state of the validator from a file."""
-        bt.logging.info("Loading validator state.")
-
         # Load the state of the validator from file.
         state = torch.load(self.config.neuron.full_path + "/state.pt")
         self.step = state["step"]
         self.scores = state["scores"]
-        self.hotkeys = state["hotkeys"]

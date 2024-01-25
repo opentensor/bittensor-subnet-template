@@ -46,7 +46,6 @@ def get_random_uids(
         uid_is_available = check_uid_availability(
             self.metagraph, uid, self.config.neuron.vpermit_tao_limit
         )
-        bt.logging.info(uid, uid_is_available)
         uid_is_not_excluded = exclude is None or uid not in exclude
 
         if uid_is_available:

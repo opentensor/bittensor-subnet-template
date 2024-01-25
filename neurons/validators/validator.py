@@ -79,11 +79,15 @@ class Validator(BaseValidatorNeuron):
 
     def __init__(self, config=None):
         config=Validator.get_config()
+        self.validator_config = ValidatorConfig().load_and_get_config_values()
+        networks = self.validator_config.get_networks()
+        self.nodes = {network : NodeFactory.create_node(network) for network in networks}
+        self.block_height_cache = {network: self.nodes[network].get_current_block_height() for network in networks}
+        
         super(Validator, self).__init__(config)
         
-        bt.logging.info("load_state()")
-        self.load_state()
-        self.validator_config = ValidatorConfig().load_and_get_config_values()
+        self.miners_metadata = get_miners_metadata(self.config, self.metagraph)
+        
 
     def cross_validate(self, axon, node, start_block_height, last_block_height, k=10):
         blocks_to_check = random.sample(range(start_block_height, last_block_height + 1), k=k)
@@ -179,8 +183,6 @@ class Validator(BaseValidatorNeuron):
                                 run_id_per_hotkey=run_id_per_hotkey,
                                 miner_distribution=miner_distribution) for response in valid_responses
             ]
-            bt.logging.info(f'rewards {rewards}, {valid_uids}')
-
             # Remove None reward as they represent timeout cross validation
             filtered_data = [(reward, uid) for reward, uid in zip(rewards, valid_uids) if reward is not None]
             rewards, valid_uids = zip(*filtered_data)
@@ -197,7 +199,6 @@ class Validator(BaseValidatorNeuron):
         self.scorer = Scorer(self.validator_config)
 
         networks = self.validator_config.get_networks()
-        self.nodes = {network : NodeFactory.create_node(network) for network in networks}
         self.block_height_cache = {network: self.nodes[network].get_current_block_height() for network in networks}
 
     def save_state(self):
