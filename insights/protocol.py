@@ -2,74 +2,79 @@ from typing import Optional, List, Dict
 import bittensor as bt
 from pydantic import BaseModel
 
+# protocol version
+VERSION = 4
+
+
 # Model types
 MODEL_TYPE_FUNDS_FLOW = "funds_flow"
 MODEL_TYPE_FUNDS_FLOW_ID = 1
-def get_model_id(model_type):
-    if model_type == MODEL_TYPE_FUNDS_FLOW:
-        return MODEL_TYPE_FUNDS_FLOW_ID
 
 # Networks
 NETWORK_BITCOIN = "bitcoin"
 NETWORK_BITCOIN_ID = 1
 NETWORK_DOGE = "doge"
 NETWORK_DOGE_ID = 2
-
-def get_network_by_id(id):
-    if id == NETWORK_BITCOIN_ID:
-        return NETWORK_BITCOIN
-    if id == NETWORK_DOGE_ID:
-        return NETWORK_DOGE
-    return None
-def get_network_id(network):
-    if network == NETWORK_BITCOIN:
-        return NETWORK_BITCOIN_ID
-    if network == NETWORK_DOGE:
-        return NETWORK_DOGE_ID
-    return None
+NETWORK_ETHEREUM = "ethereum"
+NETWORK_ETHEREUM_ID = 3
 
 # Default settings for miners
 MAX_MULTIPLE_RUN_ID = 9
 MAX_MULTIPLE_IPS = 9
 
+def get_network_by_id(id):
+    return {
+        NETWORK_BITCOIN_ID: NETWORK_BITCOIN,
+        NETWORK_DOGE_ID: NETWORK_DOGE,
+        NETWORK_ETHEREUM_ID: NETWORK_ETHEREUM
+    }.get(id)
+
+def get_network_id(network):
+    return {
+        NETWORK_BITCOIN : NETWORK_BITCOIN_ID,
+        NETWORK_DOGE : NETWORK_DOGE_ID,
+        NETWORK_ETHEREUM: NETWORK_ETHEREUM_ID
+    }.get(network)
 
 
+def get_model_id(model_type):
+    return {
+        MODEL_TYPE_FUNDS_FLOW: MODEL_TYPE_FUNDS_FLOW_ID
+    }.get(model_type)
 
 
-
-
-# EVM Compatible networks
-NETWORK_ETHEREUM = "ethereum"
-
-class MinerDiscoveryMetadata(BaseModel):
+class DiscoveryMetadata(BaseModel):
     network: str = None
     model_type: str = None
     graph_schema: Optional[Dict] = None
     #TODO: implement method for getting graph schema from miner
 
 
-class MinerDiscoveryOutput(BaseModel):
-    metadata: MinerDiscoveryMetadata = None
+class DiscoveryOutput(BaseModel):
+    metadata: DiscoveryMetadata = None
     data_samples: List[Dict] = None
     block_height: int = None
     start_block_height: int = None
     run_id: str = None
     version: Optional[int] = None
 
-class MinerDiscovery(bt.Synapse):
-    output: MinerDiscoveryOutput = None
+class BlockCheckOutput(BaseModel):
+    data_samples: List[Dict] = None
+
+class BaseSynapse(bt.Synapse):
+    version: int = VERSION
+
+class Discovery(BaseSynapse):
+    output: DiscoveryOutput = None
 
     def deserialize(self):
         return self
 
-class MinerRandomBlockCheckOutput(BaseModel):
-    data_samples: List[Dict] = None
-
-class MinerRandomBlockCheck(bt.Synapse):
+class BlockCheck(BaseSynapse):
     blocks_to_check: List[int] = None
-    output: MinerRandomBlockCheckOutput = None
+    output: BlockCheckOutput = None
 
-class MinerQuery(bt.Synapse):
+class Query(BaseSynapse):
     network: str = None
     model_type: str = None
     query: str = None
