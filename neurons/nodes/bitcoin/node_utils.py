@@ -40,3 +40,24 @@ def create_p2sh_address(hashed_script, mainnet=True):
     payload = version_byte + hashed_script
     checksum = SHA256.new(SHA256.new(payload).digest()).digest()[:4]
     return base58.b58encode(payload + checksum).decode()
+
+
+def get_tx_out_hash_table_sub_keys():
+    sub_keys = []
+    hex_chars = "0123456789abcdef"
+
+    # initialize hash_table with 4096 entries (3 hex digits)
+    for i in range(16):
+        for j in range(16):
+            for k in range(16):
+                sub_keys.append(hex_chars[i] + hex_chars[j] + hex_chars[k])
+    
+    return sub_keys
+
+
+def initialize_tx_out_hash_table():
+    hash_table = {}
+    sub_keys = get_tx_out_hash_table_sub_keys()
+    for sub_key in sub_keys:
+        hash_table[sub_key] = {}
+    return hash_table
