@@ -185,10 +185,14 @@ class Validator(BaseValidatorNeuron):
             ]
             # Remove None reward as they represent timeout cross validation
             filtered_data = [(reward, uid) for reward, uid in zip(rewards, valid_uids) if reward is not None]
-            rewards, valid_uids = zip(*filtered_data)
 
-            rewards = torch.FloatTensor(rewards)
-            self.update_scores(rewards, valid_uids)
+            if filtered_data:
+                rewards, valid_uids = zip(*filtered_data)
+
+                rewards = torch.FloatTensor(rewards)
+                self.update_scores(rewards, valid_uids)
+            else: 
+                bt.logging.info('Skipping update_scores() as no responses were valid')
 
     def resync_metagraph(self):
         super(Validator, self).resync_metagraph()
