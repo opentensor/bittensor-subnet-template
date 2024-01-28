@@ -105,15 +105,6 @@ class Validator(BaseValidatorNeuron):
 
 
     def get_reward(self, response: DiscoveryOutput, ip_per_hotkey=None, run_id_per_hotkey=None, miner_distribution=None):
-        if response.output.version < protocol.VERSION and self.validator_config.grace_period:
-            score = 0.15
-            bt.logging.info(f"Miner is running an old version. Grace period is enabled. Score set to {score}.")
-            return score
-        if response.output.version != protocol.VERSION and not self.validator_config.grace_period:            
-            score = 0
-            bt.logging.info(f"Miner is running an old version. Grace period is disabled. Score set to {score}")
-            return score
-
         output: DiscoveryOutput = response.output
         network = output.metadata.network
         start_block_height = output.start_block_height
