@@ -9,7 +9,6 @@ import bittensor as bt
 
 from insights import protocol
 
-from neurons.miners.query import get_graph_search, get_graph_indexer
 
 # import base miner class which takes care of most of the boilerplate
 from template.base.miner import BaseMinerNeuron
@@ -20,6 +19,8 @@ from neurons import VERSION
 from neurons.storage import store_miner_metadata
 from neurons.remote_config import MinerConfig
 from neurons.nodes.factory import NodeFactory
+from neurons.miners.query import get_graph_search, get_graph_indexer
+
 
 class Miner(BaseMinerNeuron):
     """
@@ -105,8 +106,6 @@ class Miner(BaseMinerNeuron):
 
         self.graph_search = get_graph_search(config)
 
-        bt.logging.info("Storing miner metadata")
-        store_miner_metadata(self.config, self.graph_search, self.wallet)
         self.miner_config = MinerConfig().load_and_get_config_values()        
 
 
@@ -194,7 +193,8 @@ class Miner(BaseMinerNeuron):
     def resync_metagraph(self):
         super(Miner, self).resync_metagraph()
         self.miner_config = MinerConfig().load_and_get_config_values()        
-    
+        store_miner_metadata(self.config, self.graph_search, self.wallet)
+
 def wait_for_blocks_sync():
         is_synced=False
 
@@ -203,6 +203,8 @@ def wait_for_blocks_sync():
             bt.logging.info(f"Skipping graph sync.")
             return is_synced
         
+        miner_config = MinerConfig().load_and_get_config_values()
+        delta = miner_config.get_blockchain_sync_delta(config.network)
         bt.logging.info(f"Waiting for graph model to sync with blockchain.")
         while not is_synced:
             try:
