@@ -4,7 +4,7 @@ import json
 import requests
 import bittensor as bt
 import threading
-
+from template.utils.misc import ttl_cache
 # Constants for configuration URLs
 
 UPDATE_INTERVAL = 3600  # Time interval for updating configuration in seconds
@@ -38,6 +38,7 @@ class RemoteConfig:
             self.load_remote_config()
             time.sleep(UPDATE_INTERVAL)
 
+    @ttl_cache(ttl=300)
     def load_remote_config(self):
         if self.config_url is None:
             return
