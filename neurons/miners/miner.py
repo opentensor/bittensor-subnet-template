@@ -76,6 +76,9 @@ class Miner(BaseMinerNeuron):
         config.graph_db_url = os.environ.get('GRAPH_DB_URL', 'bolt://localhost:7687')
         config.graph_db_user = os.environ.get('GRAPH_DB_USER', 'user')
         config.graph_db_password = os.environ.get('GRAPH_DB_PASSWORD', 'pwd')
+        
+        config.blacklist  = dict(force_validator_permit=True, allow_non_registered=False)
+
         return config
     
     def __init__(self, config=None):
@@ -194,7 +197,7 @@ class Miner(BaseMinerNeuron):
     def resync_metagraph(self):
         super(Miner, self).resync_metagraph()
         self.miner_config = MinerConfig().load_and_get_config_values()        
-        store_miner_metadata(self.config, self.graph_search, self.wallet)
+        #store_miner_metadata(self.config, self.graph_search, self.wallet)
 
     def save_state(self):
         #empty function to remove logging WARNING
