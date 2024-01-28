@@ -195,6 +195,10 @@ class Miner(BaseMinerNeuron):
         self.miner_config = MinerConfig().load_and_get_config_values()        
         store_miner_metadata(self.config, self.graph_search, self.wallet)
 
+    def save_state(self):
+        #empty function to remove logging WARNING
+        pass
+
 def wait_for_blocks_sync():
         is_synced=False
 
