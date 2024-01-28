@@ -67,6 +67,7 @@ def store_miner_metadata(config, graph_search, wallet):
     subtensor = bt.subtensor(config=config)
 
     try:
+        bt.logging.info(f"Storing miner metadata")
         metadata = get_metadata()
         subtensor.commit(wallet, config.netuid, Metadata.to_compact(metadata))
         bt.logging.info(f"Stored miner metadata: {metadata}")

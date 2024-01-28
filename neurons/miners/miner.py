@@ -107,6 +107,7 @@ class Miner(BaseMinerNeuron):
         self.graph_search = get_graph_search(config)
 
         self.miner_config = MinerConfig().load_and_get_config_values()        
+        store_miner_metadata(self.config, self.graph_search, self.wallet)
 
 
     
