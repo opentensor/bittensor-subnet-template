@@ -52,7 +52,6 @@ class DiscoveryMetadata(BaseModel):
 
 class DiscoveryOutput(BaseModel):
     metadata: DiscoveryMetadata = None
-    data_samples: List[Dict] = None
     block_height: int = None
     start_block_height: int = None
     run_id: str = None

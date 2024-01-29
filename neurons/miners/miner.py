@@ -131,9 +131,6 @@ class Miner(BaseMinerNeuron):
             block_range = self.graph_search.get_block_range()
             start_block = block_range['start_block_height']
             last_block = block_range['latest_block_height']
-
-            block_heights = random.sample(range(start_block, last_block + 1), 10)
-            data_samples = self.graph_search.get_block_transactions(block_heights)
             run_id = self.graph_search.get_run_id()
 
             synapse.output = protocol.DiscoveryOutput(
@@ -143,7 +140,6 @@ class Miner(BaseMinerNeuron):
                 ),
                 start_block_height=start_block,
                 block_height=last_block,
-                data_samples=data_samples,
                 run_id=run_id,
                 version=VERSION,
             )

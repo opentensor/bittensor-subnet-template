@@ -85,11 +85,11 @@ class Validator(BaseValidatorNeuron):
         self.block_height_cache = {network: self.nodes[network].get_current_block_height() for network in networks}
         
         super(Validator, self).__init__(config)
-        
-        self.miners_metadata = get_miners_metadata(self.config, self.metagraph)
+        self.sync_validator()
+
         
 
-    def cross_validate(self, axon, node, start_block_height, last_block_height, k=10):
+    def cross_validate(self, axon, node, start_block_height, last_block_height, k=20):
         blocks_to_check = random.sample(range(start_block_height, last_block_height + 1), k=k)
         response = self.dendrite.query(
             axon,
@@ -101,7 +101,7 @@ class Validator(BaseValidatorNeuron):
             bt.logging.debug(f"Skipping response {response}")
             return None
         
-        return node.validate_all_data_samples(response.output.data_samples)
+        return node.validate_all_data_samples(response.output.data_samples, blocks_to_check)
 
 
     def get_reward(self, response: DiscoveryOutput, ip_per_hotkey=None, run_id_per_hotkey=None, miner_distribution=None):
@@ -109,13 +109,10 @@ class Validator(BaseValidatorNeuron):
         network = output.metadata.network
         start_block_height = output.start_block_height
         last_block_height = output.block_height
-        data_samples = output.data_samples
         axon_ip = response.axon.ip
         hot_key = response.axon.hotkey
         response_time = response.dendrite.process_time
         bt.logging.info(f"🔄 Processing response for {hot_key}@{axon_ip}")
-
-        data_samples_are_valid = self.nodes[network].validate_all_data_samples(data_samples)
 
         multiple_ips = ip_per_hotkey[axon_ip] > MAX_MULTIPLE_IPS
         multiple_run_ids = run_id_per_hotkey[hot_key] > MAX_MULTIPLE_RUN_ID
@@ -126,7 +123,6 @@ class Validator(BaseValidatorNeuron):
             start_block_height,
             last_block_height,
             self.block_height_cache[network],
-            data_samples_are_valid,
             miner_distribution,
             multiple_ips,
             multiple_run_ids
@@ -150,7 +146,7 @@ class Validator(BaseValidatorNeuron):
         ip_per_hotkey = count_hotkeys_per_ip(filtered_axons)
         run_id_per_hotkey = count_run_id_per_hotkey(self.miners_metadata)
         miner_distribution = get_miner_distributions(self.miners_metadata, self.validator_config.get_networks())
-        
+
         responses = self.dendrite.query(
             filtered_axons,
             protocol.Discovery(),
@@ -164,9 +160,16 @@ class Validator(BaseValidatorNeuron):
             if response and response.output and self.miners_metadata.get(response.axon.hotkey):
                 valid_uids.append(uid)
                 valid_responses.append(response)
-            else:
-                bt.logging.info(f"skipping {response=} do not meet requirement")
-        
+
+            status_code = response.axon.status_code
+            status_message = response.axon.status_message
+            if response.is_failure:
+                bt.logging.info(f"Skipping response: Failure, miner {response.axon.hotkey} returned {status_code=}: {status_message=}")
+            elif response.is_blacklist:
+                bt.logging.info(f"Skipping response: Blacklist, miner {response.axon.hotkey} returned {status_code=}: {status_message=}")
+            elif response.is_timeout:
+                bt.logging.info(f"Skipping response: Timeout, miner {response.axon.hotkey}")
+
         if valid_responses:
             rewards = [
                 self.get_reward(response, 
@@ -185,19 +188,21 @@ class Validator(BaseValidatorNeuron):
             else: 
                 bt.logging.info('Skipping update_scores() as no responses were valid')
 
-    def resync_metagraph(self):
-        super(Validator, self).resync_metagraph()
-
-        #reload our config
+    def sync_validator(self):
         self.miners_metadata = get_miners_metadata(self.config, self.metagraph)
         self.validator_config = ValidatorConfig().load_and_get_config_values()
         self.scorer = Scorer(self.validator_config)
 
-        networks = self.validator_config.get_networks()
-        self.block_height_cache = {network: self.nodes[network].get_current_block_height() for network in networks}
+        self.networks = self.validator_config.get_networks()
+        self.block_height_cache = {network: self.nodes[network].get_current_block_height() for network in self.networks}
 
         validator_uid = self.metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
         store_validator_metadata(self.config, self.wallet, validator_uid)
+
+    def resync_metagraph(self):
+        super(Validator, self).resync_metagraph()
+        self.sync_validator()
+
 
 
 
