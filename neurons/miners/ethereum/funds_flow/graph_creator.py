@@ -3,7 +3,13 @@ from typing import List
 from decimal import Decimal
 import asyncio
 
+from web3.providers.base import JSONBaseProvider
+from web3.providers import HTTPProvider
+from web3 import Web3
+from eth_abi import abi
+
 from neurons.nodes.evm.ethereum.node import EthereumNode
+
 
 @dataclass
 class Block:
@@ -27,10 +33,9 @@ class Transaction:
     block_number: int
     tx_hash: str
     timestamp: int # Unix epoch time
-    gas_amount: int
-    gas_price_wei: int
-    from_account: Account
-    to_account: Account
+    gas_used: int
+    from_address: Account
+    to_address: Account
     value_wei: Decimal
     symbol: str = "ETH" # ETH, USDT, USDC, ...
 
@@ -41,9 +46,9 @@ class GraphCreator:
         load_dotenv()
         
         block_number = int(block_data["number"])
-        block_hash = block_data["hash"].hex()
+        block_hash = "".join(["{:02X}".format(b) for b in block_data["hash"]])
         timestamp = int(block_data["timestamp"])
-        parent_hash = block_data["parentHash"].hex()
+        parent_hash = "".join(["{:02X}".format(b) for b in block_data["parentHash"]])
 
         block = Block(
             block_number = block_number,
@@ -53,45 +58,125 @@ class GraphCreator:
             nonce = block_data.get("nonce", 0),
             difficulty = block_data.get("totalDifficulty", 0)
         )
-
-        ethereum_node = EthereumNode()
         
+        ethereum_node = EthereumNode()
+
         transactions = block_data["transactions"]
         loop = asyncio.get_event_loop()
-        rpcTxResponses = loop.run_until_complete(ethereum_node.get_transaction(transactions)) # wait till all tx details requests resolved
+        rpcTxResponses = loop.run_until_complete(ethereum_node.get_transactionReceipt(transactions)) # wait till all tx details requests resolved
+
+        nativeTransactions = []
+
+        tokenTypes = {}
 
         for resp in rpcTxResponses:
             tx_data = resp["result"]
-            from_address = tx_data["from"]
-            to_address = tx_data["to"]
+            # Transaction is token transfer
+            if 'logs' in tx_data and len(tx_data["logs"]) > 0:
+                for log in tx_data["logs"]:
+                    try:
+                        contractAddress = Web3.to_checksum_address(log["address"])
+                        symbol = ''
+                        if contractAddress not in tokenTypes:
+                            symbol =ethereum_node.get_symbol_name(contractAddress)
+                            tokenTypes.update({contractAddress: symbol})
+                        else:
+                            symbol = tokenTypes[contractAddress]
+
+                        from_address = abi.decode(['address'], bytes.fromhex(log["topics"][1][2:]))
+                        to_address = abi.decode(['address'], bytes.fromhex(log["topics"][2][2:]))
+                        from_address = ''.join(from_address)
+                        to_address = ''.join(to_address)
+
+                        loop = asyncio.get_event_loop()
+                        addresses = [from_address, to_address]
+                        balance = loop.run_until_complete(ethereum_node.get_balance_by_addresses(addresses)) # wait till all address balance requests resolved
+
+                        if from_address is None:
+                            balance[0]["result"] = "0"
+                        if to_address is None:
+                            balance[1]["result"] = "0"
+
+                        from_account = Account(
+                            address = from_address,
+                            timestamp = timestamp,
+                            balance = balance[0]["result"] # from_address_balance
+                        )
+
+                        to_account = Account(
+                            address = to_address,
+                            timestamp = timestamp,
+                            balance = balance[1]["result"] # to_address_balance
+                        )
+
+                        value = abi.decode(['uint256'], bytes.fromhex(log["data"][2:]));
+
+                        transaction = Transaction(
+                            block_hash = tx_data["blockHash"],
+                            block_number = tx_data["blockNumber"],
+                            tx_hash = tx_data["transactionHash"],
+                            gas_used = int(tx_data.get("gasUsed", 0), 0),
+                            from_address = from_account,
+                            to_address = to_account,
+                            timestamp = timestamp,
+                            value_wei = int(''.join(map(str, value))),
+                            symbol = symbol
+                        )
+
+                        block.transactions.append(transaction)
+                        
+                    except:
+                        continue
+            # Append native token transactions
+            else:
+                nativeTransactions.append(tx_data["transactionHash"])
+
+        # Native token transactions
+        if len(nativeTransactions) > 0:
             loop = asyncio.get_event_loop()
-            addresses = [from_address, to_address]
-            balance = loop.run_until_complete(ethereum_node.get_balance_by_addresses(addresses)) # wait till all address balance requests resolved
+            nativeTxResponses = loop.run_until_complete(ethereum_node.get_transaction(nativeTransactions)) # wait till all tx details requests resolved
 
-            from_account = Account(
-                address = from_address,
-                timestamp = timestamp,
-                balance = balance[0]["result"] # from_address_balance
-            )
+            for nativeResp in nativeTxResponses:
+                nativeTx_data = nativeResp["result"]
+                if 'from' in nativeTx_data and 'to' in nativeTx_data and 'value' in nativeTx_data:
+                    
+                    if int(nativeTx_data.get("value", 0), 0) > 0:
+                        from_address = nativeTx_data["from"]
+                        to_address = nativeTx_data["to"]
 
-            to_account = Account(
-                address = to_address,
-                timestamp = timestamp,
-                balance = balance[1]["result"] # to_address_balance
-            )
+                        loop = asyncio.get_event_loop()
+                        addresses = [from_address, to_address]
+                        balance = loop.run_until_complete(ethereum_node.get_balance_by_addresses(addresses)) # wait till all address balance requests resolved
 
-            transaction = Transaction(
-                block_hash = tx_data["blockHash"],
-                block_number = tx_data["blockNumber"],
-                tx_hash = tx_data["hash"],
-                timestamp = tx_data.get("timestamp", timestamp),
-                gas_amount = int(tx_data.get("gas", 0), 0),
-                gas_price_wei = int(tx_data.get("gasPrice", 0), 0),
-                from_account = from_account,
-                to_account = to_account,
-                value_wei = int(tx_data.get("value", 0), 0),
-                symbol = "ETH" # for now, we assume only original transactions not smart contract executions, so the symbol is "ETH"
-            )
-            block.transactions.append(transaction)
-        
+                        if nativeTx_data["from"] is None:
+                            balance[0]["result"] = "0"
+                        if nativeTx_data["to"] is None:
+                            balance[1]["result"] = "0"
+
+                        from_account = Account(
+                            address = from_address,
+                            timestamp = timestamp,
+                            balance = int(balance[0]["result"], 0) # from_address_balance
+                        )
+
+                        to_account = Account(
+                            address = to_address,
+                            timestamp = timestamp,
+                            balance = int(balance[1]["result"], 0) # to_address_balance
+                        )
+                        
+                        transaction = Transaction(
+                            block_hash = nativeTx_data["blockHash"],
+                            block_number = nativeTx_data["blockNumber"],
+                            tx_hash = nativeTx_data["hash"],
+                            timestamp = timestamp,
+                            gas_used = int(nativeTx_data.get("gas", 0), 0) * int(nativeTx_data.get("gasPrice", 0), 0),
+                            from_address = from_account,
+                            to_address = to_account,
+                            value_wei = int(nativeTx_data.get("value", 0), 0),
+                            symbol = "ETH" # for now, we assume only original transactions not smart contract executions, so the symbol is "ETH"
+                        )
+
+                        block.transactions.append(transaction)
+
         return {"block": block}

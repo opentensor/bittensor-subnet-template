@@ -42,11 +42,13 @@ def index_blocks(_ethereum_node, _graph_creator, _graph_indexer, start_height):
         while block_height <= current_block_height - skip_blocks:
             block = _ethereum_node.get_block_by_height(block_height)
             num_transactions = len(block["transactions"])
+            if num_transactions == 0:
+                block_height += 1
+                continue
+
             start_time = time.time()
             in_memory_graph = _graph_creator.create_in_memory_graph_from_block(block)
-            print(f"start_time: {start_time} - {time.time()}")
             success = _graph_indexer.create_graph_focused_on_funds_flow(in_memory_graph)
-            print(f"- {time.time()}\n\n")
             end_time = time.time()
             time_taken = end_time - start_time
             node_block_height = ethereum_node.get_current_block_height()
@@ -58,24 +60,25 @@ def index_blocks(_ethereum_node, _graph_creator, _graph_indexer, start_height):
             )
             formatted_progress = "{:6.2f}".format(progress)
 
-            if time_taken > 0:
-                logger.info(
-                    "Block {:>6}: Processed {} transactions in {} seconds {} TPS Progress: {}%".format(
-                        block_height,
-                        formatted_num_transactions,
-                        formatted_time_taken,
-                        formatted_tps,
-                        formatted_progress,
-                    )
-                )
-            else:
-                logger.info(
-                    "Block {:>6}: Processed {} transactions in 0.00 seconds (  Inf TPS). Progress: {}%".format(
-                        block_height, formatted_num_transactions, formatted_progress
-                    )
-                )
+            # if time_taken > 0:
+            #     logger.info(
+            #         "Block {:>6}: Processed {} transactions in {} seconds {} TPS Progress: {}%".format(
+            #             block_height,
+            #             formatted_num_transactions,
+            #             formatted_time_taken,
+            #             formatted_tps,
+            #             formatted_progress,
+            #         )
+            #     )
+            # else:
+            #     logger.info(
+            #         "Block {:>6}: Processed {} transactions in 0.00 seconds (  Inf TPS). Progress: {}%".format(
+            #             block_height, formatted_num_transactions, formatted_progress
+            #         )
+            #     )
 
             if success:
+                logger.info("Finished Block - {}".format(block_height))
                 block_height += 1
 
                 # indexer flooding prevention
@@ -93,15 +96,13 @@ def index_blocks(_ethereum_node, _graph_creator, _graph_indexer, start_height):
                 logger.info(f"Finished indexing block {block_height} before shutdown.")
                 break
 
-            start_height += 1
-
-def index_blocks_by_last_height(thread_index, _ethereum_node, _graph_creator, _graph_indexer, start_height, thread_depth):
+def index_blocks_by_last_height(thread_index, start, last, _ethereum_node, _graph_creator, _graph_indexer):
     global shutdown_flag
     print('new Thread started : thread number - {}'.format(thread_index + 1))
     skip_blocks = 6 # Set the number of block confirmations
     # calculate start_block_height & last_block_height by thread_index and thread_depth
-    start_height = thread_index * thread_depth + start_height
-    last_height = start_height + thread_depth - 1
+    start_height = start
+    last_height = last
     while not shutdown_flag:
         current_block_height = last_height - 6
         if current_block_height - skip_blocks < 0:
@@ -120,11 +121,12 @@ def index_blocks_by_last_height(thread_index, _ethereum_node, _graph_creator, _g
         while block_height <= current_block_height - skip_blocks:
             block = _ethereum_node.get_block_by_height(block_height)
             num_transactions = len(block["transactions"])
+            if num_transactions == 0:
+                block_height += 1
+                continue
             start_time = time.time()
             in_memory_graph = _graph_creator.create_in_memory_graph_from_block(block)
-            print(f"start_time: {start_time} - {time.time()}")
             success = _graph_indexer.create_graph_focused_on_funds_flow(in_memory_graph)
-            print(f"- {time.time()}\n\n")
             end_time = time.time()
             time_taken = end_time - start_time
             progress = (block_height - start_height) / (last_height - start_height) * 100
@@ -135,25 +137,26 @@ def index_blocks_by_last_height(thread_index, _ethereum_node, _graph_creator, _g
             )
             formatted_progress = "{:6.2f}".format(progress)
 
-            if time_taken > 0:
-                logger.info(
-                    "Tread Index {} Block {:>6}: Processed {} transactions in {} seconds {} TPS Progress: {}%".format(
-                        thread_index,
-                        block_height,
-                        formatted_num_transactions,
-                        formatted_time_taken,
-                        formatted_tps,
-                        formatted_progress,
-                    )
-                )
-            else:
-                logger.info(
-                    "Tread Index {} Block {:>6}: Processed {} transactions in 0.00 seconds (  Inf TPS). Progress: {}%".format(
-                        thread_index, block_height, formatted_num_transactions, formatted_progress
-                    )
-                )
+            # if time_taken > 0:
+            #     logger.info(
+            #         "Thread Index {} Block {:>6}: Processed {} transactions in {} seconds {} TPS Progress: {}%".format(
+            #             thread_index,
+            #             block_height,
+            #             formatted_num_transactions,
+            #             formatted_time_taken,
+            #             formatted_tps,
+            #             formatted_progress,
+            #         )
+            #     )
+            # else:
+            #     logger.info(
+            #         "Thread Index {} Block {:>6}: Processed {} transactions in 0.00 seconds (  Inf TPS). Progress: {}%".format(
+            #             thread_index, block_height, formatted_num_transactions, formatted_progress
+            #         )
+            #     )
 
             if success:
+                logger.info("Finished Block - {}".format(block_height))
                 block_height += 1
 
                 # indexer flooding prevention
@@ -171,12 +174,9 @@ def index_blocks_by_last_height(thread_index, _ethereum_node, _graph_creator, _g
                 logger.info(f"Finished indexing block {block_height} before shutdown.")
                 break
 
-            start_height += 1
-
 # Register the shutdown handler for SIGINT and SIGTERM
 signal.signal(signal.SIGINT, shutdown_handler)
 signal.signal(signal.SIGTERM, shutdown_handler)
-
 
 if __name__ == "__main__":
     from dotenv import load_dotenv
@@ -186,7 +186,6 @@ if __name__ == "__main__":
     graph_creator = GraphCreator()
     graph_indexer = GraphIndexer()
 
-    
     num_threads = 8 # set number of thread 8 by default
     num_thread_str = os.getenv('ETHEREUM_THREAD_CNT', None)
 
@@ -203,8 +202,8 @@ if __name__ == "__main__":
     graph_last_block_height = graph_indexer.get_latest_block_number() + 1
     if start_height_str is not None:
         start_height = int(start_height_str)
-        if graph_last_block_height > start_height:
-            start_height = graph_last_block_height
+        # if graph_last_block_height > start_height:
+        #     start_height = graph_last_block_height
     else:
         start_height = graph_last_block_height
 
@@ -217,17 +216,22 @@ if __name__ == "__main__":
         last_height = current_block_height
     
     thread_depth = floor((last_height - start_height) / num_threads)
+    restHeight = (last_height - start_height) % num_threads
 
     threads = []
-
+    
     logger.info("Starting indexer")
     logger.info(f"Starting from block height: {start_height}")
     logger.info(f"Current node block height: {last_height}")
     logger.info(f"Latest indexed block height: {graph_last_block_height}")
     # indexing all old historical tx
+    graph_indexer.create_indexes()
     for i in range(num_threads):
-        thread = Thread(target=index_blocks_by_last_height, args=(i, ethereum_node, graph_creator, graph_indexer, start_height, thread_depth))
-        threads.append(thread)
+        start = start_height + i * thread_depth
+        last = start_height + (i + 1) * thread_depth - 1
+        if i == num_threads - 1:
+            last = start_height + (i + 1) * thread_depth + restHeight
+        thread = Thread(target=index_blocks_by_last_height, args=(i, start, last, ethereum_node, graph_creator, graph_indexer))
         thread.start()
 
     # while threads're indexing old tx data
@@ -235,12 +239,12 @@ if __name__ == "__main__":
     while True:
         try:
             logger.info("Creating indexes...")
-            graph_indexer.create_indexes()
+            
             logger.info("Starting indexing blocks...")
 
-            print('-- Main thread is running for indexing recent blocks --')
+            logger.info('-- Main thread is running for indexing recent blocks --')
             index_blocks(ethereum_node, graph_creator, graph_indexer, last_height + 1)
-
+            
             break
         except Exception as e:
             ## traceback.print_exc()

@@ -68,30 +68,27 @@ class GraphIndexer:
         with self.driver.session() as session:
             # start memgraph transaction
             transaction = session.begin_transaction()
-            
             try:
                 for i in range(0, len(transactions), batch_size):
                     batch_transactions = transactions[i : i + batch_size]
-
+                    
                     transaction.run(
                         """
                         UNWIND $transactions AS tx
-                        MERGE (from:Address {id: tx.from_address})
-                        SET from.timestamp = tx.timestamp,
-                            from.balance = tx.from_balance,
-                            from.address = tx.from_address
-                        MERGE (to:Address {id: tx.to_address})
-                        SET to.timestamp = tx.timestamp,
-                            to.balance = tx.to_balance,
-                            to.address = tx.to_address
+                        MERGE (from:Address {address: tx.from_address})
+                        ON CREATE SET from.timestamp = tx.timestamp,
+                            from.balance = tx.from_balance
+                        MERGE (to:Address {address: tx.to_address})
+                        ON CREATE SET to.timestamp = tx.timestamp,
+                            to.balance = tx.to_balance
                         """,
                         transactions = [
                             {
                                 "timestamp": tx.timestamp,
-                                "from_address": tx.from_account.address,
-                                "from_balance": str(tx.from_account.balance),
-                                "to_address": tx.to_account.address,
-                                "to_balance": str(tx.to_account.balance),
+                                "from_address": tx.from_address.address,
+                                "from_balance": str(tx.to_address.balance),
+                                "to_address": tx.to_address.address,
+                                "to_balance": str(tx.to_address.balance),
                             }
                             for tx in batch_transactions
                         ],
@@ -99,8 +96,8 @@ class GraphIndexer:
                     transaction.run(
                         """
                         UNWIND $transactions AS tx
-                        MERGE (from:Address {id: tx.from_address})
-                        MERGE (to:Address {id: tx.to_address})
+                        MERGE (from:Address {address: tx.from_address})
+                        MERGE (to:Address {address: tx.to_address})
                         CREATE (from)-[:SENT { tx_hash: tx.tx_hash, block_number:tx.block_number, value: tx.value, fee: tx.fee_wei, timestamp: tx.timestamp, symbol:tx.symbol }]->(to)
                         """,
                         transactions = [
@@ -108,9 +105,11 @@ class GraphIndexer:
                                 "tx_hash": tx.tx_hash,
                                 "block_number": tx.block_number,
                                 "value": str(tx.value_wei),
-                                "fee_wei": str(tx.gas_amount * tx.gas_price_wei),
+                                "fee_wei": str(tx.gas_used),
                                 "timestamp": tx.timestamp,
-                                "symbol": tx.symbol
+                                "symbol": tx.symbol,
+                                "from_address": tx.from_address.address,
+                                "to_address": tx.to_address.address,
                             }
                             for tx in batch_transactions 
                         ]
