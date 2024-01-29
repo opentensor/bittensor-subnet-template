@@ -25,15 +25,18 @@ class Node(ABC):
         is_valid = len(block_data["tx"]) == data_sample["transaction_count"]
         return is_valid
 
-    def validate_all_data_samples(self, data_samples, min_samples=10):
-        if len(data_samples) < min_samples:
+    def validate_all_data_samples(self, data_samples, blocks_to_check):
+        if len(data_samples) != len(blocks_to_check):
             return False
         
+        for sample in data_samples:
+            if sample['block_height'] not in blocks_to_check:
+                return False
+
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            # Creating a future for each data sample validation
             futures = [executor.submit(self.validate_data_sample, sample) for sample in data_samples]
 
             for future in concurrent.futures.as_completed(futures):
                 if not future.result():
-                    return False  # If any data sample is invalid, return False immediately
+                    return False
         return True 
