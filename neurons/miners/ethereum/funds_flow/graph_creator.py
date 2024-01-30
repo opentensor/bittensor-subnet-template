@@ -78,8 +78,12 @@ class GraphCreator:
                         contractAddress = Web3.to_checksum_address(log["address"])
                         symbol = ''
                         if contractAddress not in tokenTypes:
-                            symbol =ethereum_node.get_symbol_name(contractAddress)
-                            tokenTypes.update({contractAddress: symbol})
+                            symbol = ethereum_node.get_symbol_name(contractAddress)
+                            if symbol == contractAddress:
+                                nativeTransactions.append(tx_data["transactionHash"])
+                                continue
+                            else:
+                                tokenTypes.update({contractAddress: symbol})
                         else:
                             symbol = tokenTypes[contractAddress]
 
