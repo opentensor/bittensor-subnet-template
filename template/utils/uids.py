@@ -59,9 +59,5 @@ def get_random_uids(
             [uid for uid in avail_uids if uid not in candidate_uids],
             k - len(candidate_uids),
         )
-    # Failsafe to ensure we don't sample more than available uids
-    if len(available_uids) < k:
-        k = len(available_uids)
-
     uids = torch.tensor(random.sample(available_uids, k))
     return uids
