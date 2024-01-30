@@ -216,6 +216,3 @@ if __name__ == "__main__":
             time.sleep(bt.__blocktime__*10)
 
 
-# validator should restore weight, but remove non existing miners
-# cf. subnet 3
-
