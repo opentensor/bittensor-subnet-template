@@ -3,8 +3,7 @@ from typing import Optional
 import bittensor as bt
 from bittensor.extrinsics import serving
 from pydantic import BaseModel
-from insights.protocol import get_network_id, get_model_id
-from neurons import VERSION
+from insights.protocol import get_network_id, get_model_id, VERSION
 from neurons.docker_utils import get_docker_image_version
 
 class Metadata(BaseModel):
@@ -64,9 +63,9 @@ def store_miner_metadata(config, graph_search, wallet):
             ri=run_id,
         )
 
-    subtensor = bt.subtensor(config=config)
 
     try:
+        subtensor = bt.subtensor(config=config)
         bt.logging.info(f"Storing miner metadata")
         metadata = get_metadata()
         subtensor.commit(wallet, config.netuid, Metadata.to_compact(metadata))
