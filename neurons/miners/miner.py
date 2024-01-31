@@ -3,7 +3,7 @@ import os
 import time
 import typing
 import traceback
-import random
+import yaml
 
 import bittensor as bt
 
@@ -46,7 +46,7 @@ class Miner(BaseMinerNeuron):
         )
 
         parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
-        parser.add_argument("--mode", type=str, default="prod", help="(staging|testnet|prod)")
+        parser.add_argument("--dev", action=argparse.BooleanOptionalAction)
 
         
         bt.subtensor.add_args(parser)
@@ -55,28 +55,25 @@ class Miner(BaseMinerNeuron):
         bt.axon.add_args(parser)
 
         config = bt.config(parser)
-
-        bt.logging.info(f"running in {config.mode} mode")
-        if config.mode != 'prod':
-            config.logging.debug = True
-            config.logging.trace = True
-            config.miner_set_weights = True
-            config.wallet.hotkey = 'default'
-            config.wallet.name = 'miner'
-            config.wait_for_sync = bool(os.environ.get('WAIT_FOR_SYNC', 'False'))
-        if config.mode == 'staging':
-            config.subtensor.chain_endpoint = "ws://163.172.164.213:9944"
-            config.netuid = 1
-        elif config.mode == 'testnet':
-            config.subtensor.network = 'test'
-            config.netuid = 59
-
+        config.blacklist  = dict(force_validator_permit=True, allow_non_registered=False)
         config.wait_for_sync = os.environ.get('WAIT_FOR_SYNC', 'False')=='True'
         config.graph_db_url = os.environ.get('GRAPH_DB_URL', 'bolt://localhost:7687')
         config.graph_db_user = os.environ.get('GRAPH_DB_USER', 'user')
         config.graph_db_password = os.environ.get('GRAPH_DB_PASSWORD', 'pwd')
         
-        config.blacklist  = dict(force_validator_permit=True, allow_non_registered=False)
+        dev = config.dev
+        if dev:
+            dev_config_path = "miner.yml"
+            if os.path.exists(dev_config_path):
+                with open(dev_config_path, 'r') as f:
+                    dev_config = yaml.safe_load(f.read())
+                config.update(dev_config)
+                bt.logging.info(f"config updated with {dev_config_path}")
+
+            else:
+                with open(dev_config_path, 'w') as f:
+                    yaml.safe_dump(config, f)
+                bt.logging.info(f"config stored in {dev_config_path}")
 
         return config
     

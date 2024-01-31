@@ -1,3 +1,6 @@
+validator.yml
+miner.yml
+
 neurons/validator*.json
 
 # Byte-compiled / optimized / DLL files

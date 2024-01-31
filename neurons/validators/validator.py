@@ -1,8 +1,8 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
 # Copyright © 2023 aph5nt
-import concurrent
-import json
+
+
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
 # the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
@@ -22,6 +22,8 @@ import argparse
 import random
 import torch
 import bittensor as bt
+import os
+import yaml
 
 from insights import protocol
 from insights.protocol import DiscoveryOutput, BlockCheckOutput, MAX_MULTIPLE_IPS, \
@@ -47,33 +49,27 @@ class Validator(BaseValidatorNeuron):
         )
 
         parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
-        parser.add_argument("--mode", type=str, default="prod", help="(staging|testnet|prod)")
+        parser.add_argument("--dev", action=argparse.BooleanOptionalAction)
 
         bt.subtensor.add_args(parser)
         bt.logging.add_args(parser)
         bt.wallet.add_args(parser)
 
         config = bt.config(parser)
+        
+        dev = config.dev
+        if dev:
+            dev_config_path = "validator.yml"
+            if os.path.exists(dev_config_path):
+                with open(dev_config_path, 'r') as f:
+                    dev_config = yaml.safe_load(f.read())
+                config.update(dev_config)
+                bt.logging.info(f"config updated with {dev_config_path}")
 
-        bt.logging.info(f"running in {config.mode} mode")
-        if config.mode == "staging":
-            # Local development settings
-            config.subtensor.chain_endpoint = "ws://163.172.164.213:9944"
-            config.wallet.hotkey = 'default'
-            config.wallet.name = 'validator'
-            config.netuid = 1
-            config.logging.debug = True
-            config.logging.trace = True
-            config.miner_set_weights = True
-        elif config.mode == 'testnet':
-            config.subtensor.network = 'test'
-            config.subtensor.chain_endpoint = None
-            config.wallet.hotkey = 'default'
-            config.wallet.name = 'validator'
-            config.netuid = 59
-            config.logging.debug = True
-            config.logging.trace = True
-            config.miner_set_weights = True
+            else:
+                with open(dev_config_path, 'w') as f:
+                    yaml.safe_dump(config, f)
+                bt.logging.info(f"config stored in {dev_config_path}")
 
         return config
 
@@ -85,6 +81,7 @@ class Validator(BaseValidatorNeuron):
         self.block_height_cache = {network: self.nodes[network].get_current_block_height() for network in networks}
         
         super(Validator, self).__init__(config)
+
         self.sync_validator()
 
         
