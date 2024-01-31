@@ -201,13 +201,8 @@ class Miner(BaseMinerNeuron):
         return self.base_priority(synapse=synapse)
 
     def resync_metagraph(self):
-        bt.logging(f'{self.metagraph.last_update[self.uid]}, {self.block}')
         super(Miner, self).resync_metagraph()
-        try:
-            store_miner_metadata(self.config, self.graph_search, self.wallet)
-            bt.logging.info('sending miner metadata')
-        except Exception as e:
-            bt.logging.error(f"Could not store miner metadata: {e} {traceback.format_exc()}")
+        store_miner_metadata(self.config, self.graph_search, self.wallet) 
 
     def save_state(self):
         #empty function to remove logging WARNING
