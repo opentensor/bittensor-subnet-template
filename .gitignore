@@ -2,6 +2,7 @@ validator.yml
 miner.yml
 
 neurons/validator*.json
+neurons/miner*.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
