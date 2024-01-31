@@ -255,6 +255,7 @@ class Miner(BaseMinerNeuron):
                 start_block_height=start_block,
                 block_height=last_block,
                 run_id=run_id,
+                version=4
             )
             bt.logging.info(f"Serving miner discovery output: {synapse.output}")
         except Exception as e:
