@@ -97,8 +97,10 @@ class Validator(BaseValidatorNeuron):
         if response.output is None or len(response.output.data_samples)==0 or response.output.data_samples[0] is None:
             bt.logging.debug(f"Skipping response {response}")
             return None
-        
-        return node.validate_all_data_samples(response.output.data_samples, blocks_to_check)
+
+        result = node.validate_all_data_samples(response.output.data_samples, blocks_to_check)
+        response_time = response.dendrite.process_time
+        return result, response_time
 
 
     def get_reward(self, response: DiscoveryOutput, ip_per_hotkey=None, run_id_per_hotkey=None, miner_distribution=None):
@@ -108,11 +110,20 @@ class Validator(BaseValidatorNeuron):
         last_block_height = output.block_height
         axon_ip = response.axon.ip
         hot_key = response.axon.hotkey
-        response_time = response.dendrite.process_time
         bt.logging.info(f"🔄 Processing response for {hot_key}@{axon_ip}")
 
         multiple_ips = ip_per_hotkey[axon_ip] > MAX_MULTIPLE_IPS
         multiple_run_ids = run_id_per_hotkey[hot_key] > MAX_MULTIPLE_RUN_ID
+
+        cross_validation_result, response_time = self.cross_validate(response.axon, self.nodes[network], start_block_height, last_block_height)
+
+        if cross_validation_result is None:
+            bt.logging.debug(f"Cross-Validation: {hot_key=} Timeout skipping response")
+            return None
+        if not cross_validation_result:
+            bt.logging.info(f"Cross-Validation: {hot_key=} Test failed")
+            return 0
+        bt.logging.info(f"Cross-Validation: {hot_key=} Test passed")
 
         score = self.scorer.calculate_score(
             network,
@@ -124,15 +135,7 @@ class Validator(BaseValidatorNeuron):
             multiple_ips,
             multiple_run_ids
         )
-        cross_validation_result = self.cross_validate(response.axon, self.nodes[network], start_block_height, last_block_height)
 
-        if cross_validation_result is None:
-            bt.logging.debug(f"Cross-Validation: {hot_key=} Timeout skipping response")
-            return None
-        if not cross_validation_result:
-            bt.logging.info(f"Cross-Validation: {hot_key=} Test failed")
-            return 0
-        bt.logging.info(f"Cross-Validation: {hot_key=} Test passed")
         return score
 
     async def forward(self):
@@ -206,7 +209,9 @@ class Validator(BaseValidatorNeuron):
 if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
-    
+
+    # Todo wait for btcnode to sync
+    # Todo wait for ethereum node to sync
     with Validator() as validator:
         while True:
             bt.logging.info("Validator running")

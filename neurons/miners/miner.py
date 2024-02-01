@@ -3,6 +3,8 @@ import os
 import time
 import typing
 import traceback
+from random import sample
+
 import yaml
 
 import bittensor as bt
@@ -202,7 +204,7 @@ class Miner(BaseMinerNeuron):
 
     def resync_metagraph(self):
         super(Miner, self).resync_metagraph()
-        store_miner_metadata(self.config, self.graph_search, self.wallet) 
+        store_miner_metadata(self.config, self.graph_search, self.wallet)
 
     def save_state(self):
         #empty function to remove logging WARNING
@@ -246,6 +248,8 @@ class Miner(BaseMinerNeuron):
             start_block = block_range['start_block_height']
             last_block = block_range['latest_block_height']
             run_id = self.graph_search.get_run_id()
+            block_heights = sample(range(start_block, last_block + 1), 10)
+            data_samples = self.graph_search.get_block_transactions(block_heights)
 
             synapse.output = protocol.MinerDiscoveryOutput(
                 metadata=protocol.MinerDiscoveryMetadata(
@@ -254,6 +258,7 @@ class Miner(BaseMinerNeuron):
                 ),
                 start_block_height=start_block,
                 block_height=last_block,
+                data_samples=data_samples,
                 run_id=run_id,
                 version=4
             )
