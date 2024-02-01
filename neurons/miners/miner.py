@@ -313,6 +313,6 @@ if __name__ == "__main__":
     wait_for_blocks_sync()
     with Miner() as miner:
         while True:
-            bt.logging.info(f"Miner running: block={miner.block}, last_block_update={miner.metagraph.last_update[miner.uid]}")
+            bt.logging.info(f"Miner running")
             time.sleep(bt.__blocktime__*2)
 
