@@ -57,7 +57,7 @@ class RemoteConfig:
                         json.dump(self.config_cache, file)
 
                     self.last_update_time = current_time
-                    bt.logging.info(f"Updated config from {self.config_url}")
+                    bt.logging.success(f"Updated config from {self.config_url}")
                     break  # Break the loop if successful
                 except requests.exceptions.RequestException as e:
                     retries += 1

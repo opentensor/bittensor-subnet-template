@@ -43,7 +43,7 @@ def main():
 
             if needs_refresh:
                 subprocess.run(["iptables-save"], check=True)
-                bt.logging.info(f"Refreshed ip tables")
+                bt.logging.success(f"Refreshed ip tables")
             else:
                 bt.logging.info(f"✅ No new blacklisted ips found")
 
@@ -51,7 +51,7 @@ def main():
             time.sleep(SLEEP_TIME)
 
         except KeyboardInterrupt:
-            bt.logging.success("Ip blocker killed by keyboard interrupt.")
+            bt.logging.info("Ip blocker killed by keyboard interrupt.")
             break
         except Exception as e:
             bt.logging.error(traceback.format_exc())

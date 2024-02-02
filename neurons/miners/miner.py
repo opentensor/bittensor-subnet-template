@@ -299,7 +299,7 @@ def wait_for_blocks_sync():
                 delta = latest_block_height - current_block_height
                 if delta < 100:
                     is_synced = True
-                    bt.logging.info(f"Graph model is synced with blockchain.")
+                    bt.logging.success(f"Graph model is synced with blockchain.")
                 else:
                     bt.logging.info(f"Graph Sync: {current_block_height}/{latest_block_height}")
                     time.sleep(bt.__blocktime__ * 12)
