@@ -223,13 +223,7 @@ class BaseValidatorNeuron(BaseNeuron):
 
         # Calculate the average reward for each uid across non-zero values.
         # Replace any NaN values with 0.
-<<<<<<< HEAD
-        raw_weights = torch.nn.functional.normalize(
-            self.scores, p=1, dim=0
-        )
-=======
         raw_weights = torch.nn.functional.normalize(self.scores, p=1, dim=0)
->>>>>>> upstream/main
 
         bt.logging.debug("raw_weights", raw_weights)
         bt.logging.debug("raw_weight_uids", self.metagraph.uids.to("cpu"))
@@ -265,15 +259,11 @@ class BaseValidatorNeuron(BaseNeuron):
             weights=uint_weights,
             wait_for_finalization=False,
             wait_for_inclusion=True,
-<<<<<<< HEAD
-=======
             version_key=self.spec_version,
->>>>>>> upstream/main
+            ttl = 60
         )
-        if result is True:
-            bt.logging.info("set_weights on chain successfully!")
-        else:
-            bt.logging.error("set_weights failed")
+        if not result:
+            bt.logging.error("set_weights() failed")
 
     def resync_metagraph(self):
         """Resyncs the metagraph and updates the hotkeys and moving averages based on the new metagraph."""
