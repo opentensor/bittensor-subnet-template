@@ -69,7 +69,7 @@ def store_miner_metadata(config, graph_search, wallet):
         bt.logging.info(f"Storing miner metadata")
         metadata = get_metadata()
         subtensor.commit(wallet, config.netuid, Metadata.to_compact(metadata))
-        bt.logging.info(f"Stored miner metadata: {metadata}")
+        bt.logging.success(f"Stored miner metadata: {metadata}")
         
     except bt.errors.MetadataError as e:
         bt.logging.warning(f"Skipping storing miner metadata, error: {e}")
@@ -108,7 +108,7 @@ def store_validator_metadata(config, wallet, uid):
                 return
 
         subtensor.commit(wallet, config.netuid, metadata.to_compact())
-        bt.logging.info(f"Stored validator metadata: {metadata}")
+        bt.logging.success(f"Stored validator metadata: {metadata}")
     except bt.errors.MetadataError as e:
         bt.logging.warning(f"Skipping storing validator metadata, error: {e}")
     except Exception as e:
