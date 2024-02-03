@@ -210,8 +210,6 @@ if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
 
-    # Todo wait for btcnode to sync
-    # Todo wait for ethereum node to sync
     with Validator() as validator:
         while True:
             bt.logging.info("Validator running")

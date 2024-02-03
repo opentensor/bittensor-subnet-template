@@ -13,3 +13,4 @@ requests
 urllib3
 web3
 PyYAML
+asyncio
