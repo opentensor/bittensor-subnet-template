@@ -5,7 +5,7 @@ class Scorer:
     def __init__(self, config: ValidatorConfig):
         self.config = config
 
-    def calculate_score(self, network,  process_time, indexed_start_block_height, indexed_end_block_height, blockchain_last_block_height, data_samples_are_valid, miner_distribution, multiple_ips, multiple_run_ids):
+    def calculate_score(self, network,  process_time, indexed_start_block_height, indexed_end_block_height, blockchain_last_block_height, miner_distribution, multiple_ips, multiple_run_ids):
         log =  (f'🔄 Network: {network} | ' \
                 f'Process time: {process_time:4f} | ' \
                 f'Indexed start block height: {indexed_start_block_height} | ' \
@@ -13,17 +13,13 @@ class Scorer:
                 f'Blockchain last block height: {blockchain_last_block_height} | ' \
                 f'Miner distribution: {miner_distribution} | ' \
                 f'Multiple IPs: {multiple_ips} | ' \
-                f'Multiple run id: {multiple_run_ids} | ' \
-                f'Valid data samples: {data_samples_are_valid} | ')
+                f'Multiple run id: {multiple_run_ids} | ')
         bt.logging.info(log)
 
         if multiple_ips:
             bt.logging.info(f"🔄 Final score: 0")
             return 0
         if multiple_run_ids:
-            bt.logging.info(f"🔄 Final score: 0")
-            return 0
-        if not data_samples_are_valid:
             bt.logging.info(f"🔄 Final score: 0")
             return 0
 

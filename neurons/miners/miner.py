@@ -1,350 +1,323 @@
-# The MIT License (MIT)
-# Copyright © 2023 Yuma Rao
-# Copyright © 2023 aphex5
-import concurrent
-import json
-# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
-# documentation files (the “Software”), to deal in the Software without restriction, including without limitation
-# the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
-# and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in all copies or substantial portions of
-# the Software.
-
-# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-# THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-# DEALINGS IN THE SOFTWARE.
-
+import argparse
 import os
 import time
-import argparse
-import traceback
 import typing
-import torch
-import bittensor as bt
+import traceback
 from random import sample
+
+import yaml
+
+import bittensor as bt
+
 from insights import protocol
-from neurons import VERSION
-from neurons.miners import blacklists
-from neurons.nodes.nodes import get_node
-from neurons.miners.bitcoin.funds_flow.graph_indexer import GraphIndexer
-from neurons.miners.query import (
-    execute_query_proxy,
-    get_graph_search, is_query_only,
-)
-from insights.protocol import (
-    MODEL_TYPE_FUNDS_FLOW,
-    NETWORK_BITCOIN,
-    MinerDiscoveryMetadata
-)
-from neurons.remote_config import MinerConfig
+
+
+# import base miner class which takes care of most of the boilerplate
+from template.base.miner import BaseMinerNeuron
+
+from neurons.miners import blacklist
+from insights.protocol import MODEL_TYPE_FUNDS_FLOW, NETWORK_BITCOIN
 from neurons.storage import store_miner_metadata
+from neurons.remote_config import MinerConfig
+from neurons.nodes.factory import NodeFactory
+from neurons.miners.query import get_graph_search, get_graph_indexer
 
 
-def get_config():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--network",
-        default=NETWORK_BITCOIN,
-        help="Set miner's supported blockchain network.",
-    )
-    parser.add_argument(
-        "--model_type",
-        type=str,
-        default=MODEL_TYPE_FUNDS_FLOW,
-        help="Set miner's supported model type.",
-    )
+class Miner(BaseMinerNeuron):
+    """
+    Your miner neuron class. You should use this class to define your miner's behavior. In particular, you should replace the forward function with your own logic. You may also want to override the blacklist and priority functions according to your needs.
 
-    parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
+    This class inherits from the BaseMinerNeuron class, which in turn inherits from BaseNeuron. The BaseNeuron class takes care of routine tasks such as setting up wallet, subtensor, metagraph, logging directory, parsing config, etc. You can override any of the methods in BaseNeuron if you need to customize the behavior.
 
-    bt.subtensor.add_args(parser)
-    bt.logging.add_args(parser)
-    bt.wallet.add_args(parser)
-    bt.axon.add_args(parser)
+    This class provides reasonable default behavior for a miner such as blacklisting unrecognized hotkeys, prioritizing requests based on stake, and forwarding requests to the forward function. If you need to define custom
+    """
+    @staticmethod
+    def get_config():
 
-    config = bt.config(parser)
-    config.full_path = os.path.expanduser(
-        "{}/{}/{}/netuid{}/{}".format(
-            config.logging.logging_dir,
-            config.wallet.name,
-            config.wallet.hotkey,
-            config.netuid,
-            "miner",
+        parser = argparse.ArgumentParser()
+        parser.add_argument(
+            "--network",
+            default=NETWORK_BITCOIN,
+            help="Set miner's supported blockchain network.",
         )
-    )
-    if not os.path.exists(config.full_path):
-        os.makedirs(config.full_path, exist_ok=True)
-    return config
+        parser.add_argument(
+            "--model_type",
+            type=str,
+            default=MODEL_TYPE_FUNDS_FLOW,
+            help="Set miner's supported model type.",
+        )
 
-def wait_for_blocks_sync(config):
-    bt.logging.info(f"Waiting for graph model to sync with blockchain.")
-    is_synced=False
-    while not is_synced:
-        wait_for_sync = os.getenv('WAIT_FOR_SYNC', 'True')
-        if wait_for_sync == 'False':
-            bt.logging.info(f"Skipping graph sync.")
-            break
+        parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
+        parser.add_argument("--dev", action=argparse.BooleanOptionalAction)
 
-        try:
-            graph_indexer = GraphIndexer(config.graph_db_url)
-            if config.network == 'bitcoin':
-                node = get_node(config.network)
-                latest_block_height =  node.get_current_block_height()
-                current_block_height = graph_indexer.get_latest_block_number()
-                if latest_block_height - current_block_height < 100:
-                    is_synced = True
-                    bt.logging.info(f"Graph model is synced with blockchain.")
-                else:
-                    bt.logging.info(f"Graph Sync: {current_block_height}/{latest_block_height}")
-                    time.sleep(bt.__blocktime__ * 12)
+        
+        bt.subtensor.add_args(parser)
+        bt.logging.add_args(parser)
+        bt.wallet.add_args(parser)
+        bt.axon.add_args(parser)
+
+        config = bt.config(parser)
+        config.blacklist  = dict(force_validator_permit=True, allow_non_registered=False)
+        config.wait_for_sync = os.environ.get('WAIT_FOR_SYNC', 'False')=='True'
+        config.graph_db_url = os.environ.get('GRAPH_DB_URL', 'bolt://localhost:7687')
+        config.graph_db_user = os.environ.get('GRAPH_DB_USER', 'user')
+        config.graph_db_password = os.environ.get('GRAPH_DB_PASSWORD', 'pwd')
+        
+        dev = config.dev
+        if dev:
+            dev_config_path = "miner.yml"
+            if os.path.exists(dev_config_path):
+                with open(dev_config_path, 'r') as f:
+                    dev_config = yaml.safe_load(f.read())
+                config.update(dev_config)
+                bt.logging.info(f"config updated with {dev_config_path}")
+
             else:
-                raise Exception("Unsupported blockchain network")
-        except Exception as e:
-            bt.logging.error(traceback.format_exc())
-            time.sleep(bt.__blocktime__ * 12)
-            bt.logging.info(f"Failed to connect with graph database. Retrying...")
-            continue
+                with open(dev_config_path, 'w') as f:
+                    yaml.safe_dump(config, f)
+                bt.logging.info(f"config stored in {dev_config_path}")
 
-def main(config):
-    bt.logging(config=config, logging_dir=config.full_path)
-    bt.logging.info(
-        f"Running miner for subnet: {config.netuid} on network: {config.subtensor.chain_endpoint} with config:"
-    )
-    bt.logging.info("Setting up bittensor objects.")
-    wallet = bt.wallet(config=config)
-    bt.logging.info(f"Wallet: {wallet}")
-    subtensor = bt.subtensor(config=config)
-    bt.logging.info(f"Subtensor: {subtensor}")
-    metagraph = subtensor.metagraph(config.netuid)
-    bt.logging.info(f"Metagraph: {metagraph}")
+        return config
+    
+    def __init__(self, config=None):
+        config = Miner.get_config()
+        
+        super(Miner, self).__init__(config=config)
+        
 
-    last_updated_block = subtensor.block - 100
-
-    if wallet.hotkey.ss58_address not in metagraph.hotkeys:
-        bt.logging.error(
-            f"\nYour miner: {wallet} is not registered to chain connection: {subtensor} \nRun btcli register and try again. "
+        self.request_timestamps: dict = {}
+        
+        self.axon = bt.axon(wallet=self.wallet, port=self.config.axon.port)        
+        # Attach determiners which functions are called when servicing a request.
+        bt.logging.info(f"Attaching forwards functions to miner axon.")
+        self.axon.attach(
+            forward_fn=self.block_check,
+            blacklist_fn=self.block_check_blacklist,
+            priority_fn=self.block_check_priority,
+        ).attach(
+            forward_fn=self.discovery,
+            blacklist_fn=self.discovery_blacklist,
+            priority_fn=self.discovery_priority,
+        ).attach(
+            forward_fn=self.query,
+            blacklist_fn=self.query_blacklist,
+            priority_fn=self.query_priority,
         )
-        exit()
 
-    """ Building dependencies. """
-    miner_config = MinerConfig()
-    miner_config.load_and_get_config_values()
-    blacklist_registry_manager = blacklists.BlacklistRegistryManager()
-    _blacklist_discovery = blacklists.BlacklistDiscovery(config, metagraph, miner_config, blacklist_registry_manager)
-    _blacklist_discovery.set_validator_metadata()
-    _blacklist_discovery.run_validator_metadata_updater()
+        #to_remove_after_merge:
+        self.axon.attach(
+            forward_fn=self.deprecated_block_check,
+            blacklist_fn=self.deprecated_block_check_blacklist,
+            priority_fn=self.deprecated_block_check_priority,
+        ).attach(
+            forward_fn=self.deprecated_discovery,
+            blacklist_fn=self.deprecated_discovery_blacklist,
+            priority_fn=self.deprecated_discovery_priority,
+        ).attach(
+            forward_fn=self.deprecated_query,
+            blacklist_fn=self.deprecated_query_blacklist,
+            priority_fn=self.deprecated_query_priority,
+        )
 
-    my_subnet_uid = metagraph.hotkeys.index(wallet.hotkey.ss58_address)
-    bt.logging.info(f"Running miner on uid: {my_subnet_uid}")
+        bt.logging.info(f"Axon created: {self.axon}")
 
-    graph_search = get_graph_search(config.network, config.model_type)
-    store_miner_metadata(config, graph_search, wallet)
+        self.graph_search = get_graph_search(config)
 
-    def miner_discovery(synapse: protocol.MinerDiscovery) -> protocol.MinerDiscovery:
+        self.miner_config = MinerConfig().load_and_get_config_values()        
+
+
+    
+    async def block_check(self, synapse: protocol.BlockCheck) -> protocol.BlockCheck:
         try:
-            graph_search = get_graph_search(config.network, config.model_type)
-            block_range = graph_search.get_block_range()
-            _latest_block_height = block_range['latest_block_height']
-            start_block_height = block_range['start_block_height']
-
-            block_heights = sample(range(start_block_height, _latest_block_height + 1), 10)
-            data_samples = graph_search.get_block_transactions(block_heights)
-            run_id = graph_search.get_run_id()
-
-            synapse.output = protocol.MinerDiscoveryOutput(
-                metadata=MinerDiscoveryMetadata(
-                    network=config.network,
-                    model_type=config.model_type,
-                ),
-                start_block_height=start_block_height,
-                block_height=_latest_block_height,
+            block_heights = synapse.blocks_to_check
+            data_samples = self.graph_search.get_block_transactions(block_heights)
+            synapse.output = protocol.BlockCheckOutput(
                 data_samples=data_samples,
-                run_id=run_id,
-                version=VERSION,
             )
-            bt.logging.info(f"Serving miner discovery output: {synapse.output}")
-
-            return synapse
+            bt.logging.info(f"Serving miner random block check output: {synapse.output}")
         except Exception as e:
             bt.logging.error(traceback.format_exc())
             synapse.output = None
-            return synapse
-
-    def miner_random_block_check(synapse: protocol.MinerRandomBlockCheck) -> protocol.MinerRandomBlockCheck:
+        return synapse
+            
+    async def discovery(self, synapse: protocol.Discovery ) -> protocol.Discovery:
         try:
-            graph_search = get_graph_search(config.network, config.model_type)
+            block_range = self.graph_search.get_block_range()
+            start_block = block_range['start_block_height']
+            last_block = block_range['latest_block_height']
+            run_id = self.graph_search.get_run_id()
+
+            synapse.output = protocol.DiscoveryOutput(
+                metadata=protocol.DiscoveryMetadata(
+                    network=self.config.network,
+                    model_type=self.config.model_type,
+                ),
+                start_block_height=start_block,
+                block_height=last_block,
+                run_id=run_id,
+            )
+            bt.logging.info(f"Serving miner discovery output: {synapse.output}")
+        except Exception as e:
+            bt.logging.error(traceback.format_exc())
+            synapse.output = None
+        return synapse
+
+    async def query(self, synapse: protocol.Query ) -> protocol.Query:
+        try:
+            synapse.output = self.graph_search.execute_query(
+                network=synapse.network, query=synapse.query)
+        except Exception as e:
+            bt.logging.error(traceback.format_exc())
+            synapse.output = None
+        return synapse
+
+    async def block_check_blacklist(self, synapse: protocol.BlockCheck) -> typing.Tuple[bool, str]:
+        return blacklist.base_blacklist(self, synapse=synapse)
+
+    async def discovery_blacklist(self, synapse: protocol.Discovery) -> typing.Tuple[bool, str]:
+        return blacklist.discovery_blacklist(self, synapse=synapse)
+
+    async def query_blacklist(self, synapse: protocol.Query) -> typing.Tuple[bool, str]:
+        return blacklist.query_blacklist(self, synapse=synapse)
+
+
+    def base_priority(self, synapse: bt.Synapse) -> float:
+        caller_uid = self.metagraph.hotkeys.index(
+            synapse.dendrite.hotkey
+        ) 
+        prirority = float(
+            self.metagraph.S[caller_uid]
+        )
+        bt.logging.trace(
+            f"Prioritizing {synapse.dendrite.hotkey} with value: ", prirority
+        )
+        return prirority
+    
+    async def block_check_priority(self, synapse: protocol.BlockCheck) -> float:
+        return self.base_priority(synapse=synapse)
+
+    async def discovery_priority(self, synapse: protocol.Discovery) -> float:
+        return self.base_priority(synapse=synapse)
+
+    async def query_priority(self, synapse: protocol.Query) -> float:
+        return self.base_priority(synapse=synapse)
+
+    def resync_metagraph(self):
+        super(Miner, self).resync_metagraph()
+        store_miner_metadata(self.config, self.graph_search, self.wallet)
+
+    def save_state(self):
+        #empty function to remove logging WARNING
+        pass
+
+    ### TO REMOVE AFTER MERGE WITH MAIN
+    async def deprecated_block_check_priority(self, synapse: protocol.MinerRandomBlockCheck) -> float:
+        return self.base_priority(synapse=synapse)
+
+    async def deprecated_discovery_priority(self, synapse: protocol.MinerDiscovery) -> float:
+        return self.base_priority(synapse=synapse)
+
+    async def deprecated_query_priority(self, synapse: protocol.MinerQuery) -> float:
+        return self.base_priority(synapse=synapse)
+    
+    async def deprecated_block_check_blacklist(self, synapse: protocol.MinerRandomBlockCheck) -> typing.Tuple[bool, str]:
+        return blacklist.base_blacklist(self, synapse=synapse)
+
+    async def deprecated_discovery_blacklist(self, synapse: protocol.MinerDiscovery) -> typing.Tuple[bool, str]:
+        return blacklist.discovery_blacklist(self, synapse=synapse)
+
+    async def deprecated_query_blacklist(self, synapse: protocol.MinerQuery) -> typing.Tuple[bool, str]:
+        return blacklist.query_blacklist(self, synapse=synapse)
+
+    async def deprecated_block_check(self, synapse: protocol.MinerRandomBlockCheck) -> protocol.MinerRandomBlockCheck:
+        try:
             block_heights = synapse.blocks_to_check
-            data_samples = graph_search.get_block_transactions(block_heights)
+            data_samples = self.graph_search.get_block_transactions(block_heights)
             synapse.output = protocol.MinerRandomBlockCheckOutput(
                 data_samples=data_samples,
             )
             bt.logging.info(f"Serving miner random block check output: {synapse.output}")
-
-            return synapse
         except Exception as e:
             bt.logging.error(traceback.format_exc())
             synapse.output = None
-            return synapse
-
-    def execute_query(synapse: protocol.MinerQuery) -> protocol.MinerQuery:
+        return synapse
+            
+    async def deprecated_discovery(self, synapse: protocol.MinerDiscovery ) -> protocol.MinerDiscovery:
         try:
-            synapse.output = execute_query_proxy(
-                network=synapse.network,
-                model_type=synapse.model_type,
-                query=synapse.query,
+            block_range = self.graph_search.get_block_range()
+            start_block = block_range['start_block_height']
+            last_block = block_range['latest_block_height']
+            run_id = self.graph_search.get_run_id()
+            block_heights = sample(range(start_block, last_block + 1), 10)
+            data_samples = self.graph_search.get_block_transactions(block_heights)
+
+            synapse.output = protocol.MinerDiscoveryOutput(
+                metadata=protocol.MinerDiscoveryMetadata(
+                    network=self.config.network,
+                    model_type=self.config.model_type,
+                ),
+                start_block_height=start_block,
+                block_height=last_block,
+                data_samples=data_samples,
+                run_id=run_id,
+                version=4
             )
+            bt.logging.info(f"Serving miner discovery output: {synapse.output}")
         except Exception as e:
             bt.logging.error(traceback.format_exc())
             synapse.output = None
-
         return synapse
 
-    def priority_discovery(synapse: protocol.MinerDiscovery) -> float:
-        caller_uid = metagraph.hotkeys.index(synapse.dendrite.hotkey)
-        prirority = float(metagraph.S[caller_uid])
-        bt.logging.trace(
-            f"Prioritizing {synapse.dendrite.hotkey} with value: ", prirority
-        )
-        return prirority
-
-    def blacklist_discovery(synapse: protocol.MinerDiscovery) -> typing.Tuple[bool, str]:
-        return  _blacklist_discovery.blacklist_discovery(metagraph, synapse)
-
-    def priority_execute_query(synapse: protocol.MinerQuery) -> float:
-        caller_uid = metagraph.hotkeys.index(synapse.dendrite.hotkey)
-        prirority = float(metagraph.S[caller_uid])
-        bt.logging.trace(
-            f"Prioritizing {synapse.dendrite.hotkey} with value: ", prirority
-        )
-        return prirority
-
-    def blacklist_execute_query(synapse: protocol.MinerQuery) -> typing.Tuple[bool, str]:
-
-        if synapse.dendrite.hotkey not in metagraph.hotkeys:
-            bt.logging.trace(
-                f"Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}"
-            )
-            return True, "Unrecognized hotkey"
-
-        if synapse.network != config.blockchain:
-            bt.logging.trace(
-                f"Blacklisting hot key {synapse.dendrite.hotkey} because of wrong blockchain"
-            )
-            return True, "Blockchain not supported."
-
-        elif synapse.model_type != config.model_type:
-            bt.logging.trace(
-                f"Blacklisting hot key {synapse.dendrite.hotkey} because of wrong model type"
-            )
-            return True, "Model type not supported."
-
-        elif not is_query_only(synapse.query):
-            bt.logging.trace(
-                f"Blacklisting hot key {synapse.dendrite.hotkey} because of illegal cypher keywords"
-            )
-            return True, "Illegal cypher keywords."
-
-        else:
-            return False, "All ok"
-
-    axon = bt.axon(wallet=wallet, config=config)
-    bt.logging.info(f"Attaching forward function to axon.")
-
-    axon.attach(forward_fn=miner_discovery,  blacklist_fn=blacklist_discovery, priority_fn=priority_discovery).attach(
-        forward_fn=execute_query, blacklist_fn=blacklist_execute_query, priority_fn=priority_execute_query).attach(forward_fn=miner_random_block_check)
-
-    bt.logging.info(
-        f"Serving axon {axon} on network: {config.subtensor.chain_endpoint} with netuid: {config.netuid}"
-    )
-
-    axon.serve(netuid=config.netuid, subtensor=subtensor)
-    bt.logging.info(f"Starting axon server on port: {config.axon.port}")
-    metagraph.sync(subtensor=subtensor)
-    axon.start()
-    bt.logging.info(f"Starting main loop")
-
-    step = 0
-    while True:
+    async def deprecated_query(self, synapse: protocol.MinerQuery ) -> protocol.MinerQuery:
         try:
-            if subtensor.block - last_updated_block > 100:
-                if step % 60 != 0:
-                    try:
-                        graph_search = get_graph_search(config.network, config.model_type)
-                        store_miner_metadata(config, graph_search, wallet)
-                    except Exception as e:
-                        bt.logging.error(f"Could not store miner metadata: {e} {traceback.format_exc()}")
-
-            if subtensor.block - last_updated_block >= 100:
-                uid = None
-                try:
-                    for _uid, axon in enumerate(metagraph.axons):
-                        if axon.hotkey == wallet.hotkey.ss58_address:
-                            uid = _uid
-                            break
-                    if uid is not None:
-                        miner_set_weights = os.getenv('MINER_SET_WEIGHTS', 'True')
-                        if miner_set_weights == 'True':
-                            weights = torch.Tensor([0.0] * len(metagraph.uids))
-                            weights[uid] = 1.0
-                            (uids, processed_weights) = bt.utils.weight_utils.process_weights_for_netuid( uids = metagraph.uids, weights = weights, netuid=config.netuid, subtensor = subtensor)
-                            subtensor.set_weights(wallet = wallet, netuid = config.netuid, weights = processed_weights, uids = uids)
-                            bt.logging.trace("🔄 Miner weight set!")
-                        last_updated_block = subtensor.block
-                    else:
-                        bt.logging.warning(f"The miner hotkey {config.wallet.hotkey} has been deregistered from the network.")
-                except Exception as e:
-                    bt.logging.warning(f"Could not set miner weight: {e}")
-                    raise e
-
-            if step % 60 == 0:
-                metagraph = subtensor.metagraph(config.netuid)
-                log =  (f'Step:{step} | '
-                        f'Block:{metagraph.block.item()} | '
-                        f'Stake:{metagraph.S[my_subnet_uid]} | '
-                        f'Rank:{metagraph.R[my_subnet_uid]} | '
-                        f'Trust:{metagraph.T[my_subnet_uid]} | '
-                        f'Consensus:{metagraph.C[my_subnet_uid] } | '
-                        f'Incentive:{metagraph.I[my_subnet_uid]} | '
-                        f'Emission:{metagraph.E[my_subnet_uid]}')
-                bt.logging.info(log)
-
-            miner_config.load_and_get_config_values()
-            step += 1
-            time.sleep(1)
-
-        except KeyboardInterrupt:
-            axon.stop()
-            bt.logging.success("Miner killed by keyboard interrupt.")
-            break
+            synapse.output = self.graph_search.execute_query(
+                network=synapse.network, query=synapse.query)
         except Exception as e:
             bt.logging.error(traceback.format_exc())
-            continue
+            synapse.output = None
+        return synapse
 
 
+def wait_for_blocks_sync():
+        is_synced=False
+
+        config = Miner.get_config()
+        if not config.wait_for_sync:
+            bt.logging.info(f"Skipping graph sync.")
+            return is_synced
+        
+        miner_config = MinerConfig().load_and_get_config_values()
+        delta = miner_config.get_blockchain_sync_delta(config.network)
+        bt.logging.info(f"Waiting for graph model to sync with blockchain.")
+        while not is_synced:
+            try:
+                graph_indexer = get_graph_indexer(config)
+                node = NodeFactory.create_node(config.network)
+
+                latest_block_height = node.get_current_block_height()
+                current_block_height = graph_indexer.get_latest_block_number()
+                delta = latest_block_height - current_block_height
+                if delta < 100:
+                    is_synced = True
+                    bt.logging.success(f"Graph model is synced with blockchain.")
+                else:
+                    bt.logging.info(f"Graph Sync: {current_block_height}/{latest_block_height}")
+                    time.sleep(bt.__blocktime__ * 12)
+            except Exception as e:
+                bt.logging.error(traceback.format_exc())
+                time.sleep(bt.__blocktime__ * 12)
+                bt.logging.info(f"Failed to connect with graph database. Retrying...")
+                continue
+        return is_synced
+
+# This is the main function, which runs the miner.
 if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
 
-    config = get_config()
+    wait_for_blocks_sync()
+    with Miner() as miner:
+        while True:
+            bt.logging.info(f"Miner running")
+            time.sleep(bt.__blocktime__*2)
 
-    # Check for an environment variable to enable local development
-    if os.getenv("MINER_TEST_MODE") == "True":
-        # Local development settings
-        config.subtensor.chain_endpoint = "ws://163.172.164.213:9944"
-        config.wallet.hotkey = 'default2'
-        config.wallet.name = 'validator'
-        config.netuid = 1
-        config.logging.debug = True
-        config.logging.trace = True
-
-        # set environment variables
-        os.environ['WAIT_FOR_SYNC'] = 'False'
-        os.environ['GRAPH_DB_URL'] = 'bolt://localhost:7687'
-        os.environ['GRAPH_DB_USER'] = 'user'
-        os.environ['GRAPH_DB_PASSWORD'] = 'pwd'
-        os.environ['BT_AXON_PORT'] = '8191'
-
-    wait_for_blocks_sync(config)
-    main(config)

@@ -3,8 +3,7 @@ from typing import Optional
 import bittensor as bt
 from bittensor.extrinsics import serving
 from pydantic import BaseModel
-from insights.protocol import get_network_id, get_model_id
-from neurons import VERSION
+from insights.protocol import get_network_id, get_model_id, VERSION
 from neurons.docker_utils import get_docker_image_version
 
 class Metadata(BaseModel):
@@ -64,14 +63,18 @@ def store_miner_metadata(config, graph_search, wallet):
             ri=run_id,
         )
 
-    subtensor = bt.subtensor(config=config)
 
     try:
+        subtensor = bt.subtensor(config=config)
+        bt.logging.info(f"Storing miner metadata")
         metadata = get_metadata()
         subtensor.commit(wallet, config.netuid, Metadata.to_compact(metadata))
-        bt.logging.info(f"Stored miner metadata: {metadata}")
+        bt.logging.success(f"Stored miner metadata: {metadata}")
+        
     except bt.errors.MetadataError as e:
-        bt.logging.warning(f"Skipping storing miner metadata")
+        bt.logging.warning(f"Skipping storing miner metadata, error: {e}")
+    except Exception as e:
+        bt.logging.warning(f"Skipping storing miner metadata, error: {e}")
 
 def store_validator_metadata(config, wallet, uid):
 
@@ -105,9 +108,11 @@ def store_validator_metadata(config, wallet, uid):
                 return
 
         subtensor.commit(wallet, config.netuid, metadata.to_compact())
-        bt.logging.info(f"Stored validator metadata: {metadata}")
+        bt.logging.success(f"Stored validator metadata: {metadata}")
     except bt.errors.MetadataError as e:
         bt.logging.warning(f"Skipping storing validator metadata, error: {e}")
+    except Exception as e:
+        bt.logging.warning(f"Skipping storing miner metadata, error: {e}")
 
 def get_miners_metadata(config, metagraph):
     miners_metadata = {}
@@ -137,38 +142,3 @@ def get_miners_metadata(config, metagraph):
                 continue
 
     return miners_metadata
-
-
-def get_validator_metadata(config, metagraph, miner_config):
-    validator_metadata = {}
-    subtensor = bt.subtensor(config=config)
-
-    for neuron in metagraph.neurons:
-        if float(neuron.stake) > miner_config.stake_threshold:
-            hotkey = neuron.hotkey
-            uid = neuron.uid
-
-            bt.logging.info(f"Getting validator metadata for {hotkey}")
-
-            def get_commitment(netuid: int, uid: int, block: Optional[int] = None) -> str:
-                metadata = serving.get_metadata(subtensor, netuid, hotkey, block)
-                if metadata is None:
-                    return None
-                commitment = metadata["info"]["fields"][0]
-                hex_data = commitment[list(commitment.keys())[0]][2:]
-                return bytes.fromhex(hex_data).decode()
-
-            subtensor.get_commitment = get_commitment
-
-            try:
-                metadata_str = subtensor.get_commitment(config.netuid, uid)
-                if metadata_str is None:
-                    continue
-                metadata = ValidatorMetadata.from_compact(metadata_str)
-                validator_metadata[hotkey] = metadata
-            except Exception as e:
-                bt.logging.warning(f"Error while getting validator metadata for {hotkey}, Skipping...")
-                continue
-
-    bt.logging.info(f"Validators metadata: {validator_metadata}")
-    return validator_metadata
