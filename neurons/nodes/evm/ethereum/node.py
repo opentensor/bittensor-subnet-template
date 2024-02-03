@@ -108,7 +108,7 @@ class EthereumNode(Node):
             # keep connection alive for all requests.
             async with ClientSession() as session:
                 for tran in transactions:
-                    task = async_rpc_request(session, self.node_rpc_url, 'eth_getTransactionReceipt',[tran.hex()])
+                    task = async_rpc_request(session, self.node_rpc_url, 'eth_getTransactionReceipt',[tran])
                     tasks.append(task)
                 responses = await asyncio.gather(*tasks)
                 return responses
