@@ -3,7 +3,9 @@ import os
 import time
 import typing
 import traceback
-import random
+from random import sample
+
+import yaml
 
 import bittensor as bt
 
@@ -46,7 +48,7 @@ class Miner(BaseMinerNeuron):
         )
 
         parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
-        parser.add_argument("--mode", type=str, default="prod", help="(staging|testnet|prod)")
+        parser.add_argument("--dev", action=argparse.BooleanOptionalAction)
 
         
         bt.subtensor.add_args(parser)
@@ -55,28 +57,25 @@ class Miner(BaseMinerNeuron):
         bt.axon.add_args(parser)
 
         config = bt.config(parser)
-
-        bt.logging.info(f"running in {config.mode} mode")
-        if config.mode != 'prod':
-            config.logging.debug = True
-            config.logging.trace = True
-            config.miner_set_weights = True
-            config.wallet.hotkey = 'default'
-            config.wallet.name = 'miner'
-            config.wait_for_sync = bool(os.environ.get('WAIT_FOR_SYNC', 'False'))
-        if config.mode == 'staging':
-            config.subtensor.chain_endpoint = "ws://163.172.164.213:9944"
-            config.netuid = 1
-        elif config.mode == 'testnet':
-            config.subtensor.network = 'test'
-            config.netuid = 59
-
+        config.blacklist  = dict(force_validator_permit=True, allow_non_registered=False)
         config.wait_for_sync = os.environ.get('WAIT_FOR_SYNC', 'False')=='True'
         config.graph_db_url = os.environ.get('GRAPH_DB_URL', 'bolt://localhost:7687')
         config.graph_db_user = os.environ.get('GRAPH_DB_USER', 'user')
         config.graph_db_password = os.environ.get('GRAPH_DB_PASSWORD', 'pwd')
         
-        config.blacklist  = dict(force_validator_permit=True, allow_non_registered=False)
+        dev = config.dev
+        if dev:
+            dev_config_path = "miner.yml"
+            if os.path.exists(dev_config_path):
+                with open(dev_config_path, 'r') as f:
+                    dev_config = yaml.safe_load(f.read())
+                config.update(dev_config)
+                bt.logging.info(f"config updated with {dev_config_path}")
+
+            else:
+                with open(dev_config_path, 'w') as f:
+                    yaml.safe_dump(config, f)
+                bt.logging.info(f"config stored in {dev_config_path}")
 
         return config
     
@@ -249,6 +248,8 @@ class Miner(BaseMinerNeuron):
             start_block = block_range['start_block_height']
             last_block = block_range['latest_block_height']
             run_id = self.graph_search.get_run_id()
+            block_heights = sample(range(start_block, last_block + 1), 10)
+            data_samples = self.graph_search.get_block_transactions(block_heights)
 
             synapse.output = protocol.MinerDiscoveryOutput(
                 metadata=protocol.MinerDiscoveryMetadata(
@@ -257,7 +258,9 @@ class Miner(BaseMinerNeuron):
                 ),
                 start_block_height=start_block,
                 block_height=last_block,
+                data_samples=data_samples,
                 run_id=run_id,
+                version=4
             )
             bt.logging.info(f"Serving miner discovery output: {synapse.output}")
         except Exception as e:
@@ -296,7 +299,7 @@ def wait_for_blocks_sync():
                 delta = latest_block_height - current_block_height
                 if delta < 100:
                     is_synced = True
-                    bt.logging.info(f"Graph model is synced with blockchain.")
+                    bt.logging.success(f"Graph model is synced with blockchain.")
                 else:
                     bt.logging.info(f"Graph Sync: {current_block_height}/{latest_block_height}")
                     time.sleep(bt.__blocktime__ * 12)
@@ -315,6 +318,6 @@ if __name__ == "__main__":
     wait_for_blocks_sync()
     with Miner() as miner:
         while True:
-            bt.logging.info("Miner running")
-            time.sleep(bt.__blocktime__*10)
+            bt.logging.info(f"Miner running")
+            time.sleep(bt.__blocktime__*2)
 

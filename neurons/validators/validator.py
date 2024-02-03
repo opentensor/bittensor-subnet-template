@@ -1,8 +1,8 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
 # Copyright © 2023 aph5nt
-import concurrent
-import json
+
+
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
 # the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
@@ -22,6 +22,8 @@ import argparse
 import random
 import torch
 import bittensor as bt
+import os
+import yaml
 
 from insights import protocol
 from insights.protocol import DiscoveryOutput, BlockCheckOutput, MAX_MULTIPLE_IPS, \
@@ -47,33 +49,27 @@ class Validator(BaseValidatorNeuron):
         )
 
         parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
-        parser.add_argument("--mode", type=str, default="prod", help="(staging|testnet|prod)")
+        parser.add_argument("--dev", action=argparse.BooleanOptionalAction)
 
         bt.subtensor.add_args(parser)
         bt.logging.add_args(parser)
         bt.wallet.add_args(parser)
 
         config = bt.config(parser)
+        
+        dev = config.dev
+        if dev:
+            dev_config_path = "validator.yml"
+            if os.path.exists(dev_config_path):
+                with open(dev_config_path, 'r') as f:
+                    dev_config = yaml.safe_load(f.read())
+                config.update(dev_config)
+                bt.logging.info(f"config updated with {dev_config_path}")
 
-        bt.logging.info(f"running in {config.mode} mode")
-        if config.mode == "staging":
-            # Local development settings
-            config.subtensor.chain_endpoint = "ws://163.172.164.213:9944"
-            config.wallet.hotkey = 'default'
-            config.wallet.name = 'validator'
-            config.netuid = 1
-            config.logging.debug = True
-            config.logging.trace = True
-            config.miner_set_weights = True
-        elif config.mode == 'testnet':
-            config.subtensor.network = 'test'
-            config.subtensor.chain_endpoint = None
-            config.wallet.hotkey = 'default'
-            config.wallet.name = 'validator'
-            config.netuid = 59
-            config.logging.debug = True
-            config.logging.trace = True
-            config.miner_set_weights = True
+            else:
+                with open(dev_config_path, 'w') as f:
+                    yaml.safe_dump(config, f)
+                bt.logging.info(f"config stored in {dev_config_path}")
 
         return config
 
@@ -85,6 +81,7 @@ class Validator(BaseValidatorNeuron):
         self.block_height_cache = {network: self.nodes[network].get_current_block_height() for network in networks}
         
         super(Validator, self).__init__(config)
+
         self.sync_validator()
 
         
@@ -100,8 +97,10 @@ class Validator(BaseValidatorNeuron):
         if response.output is None or len(response.output.data_samples)==0 or response.output.data_samples[0] is None:
             bt.logging.debug(f"Skipping response {response}")
             return None
-        
-        return node.validate_all_data_samples(response.output.data_samples, blocks_to_check)
+
+        result = node.validate_all_data_samples(response.output.data_samples, blocks_to_check)
+        response_time = response.dendrite.process_time
+        return result, response_time
 
 
     def get_reward(self, response: DiscoveryOutput, ip_per_hotkey=None, run_id_per_hotkey=None, miner_distribution=None):
@@ -111,11 +110,20 @@ class Validator(BaseValidatorNeuron):
         last_block_height = output.block_height
         axon_ip = response.axon.ip
         hot_key = response.axon.hotkey
-        response_time = response.dendrite.process_time
         bt.logging.info(f"🔄 Processing response for {hot_key}@{axon_ip}")
 
         multiple_ips = ip_per_hotkey[axon_ip] > MAX_MULTIPLE_IPS
         multiple_run_ids = run_id_per_hotkey[hot_key] > MAX_MULTIPLE_RUN_ID
+
+        cross_validation_result, response_time = self.cross_validate(response.axon, self.nodes[network], start_block_height, last_block_height)
+
+        if cross_validation_result is None:
+            bt.logging.debug(f"Cross-Validation: {hot_key=} Timeout skipping response")
+            return None
+        if not cross_validation_result:
+            bt.logging.info(f"Cross-Validation: {hot_key=} Test failed")
+            return 0
+        bt.logging.info(f"Cross-Validation: {hot_key=} Test passed")
 
         score = self.scorer.calculate_score(
             network,
@@ -127,15 +135,7 @@ class Validator(BaseValidatorNeuron):
             multiple_ips,
             multiple_run_ids
         )
-        cross_validation_result = self.cross_validate(response.axon, self.nodes[network], start_block_height, last_block_height)
 
-        if cross_validation_result is None:
-            bt.logging.debug(f"Cross-Validation: {hot_key=} Timeout skipping response")
-            return None
-        if not cross_validation_result:
-            bt.logging.info(f"Cross-Validation: {hot_key=} Test failed")
-            return 0
-        bt.logging.info(f"Cross-Validation: {hot_key=} Test passed")
         return score
 
     async def forward(self):
@@ -209,7 +209,9 @@ class Validator(BaseValidatorNeuron):
 if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
-    
+
+    # Todo wait for btcnode to sync
+    # Todo wait for ethereum node to sync
     with Validator() as validator:
         while True:
             bt.logging.info("Validator running")

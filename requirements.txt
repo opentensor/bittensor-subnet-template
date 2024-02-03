@@ -1,4 +1,4 @@
-bittensor==6.6.0
+bittensor==6.7.1
 torch
 python-bitcoinrpc
 bitcoin
@@ -12,3 +12,4 @@ sqlalchemy
 requests
 urllib3
 web3
+PyYAML
