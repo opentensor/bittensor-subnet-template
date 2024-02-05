@@ -96,7 +96,7 @@ class Validator(BaseValidatorNeuron):
         )
         if response.output is None or len(response.output.data_samples)==0 or response.output.data_samples[0] is None:
             bt.logging.debug(f"Skipping response {response}")
-            return None
+            return None, None
 
         result = node.validate_all_data_samples(response.output.data_samples, blocks_to_check)
         response_time = response.dendrite.process_time
