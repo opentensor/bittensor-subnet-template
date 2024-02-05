@@ -86,6 +86,7 @@ class GraphIndexer:
             index_creation_statements = {
                 "Transaction-tx_id": "CREATE INDEX ON :Transaction(tx_id);",
                 "Transaction-block_height": "CREATE INDEX ON :Transaction(block_height);",
+                "Transaction-out_total_amount": "CREATE INDEX ON :Transaction(out_total_amount)",
                 "Address-address": "CREATE INDEX ON :Address(address);",
                 "SENT-value_satoshi": "CREATE INDEX ON :SENT(value_satoshi)",
             }
