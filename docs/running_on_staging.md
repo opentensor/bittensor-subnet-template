@@ -176,7 +176,7 @@ You will see:
 
 ## 9. Create a subnet
 
-The below commands establish a new subnet on the local chain. The cost will be exactly τ100.000000000 for the first subnet you create.
+The below commands establish a new subnet on the local chain. The cost will be exactly τ1000.000000000 for the first subnet you create and you'll have to run the faucet several times to get enough tokens.
 
 ```bash
 btcli subnet create --wallet.name owner --subtensor.chain_endpoint ws://127.0.0.1:9946 
@@ -186,7 +186,7 @@ You will see:
 
 ```bash
 >> Your balance is: τ200.000000000
->> Do you want to register a subnet for τ100.000000000? [y/n]: 
+>> Do you want to register a subnet for τ1000.000000000? [y/n]: 
 >> Enter password to unlock key: [YOUR_PASSWORD]
 >> ✅ Registered subnetwork with netuid: 1
 ```
@@ -307,7 +307,22 @@ Run the subnet validator:
 python neurons/validator.py --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1:9946 --wallet.name validator --wallet.hotkey default --logging.debug
 ```
 
-## 14. Verify your incentive mechanism
+## 14. Set weights for your subnet
+
+Register a validator on the root subnet and boost to set weights for your subnet. This is a necessary step to ensure that the subnet is able to receive emmissions.
+
+### Register your validator on the root subnet
+
+```bash
+btcli root register --wallet.name validator --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946
+```
+
+### Boost your subnet on the root subnet
+```bash
+btcli root boost --netuid 1 --increase 1 --wallet.name validator --wallet.hotkey default --subtensor.chain_endpoint ws://127.0.0.1:9946
+```
+
+## 15. Verify your incentive mechanism
 
 After a few blocks the subnet validator will set weights. This indicates that the incentive mechanism is active. Then after a subnet tempo elapses (360 blocks or 72 minutes) you will see your incentive mechanism beginning to distribute TAO to the subnet miner.
 
