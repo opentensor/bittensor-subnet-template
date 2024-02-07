@@ -23,6 +23,7 @@ import torch
 import asyncio
 import threading
 import bittensor as bt
+import multiprocessing 
 
 from typing import List
 from traceback import print_exception
@@ -252,18 +253,32 @@ class BaseValidatorNeuron(BaseNeuron):
         bt.logging.debug("uint_uids", uint_uids)
 
         # Set the weights on chain via our subtensor connection.
-        result = self.subtensor.set_weights(
-            wallet=self.wallet,
-            netuid=self.config.netuid,
-            uids=uint_uids,
-            weights=uint_weights,
-            wait_for_finalization=False,
-            wait_for_inclusion=True,
-            version_key=self.spec_version,
-            ttl = 60
-        )
+        result = self.try_set_weights(uint_uids, uint_weights)
         if not result:
             bt.logging.error("set_weights() failed")
+
+    def try_set_weights(self, uids, weights, ttl=60):
+        def set_weights(self, uids, weights, ttl):
+            self.subtensor.set_weights(
+                wallet=self.wallet,
+                netuid=self.config.netuid,
+                uids=uids,
+                weights=weights,
+                wait_for_finalization=False,
+                wait_for_inclusion=True,
+                version_key=self.spec_version,
+                ttl = ttl
+            )
+        process = multiprocessing.Process(
+            target=set_weights, args=(self, uids, weights, ttl)
+        )
+        process.start()
+        process.join(timeout=ttl)
+        if process.is_alive():
+            process.terminate()
+            process.join()
+            return False # failed
+        return True # Success
 
     def resync_metagraph(self):
         """Resyncs the metagraph and updates the hotkeys and moving averages based on the new metagraph."""
