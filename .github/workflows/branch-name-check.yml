@@ -1,0 +1,25 @@
+name: Enforce Branch Naming Convention
+on:
+  push:
+
+jobs:
+  check-branch-name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify Branch Name Pattern
+        run: |
+          # Extract the branch name from GITHUB_REF
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+
+          # Define regex for release and feature branches
+          RELEASE_BRANCH_REGEX="^release\/[0-9]+\.[0-9]+$"
+          FEATURE_BRANCH_REGEX="^feature\/.+$"
+
+          # Allow branches main, release/*, feature/* by skipping checks
+          if [[ "$BRANCH_NAME" == "main" ]] || [[ $BRANCH_NAME =~ $RELEASE_BRANCH_REGEX ]] || [[ $BRANCH_NAME =~ $FEATURE_BRANCH_REGEX ]]; then
+            echo "Branch name $BRANCH_NAME is allowed."
+            exit 0
+          else
+            echo "ERROR: Branch name $BRANCH_NAME does not follow the naming convention (main, release/x.x, or feature/anything)."
+            exit 1
+          fi
