@@ -186,7 +186,7 @@ class BaseMinerNeuron(BaseNeuron):
                 weights=chain_weights.to("cpu"),
                 wait_for_inclusion=False,
                 version_key=self.spec_version,
-                ttl = 60
+                ttl = 180
             )
 
         except Exception as e:
