@@ -84,6 +84,7 @@ class GraphIndexer:
                     existing_index_set.add(index_name)
 
             index_creation_statements = {
+                "Transaction": "CREATE INDEX ON :Transaction;",
                 "Transaction-tx_id": "CREATE INDEX ON :Transaction(tx_id);",
                 "Transaction-block_height": "CREATE INDEX ON :Transaction(block_height);",
                 "Transaction-out_total_amount": "CREATE INDEX ON :Transaction(out_total_amount)",
