@@ -1,6 +1,5 @@
 import os
 from neo4j import GraphDatabase
-from decimal import Decimal
 
 from neurons.setup_logger import setup_logger
 
@@ -65,6 +64,7 @@ class GraphIndexer:
                     existing_index_set.add(index_name)
 
             index_creation_statements = {
+                "Address": "CREATE INDEX ON :Address;",
                 "Address-balance": "CREATE INDEX ON :Address(balance);",
                 "Address-timestamp": "CREATE INDEX ON :Address(timestamp);",
                 "Address-address": "CREATE INDEX ON :Address(address);",
