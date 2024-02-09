@@ -8,7 +8,7 @@ VERSION = 4
 
 # Model types
 MODEL_TYPE_FUNDS_FLOW = "funds_flow"
-MODEL_TYPE_FUNDS_FLOW_ID = 1
+MODEL_TYPE_FUNDS_FLOW_ID = 2
 
 # Networks
 NETWORK_BITCOIN = "bitcoin"
