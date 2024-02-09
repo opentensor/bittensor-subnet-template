@@ -104,7 +104,7 @@ class GraphCreator:
                     
                     transaction = Transaction(
                         block_hash = nativeTx_data["blockHash"],
-                        block_number = nativeTx_data["blockNumber"],
+                        block_number = int(nativeTx_data["blockNumber"], 0),
                         tx_hash = nativeTx_data["hash"],
                         timestamp = timestamp,
                         gas_used = int(nativeTx_data.get("gas", 0), 0) * int(nativeTx_data.get("gasPrice", 0), 0),
@@ -182,7 +182,7 @@ class GraphCreator:
 
                                 transaction = Transaction(
                                     block_hash = tx_data["blockHash"],
-                                    block_number = tx_data["blockNumber"],
+                                    block_number = int(tx_data["blockNumber"], 0),
                                     tx_hash = tx_data["transactionHash"],
                                     gas_used = int(tx_data.get("gasUsed", 0), 0),
                                     from_address = from_account,
