@@ -3,4 +3,4 @@ cd "$(dirname "$0")/../"
 echo $(pwd)
 export PYTHONPATH=$(pwd)
 
-python3 neurons/miners/bitcoin/funds_flow/indexer.py
+python3 neurons/miners/bitcoin/funds_flow/indexer.py --start_height "$BITCOIN_START_BLOCK_HEIGHT"
