@@ -70,6 +70,8 @@ class GraphIndexer:
                 "Address-address": "CREATE INDEX ON :Address(address);",
                 "SENT-value": "CREATE INDEX ON :SENT(value)",
                 "SENT-symbol": "CREATE INDEX ON :SENT(symbol)",
+                "SENT-tx_hash": "CREATE INDEX ON :SENT(tx_hash)",
+                "SENT-tx_hash": "CREATE INDEX ON :SENT(checksum)",
             }
 
             for index_name, statement in index_creation_statements.items():
@@ -116,7 +118,7 @@ class GraphIndexer:
                         UNWIND $transactions AS tx
                         MERGE (from:Address {address: tx.from_address})
                         MERGE (to:Address {address: tx.to_address})
-                        CREATE (from)-[:SENT { tx_hash: tx.tx_hash, block_number:tx.block_number, value: tx.value, fee: tx.fee_wei, timestamp: tx.timestamp, symbol:tx.symbol }]->(to)
+                        CREATE (from)-[:SENT { tx_hash: tx.tx_hash, block_number:tx.block_number, value: tx.value, fee: tx.fee_wei, timestamp: tx.timestamp, symbol:tx.symbol, from: tx.from_address, to: tx.to_address, checksum:tx.checksum }]->(to)
                         """,
                         transactions = [
                             {
@@ -128,6 +130,7 @@ class GraphIndexer:
                                 "symbol": tx.symbol,
                                 "from_address": tx.from_address.address,
                                 "to_address": tx.to_address.address,
+                                "checksum": tx.checksum,
                             }
                             for tx in batch_transactions 
                         ]
