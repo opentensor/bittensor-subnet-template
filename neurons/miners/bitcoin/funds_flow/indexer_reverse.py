@@ -76,8 +76,8 @@ signal.signal(signal.SIGTERM, shutdown_handler)
 if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
-    start_height = int(os.getenv("BITCOIN_START_BLOCK_HEIGHT", 1))
-    end_height = int(os.getenv("BITCOIN_END_BLOCK_HEIGHT", 800000))
+    start_height = int(os.getenv("BITCOIN_START_BLOCK_HEIGHT", 300))
+    end_height = int(os.getenv("BITCOIN_END_BLOCK_HEIGHT", 200))
     bitcoin_node = NodeFactory.create_node(NETWORK_BITCOIN)
     graph_creator = GraphCreator()
     graph_indexer = GraphIndexer()
@@ -89,13 +89,15 @@ if __name__ == "__main__":
             graph_last_block_height = graph_indexer.get_latest_block_number()
             graph_min_block_height = graph_indexer.get_min_block_number()
 
+            block_height_gaps = graph_indexer.find_gap_ranges_in_block_heights(start_height, end_height)
+
             logger.info(f"Currently Indexed Block Range: {graph_min_block_height} - {graph_last_block_height}")
 
-            if graph_min_block_height > 0 or graph_last_block_height > 0:
-                if graph_min_block_height <= end_height <= graph_last_block_height:
-                    end_height = graph_last_block_height + 1
-                if graph_min_block_height <= start_height <= graph_last_block_height:
-                    start_height = graph_min_block_height - 1
+            #if graph_min_block_height > 0 or graph_last_block_height > 0:
+#                if graph_min_block_height <= end_height <= graph_last_block_height:
+ #                   end_height = graph_last_block_height + 1
+  #              if graph_min_block_height <= start_height <= graph_last_block_height:
+   #                 start_height = graph_min_block_height - 1
 
             if start_height < end_height:
                 break
@@ -104,7 +106,8 @@ if __name__ == "__main__":
             graph_indexer.create_indexes()
             logger.info(f"Starting indexing blocks from {start_height} to {end_height}...")
 
-            index_blocks(bitcoin_node, graph_creator, graph_indexer, start_height, end_height)
+            for range in block_height_gaps:
+                index_blocks(bitcoin_node, graph_creator, graph_indexer, range[1], range[0])
         except Exception as e:
             logger.error(f"Indexing failed with error: {e}")
         finally:
