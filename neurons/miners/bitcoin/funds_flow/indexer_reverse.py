@@ -76,7 +76,7 @@ signal.signal(signal.SIGTERM, shutdown_handler)
 if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
-    start_height = int(os.getenv("BITCOIN_START_BLOCK_HEIGHT", 310))
+    start_height = int(os.getenv("BITCOIN_START_BLOCK_HEIGHT", 437))
     end_height = int(os.getenv("BITCOIN_END_BLOCK_HEIGHT", 1))
     bitcoin_node = NodeFactory.create_node(NETWORK_BITCOIN)
     graph_creator = GraphCreator()
