@@ -25,6 +25,6 @@ if __name__ == '__main__':
         os.remove(target_path)
 
     hash_table = initialize_hash_table()
-    n_threads = os.environ.get("INDEXING_THREADS", 64)
+    n_threads = int(os.environ.get("INDEXING_THREADS", 64))
     index_hash_table(hash_table, csv_file, n_threads=n_threads)
     save_hash_table(hash_table, target_path)
