@@ -87,6 +87,11 @@ class Validator(BaseValidatorNeuron):
         
 
     def cross_validate(self, axon, node, start_block_height, last_block_height, k=20):
+
+        if (last_block_height+1-start_block_height) <  k:
+            bt.logging.debug("Miner block height is Invalid")
+            return False, 0
+
         blocks_to_check = random.sample(range(start_block_height, last_block_height + 1), k=k)
         response = self.dendrite.query(
             axon,
