@@ -34,7 +34,7 @@ from neurons.nodes.factory import NodeFactory
 from neurons.storage import store_validator_metadata, get_miners_metadata
 from neurons.validators.scoring import Scorer
 
-from neurons.validators.utils.utils import get_miner_distributions, count_hotkeys_per_ip, count_run_id_per_hotkey
+from neurons.validators.utils.utils import get_miner_distributions, count_hotkeys_per_ip, count_run_id_per_hotkey, generate_challenge_to_check
 from neurons.validators.utils.uids import get_random_uids
 
 from template.base.validator import BaseValidatorNeuron
@@ -87,19 +87,22 @@ class Validator(BaseValidatorNeuron):
         
 
     def cross_validate(self, axon, node, start_block_height, last_block_height, k=20):
-        blocks_to_check = random.sample(range(start_block_height, last_block_height + 1), k=k)
+        challenge, txn_ids_to_check = generate_challenge_to_check(node, start_block_height, last_block_height, k)
+        
         response = self.dendrite.query(
             axon,
-            protocol.BlockCheck(blocks_to_check=blocks_to_check),
+            challenge,
             deserialize=True,
-            timeout = self.validator_config.discovery_timeout,
+            timeout = self.validator_config.challenge_timeout,
         )
-        if response.output is None or len(response.output.data_samples)==0 or response.output.data_samples[0] is None:
+        
+        if response.outputs is None or len(response.outputs) != len(txn_ids_to_check):
             bt.logging.debug(f"Skipping response {response}")
             return None, None
-
-        result = node.validate_all_data_samples(response.output.data_samples, blocks_to_check)
+        
+        result = response.outputs == txn_ids_to_check
         response_time = response.dendrite.process_time
+        
         return result, response_time
 
 
