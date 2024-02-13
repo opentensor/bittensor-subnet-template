@@ -1,6 +1,6 @@
 import random
 
-from insights.protocol import get_network_by_id, Challenge, ChallengeInput
+from insights.protocol import get_network_by_id, Challenge
 from neurons.nodes.bitcoin.node_utils import process_in_memory_txn_for_indexing
 from neurons.miners.bitcoin.funds_flow.graph_creator import GraphCreator
 
@@ -38,28 +38,22 @@ def count_hotkeys_per_ip(filtered_axons):
 
     return hotkey_count_per_ip
 
-def generate_challenge_to_check(node, start_block_height, last_block_height, k=20):
-    blocks_to_check = random.sample(range(start_block_height, last_block_height + 1), k=k)
-    txn_ids_to_check = []
+def generate_challenge_to_check(node, start_block_height, last_block_height):
+    block_to_check = random.randint(start_block_height, last_block_height)
     graph_creator = GraphCreator()
-    challenge_inputs = []
     
-    for block_height in blocks_to_check:
-        block_data = node.get_block_by_height(block_height)
-        num_transactions = len(block_data["tx"])
+    block_data = node.get_block_by_height(block_to_check)
+    num_transactions = len(block_data["tx"])
 
-        out_total_amount = 0
-        while out_total_amount == 0:
-            selected_txn = block_data["tx"][random.randint(0, num_transactions - 1)]
-            txn_id = selected_txn.get('txid')
+    out_total_amount = 0
+    while out_total_amount == 0:
+        selected_txn = block_data["tx"][random.randint(0, num_transactions - 1)]
+        txn_id = selected_txn.get('txid')
+    
+        txn_data = node.get_txn_data_by_id(txn_id)
+        tx = graph_creator.create_in_memory_txn(txn_data)
+
+        in_amount_by_address, out_amount_by_address, input_addresses, output_addresses, in_total_amount, out_total_amount = process_in_memory_txn_for_indexing(tx, node)
         
-            txn_data = node.get_txn_data_by_id(txn_id)
-            tx = graph_creator.create_in_memory_txn(txn_data)
-
-            in_amount_by_address, out_amount_by_address, input_addresses, output_addresses, in_total_amount, out_total_amount = process_in_memory_txn_for_indexing(tx, node)
-            
-        txn_ids_to_check.append(txn_id)
-        challenge_inputs.append(ChallengeInput(in_total_amount=in_total_amount, out_total_amount=out_total_amount, tx_id_last_4_chars=txn_id[-4:]))
-
-    challenge = Challenge(inputs=challenge_inputs)
-    return challenge, txn_ids_to_check
+    challenge = Challenge(in_total_amount=in_total_amount, out_total_amount=out_total_amount, tx_id_last_4_chars=txn_id[-4:])
+    return challenge, txn_id

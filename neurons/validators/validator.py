@@ -87,7 +87,11 @@ class Validator(BaseValidatorNeuron):
         
 
     def cross_validate(self, axon, node, start_block_height, last_block_height, k=20):
-        challenge, txn_ids_to_check = generate_challenge_to_check(node, start_block_height, last_block_height, k)
+        if last_block_height < start_block_height:
+            bt.logging.debug("Miner block height is Invalid")
+            return False, 0
+
+        challenge, txn_id_to_check = generate_challenge_to_check(node, start_block_height, last_block_height)
         
         response = self.dendrite.query(
             axon,
@@ -96,11 +100,11 @@ class Validator(BaseValidatorNeuron):
             timeout = self.validator_config.challenge_timeout,
         )
         
-        if response.outputs is None or len(response.outputs) != len(txn_ids_to_check):
+        if response.output is None:
             bt.logging.debug(f"Skipping response {response}")
             return None, None
         
-        result = response.outputs == txn_ids_to_check
+        result = response.output == txn_id_to_check
         response_time = response.dendrite.process_time
         
         return result, response_time

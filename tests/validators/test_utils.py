@@ -64,15 +64,14 @@ class TestUtils(unittest.TestCase):
     def test_generate_challenge_to_check(self):
         graph_creator = GraphCreator()
         node = NodeFactory.create_node(NETWORK_BITCOIN)
-        challenge, txn_ids_to_check = generate_challenge_to_check(node, 500000, 600000, 5)
+        challenge, txn_id_to_check = generate_challenge_to_check(node, 500000, 600000)
 
-        for i, txn_id in enumerate(txn_ids_to_check):
-            txn_data = node.get_txn_data_by_id(txn_id)
-            tx = graph_creator.create_in_memory_txn(txn_data)
-            in_amount_by_address, out_amount_by_address, input_addresses, output_addresses, in_total_amount, out_total_amount = process_in_memory_txn_for_indexing(tx, node)
-            self.assertEqual(challenge.inputs[i].in_total_amount, in_total_amount)
-            self.assertEqual(challenge.inputs[i].out_total_amount, out_total_amount)
-            self.assertEqual(challenge.inputs[i].tx_id_last_4_chars, txn_id[-4:])
+        txn_data = node.get_txn_data_by_id(txn_id_to_check)
+        tx = graph_creator.create_in_memory_txn(txn_data)
+        in_amount_by_address, out_amount_by_address, input_addresses, output_addresses, in_total_amount, out_total_amount = process_in_memory_txn_for_indexing(tx, node)
+        self.assertEqual(challenge.in_total_amount, in_total_amount)
+        self.assertEqual(challenge.out_total_amount, out_total_amount)
+        self.assertEqual(challenge.tx_id_last_4_chars, txn_id_to_check[-4:])
 
 if __name__ == '__main__':
     from dotenv import load_dotenv
