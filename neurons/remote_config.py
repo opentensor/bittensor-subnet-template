@@ -123,6 +123,7 @@ class ValidatorConfig(RemoteConfig):
         self.blockchain_importance_weight = None
         
         self.discovery_timeout = None
+        self.challenge_timeout = None
 
         self.blockchain_importance = None
         self.blockchain_recency_weight = None
@@ -141,6 +142,7 @@ class ValidatorConfig(RemoteConfig):
         self.blockchain_importance_weight = self.get_config_value('blockchain_importance_weight', 1)
         
         self.discovery_timeout = self.get_config_value('discovery_timeout', 100)
+        self.challenge_timeout = self.get_config_value('challenge_timeout', 1000)
 
         self.blockchain_importance = self.get_config_value('blockchain_importance', {"bitcoin": 0.9, "doge": 0.1})
         self.blockchain_recency_weight = self.get_config_value('blockchain_recency_weight',  {"bitcoin": 2, "doge": 2})
