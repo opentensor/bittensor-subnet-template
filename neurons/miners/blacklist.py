@@ -136,3 +136,8 @@ def base_blacklist(self, synapse: bt.Synapse) -> typing.Tuple[bool, str]:
     if hotkey not in self.miner_config.whitelisted_hotkeys and self.config.mode == 'prod':
         return True, f"Not Whitelisted hotkey: {hotkey}"
     return False, "Hotkey recognized"
+
+def challenge_blacklist(self, synapse: protocol.Challenge) -> typing.Tuple[bool, str]:
+    # TODO: implement blacklist logic for protocol.Challenge
+    
+    return False, "Hotkey recognized!"
