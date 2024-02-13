@@ -111,3 +111,7 @@ class BitcoinNode(Node):
         else: # get from hash table if exists
             address, amount = self.tx_out_hash_table[txn_id[:3]][(txn_id, vout_id)]
             return address, int(amount)
+
+    def get_txn_data_by_id(self, txn_id: str):
+        rpc_connection = AuthServiceProxy(self.node_rpc_url)
+        return rpc_connection.getrawtransaction(str(txn_id), 1)
