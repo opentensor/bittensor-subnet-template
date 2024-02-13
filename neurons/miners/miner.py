@@ -189,8 +189,10 @@ class Miner(BaseMinerNeuron):
 
     def resync_metagraph(self):
         super(Miner, self).resync_metagraph()
-        store_miner_metadata(self.config, self.graph_search, self.wallet)
     
+    def send_metadata(self):
+        store_miner_metadata(self.config, self.graph_search, self.wallet)
+
 def wait_for_blocks_sync():
         is_synced=False
 
