@@ -114,4 +114,4 @@ class BitcoinNode(Node):
 
     def get_txn_data_by_id(self, txn_id: str):
         rpc_connection = AuthServiceProxy(self.node_rpc_url)
-        return rpc_connection.getrawtransaction(str(txn_id), 1)
+        return rpc_connection.getrawtransaction(txn_id, 1)

@@ -61,5 +61,5 @@ def generate_challenge_to_check(node, start_block_height, last_block_height, k=2
         txn_ids_to_check.append(txn_id)
         challenge_inputs.append(ChallengeInput(in_total_amount=in_total_amount, out_total_amount=out_total_amount, tx_id_last_4_chars=txn_id[-4:]))
 
-    challenage = Challenge(inputs=challenge_inputs)
-    return challenage, txn_ids_to_check
+    challenge = Challenge(inputs=challenge_inputs)
+    return challenge, txn_ids_to_check
