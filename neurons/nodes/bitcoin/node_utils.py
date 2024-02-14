@@ -64,44 +64,38 @@ def initialize_tx_out_hash_table():
 
 
 def process_in_memory_txn_for_indexing(tx, _bitcoin_node):
-    in_amount_by_address = {} # input amounts by address in satoshi
-    out_amount_by_address = {} # output amounts by address in satoshi
+    input_amounts = {} # input amounts by address in satoshi
+    output_amounts = {} # output amounts by address in satoshi
     
     for vin in tx.vins:
         if vin.tx_id == 0:
             continue
         address, amount = _bitcoin_node.get_address_and_amount_by_txn_id_and_vout_id(vin.tx_id, str(vin.vout_id))
-        if address in in_amount_by_address:
-            in_amount_by_address[address] += amount
-        else:
-            in_amount_by_address[address] = amount
+        input_amounts[address] = input_amounts.get(address, 0) + amount
 
     for vout in tx.vouts:
         amount = vout.value_satoshi
         address = vout.address
-        if vout.address in out_amount_by_address:
-            out_amount_by_address[address] += amount
-        else:
-            out_amount_by_address[address] = amount
-    
-    for address in in_amount_by_address.keys():
-        if in_amount_by_address[address] == 0:
-            continue
-        if address in out_amount_by_address and out_amount_by_address[address] != 0:
-            if in_amount_by_address[address] > out_amount_by_address[address]:
-                in_amount_by_address[address] -= out_amount_by_address[address]
-                out_amount_by_address[address] = 0
-            elif in_amount_by_address[address] < out_amount_by_address[address]:
-                out_amount_by_address[address] -= in_amount_by_address[address]
-                in_amount_by_address[address] = 0
+        output_amounts[address] = output_amounts.get(address, 0) + amount
+
+
+    for address in input_amounts:
+        if address in output_amounts:
+            diff = input_amounts[address] - output_amounts[address]
+            if diff > 0:
+                input_amounts[address] = diff
+                output_amounts[address] = 0
+            elif diff < 0:
+                output_amounts[address] = -diff
+                input_amounts[address] = 0
             else:
-                in_amount_by_address[address] = 0
-                out_amount_by_address[address] = 0
+                input_amounts[address] = 0
+                output_amounts[address] = 0
     
-    input_addresses = [address for address in in_amount_by_address.keys() if in_amount_by_address[address] != 0]
-    output_addresses = [address for address in out_amount_by_address.keys() if out_amount_by_address[address] != 0]
+    input_addresses = [address for address, amount in input_amounts.items() if amount != 0]
+    output_addresses = [address for address, amount in output_amounts.items() if amount != 0]
                 
-    in_total_amount = sum([in_amount_by_address[address] for address in input_addresses])
-    out_total_amount = sum([out_amount_by_address[address] for address in output_addresses])
+    in_total_amount = sum(input_amounts.values())
+    out_total_amount = sum(output_amounts.values())
     
-    return in_amount_by_address, out_amount_by_address, input_addresses, output_addresses, in_total_amount, out_total_amount
+    return input_amounts, output_amounts, input_addresses, output_addresses, in_total_amount, out_total_amount
