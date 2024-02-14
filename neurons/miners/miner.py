@@ -182,7 +182,7 @@ class Miner(BaseMinerNeuron):
         return blacklist.query_blacklist(self, synapse=synapse)
 
     async def challenge_blacklist(self, synapse: protocol.Challenge) -> typing.Tuple[bool, str]:
-        return blacklist.challenge_blacklist(self, synapse=synapse)
+        return blacklist.base_blacklist(self, synapse=synapse)
 
 
     def base_priority(self, synapse: bt.Synapse) -> float:
