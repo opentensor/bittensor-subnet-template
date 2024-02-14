@@ -1,6 +1,5 @@
 import os
 from neurons.setup_logger import setup_logger
-from neurons.nodes.bitcoin.node_utils import process_in_memory_txn_for_indexing
 from neo4j import GraphDatabase
 
 logger = setup_logger("GraphIndexer")
@@ -117,7 +116,7 @@ class GraphIndexer:
                     batch_inputs = []
                     batch_outputs = []
                     for tx in batch_transactions:
-                        in_amount_by_address, out_amount_by_address, input_addresses, output_addresses, in_total_amount, out_total_amount = process_in_memory_txn_for_indexing(tx, _bitcoin_node)
+                        in_amount_by_address, out_amount_by_address, input_addresses, output_addresses, in_total_amount, out_total_amount = _bitcoin_node.process_in_memory_txn_for_indexing(tx)
                         
                         inputs = [{"address": address, "amount": in_amount_by_address[address], "tx_id": tx.tx_id } for address in input_addresses]
                         outputs = [{"address": address, "amount": out_amount_by_address[address], "tx_id": tx.tx_id } for address in output_addresses]

@@ -46,7 +46,6 @@ def get_tx_out_hash_table_sub_keys():
     hex_chars = "0123456789abcdef"
     return [h1 + h2 + h3 for h1 in hex_chars for h2 in hex_chars for h3 in hex_chars]
 
-
 def initialize_tx_out_hash_table():
     hash_table = {}
     for sub_key in get_tx_out_hash_table_sub_keys():
@@ -54,39 +53,3 @@ def initialize_tx_out_hash_table():
     return hash_table
 
 
-def process_in_memory_txn_for_indexing(tx, _bitcoin_node):
-    input_amounts = {} # input amounts by address in satoshi
-    output_amounts = {} # output amounts by address in satoshi
-    
-    for vin in tx.vins:
-        if vin.tx_id == 0:
-            continue
-        address, amount = _bitcoin_node.get_address_and_amount_by_txn_id_and_vout_id(vin.tx_id, str(vin.vout_id))
-        input_amounts[address] = input_amounts.get(address, 0) + amount
-
-    for vout in tx.vouts:
-        amount = vout.value_satoshi
-        address = vout.address
-        output_amounts[address] = output_amounts.get(address, 0) + amount
-
-
-    for address in input_amounts:
-        if address in output_amounts:
-            diff = input_amounts[address] - output_amounts[address]
-            if diff > 0:
-                input_amounts[address] = diff
-                output_amounts[address] = 0
-            elif diff < 0:
-                output_amounts[address] = -diff
-                input_amounts[address] = 0
-            else:
-                input_amounts[address] = 0
-                output_amounts[address] = 0
-    
-    input_addresses = [address for address, amount in input_amounts.items() if amount != 0]
-    output_addresses = [address for address, amount in output_amounts.items() if amount != 0]
-                
-    in_total_amount = sum(input_amounts.values())
-    out_total_amount = sum(output_amounts.values())
-    
-    return input_amounts, output_amounts, input_addresses, output_addresses, in_total_amount, out_total_amount

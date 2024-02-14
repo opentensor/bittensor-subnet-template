@@ -26,7 +26,7 @@ import os
 import yaml
 
 from insights import protocol
-from insights.protocol import DiscoveryOutput, BlockCheckOutput, MAX_MULTIPLE_IPS, \
+from insights.protocol import DiscoveryOutput, MAX_MULTIPLE_IPS, \
     MAX_MULTIPLE_RUN_ID
 
 from neurons.remote_config import ValidatorConfig
@@ -34,7 +34,7 @@ from neurons.nodes.factory import NodeFactory
 from neurons.storage import store_validator_metadata, get_miners_metadata
 from neurons.validators.scoring import Scorer
 
-from neurons.validators.utils.utils import get_miner_distributions, count_hotkeys_per_ip, count_run_id_per_hotkey, generate_challenge_to_check
+from neurons.validators.utils.utils import get_miner_distributions, count_hotkeys_per_ip, count_run_id_per_hotkey
 from neurons.validators.utils.uids import get_random_uids
 
 from template.base.validator import BaseValidatorNeuron
@@ -86,12 +86,12 @@ class Validator(BaseValidatorNeuron):
 
         
 
-    def cross_validate(self, axon, node, start_block_height, last_block_height, k=20):
+    def cross_validate(self, axon, node, start_block_height, last_block_height):
         if last_block_height < start_block_height:
             bt.logging.debug("Miner block height is Invalid")
             return False, 0
 
-        challenge, txn_id_to_check = generate_challenge_to_check(node, start_block_height, last_block_height)
+        challenge, expected_response = node.create_challenge(start_block_height, last_block_height)
         
         response = self.dendrite.query(
             axon,
@@ -100,11 +100,11 @@ class Validator(BaseValidatorNeuron):
             timeout = self.validator_config.challenge_timeout,
         )
         
-        if response.output is None:
+        if response is None or response.output is None:
             bt.logging.debug(f"Skipping response {response}")
             return None, None
         
-        result = response.output == txn_id_to_check
+        result = response.output == expected_response
         response_time = response.dendrite.process_time
         
         return result, response_time
