@@ -43,22 +43,13 @@ def create_p2sh_address(hashed_script, mainnet=True):
 
 
 def get_tx_out_hash_table_sub_keys():
-    sub_keys = []
     hex_chars = "0123456789abcdef"
-
-    # initialize hash_table with 4096 entries (3 hex digits)
-    for i in range(16):
-        for j in range(16):
-            for k in range(16):
-                sub_keys.append(hex_chars[i] + hex_chars[j] + hex_chars[k])
-    
-    return sub_keys
+    return [h1 + h2 + h3 for h1 in hex_chars for h2 in hex_chars for h3 in hex_chars]
 
 
 def initialize_tx_out_hash_table():
     hash_table = {}
-    sub_keys = get_tx_out_hash_table_sub_keys()
-    for sub_key in sub_keys:
+    for sub_key in get_tx_out_hash_table_sub_keys():
         hash_table[sub_key] = {}
     return hash_table
 
