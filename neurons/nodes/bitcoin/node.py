@@ -25,9 +25,12 @@ logger = setup_logger("BitcoinNode")
 class BitcoinNode(Node):
     def __init__(self, node_rpc_url: str = None):
         self.tx_out_hash_table = initialize_tx_out_hash_table()
-        pickle_files = os.environ.get("BITCOIN_V2_TX_OUT_HASHMAP_PICKLES").split(',')
-        for pickle_file in pickle_files:
-            self.load_tx_out_hash_table(pickle_file)
+        env_pickle_files = os.environ.get("BITCOIN_V2_TX_OUT_HASHMAP_PICKLES")
+        if env_pickle_files:
+            pickle_files = env_pickle_files.split(',')
+            for pickle_file in pickle_files:
+                self.load_tx_out_hash_table(pickle_file)
+                
         if node_rpc_url is None:
             self.node_rpc_url = (
                 os.environ.get("BITCOIN_NODE_RPC_URL")
