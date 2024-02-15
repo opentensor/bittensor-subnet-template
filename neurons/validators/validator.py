@@ -96,12 +96,12 @@ class Validator(BaseValidatorNeuron):
         response = self.dendrite.query(
             axon,
             challenge,
-            deserialize=True,
+            deserialize=False,
             timeout = self.validator_config.challenge_timeout,
         )
         
         if response is None or response.output is None:
-            bt.logging.debug(f"Skipping response {response}")
+            bt.logging.debug("Skipping: Challenge response empty")
             return None, None
         
         result = response.output == expected_response

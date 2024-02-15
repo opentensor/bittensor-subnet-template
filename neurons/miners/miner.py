@@ -139,7 +139,7 @@ class Miner(BaseMinerNeuron):
             synapse.output = protocol.DiscoveryOutput(
                 metadata=protocol.DiscoveryMetadata(
                     network=self.config.network,
-                    model_type=self.config.model_type,
+                    model_type=self.config.model_type
                 ),
                 start_block_height=start_block,
                 block_height=last_block,
@@ -162,11 +162,15 @@ class Miner(BaseMinerNeuron):
     
     async def challenge(self, synapse: protocol.Challenge ) -> protocol.Challenge:
         try:
+            bt.logging.info(f"challenge recieved: {synapse}")
+
             synapse.output = self.graph_search.solve_challenge(
                 in_total_amount=synapse.in_total_amount,
                 out_total_amount=synapse.out_total_amount,
                 tx_id_last_4_chars=synapse.tx_id_last_4_chars
             )
+            bt.logging.info(f"Serving miner challenge output: {synapse.output}")
+
         except Exception as e:
             bt.logging.error(traceback.format_exc())
             synapse.output = None

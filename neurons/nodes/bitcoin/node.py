@@ -32,7 +32,7 @@ class BitcoinNode(Node):
         pickle_files_env = os.environ.get("BITCOIN_V2_TX_OUT_HASHMAP_PICKLES")
         pickle_files = []
         if pickle_files_env:
-            pickle_files = pickle_files.split(',')
+            pickle_files = pickle_files_env.split(',')
 
         for pickle_file in pickle_files:
             if pickle_file:
