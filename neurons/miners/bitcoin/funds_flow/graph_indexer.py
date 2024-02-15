@@ -2,7 +2,6 @@ import os
 from neurons.setup_logger import setup_logger
 from neo4j import GraphDatabase
 
-
 logger = setup_logger("GraphIndexer")
 
 
@@ -117,45 +116,7 @@ class GraphIndexer:
                     batch_inputs = []
                     batch_outputs = []
                     for tx in batch_transactions:
-                        in_amount_by_address = {} # input amounts by address in satoshi
-                        out_amount_by_address = {} # output amounts by address in satoshi
-                        
-                        for vin in tx.vins:
-                            if vin.tx_id == 0:
-                                continue
-                            address, amount = _bitcoin_node.get_address_and_amount_by_txn_id_and_vout_id(vin.tx_id, str(vin.vout_id))
-                            if address in in_amount_by_address:
-                                in_amount_by_address[address] += amount
-                            else:
-                                in_amount_by_address[address] = amount
-
-                        for vout in tx.vouts:
-                            amount = vout.value_satoshi
-                            address = vout.address
-                            if vout.address in out_amount_by_address:
-                                out_amount_by_address[address] += amount
-                            else:
-                                out_amount_by_address[address] = amount
-                        
-                        for address in in_amount_by_address.keys():
-                            if in_amount_by_address[address] == 0:
-                                continue
-                            if address in out_amount_by_address and out_amount_by_address[address] != 0:
-                                if in_amount_by_address[address] > out_amount_by_address[address]:
-                                    in_amount_by_address[address] -= out_amount_by_address[address]
-                                    out_amount_by_address[address] = 0
-                                elif in_amount_by_address[address] < out_amount_by_address[address]:
-                                    out_amount_by_address[address] -= in_amount_by_address[address]
-                                    in_amount_by_address[address] = 0
-                                else:
-                                    in_amount_by_address[address] = 0
-                                    out_amount_by_address[address] = 0
-                        
-                        input_addresses = [address for address in in_amount_by_address.keys() if in_amount_by_address[address] != 0]
-                        output_addresses = [address for address in out_amount_by_address.keys() if out_amount_by_address[address] != 0]
-                                    
-                        in_total_amount = sum([in_amount_by_address[address] for address in input_addresses])
-                        out_total_amount = sum([out_amount_by_address[address] for address in output_addresses])
+                        in_amount_by_address, out_amount_by_address, input_addresses, output_addresses, in_total_amount, out_total_amount = _bitcoin_node.process_in_memory_txn_for_indexing(tx)
                         
                         inputs = [{"address": address, "amount": in_amount_by_address[address], "tx_id": tx.tx_id } for address in input_addresses]
                         outputs = [{"address": address, "amount": out_amount_by_address[address], "tx_id": tx.tx_id } for address in output_addresses]

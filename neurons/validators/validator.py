@@ -26,7 +26,7 @@ import os
 import yaml
 
 from insights import protocol
-from insights.protocol import DiscoveryOutput, BlockCheckOutput, MAX_MULTIPLE_IPS, \
+from insights.protocol import DiscoveryOutput, MAX_MULTIPLE_IPS, \
     MAX_MULTIPLE_RUN_ID
 
 from neurons.remote_config import ValidatorConfig
@@ -86,20 +86,27 @@ class Validator(BaseValidatorNeuron):
 
         
 
-    def cross_validate(self, axon, node, start_block_height, last_block_height, k=20):
-        blocks_to_check = random.sample(range(start_block_height, last_block_height + 1), k=k)
+    def cross_validate(self, axon, node, start_block_height, last_block_height):
+        if last_block_height < start_block_height:
+            bt.logging.debug("Miner block height is Invalid")
+            return False, 0
+
+        challenge, expected_response = node.create_challenge(start_block_height, last_block_height)
+        
         response = self.dendrite.query(
             axon,
-            protocol.BlockCheck(blocks_to_check=blocks_to_check),
-            deserialize=True,
-            timeout = self.validator_config.discovery_timeout,
+            challenge,
+            deserialize=False,
+            timeout = self.validator_config.challenge_timeout,
         )
-        if response.output is None or len(response.output.data_samples)==0 or response.output.data_samples[0] is None:
-            bt.logging.debug(f"Skipping response {response}")
+        
+        if response is None or response.output is None:
+            bt.logging.debug("Skipping: Challenge response empty")
             return None, None
-
-        result = node.validate_all_data_samples(response.output.data_samples, blocks_to_check)
+        
+        result = response.output == expected_response
         response_time = response.dendrite.process_time
+        
         return result, response_time
 
 

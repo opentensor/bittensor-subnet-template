@@ -81,3 +81,12 @@ class Query(BaseSynapse):
 
     def deserialize(self) -> List[Dict]:
         return self.output
+
+class Challenge(BaseSynapse):
+    in_total_amount: int = None
+    out_total_amount: int = None
+    tx_id_last_4_chars: str = None
+    output: Optional[str] = None
+    
+    def deserialize(self) -> List[str]:
+        return self.outputs

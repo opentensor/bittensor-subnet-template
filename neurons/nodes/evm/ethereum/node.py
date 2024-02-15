@@ -48,6 +48,9 @@ class EthereumNode(Node):
         finally:
             web3.provider = None # Close the connection
 
+    def create_challenge(self, start_block_height, last_block_height):
+        raise NotImplementedError()
+
     def get_transaction_by_hash(self, tx_hash): # get the transaction details from tx hash
         web3 = Web3(Web3.HTTPProvider(self.node_rpc_url))
         try:
