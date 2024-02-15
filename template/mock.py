@@ -88,12 +88,12 @@ class MockDendrite(bt.dendrite):
                 if process_time < timeout:
                     s.dendrite.process_time = str(time.time() - start_time)
                     # Update the status code and status message of the dendrite to match the axon
-                    s.completion = f'Mock miner completion {i}'
+                    s.dummy_output = s.dummy_input * 2
                     s.dendrite.status_code = 200
                     s.dendrite.status_message = "OK"
                     synapse.dendrite.process_time = str(process_time)
                 else:
-                    s.completion = ""
+                    s.dummy_output = ""
                     s.dendrite.status_code = 408
                     s.dendrite.status_message = "Timeout"
                     synapse.dendrite.process_time = str(timeout)
