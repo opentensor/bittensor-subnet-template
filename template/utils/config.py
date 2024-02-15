@@ -99,9 +99,11 @@ def add_args(cls, parser):
     )
 
     parser.add_argument(
-        "--wandb.off", action="store_true", help="Turn off wandb.", default=False
+        "--wandb.off",
+        action="store_true",
+        help="Turn off wandb.",
+        default=False,
     )
-
 
     parser.add_argument(
         "--wandb.offline",
@@ -117,6 +119,7 @@ def add_args(cls, parser):
         default="",
     )
 
+
 def add_miner_args(cls, parser):
     """Add miner specific arguments to the parser."""
 
@@ -124,7 +127,7 @@ def add_miner_args(cls, parser):
         "--neuron.name",
         type=str,
         help="Trials for this neuron go in neuron.root / (wallet_cold - wallet_hot) / neuron.name. ",
-        default='miner',
+        default="miner",
     )
 
     parser.add_argument(
@@ -163,7 +166,7 @@ def add_validator_args(cls, parser):
         "--neuron.name",
         type=str,
         help="Trials for this neuron go in neuron.root / (wallet_cold - wallet_hot) / neuron.name. ",
-        default='validator',
+        default="validator",
     )
 
     parser.add_argument(
@@ -215,8 +218,8 @@ def add_validator_args(cls, parser):
         "--neuron.vpermit_tao_limit",
         type=int,
         help="The maximum number of TAO allowed to query a validator with a vpermit.",
-            default=4096,
-        )
+        default=4096,
+    )
 
     parser.add_argument(
         "--wandb.project_name",
@@ -231,7 +234,6 @@ def add_validator_args(cls, parser):
         help="The name of the project where you are sending the new run.",
         default="opentensor-dev",
     )
-
 
 
 def config(cls):
