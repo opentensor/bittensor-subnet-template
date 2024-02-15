@@ -51,7 +51,9 @@ class BaseValidatorNeuron(BaseNeuron):
 
         # Set up initial scoring weights for validation
         bt.logging.info("Building validation weights.")
-        self.scores = torch.zeros(self.metagraph.n, dtype=torch.float32, device=self.device)
+        self.scores = torch.zeros(
+            self.metagraph.n, dtype=torch.float32, device=self.device
+        )
 
         # Init sync with the network. Updates the metagraph.
         self.sync()
