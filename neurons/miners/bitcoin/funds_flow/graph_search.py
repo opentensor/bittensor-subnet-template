@@ -32,9 +32,10 @@ class GraphSearch:
             auth=(self.graph_db_user, self.graph_db_password),
         )
 
-    def execute_query(self, network, query):
-        # TODO: Implement this
-        return []
+    def execute_cypher_query(self, query):
+        with self.driver.session(default_access_mode="READ") as session:
+            result = session.run(query)
+            return result
 
     def get_run_id(self):
         records, summary, keys = self.driver.execute_query("RETURN 1")
