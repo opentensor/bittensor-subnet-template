@@ -2,7 +2,7 @@ import os
 import typing
 from neo4j import GraphDatabase
 
-from neurons.utils import is_potentially_malicious
+from neurons.utils import is_malicious
 
 
 class GraphSearch:
@@ -34,9 +34,9 @@ class GraphSearch:
             auth=(self.graph_db_user, self.graph_db_password),
         )
 
-    def execute_cypher_query(self, query):
+    def execute_query(self, query):
         with self.driver.session() as session:
-            if not is_potentially_malicious(query):
+            if not is_malicious(query):
                 result = session.run(query)
                 return result
             else:

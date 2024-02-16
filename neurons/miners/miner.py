@@ -90,7 +90,7 @@ class Miner(BaseMinerNeuron):
         self.axon = bt.axon(wallet=self.wallet, port=self.config.axon.port)        
         # Attach determiners which functions are called when servicing a request.
         bt.logging.info(f"Attaching forwards functions to miner axon.")
-        (self.axon.attach(
+        self.axon.attach(
             forward_fn=self.block_check,
             blacklist_fn=self.block_check_blacklist,
             priority_fn=self.block_check_priority,
@@ -103,14 +103,10 @@ class Miner(BaseMinerNeuron):
             blacklist_fn=self.query_blacklist,
             priority_fn=self.query_priority,
         ).attach(
-            forward_fn=self.cypher_query,
-            blacklist_fn=self.query_blacklist,
-            priority_fn=self.query_priority,
-        ).attach(
             forward_fn=self.challenge,
             blacklist_fn=self.challenge_blacklist,
             priority_fn=self.challenge_priority,
-        ))
+        )
 
         bt.logging.info(f"Axon created: {self.axon}")
 
@@ -164,16 +160,6 @@ class Miner(BaseMinerNeuron):
             synapse.output = None
         return synapse
 
-    async def cypher_query(self, synapse: protocol.Query ) -> protocol.Query:
-        try:
-            synapse.output = self.graph_search.execute_cypher_query(
-                query=synapse.query
-            )
-        except Exception as e:
-            bt.logging.error(traceback.format_exc())
-            synapse.output = None
-        return synapse
-    
     async def challenge(self, synapse: protocol.Challenge ) -> protocol.Challenge:
         try:
             bt.logging.info(f"challenge recieved: {synapse}")

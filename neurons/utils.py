@@ -29,7 +29,7 @@ def generate_patterns_for_terms(terms):
     return patterns
 
 
-def is_potentially_malicious(query, terms):
+def is_malicious(query, terms):
     # Normalize the query by lowercasing (maintaining original for comment checks)
     normalized_query = query.lower()
 
