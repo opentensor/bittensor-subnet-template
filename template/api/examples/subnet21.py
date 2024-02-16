@@ -26,7 +26,10 @@ from bittensor.subnets import SubnetsAPI
 
 try:
     from storage.validator.cid import generate_cid_string
-    from storage.validator.encryption import encrypt_data, decrypt_data_with_private_key
+    from storage.validator.encryption import (
+        encrypt_data,
+        decrypt_data_with_private_key,
+    )
 except:
     storage_url = "https://github.com/ifrit98/storage-subnet"
     bt.logging.error(
@@ -40,7 +43,11 @@ class StoreUserAPI(SubnetsAPI):
         self.netuid = 21
 
     def prepare_synapse(
-        self, data: bytes, encrypt=False, ttl=60 * 60 * 24 * 30, encoding="utf-8"
+        self,
+        data: bytes,
+        encrypt=False,
+        ttl=60 * 60 * 24 * 30,
+        encoding="utf-8",
     ) -> StoreUser:
         data = bytes(data, encoding) if isinstance(data, str) else data
         encrypted_data, encryption_payload = (
@@ -57,13 +64,17 @@ class StoreUserAPI(SubnetsAPI):
 
         return synapse
 
-    def process_responses(self, responses: List[Union["bt.Synapse", Any]]) -> str:
+    def process_responses(
+        self, responses: List[Union["bt.Synapse", Any]]
+    ) -> str:
         success = False
         failure_modes = {"code": [], "message": []}
         for response in responses:
             if response.dendrite.status_code != 200:
                 failure_modes["code"].append(response.dendrite.status_code)
-                failure_modes["message"].append(response.dendrite.status_message)
+                failure_modes["message"].append(
+                    response.dendrite.status_message
+                )
                 continue
 
             stored_cid = (
@@ -97,24 +108,35 @@ class RetrieveUserAPI(SubnetsAPI):
         synapse = RetrieveUser(data_hash=cid)
         return synapse
 
-    def process_responses(self, responses: List[Union["bt.Synapse", Any]]) -> bytes:
+    def process_responses(
+        self, responses: List[Union["bt.Synapse", Any]]
+    ) -> bytes:
         success = False
         decrypted_data = b""
         for response in responses:
             bt.logging.trace(f"response: {response.dendrite.dict()}")
-            if response.dendrite.status_code != 200 or response.encrypted_data is None:
+            if (
+                response.dendrite.status_code != 200
+                or response.encrypted_data is None
+            ):
                 continue
 
             # Decrypt the response
-            bt.logging.trace(f"encrypted_data: {response.encrypted_data[:100]}")
+            bt.logging.trace(
+                f"encrypted_data: {response.encrypted_data[:100]}"
+            )
             encrypted_data = base64.b64decode(response.encrypted_data)
-            bt.logging.debug(f"encryption_payload: {response.encryption_payload}")
+            bt.logging.debug(
+                f"encryption_payload: {response.encryption_payload}"
+            )
             if (
                 response.encryption_payload is None
                 or response.encryption_payload == ""
                 or response.encryption_payload == "{}"
             ):
-                bt.logging.warning("No encryption payload found. Unencrypted data.")
+                bt.logging.warning(
+                    "No encryption payload found. Unencrypted data."
+                )
                 decrypted_data = encrypted_data
             else:
                 decrypted_data = decrypt_data_with_private_key(
@@ -127,14 +149,18 @@ class RetrieveUserAPI(SubnetsAPI):
             break
 
         if success:
-            bt.logging.info(f"Returning retrieved data: {decrypted_data[:100]}")
+            bt.logging.info(
+                f"Returning retrieved data: {decrypted_data[:100]}"
+            )
         else:
             bt.logging.error("Failed to retrieve data.")
 
         return decrypted_data
 
 
-async def test_store_and_retrieve(netuid: int = 22, wallet: "bt.wallet" = None):
+async def test_store_and_retrieve(
+    netuid: int = 22, wallet: "bt.wallet" = None
+):
     # Example usage
     wallet = wallet or bt.wallet()
 

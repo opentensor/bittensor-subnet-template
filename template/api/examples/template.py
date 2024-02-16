@@ -20,18 +20,21 @@
 
 import bittensor as bt
 from template.api import DummyAPI, get_query_api_axons
+
 bt.debug()
+
 
 # Example usage
 async def test_dummy():
-
     wallet = bt.wallet()
 
     store_handler = DummyAPI(wallet)
 
     # Fetch the axons of the available API nodes, or specify UIDs directly
     metagraph = bt.subtensor("test").metagraph(netuid=22)
-    axons = await get_query_api_axons(wallet=wallet, metagraph=metagraph, uids=[5, 7])
+    axons = await get_query_api_axons(
+        wallet=wallet, metagraph=metagraph, uids=[5, 7]
+    )
 
     # Store some data!
     raw_data = b"Hello FileTao!"
@@ -41,7 +44,7 @@ async def test_dummy():
         axons=axons,
         # any arguments for the proper synapse
         data=raw_data,
-        encrypt=False, # optionally encrypt the data with your bittensor wallet
+        encrypt=False,  # optionally encrypt the data with your bittensor wallet
         ttl=60 * 60 * 24 * 30,
         encoding="utf-8",
         uid=None,
@@ -53,4 +56,5 @@ async def test_dummy():
 
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(test_storage())
