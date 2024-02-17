@@ -32,13 +32,4 @@ from . import protocol
 from . import base
 from . import validator
 from . import api
-
-import json
-
-SUBNET_LINKS = None
-try:
-    with open("subnet_links.json") as f:
-        links_dict = json.load(f)
-        SUBNET_LINKS = links_dict.get("subnet_repositories", None)
-except:
-    pass
+from .subnet_links import SUBNET_LINKS
