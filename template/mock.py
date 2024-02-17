@@ -37,7 +37,9 @@ class MockSubtensor(bt.MockSubtensor):
 
 class MockMetagraph(bt.metagraph):
     def __init__(self, netuid=1, network="mock", subtensor=None):
-        super().__init__(netuid=netuid, network=network, sync=False)
+        super().__init__(
+            netuid=netuid, network=network, sync=False
+        )
 
         if subtensor is not None:
             self.subtensor = subtensor
@@ -53,9 +55,8 @@ class MockMetagraph(bt.metagraph):
 
 class MockDendrite(bt.dendrite):
     """
-    Replaces a real bittensor network request with a mock request that just returns some static completion for all axons that are passed and adds some random delay.
+    Replaces a real bittensor network request with a mock request that just returns some static response for all axons that are passed and adds some random delay.
     """
-
     def __init__(self, wallet):
         super().__init__(wallet)
 
@@ -68,6 +69,7 @@ class MockDendrite(bt.dendrite):
         run_async: bool = True,
         streaming: bool = False,
     ):
+
         if streaming:
             raise NotImplementedError("Streaming not implemented yet.")
 
@@ -86,12 +88,13 @@ class MockDendrite(bt.dendrite):
                 if process_time < timeout:
                     s.dendrite.process_time = str(time.time() - start_time)
                     # Update the status code and status message of the dendrite to match the axon
+                    # TODO (developer): replace with your own expected synapse data
                     s.dummy_output = s.dummy_input * 2
                     s.dendrite.status_code = 200
                     s.dendrite.status_message = "OK"
                     synapse.dendrite.process_time = str(process_time)
                 else:
-                    s.dummy_output = ""
+                    s.dummy_output = 0
                     s.dendrite.status_code = 408
                     s.dendrite.status_message = "Timeout"
                     synapse.dendrite.process_time = str(timeout)
@@ -103,10 +106,7 @@ class MockDendrite(bt.dendrite):
                     return s
 
             return await asyncio.gather(
-                *(
-                    single_axon_response(i, target_axon)
-                    for i, target_axon in enumerate(axons)
-                )
+                *(single_axon_response(i, target_axon) for i, target_axon in enumerate(axons))
             )
 
         return await query_all_axons(streaming)
