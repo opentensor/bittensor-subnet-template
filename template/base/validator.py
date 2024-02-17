@@ -21,6 +21,7 @@
 import copy
 import torch
 import asyncio
+import argparse
 import threading
 import bittensor as bt
 
@@ -28,12 +29,19 @@ from typing import List
 from traceback import print_exception
 
 from template.base.neuron import BaseNeuron
+from template.mock import MockDendrite
+from template.utils.config import add_validator_args
 
 
 class BaseValidatorNeuron(BaseNeuron):
     """
     Base class for Bittensor validators. Your validator should inherit from this class.
     """
+
+    @classmethod
+    def add_args(cls, parser: argparse.ArgumentParser):
+        super().add_args(parser)
+        add_validator_args(cls, parser)
 
     def __init__(self, config=None):
         super().__init__(config=config)
@@ -42,12 +50,17 @@ class BaseValidatorNeuron(BaseNeuron):
         self.hotkeys = copy.deepcopy(self.metagraph.hotkeys)
 
         # Dendrite lets us send messages to other nodes (axons) in the network.
-        self.dendrite = bt.dendrite(wallet=self.wallet)
+        if self.config.mock:
+            self.dendrite = MockDendrite(wallet=self.wallet)
+        else:
+            self.dendrite = bt.dendrite(wallet=self.wallet)
         bt.logging.info(f"Dendrite: {self.dendrite}")
 
         # Set up initial scoring weights for validation
         bt.logging.info("Building validation weights.")
-        self.scores = torch.zeros_like(self.metagraph.S, dtype=torch.float32)
+        self.scores = torch.zeros(
+            self.metagraph.n, dtype=torch.float32, device=self.device
+        )
 
         # Init sync with the network. Updates the metagraph.
         self.sync()
@@ -250,7 +263,7 @@ class BaseValidatorNeuron(BaseNeuron):
             uids=uint_uids,
             weights=uint_weights,
             wait_for_finalization=False,
-            wait_for_inclusion=True,
+            wait_for_inclusion=False,
             version_key=self.spec_version,
         )
         if result is True:
