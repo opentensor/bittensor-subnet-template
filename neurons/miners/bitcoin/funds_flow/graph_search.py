@@ -107,3 +107,37 @@ class GraphSearch:
             if single_result is None or single_result[0] is None:
                 return None
             return single_result[0]
+        
+    def find_indexed_block_height_ranges(self):
+        with self.driver.session() as session:
+            result = session.run(
+                """
+                MATCH (t:Transaction)
+                RETURN DISTINCT t.block_height AS block_height
+                ORDER BY block_height
+                """,
+            )
+            block_heights = [record["block_height"] for record in result]
+
+            if not block_heights:
+                return []
+
+            # Group consecutive gaps into ranges
+            gap_ranges = []
+            current_start = block_heights[0]
+            current_end = block_heights[0]
+
+            for height in block_heights[1:]:
+                if height == current_end + 1:
+                    # Consecutive gap, extend the current range
+                    current_end = height
+                else:
+                    # Non-consecutive gap, start a new range
+                    gap_ranges.append((current_start, current_end))
+                    current_start = height
+                    current_end = height
+
+            # Add the last range
+            gap_ranges.append((current_start, current_end))
+
+            return gap_ranges
