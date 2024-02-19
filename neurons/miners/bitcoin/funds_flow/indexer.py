@@ -136,7 +136,7 @@ if __name__ == "__main__":
     logger.info(in_reverse_order_str)
     
     if start_height_str is None:
-        logger.info("Please specify BITCOIN_START_BLOCK_HEIGHT")
+        logger.info("Please specify BITCOIN_INDEXER_START_BLOCK_HEIGHT")
     else:
         start_height = int(start_height_str)
         end_height = int(end_height_str)
