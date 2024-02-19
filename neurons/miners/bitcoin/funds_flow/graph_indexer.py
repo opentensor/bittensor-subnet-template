@@ -124,7 +124,7 @@ class GraphIndexer:
             for record in existing_indexes:
                 label = record["label"]
                 property = record["property"]
-                index_name = f"{label}-{property}"
+                index_name = f"{label}-{property}" if property else label
                 if index_name:
                     existing_index_set.add(index_name)
 
