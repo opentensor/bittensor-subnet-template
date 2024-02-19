@@ -71,7 +71,7 @@ def iterate_range(_bitcoin_node, _graph_creator, _graph_indexer, start_height: i
     block_height = start_height
     step = -1 if in_reverse_order else +1
     
-    while block_height >= end_height and not shutdown_flag:
+    while (block_height - end_height) * step <= 0 and not shutdown_flag:
         if _graph_indexer.check_if_block_is_indexed(block_height):
             logger.info(f"Skipping block #{block_height}. Already indexed.")
             block_height += step
@@ -130,8 +130,10 @@ if __name__ == "__main__":
     graph_indexer = GraphIndexer()
     
     start_height_str = os.getenv('BITCOIN_INDEXER_START_BLOCK_HEIGHT', None)
-    end_height_str = os.getenv('BITCOIN_INDEXER_END_BLOCK_HEIGHT', '-1')
-    in_reverse_order_str = os.getenv('BITCOIN_INDEXER_IN_REVERSE_ORDER', '0')
+    end_height_str = os.getenv('BITCOIN_INDEXER_END_BLOCK_HEIGHT', '-1') or '-1'
+    in_reverse_order_str = os.getenv('BITCOIN_INDEXER_IN_REVERSE_ORDER', '0') or '0'
+    
+    logger.info(in_reverse_order_str)
     
     if start_height_str is None:
         logger.info("Please specify BITCOIN_START_BLOCK_HEIGHT")
