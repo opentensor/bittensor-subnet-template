@@ -50,7 +50,53 @@ class GraphIndexer:
                return 0
 
             return single_result[0]
-        
+
+    def find_gap_ranges_in_block_heights(self, start, end):
+        with self.driver.session() as session:
+            result = session.run(
+                """
+                MATCH (t:Transaction)
+                WHERE t.block_height >= $end AND t.block_height <= $start
+                RETURN DISTINCT t.block_height AS block_height
+                ORDER BY block_height
+                """,
+                start=start,
+                end=end
+            )
+            block_heights = [record["block_height"] for record in result]
+
+            # Generate the full expected range of block heights
+            expected_heights = set(range(end, start + 1))
+
+            # Find which expected heights are not present in the actual block heights
+            gaps = sorted(expected_heights - set(block_heights))
+
+            if not gaps:
+                return []
+
+            # Group consecutive gaps into ranges
+            gap_ranges = []
+            current_start = gaps[0]
+            current_end = gaps[0]
+
+            for height in gaps[1:]:
+                if height == current_end + 1:
+                    # Consecutive gap, extend the current range
+                    current_end = height
+                else:
+                    # Non-consecutive gap, start a new range
+                    gap_ranges.append((current_start, current_end))
+                    current_start = height
+                    current_end = height
+
+            # Add the last range
+            gap_ranges.append((current_start, current_end))
+
+            return gap_ranges
+
+
+
+
     def get_min_block_number(self):
         with self.driver.session() as session:
             result = session.run(
