@@ -5,6 +5,8 @@ import time
 import multiprocessing
 from functools import partial
 
+from neurons.nodes.bitcoin.node_utils import initialize_tx_out_hash_table, get_tx_out_hash_table_sub_keys
+
 
 def calculate_chunk_positions(csv_file, n_threads=64):
     positions = []
@@ -34,32 +36,11 @@ def calculate_chunk_positions(csv_file, n_threads=64):
     return result
 
 
-def get_sub_keys():
-    sub_keys = []
-    hex_chars = "0123456789abcdef"
-
-    # initialize hash_table with 4096 entries (3 hex digits)
-    for i in range(16):
-        for j in range(16):
-            for k in range(16):
-                sub_keys.append(hex_chars[i] + hex_chars[j] + hex_chars[k])
-
-    return sub_keys
-
-
-def initialize_hash_table():
-    hash_table = {}
-    sub_keys = get_sub_keys()
-    for sub_key in sub_keys:
-        hash_table[sub_key] = {}
-    return hash_table
-
-
 # Process logic for each thread
 def process_lines(pos_range, csv_file):
     start_pos = pos_range[0]
     end_pos = pos_range[1]
-    hash_table = initialize_hash_table()
+    hash_table = initialize_tx_out_hash_table()
     with open(csv_file, 'r') as file:
         file.seek(start_pos)
         i = 0
@@ -110,7 +91,7 @@ def index_hash_table(hash_table, csv_file, n_threads=64, debug=1):
 
 
 def merge_hash_tables(hash_table, new_hash_tables):
-    sub_keys = get_sub_keys()
+    sub_keys = get_tx_out_hash_table_sub_keys()
     for new_hash_table in new_hash_tables:
         for sub_key in sub_keys:
             hash_table[sub_key].update(new_hash_table[sub_key])
