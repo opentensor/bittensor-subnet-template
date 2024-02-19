@@ -51,35 +51,38 @@ class GraphIndexer:
 
             return single_result[0]
 
-    def find_gap_ranges_in_block_heights(self, start, end):
+    def check_if_block_is_indexed(self, block_height: int) -> bool:
+        with self.driver.session() as session:
+            result = session.run(
+                """
+                MATCH (t: Transaction{block_height: $block_height})
+                RETURN t
+                LIMIT 1;
+                """,
+                block_height=block_height
+            )
+            return (result and len(result) > 0)
+
+    def find_indexed_block_height_ranges(self):
         with self.driver.session() as session:
             result = session.run(
                 """
                 MATCH (t:Transaction)
-                WHERE t.block_height >= $end AND t.block_height <= $start
                 RETURN DISTINCT t.block_height AS block_height
                 ORDER BY block_height
                 """,
-                start=start,
-                end=end
             )
             block_heights = [record["block_height"] for record in result]
 
-            # Generate the full expected range of block heights
-            expected_heights = set(range(end, start + 1))
-
-            # Find which expected heights are not present in the actual block heights
-            gaps = sorted(expected_heights - set(block_heights))
-
-            if not gaps:
+            if not block_heights:
                 return []
 
             # Group consecutive gaps into ranges
             gap_ranges = []
-            current_start = gaps[0]
-            current_end = gaps[0]
+            current_start = block_heights[0]
+            current_end = block_heights[0]
 
-            for height in gaps[1:]:
+            for height in block_heights[1:]:
                 if height == current_end + 1:
                     # Consecutive gap, extend the current range
                     current_end = height
@@ -93,9 +96,6 @@ class GraphIndexer:
             gap_ranges.append((current_start, current_end))
 
             return gap_ranges
-
-
-
 
     def get_min_block_number(self):
         with self.driver.session() as session:

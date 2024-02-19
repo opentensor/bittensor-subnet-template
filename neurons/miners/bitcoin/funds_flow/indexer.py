@@ -42,6 +42,10 @@ def index_blocks(_bitcoin_node, _graph_creator, _graph_indexer, start_height):
 
         block_height = start_height
         while block_height <= current_block_height - skip_blocks:
+            if _graph_indexer.check_if_block_is_indexed(block_height):
+                logger.info(f"Skipping block #{block_height}. Already indexed.")
+                continue
+            
             block = _bitcoin_node.get_block_by_height(block_height)
             num_transactions = len(block["tx"])
             start_time = time.time()
