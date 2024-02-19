@@ -61,7 +61,8 @@ class GraphIndexer:
                 """,
                 block_height=block_height
             )
-            return (result and len(result) > 0)
+            single_result = result.single()
+            return single_result is not None
 
     def find_indexed_block_height_ranges(self):
         with self.driver.session() as session:
