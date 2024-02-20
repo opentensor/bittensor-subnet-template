@@ -159,7 +159,7 @@ class Miner(BaseMinerNeuron):
             bt.logging.error(traceback.format_exc())
             synapse.output = None
         return synapse
-    
+
     async def challenge(self, synapse: protocol.Challenge ) -> protocol.Challenge:
         try:
             bt.logging.info(f"challenge recieved: {synapse}")

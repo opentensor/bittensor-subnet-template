@@ -2,6 +2,8 @@ import os
 import typing
 from neo4j import GraphDatabase
 
+from neurons.utils import is_malicious
+
 
 class GraphSearch:
     def __init__(
@@ -32,9 +34,14 @@ class GraphSearch:
             auth=(self.graph_db_user, self.graph_db_password),
         )
 
-    def execute_query(self, network, query):
-        # TODO: Implement this
-        return []
+    def execute_query(self, query):
+        with self.driver.session() as session:
+            if not is_malicious(query):
+                result = session.run(query)
+                return result
+            else:
+                return None
+
 
     def get_run_id(self):
         records, summary, keys = self.driver.execute_query("RETURN 1")
