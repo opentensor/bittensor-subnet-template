@@ -1,6 +1,7 @@
 import os
 
-from utils import initialize_hash_table, index_hash_table, save_hash_table, load_hash_table
+from neurons.nodes.bitcoin.node_utils import initialize_tx_out_hash_table
+from utils import index_hash_table, save_hash_table
 import argparse
 
 def parse_args():
@@ -24,7 +25,7 @@ if __name__ == '__main__':
     if os.path.exists(target_path):
         os.remove(target_path)
 
-    hash_table = initialize_hash_table()
+    hash_table = initialize_tx_out_hash_table()
     n_threads = int(os.environ.get("INDEXING_THREADS", 64))
     index_hash_table(hash_table, csv_file, n_threads=n_threads)
     save_hash_table(hash_table, target_path)
