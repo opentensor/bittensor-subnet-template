@@ -87,7 +87,7 @@ class Validator(BaseValidatorNeuron):
         
 
     def cross_validate(self, axon, node, start_block_height, last_block_height, k=20):
-        if not last_block_height or not start_block_height or not k:
+        if not last_block_height or last_block_height is None or start_block_height is None or not k:
             return False, 0
 
         if (last_block_height+1-start_block_height) <  k:
