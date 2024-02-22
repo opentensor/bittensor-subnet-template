@@ -35,7 +35,6 @@ class GraphIndexer:
             auth=(self.graph_db_user, self.graph_db_password),
         )
 
-
     def close(self):
         self.driver.close()
 
@@ -83,37 +82,38 @@ class GraphIndexer:
                     except Exception as e:
                         logger.error(f"An exception occurred while creating index {index_name}: {e}")
 
-    def create_graph_focused_on_funds_flow(self, in_memory_graph, batch_size=8):
-        block_node = in_memory_graph["block"]
-        transactions = block_node.transactions
+    def create_graph_focused_on_funds_flow(self, transactions, batch_size=8):
+        # transactions = in_memory_graph["block"].transactions
         with self.driver.session() as session:
             # start memgraph transaction
             transaction = session.begin_transaction()
             try:
                 for i in range(0, len(transactions), batch_size):
                     batch_transactions = transactions[i : i + batch_size]
-                    
+
                     transaction.run(
                         """
                         UNWIND $transactions AS tx
                         MERGE (from:Address {address: tx.from_address})
-                        ON CREATE SET from.timestamp = tx.timestamp,
+                        ON CREATE SET from.timestamp = tx.from_timestamp,
                             from.balance = tx.from_balance
                         MERGE (to:Address {address: tx.to_address})
-                        ON CREATE SET to.timestamp = tx.timestamp,
+                        ON CREATE SET to.timestamp = tx.to_timestamp,
                             to.balance = tx.to_balance
                         """,
                         transactions = [
                             {
-                                "timestamp": tx.timestamp,
+                                "from_timestamp": tx.from_address.timestamp,
+                                "to_timestamp": tx.to_address.timestamp,
                                 "from_address": tx.from_address.address,
-                                "from_balance": str(tx.to_address.balance),
+                                "from_balance": tx.from_address.balance,
                                 "to_address": tx.to_address.address,
-                                "to_balance": str(tx.to_address.balance),
+                                "to_balance": tx.to_address.balance,
                             }
                             for tx in batch_transactions
                         ],
                     )
+
                     transaction.run(
                         """
                         UNWIND $transactions AS tx
@@ -125,15 +125,15 @@ class GraphIndexer:
                             {
                                 "tx_hash": tx.tx_hash,
                                 "block_number": tx.block_number,
-                                "value": str(tx.value_wei),
-                                "fee_wei": str(tx.gas_used),
+                                "value": tx.value_wei,
+                                "fee_wei": tx.gas_used,
                                 "timestamp": tx.timestamp,
                                 "symbol": tx.symbol,
                                 "from_address": tx.from_address.address,
                                 "to_address": tx.to_address.address,
                                 "checksum": tx.checksum,
                             }
-                            for tx in batch_transactions 
+                            for tx in batch_transactions
                         ]
                     )
 
