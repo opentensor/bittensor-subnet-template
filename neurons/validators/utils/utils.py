@@ -33,3 +33,4 @@ def count_hotkeys_per_ip(filtered_axons):
         hotkey_count_per_ip[ip] = hotkey_count_per_ip.get(ip, 0) + 1
 
     return hotkey_count_per_ip
+

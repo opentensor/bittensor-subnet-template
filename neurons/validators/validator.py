@@ -26,13 +26,14 @@ import os
 import yaml
 
 from insights import protocol
-from insights.protocol import DiscoveryOutput, MAX_MULTIPLE_IPS, \
+from insights.protocol import Discovery, DiscoveryOutput, MAX_MULTIPLE_IPS, \
     MAX_MULTIPLE_RUN_ID
 
 from neurons.remote_config import ValidatorConfig
 from neurons.nodes.factory import NodeFactory
 from neurons.storage import store_validator_metadata, get_miners_metadata
 from neurons.validators.scoring import Scorer
+from neurons.validators.utils.synapse import is_discovery_response_valid
 
 from neurons.validators.utils.utils import get_miner_distributions, count_hotkeys_per_ip, count_run_id_per_hotkey
 from neurons.validators.utils.uids import get_random_uids
@@ -87,20 +88,16 @@ class Validator(BaseValidatorNeuron):
         
 
     def cross_validate(self, axon, node, start_block_height, last_block_height):
-        if last_block_height < start_block_height:
-            bt.logging.debug("Miner block height is Invalid")
-            return False, 0
-
         challenge, expected_response = node.create_challenge(start_block_height, last_block_height)
         
         response = self.dendrite.query(
             axon,
             challenge,
-            deserialize=False,
+            deserialize=True,
             timeout = self.validator_config.challenge_timeout,
         )
         
-        if response is None or response.output is None:
+        if response is None:
             bt.logging.debug("Skipping: Challenge response empty")
             return None, None
         
@@ -110,13 +107,19 @@ class Validator(BaseValidatorNeuron):
         return result, response_time
 
 
-    def get_reward(self, response: DiscoveryOutput, ip_per_hotkey=None, run_id_per_hotkey=None, miner_distribution=None):
+    def get_reward(self, response: Discovery, ip_per_hotkey=None, run_id_per_hotkey=None, miner_distribution=None):
+
+        if not is_discovery_response_valid(response):
+            bt.logging.debug(f'Discovery Response invalid {response}')
+            return None
+        
         output: DiscoveryOutput = response.output
         network = output.metadata.network
         start_block_height = output.start_block_height
         last_block_height = output.block_height
         axon_ip = response.axon.ip
         hot_key = response.axon.hotkey
+
         bt.logging.info(f"🔄 Processing response for {hot_key}@{axon_ip}")
 
         multiple_ips = ip_per_hotkey[axon_ip] > MAX_MULTIPLE_IPS
@@ -156,7 +159,7 @@ class Validator(BaseValidatorNeuron):
 
         responses = self.dendrite.query(
             filtered_axons,
-            protocol.Discovery(),
+            Discovery(),
             deserialize=True,
             timeout = self.validator_config.discovery_timeout,
         )
