@@ -13,6 +13,18 @@ def get_miner_distributions(miners_metadata, network_importance_keys):
 
     return miner_distribution
 
+def count_run_id_per_hotkey(metadata):
+    run_id_count = {}
+    for hotkey in metadata:
+        if hotkey not in run_id_count:
+            run_id_count[hotkey] = set()
+        run_id_count[hotkey].add(metadata[hotkey].ri)
+
+    # Count the number of unique run_ids for each hotkey
+    for hotkey in run_id_count:
+        run_id_count[hotkey] = len(run_id_count[hotkey])
+    return run_id_count
+
 def count_hotkeys_per_ip(filtered_axons):
     hotkey_count_per_ip = {}
 
