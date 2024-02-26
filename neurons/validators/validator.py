@@ -19,13 +19,12 @@
 
 import time
 import argparse
-import random
+import traceback
 import torch
 import bittensor as bt
 import os
 import yaml
 
-from insights import protocol
 from insights.protocol import Discovery, DiscoveryOutput, MAX_MULTIPLE_IPS, \
     MAX_MULTIPLE_RUN_ID
 
@@ -93,11 +92,11 @@ class Validator(BaseValidatorNeuron):
         response = self.dendrite.query(
             axon,
             challenge,
-            deserialize=True,
+            deserialize=False,
             timeout = self.validator_config.challenge_timeout,
         )
         
-        if response is None:
+        if response is None or response.output is None:
             bt.logging.debug("Skipping: Challenge response empty")
             return None, None
         
@@ -108,45 +107,48 @@ class Validator(BaseValidatorNeuron):
 
 
     def get_reward(self, response: Discovery, ip_per_hotkey=None, run_id_per_hotkey=None, miner_distribution=None):
+        try:
+            if not is_discovery_response_valid(response):
+                bt.logging.debug(f'Discovery Response invalid {response}')
+                return None
+            
+            output: DiscoveryOutput = response.output
+            network = output.metadata.network
+            start_block_height = output.start_block_height
+            last_block_height = output.block_height
+            axon_ip = response.axon.ip
+            hot_key = response.axon.hotkey
 
-        if not is_discovery_response_valid(response):
-            bt.logging.debug(f'Discovery Response invalid {response}')
-            return None
-        
-        output: DiscoveryOutput = response.output
-        network = output.metadata.network
-        start_block_height = output.start_block_height
-        last_block_height = output.block_height
-        axon_ip = response.axon.ip
-        hot_key = response.axon.hotkey
+            bt.logging.info(f"🔄 Processing response for {hot_key}@{axon_ip}")
 
-        bt.logging.info(f"🔄 Processing response for {hot_key}@{axon_ip}")
+            multiple_ips = ip_per_hotkey[axon_ip] > MAX_MULTIPLE_IPS
+            multiple_run_ids = run_id_per_hotkey[hot_key] > MAX_MULTIPLE_RUN_ID
+            cross_validation_result, response_time = self.cross_validate(response.axon, self.nodes[network], start_block_height, last_block_height)
 
-        multiple_ips = ip_per_hotkey[axon_ip] > MAX_MULTIPLE_IPS
-        multiple_run_ids = run_id_per_hotkey[hot_key] > MAX_MULTIPLE_RUN_ID
+            if cross_validation_result is None:
+                bt.logging.debug(f"Cross-Validation: {hot_key=} Timeout skipping response")
+                return None
+            if not cross_validation_result:
+                bt.logging.info(f"Cross-Validation: {hot_key=} Test failed")
+                return 0
+            bt.logging.info(f"Cross-Validation: {hot_key=} Test passed")
 
-        cross_validation_result, response_time = self.cross_validate(response.axon, self.nodes[network], start_block_height, last_block_height)
+            score = self.scorer.calculate_score(
+                network,
+                response_time,
+                start_block_height,
+                last_block_height,
+                self.block_height_cache[network],
+                miner_distribution,
+                multiple_ips,
+                multiple_run_ids
+            )
 
-        if cross_validation_result is None:
+            return score
+        except Exception as e:
+            bt.logging.error(f"Error occurred during cross-validation: {traceback.format_exc()}")
             bt.logging.debug(f"Cross-Validation: {hot_key=} Timeout skipping response")
             return None
-        if not cross_validation_result:
-            bt.logging.info(f"Cross-Validation: {hot_key=} Test failed")
-            return 0
-        bt.logging.info(f"Cross-Validation: {hot_key=} Test passed")
-
-        score = self.scorer.calculate_score(
-            network,
-            response_time,
-            start_block_height,
-            last_block_height,
-            self.block_height_cache[network],
-            miner_distribution,
-            multiple_ips,
-            multiple_run_ids
-        )
-
-        return score
 
     async def forward(self):
         available_uids = get_random_uids(self, self.config.neuron.sample_size)
