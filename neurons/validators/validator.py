@@ -19,20 +19,20 @@
 
 import time
 import argparse
-import random
+import traceback
 import torch
 import bittensor as bt
 import os
 import yaml
 
-from insights import protocol
-from insights.protocol import DiscoveryOutput, MAX_MULTIPLE_IPS, \
+from insights.protocol import Discovery, DiscoveryOutput, MAX_MULTIPLE_IPS, \
     MAX_MULTIPLE_RUN_ID
 
 from neurons.remote_config import ValidatorConfig
 from neurons.nodes.factory import NodeFactory
 from neurons.storage import store_validator_metadata, get_miners_metadata
 from neurons.validators.scoring import Scorer
+from neurons.validators.utils.synapse import is_discovery_response_valid
 
 from neurons.validators.utils.utils import get_miner_distributions, count_hotkeys_per_ip, count_run_id_per_hotkey
 from neurons.validators.utils.uids import get_random_uids
@@ -87,10 +87,6 @@ class Validator(BaseValidatorNeuron):
         
 
     def cross_validate(self, axon, node, start_block_height, last_block_height):
-        if last_block_height < start_block_height:
-            bt.logging.debug("Miner block height is Invalid")
-            return False, 0
-
         challenge, expected_response = node.create_challenge(start_block_height, last_block_height)
         
         response = self.dendrite.query(
@@ -110,40 +106,49 @@ class Validator(BaseValidatorNeuron):
         return result, response_time
 
 
-    def get_reward(self, response: DiscoveryOutput, ip_per_hotkey=None, run_id_per_hotkey=None, miner_distribution=None):
-        output: DiscoveryOutput = response.output
-        network = output.metadata.network
-        start_block_height = output.start_block_height
-        last_block_height = output.block_height
-        axon_ip = response.axon.ip
-        hot_key = response.axon.hotkey
-        bt.logging.info(f"🔄 Processing response for {hot_key}@{axon_ip}")
+    def get_reward(self, response: Discovery, ip_per_hotkey=None, run_id_per_hotkey=None, miner_distribution=None):
+        try:
+            if not is_discovery_response_valid(response):
+                bt.logging.debug(f'Discovery Response invalid {response}')
+                return None
+            
+            output: DiscoveryOutput = response.output
+            network = output.metadata.network
+            start_block_height = output.start_block_height
+            last_block_height = output.block_height
+            axon_ip = response.axon.ip
+            hot_key = response.axon.hotkey
 
-        multiple_ips = ip_per_hotkey[axon_ip] > MAX_MULTIPLE_IPS
-        multiple_run_ids = run_id_per_hotkey[hot_key] > MAX_MULTIPLE_RUN_ID
+            bt.logging.info(f"🔄 Processing response for {hot_key}@{axon_ip}")
 
-        cross_validation_result, response_time = self.cross_validate(response.axon, self.nodes[network], start_block_height, last_block_height)
+            multiple_ips = ip_per_hotkey[axon_ip] > MAX_MULTIPLE_IPS
+            multiple_run_ids = run_id_per_hotkey[hot_key] > MAX_MULTIPLE_RUN_ID
+            cross_validation_result, response_time = self.cross_validate(response.axon, self.nodes[network], start_block_height, last_block_height)
 
-        if cross_validation_result is None:
+            if cross_validation_result is None:
+                bt.logging.debug(f"Cross-Validation: {hot_key=} Timeout skipping response")
+                return None
+            if not cross_validation_result:
+                bt.logging.info(f"Cross-Validation: {hot_key=} Test failed")
+                return 0
+            bt.logging.info(f"Cross-Validation: {hot_key=} Test passed")
+
+            score = self.scorer.calculate_score(
+                network,
+                response_time,
+                start_block_height,
+                last_block_height,
+                self.block_height_cache[network],
+                miner_distribution,
+                multiple_ips,
+                multiple_run_ids
+            )
+
+            return score
+        except Exception as e:
+            bt.logging.error(f"Error occurred during cross-validation: {traceback.format_exc()}")
             bt.logging.debug(f"Cross-Validation: {hot_key=} Timeout skipping response")
             return None
-        if not cross_validation_result:
-            bt.logging.info(f"Cross-Validation: {hot_key=} Test failed")
-            return 0
-        bt.logging.info(f"Cross-Validation: {hot_key=} Test passed")
-
-        score = self.scorer.calculate_score(
-            network,
-            response_time,
-            start_block_height,
-            last_block_height,
-            self.block_height_cache[network],
-            miner_distribution,
-            multiple_ips,
-            multiple_run_ids
-        )
-
-        return score
 
     async def forward(self):
         available_uids = get_random_uids(self, self.config.neuron.sample_size)
@@ -156,7 +161,7 @@ class Validator(BaseValidatorNeuron):
 
         responses = self.dendrite.query(
             filtered_axons,
-            protocol.Discovery(),
+            Discovery(),
             deserialize=True,
             timeout = self.validator_config.discovery_timeout,
         )
