@@ -84,9 +84,41 @@ class Validator(BaseValidatorNeuron):
 
         self.sync_validator()
 
-        
+    @staticmethod
+    def validate_blockchain_range(start_block_height, last_block_height, min_range_size, current_block_height):
+        if start_block_height is None or not isinstance(start_block_height, int):
+            bt.logging.debug("Invalid start block height provided to cross_validate")
+            return False
+        if last_block_height is None or not isinstance(last_block_height, int):
+            bt.logging.debug("Invalid last block height provided to cross_validate")
+            return False
+        if start_block_height <= 0 or last_block_height <= 0:
+            bt.logging.debug("Negative block heights provided to cross_validate")
+            return False
+        if start_block_height >= last_block_height:
+            bt.logging.debug("Start block height is greater than or equal to last block height in cross_validate")
+            return False
+        if not min_range_size:
+            bt.logging.debug("Parameter 'min_range_size' is not truthy in cross_validate")
+            return False
+        if last_block_height > current_block_height + 3:
+            bt.logging.debug("Last block height provided is larger than current block height")
+            return False
+        if (last_block_height + 1 - start_block_height) < min_range_size:
+            bt.logging.debug("Miner block height is Invalid")
+            return False
+
+        return True
 
     def cross_validate(self, axon, node, start_block_height, last_block_height):
+
+        current_block_height = node.get_current_block_height()
+        if current_block_height is None:
+            raise Exception("Failed to get current block height")
+
+        if not self.validate_blockchain_range(start_block_height, last_block_height, 20, current_block_height):
+            return False, 0
+
         challenge, expected_response = node.create_challenge(start_block_height, last_block_height)
         
         response = self.dendrite.query(
