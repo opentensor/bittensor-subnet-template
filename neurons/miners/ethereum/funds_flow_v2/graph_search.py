@@ -105,3 +105,18 @@ class GraphSearch:
             if single_result[0] is None:
                 return 0
             return single_result[0]
+    
+    def solve_challenge(self, checksum):
+        with self.driver.session() as session:
+            data_set = session.run(
+                """
+                MATCH (s: SENT { checksum: $checksum })
+                RETURN s.tx_hash
+                """,
+                checksum=checksum
+            )
+            single_result = data_set.single()
+
+            if single_result[0] is None:
+                return 0
+            return single_result[0]

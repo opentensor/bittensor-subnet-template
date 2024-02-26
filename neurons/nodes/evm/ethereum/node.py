@@ -1,6 +1,8 @@
 import argparse
 import asyncio
 import os
+from Crypto.Hash import SHA256
+from insights.protocol import EthChallenge
 
 from aiohttp import ClientSession
 
@@ -47,9 +49,6 @@ class EthereumNode(Node):
             logger.error(f"RPC Provider with Error: {e}")
         finally:
             web3.provider = None # Close the connection
-
-    def create_challenge(self, start_block_height, last_block_height):
-        raise NotImplementedError()
 
     def get_transaction_by_hash(self, tx_hash): # get the transaction details from tx hash
         web3 = Web3(Web3.HTTPProvider(self.node_rpc_url))
@@ -117,3 +116,20 @@ class EthereumNode(Node):
                 return responses
         except Exception as e:
             logger.error(f"RPC Provider with Error: {e}")
+
+    def create_challenge(self, start_block_height, last_block_height):
+        block_to_check = random.randint(start_block_height, last_block_height)
+        
+        block_data = self.get_block_by_height(block_to_check)
+        num_transactions = len(block_data["tx"])
+
+        out_total_amount = 0
+        while out_total_amount == 0:
+            selected_txn = block_data["tx"][random.randint(0, num_transactions - 1)]
+            txn_id = selected_txn.get('hash')
+
+            binary = selected_txn["hash"] + selected_txn["blockHash"] + selected_txn["from"] + selected_txn["to"]
+            checksum = SHA256.new(binary.encode('utf-8')).hexdigest()
+
+        challenge = EthChallenge(checksum=checksum)
+        return challenge, txn_id

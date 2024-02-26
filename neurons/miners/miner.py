@@ -16,7 +16,7 @@ from insights import protocol
 from template.base.miner import BaseMinerNeuron
 
 from neurons.miners import blacklist
-from insights.protocol import MODEL_TYPE_FUNDS_FLOW, NETWORK_BITCOIN
+from insights.protocol import MODEL_TYPE_FUNDS_FLOW, NETWORK_BITCOIN, NETWORK_ETHEREUM
 from neurons.storage import store_miner_metadata
 from neurons.remote_config import MinerConfig
 from neurons.nodes.factory import NodeFactory
@@ -164,11 +164,17 @@ class Miner(BaseMinerNeuron):
         try:
             bt.logging.info(f"challenge recieved: {synapse}")
 
-            synapse.output = self.graph_search.solve_challenge(
-                in_total_amount=synapse.in_total_amount,
-                out_total_amount=synapse.out_total_amount,
-                tx_id_last_4_chars=synapse.tx_id_last_4_chars
-            )
+            if self.config.network == NETWORK_BITCOIN:
+                synapse.output = self.graph_search.solve_challenge(
+                    in_total_amount=synapse.in_total_amount,
+                    out_total_amount=synapse.out_total_amount,
+                    tx_id_last_4_chars=synapse.tx_id_last_4_chars
+                )
+            if self.config.network == NETWORK_ETHEREUM:
+                synapse.output = self.graph_search.solve_challenge(
+                    in_total_amount=synapse.checksum,
+                )
+
             bt.logging.info(f"Serving miner challenge output: {synapse.output}")
 
         except Exception as e:

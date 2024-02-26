@@ -90,3 +90,10 @@ class Challenge(BaseSynapse):
     
     def deserialize(self) -> List[str]:
         return self.outputs
+
+class EthChallenge(BaseSynapse):
+    checksum: str = None
+    output: Optional[str] = None
+    
+    def deserialize(self) -> List[str]:
+        return self.outputs
