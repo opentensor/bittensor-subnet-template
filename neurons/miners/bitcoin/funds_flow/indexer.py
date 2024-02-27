@@ -142,16 +142,15 @@ if __name__ == "__main__":
         end_height = int(end_height_str)
         in_reverse_order = int(in_reverse_order_str)
 
-        logger.info("Getting indexed min/max block height...")
-        [indexed_min_block_height, indexed_max_block_height] = graph_indexer.get_min_max_block_height()
-        logger.info(f"Indexed block height (min, max): [{indexed_min_block_height}, {indexed_max_block_height}]")
-        
-        
-
         logger.info("Starting indexer")
         
         logger.info("Creating indexes...")
         graph_indexer.create_indexes()
+        
+        logger.info("Getting indexed min/max block height...")
+        indexed_min_block_height, indexed_max_block_height = graph_indexer.get_min_max_block_height()
+        graph_indexer.set_min_max_block_height_cache(indexed_min_block_height, indexed_max_block_height)
+        logger.info(f"Indexed block height (min, max): [{indexed_min_block_height}, {indexed_max_block_height}]")
 
         if start_height > -1 and end_height > -1: # if specifed both start and end, then iterate range
             iterate_range(bitcoin_node, graph_creator, graph_indexer, start_height, end_height, bool(in_reverse_order))
