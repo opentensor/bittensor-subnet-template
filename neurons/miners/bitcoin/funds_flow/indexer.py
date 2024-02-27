@@ -54,6 +54,9 @@ def index_block(_bitcoin_node, _graph_creator, _graph_indexer, block_height):
                 block_height, formatted_num_transactions, formatted_progress
             )
         )
+        
+    min_block_height_cache, max_block_height_cache = graph_indexer.get_min_max_block_height_cache()
+    graph_indexer.set_min_max_block_height_cache(min(min_block_height_cache, block_height), max(max_block_height_cache, block_height))
 
     return success
 
