@@ -2,7 +2,8 @@ import argparse
 import asyncio
 import os
 from Crypto.Hash import SHA256
-from insights.protocol import EthChallenge
+from insights.protocol import Challenge
+import random
 
 from aiohttp import ClientSession
 
@@ -11,6 +12,7 @@ from web3 import Web3
 from neurons.nodes.abstract_node import Node
 from neurons.setup_logger import setup_logger
 from neurons.nodes.evm.ethereum.node_utils import async_rpc_request
+
 
 parser = argparse.ArgumentParser()
 bt.logging.add_args(parser)
@@ -131,5 +133,5 @@ class EthereumNode(Node):
             binary = selected_txn["hash"] + selected_txn["blockHash"] + selected_txn["from"] + selected_txn["to"]
             checksum = SHA256.new(binary.encode('utf-8')).hexdigest()
 
-        challenge = EthChallenge(checksum=checksum)
+        challenge = Challenge(checksum=checksum)
         return challenge, txn_id
