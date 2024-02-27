@@ -152,7 +152,7 @@ if __name__ == "__main__":
         logger.info("Creating indexes...")
         graph_indexer.create_indexes()
         
-        logger.info("Getting indexed min/max block height...")
+        logger.info("Syncing block range caches...")
         indexed_min_block_height, indexed_max_block_height = graph_search.get_min_max_block_height()
         graph_indexer.set_min_max_block_height_cache(indexed_min_block_height, indexed_max_block_height)
         logger.info(f"Indexed block height (min, max): [{indexed_min_block_height}, {indexed_max_block_height}]")
