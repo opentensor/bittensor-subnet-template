@@ -21,3 +21,6 @@ if __name__ == '__main__':
     graph_indexer.set_min_max_block_height_cache(indexed_min_block_height, indexed_max_block_height)
 
     print(f"Updated min/max cache: ({indexed_min_block_height}, {indexed_max_block_height})")
+
+    graph_search.close()
+    graph_indexer.close()

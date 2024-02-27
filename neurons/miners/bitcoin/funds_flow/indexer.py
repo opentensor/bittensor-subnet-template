@@ -165,4 +165,5 @@ if __name__ == "__main__":
             move_forward(bitcoin_node, graph_creator, graph_indexer, graph_search, start_height)
         
         graph_indexer.close()
+        graph_search.close()
         logger.info("Indexer stopped")
