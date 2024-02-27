@@ -51,40 +51,6 @@ class GraphIndexer:
 
             return single_result[0]
         
-    def get_min_max_block_height(self):
-        with self.driver.session() as session:
-            result = session.run(
-                """
-                MATCH (t:Transaction)
-                RETURN MIN(t.block_height) AS min_block_height, MAX(t.block_height) AS max_block_height
-                """
-            )
-            single_result = result.single()
-            if single_result is None:
-                return [0, 0]
-            return single_result.get('min_block_height'), single_result.get('max_block_height')
-        
-    def get_min_max_block_height_cache(self):
-        with self.driver.session() as session:
-            result_min = session.run(
-                """
-                MATCH (n:Cache {field: 'min_block_height'})
-                RETURN n;
-                """
-            ).single()
-            
-            result_max = session.run(
-                """
-                MATCH (n:Cache {field: 'max_block_height'})
-                RETURN n;
-                """
-            ).single()
-            
-            min_block_height = result_min.get("value") if result_min is not None else 0
-            max_block_height = result_max.get("value") if result_max is not None else 0
-
-            return min_block_height, max_block_height
-        
     def set_min_max_block_height_cache(self, min_block_height, max_block_height):
         with self.driver.session() as session:
             # update min block height
@@ -94,7 +60,7 @@ class GraphIndexer:
                 SET n.value = $min_block_height
                 RETURN n
                 """,
-                min_block_height
+                {"min_block_height": min_block_height}
             )
 
             # update max block height
@@ -104,7 +70,7 @@ class GraphIndexer:
                 SET n.value = $max_block_height
                 RETURN n
                 """,
-                max_block_height
+                {"max_block_height": max_block_height}
             )
 
     def check_if_block_is_indexed(self, block_height: int) -> bool:

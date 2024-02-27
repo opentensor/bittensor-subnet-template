@@ -5,6 +5,7 @@ from neurons.setup_logger import setup_logger
 from neurons.nodes.factory import NodeFactory
 from neurons.miners.bitcoin.funds_flow.graph_creator import GraphCreator
 from neurons.miners.bitcoin.funds_flow.graph_indexer import GraphIndexer
+from neurons.miners.bitcoin.funds_flow.graph_search import GraphSearch
 
 from insights.protocol import NETWORK_BITCOIN
 
@@ -21,7 +22,7 @@ def shutdown_handler(signum, frame):
     shutdown_flag = True
 
 
-def index_block(_bitcoin_node, _graph_creator, _graph_indexer, block_height):
+def index_block(_bitcoin_node, _graph_creator, _graph_indexer, _graph_search, block_height):
     block = _bitcoin_node.get_block_by_height(block_height)
     num_transactions = len(block["tx"])
     start_time = time.time()
@@ -55,13 +56,13 @@ def index_block(_bitcoin_node, _graph_creator, _graph_indexer, block_height):
             )
         )
         
-    min_block_height_cache, max_block_height_cache = graph_indexer.get_min_max_block_height_cache()
-    graph_indexer.set_min_max_block_height_cache(min(min_block_height_cache, block_height), max(max_block_height_cache, block_height))
+    min_block_height_cache, max_block_height_cache = _graph_search.get_min_max_block_height_cache()
+    _graph_indexer.set_min_max_block_height_cache(min(min_block_height_cache, block_height), max(max_block_height_cache, block_height))
 
     return success
 
 
-def iterate_range(_bitcoin_node, _graph_creator, _graph_indexer, start_height: int, end_height: int, in_reverse_order: bool = False):
+def iterate_range(_bitcoin_node, _graph_creator, _graph_indexer, _graph_search, start_height: int, end_height: int, in_reverse_order: bool = False):
     if in_reverse_order and start_height < end_height:
         logger.error("start_height must equal or greater than end_height in reverse indexer")
         return False
@@ -80,7 +81,7 @@ def iterate_range(_bitcoin_node, _graph_creator, _graph_indexer, start_height: i
             block_height += step
             continue
         
-        success = index_block(_bitcoin_node, _graph_creator, _graph_indexer, block_height)
+        success = index_block(_bitcoin_node, _graph_creator, _graph_indexer, _graph_search, block_height)
         
         if success:
             block_height += step
@@ -91,7 +92,7 @@ def iterate_range(_bitcoin_node, _graph_creator, _graph_indexer, start_height: i
     return True
 
 
-def move_forward(_bitcoin_node, _graph_creator, _graph_indexer, start_height: int):
+def move_forward(_bitcoin_node, _graph_creator, _graph_indexer, _graph_search, start_height: int):
     global shutdown_flag
 
     skip_blocks = 6
@@ -111,7 +112,7 @@ def move_forward(_bitcoin_node, _graph_creator, _graph_indexer, start_height: in
             block_height += 1
             continue
         
-        success = index_block(_bitcoin_node, _graph_creator, _graph_indexer, block_height)
+        success = index_block(_bitcoin_node, _graph_creator, _graph_indexer, _graph_search, block_height)
         
         if success:
             block_height += 1
@@ -131,6 +132,7 @@ if __name__ == "__main__":
     bitcoin_node = NodeFactory.create_node(NETWORK_BITCOIN)
     graph_creator = GraphCreator()
     graph_indexer = GraphIndexer()
+    graph_search = GraphSearch()
     
     start_height_str = os.getenv('BITCOIN_INDEXER_START_BLOCK_HEIGHT', None)
     end_height_str = os.getenv('BITCOIN_INDEXER_END_BLOCK_HEIGHT', '-1') or '-1'
@@ -151,16 +153,16 @@ if __name__ == "__main__":
         graph_indexer.create_indexes()
         
         logger.info("Getting indexed min/max block height...")
-        indexed_min_block_height, indexed_max_block_height = graph_indexer.get_min_max_block_height()
+        indexed_min_block_height, indexed_max_block_height = graph_search.get_min_max_block_height()
         graph_indexer.set_min_max_block_height_cache(indexed_min_block_height, indexed_max_block_height)
         logger.info(f"Indexed block height (min, max): [{indexed_min_block_height}, {indexed_max_block_height}]")
 
         if start_height > -1 and end_height > -1: # if specifed both start and end, then iterate range
-            iterate_range(bitcoin_node, graph_creator, graph_indexer, start_height, end_height, bool(in_reverse_order))
+            iterate_range(bitcoin_node, graph_creator, graph_indexer, graph_search, start_height, end_height, bool(in_reverse_order))
         elif in_reverse_order: # if end is not specifed but in reverse order, then set end_height 1 and iterate range
-            iterate_range(bitcoin_node, graph_creator, graph_indexer, start_height, 1, bool(in_reverse_order))
+            iterate_range(bitcoin_node, graph_creator, graph_indexer, graph_search, start_height, 1, bool(in_reverse_order))
         else: # if end_height and in_reverse_order are both unset, then move forward in real-time
-            move_forward(bitcoin_node, graph_creator, graph_indexer, start_height)
+            move_forward(bitcoin_node, graph_creator, graph_indexer, graph_search, start_height)
         
         graph_indexer.close()
         logger.info("Indexer stopped")
