@@ -42,6 +42,11 @@ def get_model_id(model_type):
         MODEL_TYPE_FUNDS_FLOW: MODEL_TYPE_FUNDS_FLOW_ID
     }.get(model_type)
 
+def get_model_types():
+    return [MODEL_TYPE_FUNDS_FLOW]
+
+def get_networks():
+    return [NETWORK_BITCOIN]
 
 class DiscoveryMetadata(BaseModel):
     network: str = None
@@ -94,5 +99,5 @@ class Challenge(BaseSynapse):
 
     output: Optional[str] = None
     
-    def deserialize(self) -> List[str]:
-        return self.outputs
+    def deserialize(self) -> str:
+        return self.output
