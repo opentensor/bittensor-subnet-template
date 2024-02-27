@@ -50,6 +50,19 @@ class GraphIndexer:
                return 0
 
             return single_result[0]
+        
+    def get_min_max_block_height(self):
+        with self.driver.session() as session:
+            result = session.run(
+                """
+                MATCH (t:Transaction)
+                RETURN MIN(t.block_height) AS min_block_height, MAX(t.block_height) AS max_block_height
+                """
+            )
+            single_result = result.single()
+            if single_result is None:
+                return [0, 0]
+            return [single_result.get('min_block_height', 'max_block_height')]
 
     def check_if_block_is_indexed(self, block_height: int) -> bool:
         with self.driver.session() as session:

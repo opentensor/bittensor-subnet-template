@@ -142,6 +142,12 @@ if __name__ == "__main__":
         end_height = int(end_height_str)
         in_reverse_order = int(in_reverse_order_str)
 
+        logger.info("Getting indexed min/max block height...")
+        [indexed_min_block_height, indexed_max_block_height] = graph_indexer.get_min_max_block_height()
+        logger.info(f"Indexed block height (min, max): [{indexed_min_block_height}, {indexed_max_block_height}]")
+        
+        
+
         logger.info("Starting indexer")
         
         logger.info("Creating indexes...")
