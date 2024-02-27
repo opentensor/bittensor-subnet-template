@@ -14,6 +14,7 @@ from neurons.setup_logger import setup_logger
 from neurons.nodes.evm.ethereum.node_utils import async_rpc_request
 
 
+
 parser = argparse.ArgumentParser()
 bt.logging.add_args(parser)
 logger = setup_logger("EvmNode")
