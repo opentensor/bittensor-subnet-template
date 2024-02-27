@@ -172,7 +172,7 @@ class Miner(BaseMinerNeuron):
                 )
             if self.config.network == NETWORK_ETHEREUM:
                 synapse.output = self.graph_search.solve_challenge(
-                    in_total_amount=synapse.checksum,
+                    checksum=synapse.checksum,
                 )
 
             bt.logging.info(f"Serving miner challenge output: {synapse.output}")
