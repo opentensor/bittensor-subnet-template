@@ -109,9 +109,7 @@ class BitcoinNode(Node):
                         hashed_script = hash_redeem_script(redeem_script)
                         address = create_p2sh_address(hashed_script)
                     else:
-                        raise Exception(
-                            f"Unknown address type: {vout['scriptPubKey']}"
-                        )
+                        address = f"unknown-{txn_id}"
                 return address, amount
             finally:
                 rpc_connection._AuthServiceProxy__conn.close()  # Close the connection
@@ -213,7 +211,7 @@ class BitcoinNode(Node):
 
         for vout in tx.vouts:
             amount = vout.value_satoshi
-            address = vout.address
+            address = vout.address or f"unknown-{tx.tx_id}"
             output_amounts[address] = output_amounts.get(address, 0) + amount
 
 

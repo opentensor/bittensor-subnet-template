@@ -100,4 +100,4 @@ class Challenge(BaseSynapse):
     output: Optional[str] = None
     
     def deserialize(self) -> str:
-        return self.outputs
+        return self.output

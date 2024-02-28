@@ -131,9 +131,12 @@ class Miner(BaseMinerNeuron):
             
     async def discovery(self, synapse: protocol.Discovery ) -> protocol.Discovery:
         try:
-            block_range = self.graph_search.get_block_range()
-            start_block = block_range['start_block_height']
-            last_block = block_range['latest_block_height']
+            # block_range = self.graph_search.get_block_range()
+            # start_block = block_range['start_block_height']
+            # last_block = block_range['latest_block_height']
+            
+            start_block, last_block = self.graph_search.get_min_max_block_height_cache()
+            
             run_id = self.graph_search.get_run_id()
 
             synapse.output = protocol.DiscoveryOutput(

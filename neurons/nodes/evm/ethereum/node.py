@@ -5,15 +5,14 @@ from Crypto.Hash import SHA256
 from insights.protocol import Challenge
 import random
 
+import requests
 from aiohttp import ClientSession
 
 import bittensor as bt
 from web3 import Web3
+from web3.providers.base import JSONBaseProvider
 from neurons.nodes.abstract_node import Node
 from neurons.setup_logger import setup_logger
-from neurons.nodes.evm.ethereum.node_utils import async_rpc_request
-
-
 
 parser = argparse.ArgumentParser()
 bt.logging.add_args(parser)
@@ -28,24 +27,25 @@ class EthereumNode(Node):
             )
         else:
             self.node_rpc_url = node_rpc_url
+        
+        self.web3 = Web3(Web3.HTTPProvider(self.node_rpc_url))
+
+    def close_provider(self):
+        self.web3.provider = None
 
     def get_current_block_height(self):
-        web3 = Web3(Web3.HTTPProvider(self.node_rpc_url))
         try:
-            if web3.is_connected:
-                return web3.eth.block_number
+            if self.web3.is_connected:
+                return self.web3.eth.block_number
             else:
                 logger.info("RPC Provider disconnected.")
         except Exception as e:
             logger.error(f"RPC Provider with Error: {e}")
-        finally:
-            web3.provider = None # Close the connection
     
     def get_block_by_height(self, block_height):
-        web3 = Web3(Web3.HTTPProvider(self.node_rpc_url))
         try:
-            if web3.is_connected:
-                return web3.eth.get_block(block_height)
+            if self.web3.is_connected:
+                return self.web3.eth.get_block(block_height)
             else:
                 logger.info("RPC Provider disconnected.")
         except Exception as e:
@@ -54,69 +54,73 @@ class EthereumNode(Node):
             web3.provider = None # Close the connection
 
     def get_transaction_by_hash(self, tx_hash): # get the transaction details from tx hash
-        web3 = Web3(Web3.HTTPProvider(self.node_rpc_url))
         try:
-            if web3.is_connected:
-                return web3.eth.get_transaction(tx_hash)
+            if self.web3.is_connected:
+                return self.web3.eth.get_transaction(tx_hash)
             else:
                 logger.info(f("RPC Provider disconnected."))
         except Exception as e:
             logger.error(f"RPC Provider with Error: {e}")
-        finally:
-            web3.provider = None # Close the connection
     
     def get_symbol_name(self, contractAddress):
-        web3 = Web3(Web3.HTTPProvider(self.node_rpc_url))        
         jsonAbi = [{"constant":True,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"payable":False,"stateMutability":"view","type":"function"}]
         try:
-            if web3.is_connected:
-                contract = web3.eth.contract(address=contractAddress, abi=jsonAbi)
+            if self.web3.is_connected:
+                contract = self.web3.eth.contract(address=contractAddress, abi=jsonAbi)
                 return contract.functions.symbol().call()
             else:
                 logger.info(f("RPC Provider disconnected."))
         except:
             return contractAddress
-        finally:
-            web3.provider = None # Close the connection
-
-    async def get_balance_by_addresses(self, addresses): # get the balance from addresses
-        tasks = []
-        # Fetch all responses within one Client session,
-        # keep connection alive for all requests.
-        async with ClientSession() as session:
-            for address in addresses:
-                task = async_rpc_request(session, self.node_rpc_url, 'eth_getBalance', [address, 'pending'])
-                tasks.append(task)
-
-            responses = await asyncio.gather(*tasks)
-            return responses
-
-    async def get_transaction(self, transactions): # get tx details from tx hash
+    
+    # get the balance from addresses
+    def get_balance_by_addresses(self, addresses):
         try:
-            tasks = []
-            # Fetch all responses within one Client session,
-            # keep connection alive for all requests.
-            async with ClientSession() as session:
-                for tran in transactions:
-                    task = async_rpc_request(session, self.node_rpc_url, 'eth_getTransactionByHash',[tran])
-                    tasks.append(task)
+            batch_size = 500
+            sub_arrays = [addresses[i:i + batch_size] for i in range(0, len(addresses), batch_size)]
+            responses = []
 
-                responses = await asyncio.gather(*tasks)
-                return responses
+            for addrs in sub_arrays:
+                base_provider = JSONBaseProvider()
+                request_data = b'[' + b','.join([base_provider.encode_rpc_request('eth_getBalance', [addr, 'latest']) for addr in addrs]) + b']'
+                r = requests.post(self.node_rpc_url, data=request_data, headers={'Content-Type': 'application/json'})
+                responses += base_provider.decode_rpc_response(r.content)
+
+            return responses
         except Exception as e:
             logger.error(f"RPC Provider with Error: {e}")
-    
-    async def get_transactionReceipt(self, transactions): # get txReceipt details from tx hash
+
+    # get tx details from tx hash
+    def get_transaction(self, transactions):
         try:
-            tasks = []
-            # Fetch all responses within one Client session,
-            # keep connection alive for all requests.
-            async with ClientSession() as session:
-                for tran in transactions:
-                    task = async_rpc_request(session, self.node_rpc_url, 'eth_getTransactionReceipt',[tran])
-                    tasks.append(task)
-                responses = await asyncio.gather(*tasks)
-                return responses
+            batch_size = 500
+            sub_arrays = [transactions[i:i + batch_size] for i in range(0, len(transactions), batch_size)]
+            responses = []
+
+            for txs in sub_arrays:
+                base_provider = JSONBaseProvider()
+                request_data = b'[' + b','.join([base_provider.encode_rpc_request('eth_getTransactionByHash', [tran]) for tran in txs]) + b']'
+                r = requests.post(self.node_rpc_url, data=request_data, headers={'Content-Type': 'application/json'})
+                responses += base_provider.decode_rpc_response(r.content)
+
+            return responses
+        except Exception as e:
+            logger.error(f"RPC Provider with Error: {e}")
+
+    # get txReceipt details from tx hash
+    def get_transactionReceipt(self, transactions):
+        try:
+            batch_size = 500
+            sub_arrays = [transactions[i:i + batch_size] for i in range(0, len(transactions), batch_size)]
+            responses = []
+
+            for txs in sub_arrays:
+                base_provider = JSONBaseProvider()
+                request_data = b'[' + b','.join([base_provider.encode_rpc_request('eth_getTransactionReceipt', [tran]) for tran in txs]) + b']'
+                r = requests.post(self.node_rpc_url, data=request_data, headers={'Content-Type': 'application/json'})
+                responses += base_provider.decode_rpc_response(r.content)
+
+            return responses
         except Exception as e:
             logger.error(f"RPC Provider with Error: {e}")
 
