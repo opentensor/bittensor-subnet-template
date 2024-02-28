@@ -51,6 +51,29 @@ class GraphIndexer:
                return 0
 
             return single_result[0]
+    
+    def set_min_max_block_height_cache(self, min_block_height, max_block_height):
+        with self.driver.session() as session:
+            # update min block height
+            session.run(
+                """
+                MERGE (n:Cache {field: 'min_block_height'})
+                SET n.value = $min_block_height
+                RETURN n
+                """,
+                {"min_block_height": min_block_height}
+            )
+
+            # update max block height
+            session.run(
+                """
+                MERGE (n:Cache {field: 'max_block_height'})
+                SET n.value = $max_block_height
+                RETURN n
+                """,
+                {"max_block_height": max_block_height}
+            )
+
     def create_indexes(self):
         with self.driver.session() as session:
             # Fetch existing indexes
@@ -64,6 +87,7 @@ class GraphIndexer:
                     existing_index_set.add(index_name)
 
             index_creation_statements = {
+                "Cache": "CREATE INDEX ON :Cache;",
                 "Address-balance": "CREATE INDEX ON :Address(balance);",
                 "Address-timestamp": "CREATE INDEX ON :Address(timestamp);",
                 "Address-address": "CREATE INDEX ON :Address(address);",
