@@ -1,12 +1,10 @@
 import argparse
-import asyncio
 import os
 from Crypto.Hash import SHA256
 from insights.protocol import Challenge
 import random
 
 import requests
-from aiohttp import ClientSession
 
 import bittensor as bt
 from web3 import Web3
