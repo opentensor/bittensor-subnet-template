@@ -123,7 +123,6 @@ def index_blocks(_graph_creator, _graph_indexer, _graph_search, start_height):
                     logger.info(f"Finished indexing block {block_height} before shutdown.")
                     break
             except Exception as e:
-                print(e)
                 # sometimes we may have rpc server connect issue catch all failed block so we can retry
                 log_blockHeight_crashed_by_rpc(block_height)
                 block_height += 1
