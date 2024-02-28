@@ -128,7 +128,9 @@ class BitcoinNode(Node):
 
         # if failed ot find valid block, return invalid response
         if not num_retries:
-            return Challenge(), -1
+            raise Exception(
+                f"Failed to create a valid challenge."
+            )
         
         block_data = self.get_block_by_height(block_to_check)
         num_transactions = len(block_data["tx"])
