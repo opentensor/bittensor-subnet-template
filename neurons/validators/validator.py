@@ -85,25 +85,28 @@ class Validator(BaseValidatorNeuron):
         self.sync_validator()
 
         
-
     def cross_validate(self, axon, node, start_block_height, last_block_height):
-        challenge, expected_response = node.create_challenge(start_block_height, last_block_height)
-        
-        response = self.dendrite.query(
-            axon,
-            challenge,
-            deserialize=False,
-            timeout = self.validator_config.challenge_timeout,
-        )
-        
-        if response is None or response.output is None:
-            bt.logging.debug("Skipping: Challenge response empty")
+        try:
+            challenge, expected_response = node.create_challenge(start_block_height, last_block_height)
+            
+            response = self.dendrite.query(
+                axon,
+                challenge,
+                deserialize=False,
+                timeout = self.validator_config.challenge_timeout,
+            )
+            
+            if response is None or response.output is None:
+                bt.logging.debug("Skipping: Challenge response empty")
+                return None, None
+            
+            result = response.output == expected_response
+            response_time = response.dendrite.process_time
+            
+            return result, response_time
+        except Exception as e:
+            bt.logging.error(f"Cross validation error occurred: {e}")
             return None, None
-        
-        result = response.output == expected_response
-        response_time = response.dendrite.process_time
-        
-        return result, response_time
 
 
     def get_reward(self, response: Discovery, ip_per_hotkey=None, run_id_per_hotkey=None, miner_distribution=None):

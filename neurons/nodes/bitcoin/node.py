@@ -11,6 +11,7 @@ from neurons.nodes.bitcoin.node_utils import (
     construct_redeem_script,
     hash_redeem_script,
     create_p2sh_address,
+    check_if_block_is_valid_for_challenge
 )
 from neurons.setup_logger import setup_logger
 
@@ -118,7 +119,18 @@ class BitcoinNode(Node):
             return address, int(amount)
 
     def create_challenge(self, start_block_height, last_block_height):
-        block_to_check = random.randint(start_block_height, last_block_height)
+        num_retries = 10 # to prevent infinite loop
+        is_valid_block = False
+        while num_retries and not is_valid_block:
+            block_to_check = random.randint(start_block_height, last_block_height)
+            is_valid_block = check_if_block_is_valid_for_challenge(block_to_check)
+            num_retries -= 1
+
+        # if failed ot find valid block, return invalid response
+        if not num_retries:
+            raise Exception(
+                f"Failed to create a valid challenge."
+            )
         
         block_data = self.get_block_by_height(block_to_check)
         num_transactions = len(block_data["tx"])
