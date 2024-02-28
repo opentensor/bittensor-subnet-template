@@ -89,6 +89,10 @@ class Validator(BaseValidatorNeuron):
     def cross_validate(self, axon, node, start_block_height, last_block_height):
         challenge, expected_response = node.create_challenge(start_block_height, last_block_height)
         
+        # if failed to create a valid challenge, just return false
+        if expected_response == -1:
+            return False, -1
+        
         response = self.dendrite.query(
             axon,
             challenge,

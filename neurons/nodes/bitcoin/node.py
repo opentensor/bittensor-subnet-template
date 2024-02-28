@@ -119,10 +119,16 @@ class BitcoinNode(Node):
             return address, int(amount)
 
     def create_challenge(self, start_block_height, last_block_height):
+        num_retries = 10 # to prevent infinite loop
         is_valid_block = False
-        while not is_valid_block:
+        while num_retries and not is_valid_block:
             block_to_check = random.randint(start_block_height, last_block_height)
             is_valid_block = check_if_block_is_valid_for_challenge(block_to_check)
+            num_retries -= 1
+
+        # if failed ot find valid block, return invalid response
+        if not num_retries:
+            return Challenge(), -1
         
         block_data = self.get_block_by_height(block_to_check)
         num_transactions = len(block_data["tx"])
