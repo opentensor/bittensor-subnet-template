@@ -25,16 +25,15 @@ import bittensor as bt
 import os
 import yaml
 
-from insights.protocol import Discovery, DiscoveryOutput, MAX_MULTIPLE_IPS, \
-    MAX_MULTIPLE_RUN_ID
+from insights.protocol import Discovery, DiscoveryOutput, MAX_MINER_INSTANCE
 
 from neurons.remote_config import ValidatorConfig
 from neurons.nodes.factory import NodeFactory
-from neurons.storage import store_validator_metadata, get_miners_metadata
+from neurons.storage import store_validator_metadata
 from neurons.validators.scoring import Scorer
+from neurons.validators.utils.metadata import Metadata
 from neurons.validators.utils.synapse import is_discovery_response_valid
 
-from neurons.validators.utils.utils import get_miner_distributions, count_hotkeys_per_ip, count_run_id_per_hotkey
 from neurons.validators.utils.uids import get_random_uids
 
 from template.base.validator import BaseValidatorNeuron
@@ -105,33 +104,59 @@ class Validator(BaseValidatorNeuron):
         
         return result, response_time
 
+    def is_miner_metadata_valid(self, response: Discovery):
+        hotkey = response.axon.hotkey
+        ip = response.axon.ip
+        run_id = response.output.run_id
+        
+        hotkey_meta = self.metadata.get_metadata_for_hotkey(hotkey)
 
-    def get_reward(self, response: Discovery, ip_per_hotkey=None, run_id_per_hotkey=None, miner_distribution=None):
+        if not (hotkey_meta and hotkey_meta['run_id'] and hotkey_meta['network']):
+            bt.logging.info(f'Validation Failed: hotkey={hotkey} unable to retrieve miner metadata')
+            return False
+
+        ip_count = self.metadata.ip_distribution.get(ip, 0)
+        run_id_count = self.metadata.run_id_distribution.get(run_id, 0)
+        coldkey_count = self.metadata.coldkey_distribution.get(hotkey, 0)
+
+        bt.logging.info(f"🔄 Processing response for {hotkey}@{ip}")
+        if ip_count > MAX_MINER_INSTANCE:
+            bt.logging.info(f'Validation Failed: hotkey={hotkey} has {ip_count} ip')
+            return False
+        if run_id_count > MAX_MINER_INSTANCE:
+            bt.logging.info(f'Validation Failed: hotkey={hotkey} has {run_id} run_id')
+            return False
+        if coldkey_count > MAX_MINER_INSTANCE:
+            bt.logging.info(f'Validation Failed: Coldkey of hotkey={hotkey} has {coldkey_count} hotkeys')
+            return False
+        
+        bt.logging.info(f'hotkey={hotkey} has {ip_count} ip, {run_id_count} run_id, {coldkey_count} hotkeys for its coldkey')
+
+        return True
+    
+    def get_reward(self, response: Discovery):
         try:
             if not is_discovery_response_valid(response):
                 bt.logging.debug(f'Discovery Response invalid {response}')
                 return None
+            if not self.is_miner_metadata_valid(response):
+                return 0
             
             output: DiscoveryOutput = response.output
             network = output.metadata.network
             start_block_height = output.start_block_height
             last_block_height = output.block_height
-            axon_ip = response.axon.ip
-            hot_key = response.axon.hotkey
+            hotkey = response.axon.hotkey
 
-            bt.logging.info(f"🔄 Processing response for {hot_key}@{axon_ip}")
-
-            multiple_ips = ip_per_hotkey[axon_ip] > MAX_MULTIPLE_IPS
-            multiple_run_ids = run_id_per_hotkey[hot_key] > MAX_MULTIPLE_RUN_ID
             cross_validation_result, response_time = self.cross_validate(response.axon, self.nodes[network], start_block_height, last_block_height)
 
             if cross_validation_result is None:
-                bt.logging.debug(f"Cross-Validation: {hot_key=} Timeout skipping response")
+                bt.logging.debug(f"Cross-Validation: {hotkey=} Timeout skipping response")
                 return None
             if not cross_validation_result:
-                bt.logging.info(f"Cross-Validation: {hot_key=} Test failed")
+                bt.logging.info(f"Cross-Validation: {hotkey=} Test failed")
                 return 0
-            bt.logging.info(f"Cross-Validation: {hot_key=} Test passed")
+            bt.logging.info(f"Cross-Validation: {hotkey=} Test passed")
 
             score = self.scorer.calculate_score(
                 network,
@@ -139,15 +164,13 @@ class Validator(BaseValidatorNeuron):
                 start_block_height,
                 last_block_height,
                 self.block_height_cache[network],
-                miner_distribution,
-                multiple_ips,
-                multiple_run_ids
+                self.metadata.network_distribution
             )
 
             return score
         except Exception as e:
             bt.logging.error(f"Error occurred during cross-validation: {traceback.format_exc()}")
-            bt.logging.debug(f"Cross-Validation: {hot_key=} Timeout skipping response")
+            bt.logging.debug(f"Cross-Validation: {hotkey=} Timeout skipping response")
             return None
 
     async def forward(self):
@@ -155,10 +178,6 @@ class Validator(BaseValidatorNeuron):
 
         filtered_axons = [self.metagraph.axons[uid] for uid in available_uids]
         
-        ip_per_hotkey = count_hotkeys_per_ip(filtered_axons)
-        run_id_per_hotkey = count_run_id_per_hotkey(self.miners_metadata)
-        miner_distribution = get_miner_distributions(self.miners_metadata, self.validator_config.get_networks())
-
         responses = self.dendrite.query(
             filtered_axons,
             Discovery(),
@@ -169,7 +188,7 @@ class Validator(BaseValidatorNeuron):
         valid_uids = []
         valid_responses = []
         for uid, response in zip(available_uids, responses):
-            if response and response.output and self.miners_metadata.get(response.axon.hotkey):
+            if response and response.output:
                 valid_uids.append(uid)
                 valid_responses.append(response)
 
@@ -184,10 +203,7 @@ class Validator(BaseValidatorNeuron):
 
         if valid_responses:
             rewards = [
-                self.get_reward(response, 
-                                ip_per_hotkey=ip_per_hotkey,
-                                run_id_per_hotkey=run_id_per_hotkey,
-                                miner_distribution=miner_distribution) for response in valid_responses
+                self.get_reward(response) for response in valid_responses
             ]
             # Remove None reward as they represent timeout cross validation
             filtered_data = [(reward, uid) for reward, uid in zip(rewards, valid_uids) if reward is not None]
@@ -201,7 +217,7 @@ class Validator(BaseValidatorNeuron):
                 bt.logging.info('Skipping update_scores() as no responses were valid')
 
     def sync_validator(self):
-        self.miners_metadata = get_miners_metadata(self.config, self.metagraph)
+        self.metadata = Metadata.build(self.metagraph, self.config)
         self.validator_config = ValidatorConfig().load_and_get_config_values()
         self.scorer = Scorer(self.validator_config)
 
