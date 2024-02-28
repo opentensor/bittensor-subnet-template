@@ -121,9 +121,17 @@ class GraphIndexer:
                         MERGE (from:Address {address: tx.from_address})
                         ON CREATE SET from.timestamp = tx.from_timestamp,
                             from.balance = tx.from_balance
+                        ON MATCH SET from.balance = CASE
+                            WHEN from.timestamp < tx.from_timestamp
+                            THEN tx.from_balance ELSE from.balance END,
+                            from.timestamp = CASE WHEN from.timestamp < tx.from_timestamp THEN tx.from_timestamp ELSE from.timestamp END
                         MERGE (to:Address {address: tx.to_address})
                         ON CREATE SET to.timestamp = tx.to_timestamp,
                             to.balance = tx.to_balance
+                        ON MATCH SET to.balance = CASE
+                            WHEN to.timestamp < tx.to_timestamp
+                            THEN tx.to_balance ELSE to.balance END,
+                            to.timestamp = CASE WHEN to.timestamp < tx.to_timestamp THEN tx.to_timestamp ELSE to.timestamp END
                         """,
                         transactions = [
                             {
