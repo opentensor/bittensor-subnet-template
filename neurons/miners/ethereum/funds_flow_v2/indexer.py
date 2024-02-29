@@ -273,7 +273,7 @@ if __name__ == "__main__":
     sub_last_height_str = os.getenv('ETHEREUM_SUB_END_BLOCK_HEIGHT', None)
 
     graph_last_block_height = graph_indexer.get_latest_block_number()
-    if sub_start_height_str is not None:
+    if sub_start_height_str:
         sub_start_height = int(sub_start_height_str)
         if graph_last_block_height > sub_start_height:
             sub_start_height = graph_last_block_height + 1
@@ -287,7 +287,7 @@ if __name__ == "__main__":
     graph_indexer.set_min_max_block_height_cache(indexed_min_block_height, indexed_max_block_height)
 
     current_block_height = ethereum_node.get_current_block_height()
-    if sub_last_height_str is not None:
+    if sub_last_height_str:
         sub_last_height = int(sub_last_height_str)
         if current_block_height > sub_last_height:
             sub_last_height = current_block_height
@@ -295,9 +295,9 @@ if __name__ == "__main__":
         sub_last_height = current_block_height
 
     # Config Sub Threads
-    num_threads = 0 # set number of thread 8 by default
+    num_threads = 8 # set number of thread 8 by default
     num_thread_str = os.getenv('ETHEREUM_SUB_THREAD_CNT', None)
-    if num_thread_str is not None:
+    if num_thread_str:
         num_threads = int(num_thread_str)
     
     # Config Main Thread
@@ -307,19 +307,22 @@ if __name__ == "__main__":
     main_start_height_str = os.getenv('ETHEREUM_MAIN_START_BLOCK_HEIGHT', None)
     main_last_height_str = os.getenv('ETHEREUM_MAIN_END_BLOCK_HEIGHT', None)
     is_reverse_order_str = os.getenv('ETHEREUM_MAIN_IN_REVERSE_ORDER', None)
-    
-    if main_start_height_str is not None:
+
+    if main_start_height_str:
         main_start_height = int(main_start_height_str)
-    if main_last_height_str is not None:
+    if main_last_height_str:
         main_last_height = int(main_last_height_str)
-    if is_reverse_order_str is not None:
-        is_reverse_order = bool(int(main_last_height_str))
+    if is_reverse_order_str:
+        is_reverse_order = bool(int(is_reverse_order_str))
 
     try:
         # Main Indexer running with Multi Sub Indexers
         if num_threads > 0 and sub_start_height > 0 and sub_last_height > 0:
             thread_depth = floor((sub_last_height - sub_start_height) / num_threads)
             restHeight = (sub_last_height - sub_start_height) - thread_depth * num_threads
+
+            if thread_depth == 0
+                num_threads = 1
 
             for i in range(num_threads):
                 start = sub_start_height + i * thread_depth
@@ -336,7 +339,7 @@ if __name__ == "__main__":
         else:
             if main_start_height > 0 and main_last_height > 0:
                 logger.info(f'-- Main thread is running for indexing based on min({main_start_height}) & max({main_last_height}) block numbers --')
-                single_index(graph_creator, graph_indexer, graph_search, sub_start_height, sub_last_height, is_reverse_order)
+                single_index(graph_creator, graph_indexer, graph_search, main_start_height, main_last_height, is_reverse_order)
             else:
                 logger.error('ETHEREUM_MAIN_START_BLOCK_HEIGHT & ETHEREUM_MAIN_END_BLOCK_HEIGHT should be given by ENV')
 
