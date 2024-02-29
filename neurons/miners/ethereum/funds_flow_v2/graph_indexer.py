@@ -51,6 +51,29 @@ class GraphIndexer:
                return 0
 
             return single_result[0]
+    
+    def set_min_max_block_height_cache(self, min_block_height, max_block_height):
+        with self.driver.session() as session:
+            # update min block height
+            session.run(
+                """
+                MERGE (n:Cache {field: 'min_block_height'})
+                SET n.value = $min_block_height
+                RETURN n
+                """,
+                {"min_block_height": min_block_height}
+            )
+
+            # update max block height
+            session.run(
+                """
+                MERGE (n:Cache {field: 'max_block_height'})
+                SET n.value = $max_block_height
+                RETURN n
+                """,
+                {"max_block_height": max_block_height}
+            )
+
     def create_indexes(self):
         with self.driver.session() as session:
             # Fetch existing indexes
@@ -64,6 +87,8 @@ class GraphIndexer:
                     existing_index_set.add(index_name)
 
             index_creation_statements = {
+                "Cache": "CREATE INDEX ON :Cache;",
+                "Checksum": "CREATE INDEX ON :Checksum;",
                 "Address-balance": "CREATE INDEX ON :Address(balance);",
                 "Address-timestamp": "CREATE INDEX ON :Address(timestamp);",
                 "Address-address": "CREATE INDEX ON :Address(address);",
@@ -97,9 +122,20 @@ class GraphIndexer:
                         MERGE (from:Address {address: tx.from_address})
                         ON CREATE SET from.timestamp = tx.from_timestamp,
                             from.balance = tx.from_balance
+                        ON MATCH SET from.balance = CASE
+                            WHEN from.timestamp < tx.from_timestamp
+                            THEN tx.from_balance ELSE from.balance END,
+                            from.timestamp = CASE WHEN from.timestamp < tx.from_timestamp THEN tx.from_timestamp ELSE from.timestamp END
                         MERGE (to:Address {address: tx.to_address})
                         ON CREATE SET to.timestamp = tx.to_timestamp,
                             to.balance = tx.to_balance
+                        ON MATCH SET to.balance = CASE
+                            WHEN to.timestamp < tx.to_timestamp
+                            THEN tx.to_balance ELSE to.balance END,
+                            to.timestamp = CASE WHEN to.timestamp < tx.to_timestamp THEN tx.to_timestamp ELSE to.timestamp END
+                        MERGE (checksum:Checksum {checksum: checksum.checksum})
+                        ON CREATE SET checksum.checksum = tx.checksum,
+                            checksum.tx_hash = tx.tx_hash
                         """,
                         transactions = [
                             {
@@ -109,6 +145,8 @@ class GraphIndexer:
                                 "from_balance": tx.from_address.balance,
                                 "to_address": tx.to_address.address,
                                 "to_balance": tx.to_address.balance,
+                                "checksum": tx.checksum,
+                                "tx_hash": tx.tx_hash,
                             }
                             for tx in batch_transactions
                         ],

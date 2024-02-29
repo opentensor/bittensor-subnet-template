@@ -7,6 +7,7 @@ from neurons.setup_logger import setup_logger
 from neurons.nodes.evm.ethereum.node import EthereumNode
 from neurons.miners.ethereum.funds_flow_v2.graph_creator import GraphCreator
 from neurons.miners.ethereum.funds_flow_v2.graph_indexer import GraphIndexer
+from neurons.miners.ethereum.funds_flow_v2.graph_search import GraphSearch
 
 # Global flag to signal shutdown
 shutdown_flag = False
@@ -40,7 +41,7 @@ def log_finished_thread_info(index, start, last, time):
     f.write(f"Index: {index}, Rage({start}, {last}), Total Spent Time: {time}\n")
     f.close()
 
-def index_blocks(_graph_creator, _graph_indexer, start_height):
+def index_blocks(_graph_creator, _graph_indexer, _graph_search, start_height):
     global shutdown_flag
     ethereum_node = EthereumNode()
     skip_blocks = 6 # Set the number of block confirmations
@@ -99,6 +100,9 @@ def index_blocks(_graph_creator, _graph_indexer, start_height):
                     tx['inprogress'] = True
                     success = _graph_indexer.create_graph_focused_on_funds_flow(tx['cacheTx'])
 
+                    min_block_height_cache, max_block_height_cache = _graph_search.get_min_max_block_height_cache()
+                    _graph_indexer.set_min_max_block_height_cache(min(min_block_height_cache, block_height), max(max_block_height_cache, block_height))
+
                     if success:
                         time_taken = time.time() - buf_time
                         formatted_tps = tx['cacheCnt'] / time_taken if time_taken > 0 else float("inf")
@@ -123,9 +127,8 @@ def index_blocks(_graph_creator, _graph_indexer, start_height):
                 log_blockHeight_crashed_by_rpc(block_height)
                 block_height += 1
 
-def index_blocks_by_last_height(thread_index, start, last):
+def index_blocks_by_last_height(thread_index, _graph_creator, start, last):
     global shutdown_flag
-    graph_creator = GraphCreator()
     ethereum_node = EthereumNode()
     start_time = time.time()
 
@@ -153,7 +156,7 @@ def index_blocks_by_last_height(thread_index, start, last):
                     block_height += 1
                     continue
 
-                in_memory_graph = graph_creator.create_in_memory_graph_from_block(ethereum_node, block)
+                in_memory_graph = _graph_creator.create_in_memory_graph_from_block(ethereum_node, block)
                 newTransaction = in_memory_graph["block"].transactions
                 newTransactionCnt = len(newTransaction)
 
@@ -176,6 +179,8 @@ def index_blocks_by_last_height(thread_index, start, last):
     log_finished_thread_info(index, start, last, time.time() - start_time)
     block_height += 1
 
+    
+
 
 # Register the shutdown handler for SIGINT and SIGTERM
 signal.signal(signal.SIGINT, shutdown_handler)
@@ -188,6 +193,7 @@ if __name__ == "__main__":
     graph_creator = GraphCreator()
     graph_indexer = GraphIndexer()
     ethereum_node = EthereumNode()
+    graph_search = GraphSearch()
 
     graph_indexer.create_indexes()
 
@@ -205,6 +211,12 @@ if __name__ == "__main__":
             start_height = graph_last_block_height + 1
     else:
         start_height = graph_last_block_height
+
+    # Set Initial Min & Max, Block Height
+    indexed_min_block_height, indexed_max_block_height = graph_search.get_min_max_block_height_cache()
+    if indexed_min_block_height == 0:
+        indexed_min_block_height = start_height
+    graph_indexer.set_min_max_block_height_cache(indexed_min_block_height, indexed_max_block_height)
 
     current_block_height = ethereum_node.get_current_block_height()
     if last_height_str is not None:
@@ -228,13 +240,13 @@ if __name__ == "__main__":
         last = start_height + (i + 1) * thread_depth - 1
         if i == num_threads - 1:
             last = start_height + (i + 1) * thread_depth + restHeight
-        thread = Thread(target=index_blocks_by_last_height, args=(i, start, last))
+        thread = Thread(target=index_blocks_by_last_height, args=(i, graph_creator, start, last))
         thread.start()
 
     # while True:
     try:
         logger.info('-- Main thread is running for indexing recent blocks --')
-        index_blocks(graph_creator, graph_indexer, last_height + 1)
+        index_blocks(graph_creator, graph_indexer, graph_search, last_height + 1)
 
     except Exception as e:
         ## traceback.print_exc()
@@ -244,4 +256,5 @@ if __name__ == "__main__":
         # break
     finally:
         graph_indexer.close()
+        graph_search.close()
         logger.info("Indexer stopped")

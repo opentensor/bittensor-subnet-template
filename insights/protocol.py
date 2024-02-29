@@ -88,9 +88,15 @@ class Query(BaseSynapse):
         return self.output
 
 class Challenge(BaseSynapse):
-    in_total_amount: int = None
-    out_total_amount: int = None
-    tx_id_last_4_chars: str = None
+
+    # For BTC
+    in_total_amount: Optional[int] = None
+    out_total_amount: Optional[int] = None
+    tx_id_last_4_chars: Optional[str] = None
+    
+    # Altcoins
+    checksum: Optional[str] = None
+
     output: Optional[str] = None
     
     def deserialize(self) -> str:
