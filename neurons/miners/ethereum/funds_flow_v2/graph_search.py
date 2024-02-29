@@ -110,7 +110,7 @@ class GraphSearch:
         with self.driver.session() as session:
             data_set = session.run(
                 """
-                MATCH (s: SENT { checksum: $checksum })
+                MATCH (s: Checksum { checksum: $checksum })
                 RETURN s.tx_hash
                 """,
                 checksum=checksum

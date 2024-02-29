@@ -88,6 +88,7 @@ class GraphIndexer:
 
             index_creation_statements = {
                 "Cache": "CREATE INDEX ON :Cache;",
+                "Checksum": "CREATE INDEX ON :Checksum;",
                 "Address-balance": "CREATE INDEX ON :Address(balance);",
                 "Address-timestamp": "CREATE INDEX ON :Address(timestamp);",
                 "Address-address": "CREATE INDEX ON :Address(address);",
@@ -132,6 +133,9 @@ class GraphIndexer:
                             WHEN to.timestamp < tx.to_timestamp
                             THEN tx.to_balance ELSE to.balance END,
                             to.timestamp = CASE WHEN to.timestamp < tx.to_timestamp THEN tx.to_timestamp ELSE to.timestamp END
+                        MERGE (checksum:Checksum {checksum: checksum.checksum})
+                        ON CREATE SET checksum.checksum = tx.checksum,
+                            checksum.tx_hash = tx.tx_hash
                         """,
                         transactions = [
                             {
@@ -141,6 +145,8 @@ class GraphIndexer:
                                 "from_balance": tx.from_address.balance,
                                 "to_address": tx.to_address.address,
                                 "to_balance": tx.to_address.balance,
+                                "checksum": tx.checksum,
+                                "tx_hash": tx.tx_hash,
                             }
                             for tx in batch_transactions
                         ],
