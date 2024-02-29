@@ -133,9 +133,9 @@ class GraphIndexer:
                             WHEN to.timestamp < tx.to_timestamp
                             THEN tx.to_balance ELSE to.balance END,
                             to.timestamp = CASE WHEN to.timestamp < tx.to_timestamp THEN tx.to_timestamp ELSE to.timestamp END
-                        MERGE (checksum:Checksum {checksum: checksum.checksum})
-                        ON CREATE SET checksum.checksum = tx.checksum,
-                            checksum.tx_hash = tx.tx_hash
+                        MERGE (s:Checksum {checksum: tx.checksum})
+                        ON CREATE SET s.checksum = tx.checksum,
+                            s.tx_hash = tx.tx_hash
                         """,
                         transactions = [
                             {
