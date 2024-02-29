@@ -58,17 +58,11 @@ def get_config() -> "bt.Config":
     parser.add_argument(
         "--miner.blocks_per_epoch",
         type=str,
-        help="Blocks until the miner sets weights on chain",
+        help="Blocks until the miner repulls the metagraph from the chain",
         default=100,
     )
 
     # Switches.
-    parser.add_argument(
-        "--miner.no_set_weights",
-        action="store_true",
-        help="If True, the miner does not set weights.",
-        default=False,
-    )
     parser.add_argument(
         "--miner.no_serve",
         action="store_true",
