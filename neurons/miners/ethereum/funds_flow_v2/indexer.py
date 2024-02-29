@@ -321,8 +321,7 @@ if __name__ == "__main__":
             thread_depth = floor((sub_last_height - sub_start_height) / num_threads)
             restHeight = (sub_last_height - sub_start_height) - thread_depth * num_threads
 
-            if thread_depth == 0
-                num_threads = 1
+            num_threads = 1 if thread_depth == 0 else num_threads
 
             for i in range(num_threads):
                 start = sub_start_height + i * thread_depth
