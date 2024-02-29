@@ -317,7 +317,7 @@ if __name__ == "__main__":
 
     try:
         # Main Indexer running with Multi Sub Indexers
-        if num_threads > 0 and main_start_height > 0 and main_last_height > 0:
+        if num_threads > 0 and sub_start_height > 0 and sub_last_height > 0:
             thread_depth = floor((sub_last_height - sub_start_height) / num_threads)
             restHeight = (sub_last_height - sub_start_height) - thread_depth * num_threads
 
