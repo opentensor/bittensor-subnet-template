@@ -13,11 +13,24 @@
 [Discord](https://discord.gg/bittensor) • [Subnet](https://taostats.io/subnets/netuid-15/) • [Research](https://bittensor.com/whitepaper)
 </div>
 
+<<<<<<< HEAD
 ### Table of Contents <!-- omit in toc -->
 - [Overview](#Blockchain-insights-overview)
 - [Instalation & Configuration](#instalation)
 - [Development Roadmap](#Project-roadmap)
 - [High Level Architecture](#High-level-architecture)
+=======
+---
+- [Quickstarter template](#quickstarter-template)
+- [Introduction](#introduction)
+  - [Example](#example)
+- [Installation](#installation)
+  - [Before you proceed](#before-you-proceed)
+  - [Install](#install)
+- [Writing your own incentive mechanism](#writing-your-own-incentive-mechanism)
+- [Writing your own subnet API](#writing-your-own-subnet-api)
+- [Subnet Links](#subnet-links)
+>>>>>>> upstream/main
 - [License](#license)
 ---
 
@@ -131,6 +144,226 @@ Description of the Blockchain Insights Subnet's high-level architecture, includi
 #### Query Studio
 - Query Studio is a WPF (Windows Presentation Foundation) analytical application designed for end users to perform queries against the data served by miners. It provides a user interface that allows for the execution of complex queries, facilitating the analysis and visualization of blockchain data directly on the Windows platform.
 ---
+
+## Writing your own incentive mechanism
+
+As described in [Quickstarter template](#quickstarter-template) section above, when you are ready to write your own incentive mechanism, update this template repository by editing the following files. The code in these files contains detailed documentation on how to update the template. Read the documentation in each of the files to understand how to update the template. There are multiple **TODO**s in each of the files identifying sections you should update. These files are:
+- `template/protocol.py`: Contains the definition of the wire-protocol used by miners and validators.
+- `neurons/miner.py`: Script that defines the miner's behavior, i.e., how the miner responds to requests from validators.
+- `neurons/validator.py`: This script defines the validator's behavior, i.e., how the validator requests information from the miners and determines the scores.
+- `template/forward.py`: Contains the definition of the validator's forward pass.
+- `template/reward.py`: Contains the definition of how validators reward miner responses.
+
+In addition to the above files, you should also update the following files:
+- `README.md`: This file contains the documentation for your project. Update this file to reflect your project's documentation.
+- `CONTRIBUTING.md`: This file contains the instructions for contributing to your project. Update this file to reflect your project's contribution guidelines.
+- `template/__init__.py`: This file contains the version of your project.
+- `setup.py`: This file contains the metadata about your project. Update this file to reflect your project's metadata.
+- `docs/`: This directory contains the documentation for your project. Update this directory to reflect your project's documentation.
+
+__Note__
+The `template` directory should also be renamed to your project name.
+---
+
+# Writing your own subnet API
+To leverage the abstract `SubnetsAPI` in Bittensor, you can implement a standardized interface. This interface is used to interact with the Bittensor network and can is used by a client to interact with the subnet through its exposed axons.
+
+What does Bittensor communication entail? Typically two processes, (1) preparing data for transit (creating and filling `synapse`s) and (2), processing the responses received from the `axon`(s).
+
+This protocol uses a handler registry system to associate bespoke interfaces for subnets by implementing two simple abstract functions:
+- `prepare_synapse`
+- `process_responses`
+
+These can be implemented as extensions of the generic `SubnetsAPI` interface.  E.g.:
+
+
+This is abstract, generic, and takes(`*args`, `**kwargs`) for flexibility. See the extremely simple base class:
+```python
+class SubnetsAPI(ABC):
+    def __init__(self, wallet: "bt.wallet"):
+        self.wallet = wallet
+        self.dendrite = bt.dendrite(wallet=wallet)
+
+    async def __call__(self, *args, **kwargs):
+        return await self.query_api(*args, **kwargs)
+
+    @abstractmethod
+    def prepare_synapse(self, *args, **kwargs) -> Any:
+        """
+        Prepare the synapse-specific payload.
+        """
+        ...
+
+    @abstractmethod
+    def process_responses(self, responses: List[Union["bt.Synapse", Any]]) -> Any:
+        """
+        Process the responses from the network.
+        """
+        ...
+
+```
+
+
+Here is a toy example:
+
+```python
+from bittensor.subnets import SubnetsAPI
+from MySubnet import MySynapse
+
+class MySynapseAPI(SubnetsAPI):
+    def __init__(self, wallet: "bt.wallet"):
+        super().__init__(wallet)
+        self.netuid = 99
+
+    def prepare_synapse(self, prompt: str) -> MySynapse:
+        # Do any preparatory work to fill the synapse
+        data = do_prompt_injection(prompt)
+
+        # Fill the synapse for transit
+        synapse = StoreUser(
+            messages=[data],
+        )
+        # Send it along
+        return synapse
+
+    def process_responses(self, responses: List[Union["bt.Synapse", Any]]) -> str:
+        # Look through the responses for information required by your application
+        for response in responses:
+            if response.dendrite.status_code != 200:
+                continue
+            # potentially apply post processing
+            result_data = postprocess_data_from_response(response)
+        # return data to the client
+        return result_data
+```
+
+You can use a subnet API to the registry by doing the following:
+1. Download and install the specific repo you want
+1. Import the appropriate API handler from bespoke subnets
+1. Make the query given the subnet specific API
+
+
+See a simplified example for subnet 21 (`FileTao` storage) below. See `examples/subnet21.py` file for a full implementation example to follow:
+
+```python
+
+# Subnet 21 Interface Example
+
+class StoreUserAPI(SubnetsAPI):
+    def __init__(self, wallet: "bt.wallet"):
+        super().__init__(wallet)
+        self.netuid = 21
+
+    def prepare_synapse(
+        self,
+        data: bytes,
+        encrypt=False,
+        ttl=60 * 60 * 24 * 30,
+        encoding="utf-8",
+    ) -> StoreUser:
+        data = bytes(data, encoding) if isinstance(data, str) else data
+        encrypted_data, encryption_payload = (
+            encrypt_data(data, self.wallet) if encrypt else (data, "{}")
+        )
+        expected_cid = generate_cid_string(encrypted_data)
+        encoded_data = base64.b64encode(encrypted_data)
+
+        synapse = StoreUser(
+            encrypted_data=encoded_data,
+            encryption_payload=encryption_payload,
+            ttl=ttl,
+        )
+
+        return synapse
+
+    def process_responses(
+        self, responses: List[Union["bt.Synapse", Any]]
+    ) -> str:
+        for response in responses:
+            if response.dendrite.status_code != 200:
+                continue
+            stored_cid = (
+                response.data_hash.decode("utf-8")
+                if isinstance(response.data_hash, bytes)
+                else response.data_hash
+            )
+            bt.logging.debug("received data CID: {}".format(stored_cid))
+            break
+
+        return stored_cid
+
+
+class RetrieveUserAPI(SubnetsAPI):
+    def __init__(self, wallet: "bt.wallet"):
+        super().__init__(wallet)
+        self.netuid = 21
+
+    def prepare_synapse(self, cid: str) -> RetrieveUser:
+        synapse = RetrieveUser(data_hash=cid)
+        return synapse
+
+    def process_responses(self, responses: List[Union["bt.Synapse", Any]]) -> bytes:
+        success = False
+        decrypted_data = b""
+        for response in responses:
+            if response.dendrite.status_code != 200:
+                continue
+            decrypted_data = decrypt_data_with_private_key(
+                encrypted_data,
+                response.encryption_payload,
+                bytes(self.wallet.coldkey.private_key.hex(), "utf-8"),
+            )
+        return data
+
+ 
+Example usage of the `FileTao` interface, which can serve as an example for other subnets.
+
+# import the bespoke subnet API
+from storage import StoreUserAPI, RetrieveUserAPI
+
+wallet = bt.wallet(wallet="default", hotkey="default") # the wallet used for querying
+metagraph = bt.metagraph(netuid=21)  # metagraph of the subnet desired
+query_axons = metagraph.axons... # define custom logic to retrieve desired axons (e.g. validator set, specific miners, etc)
+
+# Store the data on subnet 21
+bt.logging.info(f"Initiating store_handler: {store_handler}")
+cid = await StoreUserAPI(
+      axons=query_axons, # the axons you wish to query
+      # Below: Parameters passed to `prepare_synapse` for this API subclass
+      data=b"Hello Bittensor!",
+      encrypt=False,
+      ttl=60 * 60 * 24 * 30, 
+      encoding="utf-8",
+      uid=None,
+)
+# The Content Identifier that corresponds to the stored data
+print(cid)
+> "bafkreifv6hp4o6bllj2nkdtzbq6uh7iia6bgqgd3aallvfhagym2s757v4
+
+# Now retrieve data from SN21 (storage)
+data = await RetrieveUserAPI(
+  axons=query_axons, # axons desired to query
+  cid=cid, # the content identifier to fetch the data
+)
+print(data)
+> b"Hello Bittensor!"
+```
+
+
+# Subnet Links
+In order to see real-world examples of subnets in-action, see the `subnet_links.py` document or access them from inside the `template` package by:
+```python
+import template
+template.SUBNET_LINKS
+[{'name': 'sn0', 'url': ''},
+ {'name': 'sn1', 'url': 'https://github.com/opentensor/text-prompting/'},
+ {'name': 'sn2', 'url': 'https://github.com/bittranslateio/bittranslate/'},
+ {'name': 'sn3', 'url': 'https://github.com/gitphantomman/scraping_subnet/'},
+ {'name': 'sn4', 'url': 'https://github.com/manifold-inc/targon/'},
+...
+]
+```
+
 ## License
 This repository is licensed under the MIT License.
 ```text
