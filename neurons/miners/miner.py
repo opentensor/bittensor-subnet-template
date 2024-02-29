@@ -113,7 +113,7 @@ class Miner(BaseMinerNeuron):
         self.graph_search = get_graph_search(config)
 
         self.miner_config = MinerConfig().load_and_get_config_values()        
-
+        self.last_trial_block = self.metagraph.last_update[self.uid]
 
     
     async def block_check(self, synapse: protocol.BlockCheck) -> protocol.BlockCheck:
@@ -215,6 +215,23 @@ class Miner(BaseMinerNeuron):
 
     def resync_metagraph(self):
         super(Miner, self).resync_metagraph()
+    
+    # Control over set_weights_frequency   
+    def should_set_weights(self) -> bool:
+        miner_config = MinerConfig().load_and_get_config_values()
+        # Don't set weights on initialization.
+        if self.step == 0:
+            return False
+
+        # Check if enough epoch blocks have elapsed since the last epoch.
+        if miner_config.set_weights == False:
+            return False
+
+        # Define appropriate logic for when set weights.
+        if self.block - self.last_trial_block > miner_config.set_weights_frequency:
+            self.last_trial_block = self.block
+            return True
+        return False
     
     def send_metadata(self):
         store_miner_metadata(self.config, self.graph_search, self.wallet)
