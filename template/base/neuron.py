@@ -163,8 +163,10 @@ class BaseNeuron(ABC):
 
         # Define appropriate logic for when set weights.
         return (
-            self.block - self.metagraph.last_update[self.uid]
-        ) > self.config.neuron.epoch_length and self.neuron_type != "MinerNeuron" # don't set weights if you're a miner
+            (self.block - self.metagraph.last_update[self.uid])
+            > self.config.neuron.epoch_length
+            and self.neuron_type != "MinerNeuron"
+        )  # don't set weights if you're a miner
 
     def save_state(self):
         bt.logging.warning(
