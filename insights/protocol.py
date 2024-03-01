@@ -19,8 +19,7 @@ NETWORK_ETHEREUM = "ethereum"
 NETWORK_ETHEREUM_ID = 3
 
 # Default settings for miners
-MAX_MULTIPLE_RUN_ID = 9
-MAX_MULTIPLE_IPS = 9
+MAX_MINER_INSTANCE = 9
 
 def get_network_by_id(id):
     return {
