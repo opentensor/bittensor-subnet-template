@@ -247,10 +247,11 @@ class RetrieveUserAPI(SubnetsAPI):
                 bytes(self.wallet.coldkey.private_key.hex(), "utf-8"),
             )
         return data
-
+```
  
 Example usage of the `FileTao` interface, which can serve as an example for other subnets.
 
+```python
 # import the bespoke subnet API
 from storage import StoreUserAPI, RetrieveUserAPI
 
