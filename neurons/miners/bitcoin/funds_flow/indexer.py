@@ -30,33 +30,34 @@ def index_block(_bitcoin_node, _graph_creator, _graph_indexer, _graph_search, bl
     success = _graph_indexer.create_graph_focused_on_money_flow(in_memory_graph, _bitcoin_node)
     end_time = time.time()
     time_taken = end_time - start_time
-    node_block_height = bitcoin_node.get_current_block_height()
-    progress = block_height / node_block_height * 100
     formatted_num_transactions = "{:>4}".format(num_transactions)
     formatted_time_taken = "{:6.2f}".format(time_taken)
     formatted_tps = "{:8.2f}".format(
         num_transactions / time_taken if time_taken > 0 else float("inf")
     )
-    formatted_progress = "{:6.2f}".format(progress)
 
     if time_taken > 0:
         logger.info(
-            "Block {:>6}: Processed {} transactions in {} seconds {} TPS Progress: {}%".format(
+            "Block {:>6}: Processed {} transactions in {} seconds {} TPS".format(
                 block_height,
                 formatted_num_transactions,
                 formatted_time_taken,
                 formatted_tps,
-                formatted_progress,
             )
         )
     else:
         logger.info(
-            "Block {:>6}: Processed {} transactions in 0.00 seconds (  Inf TPS). Progress: {}%".format(
-                block_height, formatted_num_transactions, formatted_progress
+            "Block {:>6}: Processed {} transactions in 0.00 seconds (  Inf TPS).".format(
+                block_height, formatted_num_transactions
             )
         )
         
     min_block_height_cache, max_block_height_cache = _graph_search.get_min_max_block_height_cache()
+    if min_block_height_cache is None:
+        min_block_height_cache = block_height
+    if max_block_height_cache is None:
+        max_block_height_cache = block_height
+        
     _graph_indexer.set_min_max_block_height_cache(min(min_block_height_cache, block_height), max(max_block_height_cache, block_height))
 
     return success
