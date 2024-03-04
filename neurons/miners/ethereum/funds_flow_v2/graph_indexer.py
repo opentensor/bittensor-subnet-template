@@ -87,8 +87,10 @@ class GraphIndexer:
                     existing_index_set.add(index_name)
 
             index_creation_statements = {
-                "Cache": "CREATE INDEX ON :Cache;",
-                "Checksum": "CREATE INDEX ON :Checksum;",
+                "Cache-field": "CREATE INDEX ON :Cache(field);",
+                "Cache-value": "CREATE INDEX ON :Cache(value);",
+                "Checksum-checksum": "CREATE INDEX ON :Checksum(checksum);",
+                "Checksum-tx_hash": "CREATE INDEX ON :Checksum(tx_hash);",
                 "Address-balance": "CREATE INDEX ON :Address(balance);",
                 "Address-timestamp": "CREATE INDEX ON :Address(timestamp);",
                 "Address-address": "CREATE INDEX ON :Address(address);",
