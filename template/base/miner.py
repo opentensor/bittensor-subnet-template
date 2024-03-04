@@ -58,6 +58,7 @@ class BaseMinerNeuron(BaseNeuron):
         self.is_running: bool = False
         self.thread: threading.Thread = None
         self.lock = asyncio.Lock()
+        self.last_sync_block = self.block - 1000
 
     def run(self):
         """
@@ -172,12 +173,16 @@ class BaseMinerNeuron(BaseNeuron):
         """
         self.stop_run_thread()
 
+    def should_sync_metagraph(self):
+        return self.block - self.last_sync_block > self.config.neuron.epoch_length
+
     def resync_metagraph(self):
         """Resyncs the metagraph and updates the hotkeys and moving averages based on the new metagraph."""
         bt.logging.info("resync_metagraph()")
 
         # Sync the metagraph.
         self.metagraph.sync(subtensor=self.subtensor)
+        self.last_sync_block = self.block
 
     async def forward(self, synapse: bt.Synapse) -> bt.Synapse:
         raise NotImplementedError()
