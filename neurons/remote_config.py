@@ -111,8 +111,10 @@ class MinerConfig(RemoteConfig):
         self.blockchain_sync_delta = self.get_config_value('blockchain_sync_delta', {'bitcoin': 100, 'doge': 100})
         self.grace_period = self.get_config_value('grace_period', False)
         
+        # Set_weights, send metadata
         self.set_weights = self.get_config_value('set_weights', True)
         self.set_weights_frequency = self.get_config_value('set_weights_frequency', 100)
+        self.store_metadata_frequency = self.get_config_value('store_metadata_frequency', 500)
         
         return self
     

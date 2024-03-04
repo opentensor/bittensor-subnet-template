@@ -1,6 +1,7 @@
 import argparse
 import os
 import time
+import torch
 import typing
 import traceback
 from random import sample
@@ -31,6 +32,8 @@ class Miner(BaseMinerNeuron):
 
     This class provides reasonable default behavior for a miner such as blacklisting unrecognized hotkeys, prioritizing requests based on stake, and forwarding requests to the forward function. If you need to define custom
     """
+    
+        
     @staticmethod
     def get_config():
 
@@ -215,8 +218,21 @@ class Miner(BaseMinerNeuron):
 
     def resync_metagraph(self):
         super(Miner, self).resync_metagraph()
+        
+        # Sync the metagraph
+        self.last_sync_block = self.block
+        bt.logging.info("resync_metagraph() done")
     
-    # Control over set_weights_frequency   
+    # Redefine should_sync_metagraph to resync
+    def should_sync_metagraph(self):
+        """
+        Check if enough epoch blocks have elapsed since the last checkpoint to sync.
+        """        
+        return (
+            self.block - self.last_sync_block
+        ) > self.config.neuron.epoch_length
+        
+    # Redefine should_set_weights to control over set_weights_frequency   
     def should_set_weights(self) -> bool:
         miner_config = MinerConfig().load_and_get_config_values()
         # Don't set weights on initialization.
@@ -232,6 +248,48 @@ class Miner(BaseMinerNeuron):
             self.last_trial_block = self.block
             return True
         return False
+    
+    # Define set_weights which does not exist in the updated template/miner.py
+    def set_weights(self):
+        """
+        Self-assigns a weight of 1 to the current miner (identified by its UID) and
+        a weight of 0 to all other peers in the network. The weights determine the trust level the miner assigns to other nodes on the network.
+
+        Raises:
+            Exception: If there's an error while setting weights, the exception is logged for diagnosis.
+        """
+        try:
+            # --- query the chain for the most current number of peers on the network
+            chain_weights = torch.zeros(
+                self.subtensor.subnetwork_n(netuid=self.metagraph.netuid)
+            )
+            chain_weights[self.uid] = 1
+
+            # --- Set weights.
+            self.subtensor.set_weights(
+                wallet=self.wallet,
+                netuid=self.metagraph.netuid,
+                uids=torch.arange(0, len(chain_weights)),
+                weights=chain_weights.to("cpu"),
+                wait_for_inclusion=False,
+                version_key=self.spec_version,
+                ttl = 60
+            )
+
+        except Exception as e:
+            bt.logging.error(
+                f"Failed to set weights on chain with exception: { e }"
+            )
+
+        bt.logging.info(f"Set weights: {chain_weights}")
+    
+    # Make storing metadata configurable
+    def should_send_metadata(self):
+        miner_config = MinerConfig().load_and_get_config_values()
+        
+        return (
+            self.block - self.last_message_send
+        ) > miner_config.store_metadata_frequency
     
     def send_metadata(self):
         store_miner_metadata(self.config, self.graph_search, self.wallet)
