@@ -87,7 +87,7 @@ class Miner(BaseMinerNeuron):
         
         super(Miner, self).__init__(config=config)
         
-
+        self.last_weight_update = self.block - 1000
         self.request_timestamps: dict = {}
         
         self.axon = bt.axon(wallet=self.wallet, port=self.config.axon.port)        
@@ -116,8 +116,6 @@ class Miner(BaseMinerNeuron):
         self.graph_search = get_graph_search(config)
 
         self.miner_config = MinerConfig().load_and_get_config_values()        
-        self.last_trial_block = self.metagraph.last_update[self.uid]
-
     
     async def block_check(self, synapse: protocol.BlockCheck) -> protocol.BlockCheck:
         try:
@@ -226,39 +224,25 @@ class Miner(BaseMinerNeuron):
         return self.base_priority(synapse=synapse)
 
     def resync_metagraph(self):
+        self.miner_config = MinerConfig().load_and_get_config_values()
         super(Miner, self).resync_metagraph()
         
-        # Sync the metagraph
-        self.last_sync_block = self.block
-        bt.logging.info("resync_metagraph() done")
-    
-    # Redefine should_sync_metagraph to resync
-    def should_sync_metagraph(self):
-        """
-        Check if enough epoch blocks have elapsed since the last checkpoint to sync.
-        """        
-        return (
-            self.block - self.last_sync_block
-        ) > self.config.neuron.epoch_length
-        
-    # Redefine should_set_weights to control over set_weights_frequency   
     def should_set_weights(self) -> bool:
-        miner_config = MinerConfig().load_and_get_config_values()
+        
         # Don't set weights on initialization.
         if self.step == 0:
             return False
 
         # Check if enough epoch blocks have elapsed since the last epoch.
-        if miner_config.set_weights == False:
+        if self.miner_config.set_weights == False:
             return False
 
         # Define appropriate logic for when set weights.
-        if self.block - self.last_trial_block > miner_config.set_weights_frequency:
-            self.last_trial_block = self.block
+        if self.block - self.last_weight_update > self.miner_config.set_weights_frequency:
+            self.last_weight_update = self.block
             return True
         return False
     
-    # Define set_weights which does not exist in the updated template/miner.py
     def set_weights(self):
         """
         Self-assigns a weight of 1 to the current miner (identified by its UID) and
@@ -281,8 +265,7 @@ class Miner(BaseMinerNeuron):
                 uids=torch.arange(0, len(chain_weights)),
                 weights=chain_weights.to("cpu"),
                 wait_for_inclusion=False,
-                version_key=self.spec_version,
-                ttl = 60
+                version_key=self.spec_version
             )
 
         except Exception as e:
@@ -292,13 +275,12 @@ class Miner(BaseMinerNeuron):
 
         bt.logging.info(f"Set weights: {chain_weights}")
     
-    # Make storing metadata configurable
     def should_send_metadata(self):
-        miner_config = MinerConfig().load_and_get_config_values()
+        self.miner_config
         
         return (
             self.block - self.last_message_send
-        ) > miner_config.store_metadata_frequency
+        ) > self.miner_config.store_metadata_frequency
     
     def send_metadata(self):
         store_miner_metadata(self.config, self.graph_search, self.wallet)
