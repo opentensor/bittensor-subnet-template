@@ -2,7 +2,8 @@ import os
 import typing
 from neo4j import GraphDatabase
 
-from neurons.utils import is_malicious
+from insights import protocol
+from utils.query_builder import QueryBuilder
 
 
 class GraphSearch:
@@ -37,13 +38,23 @@ class GraphSearch:
     def close(self):
         self.driver.close()
         
-    def execute_query(self, query):
+    def execute_query(self, query: protocol.Query) -> protocol.QueryOutput:
+        try:
+            cypher_query = QueryBuilder.build_query(query)
+        except Exception as e:
+            raise Exception(f"query parse error: {e}")
+            
+        try:
+            result = self.execute_cypher_query(cypher_query)
+            return result
+        except Exception as e:
+            raise Exception(f"cypher query execution error: {e}")
+    
+    
+    def execute_cypher_query(self, cypher_query: str):
         with self.driver.session() as session:
-            if not is_malicious(query):
-                result = session.run(query)
-                return result
-            else:
-                return None
+            result = session.run(cypher_query)
+            return result
 
 
     def get_run_id(self):

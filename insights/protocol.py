@@ -18,6 +18,11 @@ NETWORK_DOGE_ID = 2
 NETWORK_ETHEREUM = "ethereum"
 NETWORK_ETHEREUM_ID = 3
 
+# Query Types
+QUERY_TYPE_SEARCH = "search"
+QUERY_TYPE_FLOW = "flow"
+QUERY_TYPE_AGGREGATION = "aggregation"
+
 # Default settings for miners
 MAX_MINER_INSTANCE = 9
 
@@ -77,13 +82,24 @@ class BlockCheck(BaseSynapse):
     blocks_to_check: List[int] = None
     output: BlockCheckOutput = None
 
+class QueryOutput(BaseModel):
+    result: Optional[Dict] = None
+    error: Optional[str] = None
+
 class Query(BaseSynapse):
     network: str = None
-    model_type: str = None
-    query: str = None
-    output: Optional[List[Dict]] = None
+    type: str = None
 
-    def deserialize(self) -> List[Dict]:
+    # search query
+    target: str = None
+    where: Optional[Dict] = None
+    limit: Optional[int] = None
+    skip: Optional[int] = 0
+
+    # output
+    output: Optional[QueryOutput] = None
+
+    def deserialize(self) -> Dict:
         return self.output
 
 class Challenge(BaseSynapse):
