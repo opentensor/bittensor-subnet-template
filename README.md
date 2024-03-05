@@ -13,24 +13,11 @@
 [Discord](https://discord.gg/bittensor) • [Subnet](https://taostats.io/subnets/netuid-15/) • [Research](https://bittensor.com/whitepaper)
 </div>
 
-<<<<<<< HEAD
 ### Table of Contents <!-- omit in toc -->
 - [Overview](#Blockchain-insights-overview)
 - [Instalation & Configuration](#instalation)
 - [Development Roadmap](#Project-roadmap)
 - [High Level Architecture](#High-level-architecture)
-=======
----
-- [Quickstarter template](#quickstarter-template)
-- [Introduction](#introduction)
-  - [Example](#example)
-- [Installation](#installation)
-  - [Before you proceed](#before-you-proceed)
-  - [Install](#install)
-- [Writing your own incentive mechanism](#writing-your-own-incentive-mechanism)
-- [Writing your own subnet API](#writing-your-own-subnet-api)
-- [Subnet Links](#subnet-links)
->>>>>>> upstream/main
 - [License](#license)
 ---
 
