@@ -2,6 +2,7 @@ import os
 import typing
 
 from neo4j import GraphDatabase
+from neurons.utils import is_malicious
 
 
 class GraphSearch:
@@ -40,8 +41,8 @@ class GraphSearch:
         with self.driver.session() as session:
             data_set = session.run(
                 """
-                MATCH (t:Address { block_number: $block_number })
-                RETURN t.block_number AS block_number, COUNT(t) AS transaction_count
+                MATCH (a1:Address)-[s: SENT { block_number: $block_number }]-> (a2: Address)
+                RETURN s.block_number AS block_number, COUNT(s) AS transaction_count
                 """,
                 block_number=block_number
             )
@@ -51,6 +52,14 @@ class GraphSearch:
                 "transaction_count": result["transaction_count"]
             }
 
+    def execute_query(self, query):
+        with self.driver.session() as session:
+            if not is_malicious(query):
+                result = session.run(query)
+                return result
+            else:
+                return None
+            
     def get_run_id(self):
         records, summary, keys = self.driver.execute_query("RETURN 1")
         return summary.metadata.get('run_id', None)
@@ -59,8 +68,8 @@ class GraphSearch:
         with self.driver.session() as session:
             query = """
                 UNWIND $block_number AS block_number
-                MATCH (t:Address { block_number: block_number })
-                RETURN block_number, COUNT(t) AS transaction_count
+                MATCH (a1:Address)-[s: SENT { block_number: block_number }]-> (a2: Address)
+                RETURN block_number, COUNT(s) AS transaction_count
             """
             data_set = session.run(query, block_number=block_number)
 
@@ -77,8 +86,8 @@ class GraphSearch:
         with self.driver.session() as session:
             result = session.run(
                 """
-                MATCH (t:Address)
-                RETURN MAX(t.block_number) AS latest_block_number, MIN(t.block_number) AS start_block_number
+                MATCH (a1:Address)-[s: SENT]-> (a2: Address)
+                RETURN MAX(s.block_number) AS latest_block_number, MIN(s.block_number) AS start_block_number
                 """
             )
             single_result = result.single()
@@ -97,11 +106,60 @@ class GraphSearch:
         with self.driver.session() as session:
             result = session.run(
                 """
-                MATCH (t:Address)
-                RETURN MAX(t.block_height) AS latest_block_height
+                MATCH (a1:Address)-[s: SENT]-> (a2: Address)
+                RETURN MAX(s.block_number) AS latest_block_number
                 """
             )
             single_result = result.single()
             if single_result[0] is None:
                 return 0
             return single_result[0]
+    
+    def solve_challenge(self, checksum):
+        with self.driver.session() as session:
+            data_set = session.run(
+                """
+                MATCH (s: Checksum { checksum: $checksum })
+                RETURN s.tx_hash
+                """,
+                checksum=checksum
+            )
+            single_result = data_set.single()
+
+            if single_result[0] is None:
+                return 0
+            return single_result[0]
+
+    def get_min_max_block_height(self):
+        with self.driver.session() as session:
+            result = session.run(
+                """
+                MATCH (t:SENT)
+                RETURN MIN(t.block_number) AS min_block_height, MAX(t.block_number) AS max_block_height
+                """
+            )
+            single_result = result.single()
+            if single_result is None:
+                return [0, 0]
+            return single_result.get('min_block_height'), single_result.get('max_block_height')
+
+    def get_min_max_block_height_cache(self):
+        with self.driver.session() as session:
+            result_min = session.run(
+                """
+                MATCH (n:Cache {field: 'min_block_height'})
+                RETURN n.value;
+                """
+            ).single()
+            
+            result_max = session.run(
+                """
+                MATCH (n:Cache {field: 'max_block_height'})
+                RETURN n.value;
+                """
+            ).single()
+            
+            min_block_height = result_min[0] if result_min else 0
+            max_block_height = result_max[0] if result_max else 0
+
+            return min_block_height, max_block_height

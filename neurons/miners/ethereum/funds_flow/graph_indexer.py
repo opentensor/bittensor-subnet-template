@@ -1,5 +1,6 @@
 import os
 from neo4j import GraphDatabase
+from decimal import Decimal
 
 from neurons.setup_logger import setup_logger
 
@@ -34,7 +35,6 @@ class GraphIndexer:
             auth=(self.graph_db_user, self.graph_db_password),
         )
 
-
     def close(self):
         self.driver.close()
 
@@ -51,6 +51,29 @@ class GraphIndexer:
                return 0
 
             return single_result[0]
+    
+    def set_min_max_block_height_cache(self, min_block_height, max_block_height):
+        with self.driver.session() as session:
+            # update min block height
+            session.run(
+                """
+                MERGE (n:Cache {field: 'min_block_height'})
+                SET n.value = $min_block_height
+                RETURN n
+                """,
+                {"min_block_height": min_block_height}
+            )
+
+            # update max block height
+            session.run(
+                """
+                MERGE (n:Cache {field: 'max_block_height'})
+                SET n.value = $max_block_height
+                RETURN n
+                """,
+                {"max_block_height": max_block_height}
+            )
+
     def create_indexes(self):
         with self.driver.session() as session:
             # Fetch existing indexes
@@ -64,14 +87,18 @@ class GraphIndexer:
                     existing_index_set.add(index_name)
 
             index_creation_statements = {
-                "Address": "CREATE INDEX ON :Address;",
+                "Cache-field": "CREATE INDEX ON :Cache(field);",
+                "Cache-value": "CREATE INDEX ON :Cache(value);",
+                "Checksum-checksum": "CREATE INDEX ON :Checksum(checksum);",
+                "Checksum-tx_hash": "CREATE INDEX ON :Checksum(tx_hash);",
                 "Address-balance": "CREATE INDEX ON :Address(balance);",
                 "Address-timestamp": "CREATE INDEX ON :Address(timestamp);",
                 "Address-address": "CREATE INDEX ON :Address(address);",
                 "SENT-value": "CREATE INDEX ON :SENT(value)",
+                "SENT-block_number": "CREATE INDEX ON :SENT(block_number)",
                 "SENT-symbol": "CREATE INDEX ON :SENT(symbol)",
                 "SENT-tx_hash": "CREATE INDEX ON :SENT(tx_hash)",
-                "SENT-tx_hash": "CREATE INDEX ON :SENT(checksum)",
+                "SENT-checksum": "CREATE INDEX ON :SENT(checksum)",
             }
 
             for index_name, statement in index_creation_statements.items():
@@ -82,37 +109,51 @@ class GraphIndexer:
                     except Exception as e:
                         logger.error(f"An exception occurred while creating index {index_name}: {e}")
 
-    def create_graph_focused_on_funds_flow(self, in_memory_graph, batch_size=8):
-        block_node = in_memory_graph["block"]
-        transactions = block_node.transactions
+    def create_graph_focused_on_funds_flow(self, transactions, batch_size=8):
+        # transactions = in_memory_graph["block"].transactions
         with self.driver.session() as session:
             # start memgraph transaction
             transaction = session.begin_transaction()
             try:
                 for i in range(0, len(transactions), batch_size):
                     batch_transactions = transactions[i : i + batch_size]
-                    
+
                     transaction.run(
                         """
                         UNWIND $transactions AS tx
                         MERGE (from:Address {address: tx.from_address})
-                        ON CREATE SET from.timestamp = tx.timestamp,
+                        ON CREATE SET from.timestamp = tx.from_timestamp,
                             from.balance = tx.from_balance
+                        ON MATCH SET from.balance = CASE
+                            WHEN from.timestamp < tx.from_timestamp
+                            THEN tx.from_balance ELSE from.balance END,
+                            from.timestamp = CASE WHEN from.timestamp < tx.from_timestamp THEN tx.from_timestamp ELSE from.timestamp END
                         MERGE (to:Address {address: tx.to_address})
-                        ON CREATE SET to.timestamp = tx.timestamp,
+                        ON CREATE SET to.timestamp = tx.to_timestamp,
                             to.balance = tx.to_balance
+                        ON MATCH SET to.balance = CASE
+                            WHEN to.timestamp < tx.to_timestamp
+                            THEN tx.to_balance ELSE to.balance END,
+                            to.timestamp = CASE WHEN to.timestamp < tx.to_timestamp THEN tx.to_timestamp ELSE to.timestamp END
+                        MERGE (s:Checksum {checksum: tx.checksum})
+                        ON CREATE SET s.checksum = tx.checksum,
+                            s.tx_hash = tx.tx_hash
                         """,
                         transactions = [
                             {
-                                "timestamp": tx.timestamp,
+                                "from_timestamp": tx.from_address.timestamp,
+                                "to_timestamp": tx.to_address.timestamp,
                                 "from_address": tx.from_address.address,
-                                "from_balance": str(tx.to_address.balance),
+                                "from_balance": tx.from_address.balance,
                                 "to_address": tx.to_address.address,
-                                "to_balance": str(tx.to_address.balance),
+                                "to_balance": tx.to_address.balance,
+                                "checksum": tx.checksum,
+                                "tx_hash": tx.tx_hash,
                             }
                             for tx in batch_transactions
                         ],
                     )
+
                     transaction.run(
                         """
                         UNWIND $transactions AS tx
@@ -124,15 +165,15 @@ class GraphIndexer:
                             {
                                 "tx_hash": tx.tx_hash,
                                 "block_number": tx.block_number,
-                                "value": str(tx.value_wei),
-                                "fee_wei": str(tx.gas_used),
+                                "value": tx.value_wei,
+                                "fee_wei": tx.gas_used,
                                 "timestamp": tx.timestamp,
                                 "symbol": tx.symbol,
                                 "from_address": tx.from_address.address,
                                 "to_address": tx.to_address.address,
                                 "checksum": tx.checksum,
                             }
-                            for tx in batch_transactions 
+                            for tx in batch_transactions
                         ]
                     )
 
