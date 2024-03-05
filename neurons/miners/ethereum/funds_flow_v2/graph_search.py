@@ -2,6 +2,7 @@ import os
 import typing
 
 from neo4j import GraphDatabase
+from neurons.utils import is_malicious
 
 
 class GraphSearch:
@@ -51,6 +52,14 @@ class GraphSearch:
                 "transaction_count": result["transaction_count"]
             }
 
+    def execute_query(self, query):
+        with self.driver.session() as session:
+            if not is_malicious(query):
+                result = session.run(query)
+                return result
+            else:
+                return None
+            
     def get_run_id(self):
         records, summary, keys = self.driver.execute_query("RETURN 1")
         return summary.metadata.get('run_id', None)

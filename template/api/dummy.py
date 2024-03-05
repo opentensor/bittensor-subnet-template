@@ -1,7 +1,7 @@
 # The MIT License (MIT)
-# Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
+# Copyright © 2021 Yuma Rao
+# Copyright © 2023 Opentensor Foundation
+# Copyright © 2023 Opentensor Technologies Inc
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
@@ -17,18 +17,28 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-# TODO(developer): Change this value when updating your code base.
-# Define the version of the template module.
-__version__ = "0.0.0"
-version_split = __version__.split(".")
-__spec_version__ = (
-    (1000 * int(version_split[0]))
-    + (10 * int(version_split[1]))
-    + (1 * int(version_split[2]))
-)
+import bittensor as bt
+from typing import List, Optional, Union, Any, Dict
+from template.protocol import Dummy
+from bittensor.subnets import SubnetsAPI
 
-# Import all submodules.
-from . import protocol
-from . import base
-from . import validator
-from . import api
+
+class DummyAPI(SubnetsAPI):
+    def __init__(self, wallet: "bt.wallet"):
+        super().__init__(wallet)
+        self.netuid = 33
+        self.name = "dummy"
+
+    def prepare_synapse(self, dummy_input: int) -> Dummy:
+        synapse.dummy_input = dummy_input
+        return synapse
+
+    def process_responses(
+        self, responses: List[Union["bt.Synapse", Any]]
+    ) -> List[int]:
+        outputs = []
+        for response in responses:
+            if response.dendrite.status_code != 200:
+                continue
+            return outputs.append(response.dummy_output)
+        return outputs
