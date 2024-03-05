@@ -11,8 +11,10 @@ class QueryBuilder:
                 raise Exception("target must be specified in search query")
             if query.limit is None:
                 raise Exception("limit must be specified in search query")
+            if query.where is None:
+                query.where = {}
             
-            cypher_query = 'MATCH (t:{}{})'.format(query.target, f'{{tx_id: "{query.tx_id}"}}' if 'tx_id' in query else '')
+            cypher_query = 'MATCH (t:{}{})'.format(query.target, f'{{tx_id: "{query.where["tx_id"]}"}}' if 'tx_id' in query.where else '')
             cypher_query += '\n'
             cypher_query += f'RETURN t'
             cypher_query += '\n'
