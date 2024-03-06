@@ -10,6 +10,7 @@ UPDATE_INTERVAL = 3600  # Time interval for updating configuration in seconds
 MAX_RETRIES = 10
 RETRY_INTERVAL = 5
 
+
 class RemoteConfig:
     _instances = {}
 
@@ -84,6 +85,7 @@ class RemoteConfig:
         self.stop_event.set()
         self.thread.join()
 
+
 class MinerConfig(RemoteConfig):
     def __init__(self):
         super().__init__()
@@ -96,8 +98,9 @@ class MinerConfig(RemoteConfig):
         self.blockchain_sync_delta = None
         self.grace_period = None
         self.set_weights = True
-        self.set_weights_frequency = 100
-        
+        self.set_weights_frequency = 6011
+        self.store_metadata_frequency = 6000
+
     def load_and_get_config_values(self):
         # Load remote configuration
         self.load_remote_config()
@@ -113,14 +116,15 @@ class MinerConfig(RemoteConfig):
         
         # Set_weights, send metadata
         self.set_weights = self.get_config_value('set_weights', True)
-        self.set_weights_frequency = self.get_config_value('set_weights_frequency', 100)
-        self.store_metadata_frequency = self.get_config_value('store_metadata_frequency', 500)
+        self.set_weights_frequency = self.get_config_value('set_weights_frequency', 6011)
+        self.store_metadata_frequency = self.get_config_value('store_metadata_frequency', 6000)
         
         return self
     
     def get_blockchain_sync_delta(self, network):
         return self.get_config_value(f'blockchain_sync_delta.{network}', 100)
-    
+
+
 class ValidatorConfig(RemoteConfig):
     def __init__(self):
         super().__init__()
@@ -137,7 +141,6 @@ class ValidatorConfig(RemoteConfig):
         self.grace_period = None
         
         self.config_url = os.getenv("VALIDATOR_REMOTE_CONFIG_URL", 'https://subnet-15-cfg.s3.fr-par.scw.cloud/validator3.json')
-
 
     def load_and_get_config_values(self):
         self.load_remote_config()
@@ -158,7 +161,6 @@ class ValidatorConfig(RemoteConfig):
 
     def get_blockchain_min_blocks(self, network):
         return self.get_config_value(f'blockchain_min_blocks.{network}', 51840)
-
 
     def get_network_importance(self, network):
         return self.get_config_value(f'blockchain_importance.{network}', 0.9)
