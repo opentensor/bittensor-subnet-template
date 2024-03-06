@@ -2,7 +2,7 @@ import unittest
 import os
 
 from insights import protocol
-from neurons.miners.bitcoin.funds_flow.utils.query_builder import QueryBuilder
+from neurons.miners.bitcoin.funds_flow.query_builder import QueryBuilder
 
 class TestGraphSearch(unittest.TestCase):
     def test_build_search_query(self):

@@ -3,7 +3,7 @@ import typing
 from neo4j import GraphDatabase
 
 from insights import protocol
-from utils.query_builder import QueryBuilder
+from query_builder import QueryBuilder
 
 
 class GraphSearch:
