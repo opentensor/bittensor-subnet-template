@@ -5,10 +5,9 @@ import os
 
 class QueryBuilder:
     
-    @staticmethod
-    def build_query(query: protocol.Query) -> str:
-        
-        def __build_search_query(query: protocol.Query) -> str:
+    class __InnerQueryBuilder:
+        @staticmethod
+        def build_search_query(query: protocol.Query) -> str:
             if query.target is None:
                 raise Exception("target must be specified in search query")
             if query.limit is None:
@@ -63,9 +62,11 @@ class QueryBuilder:
                 cypher_query += ';'
                 return cypher_query
         
+    @staticmethod
+    def build_query(query: protocol.Query) -> str:
         if query.type is None:
             raise Exception("type must be specified in query")
         if query.type == protocol.QUERY_TYPE_SEARCH:
-            return __build_search_query(query)
+            return QueryBuilder.__InnerQueryBuilder.build_search_query(query)
         
         raise Exception("unknown query type")
