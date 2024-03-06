@@ -17,11 +17,40 @@ class QueryBuilder:
             if query.target == 'Transaction':
                 cypher_query = 'MATCH'
                 cypher_query += ' '
+
+                # from address node
                 if "from_address" in query.where:
                     cypher_query += f'(a1:Address{{address: "{query.where["from_address"]}"}})->[s1:SENT]->'
+
+                # main transaction node
                 cypher_query += '(t:Transaction{})'.format(f'{{tx_id: "{query.where["tx_id"]}"}}' if 'tx_id' in query.where else '')
+
+                # to address node
                 if "to_address" in query.where:
                     cypher_query += f'->[s2:SENT]->(a2:Address{{address: "{query.where["to_address"]}"}})'
+
+                # where clause
+                conditionals = []
+                if "block_height_range" in query.where:
+                    if "from" in query.where["block_height_range"]:
+                        conditionals.append(f't.block_height >= {query.where["block_height_range"]["from"]}')
+                    if "to" in query.where["block_height_range"]:
+                        conditionals.append(f't.block_height <= {query.where["block_height_range"]["to"]}')
+                if "amount_range" in query.where:
+                    if "from" in query.where["amount_range"]:
+                        conditionals.append(f't.out_total_amount >= {query.where["amount_range"]["from"]}')
+                    if "to" in query.where["amount_range"]:
+                        conditionals.append(f't.out_total_amount <= {query.where["amount_range"]["to"]}')
+                if "timestamp_range" in query.where:
+                    if "from" in query.where["timestamp_range"]:
+                        conditionals.append(f't.timestamp >= {query.where["timestamp_range"]["from"]}')
+                    if "to" in query.where["timestamp_range"]:
+                        conditionals.append(f't.timestamp <= {query.where["timestamp_range"]["to"]}')
+                        
+                if len(conditionals) > 0:
+                    cypher_query += '\n'
+                    cypher_query += 'WHERE ' + ' AND '.join(conditionals)
+
                 cypher_query += '\n'
                 cypher_query += f'RETURN t'
                 cypher_query += '\n'
