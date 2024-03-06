@@ -1,5 +1,7 @@
 from insights import protocol
 
+import os
+
 
 class QueryBuilder:
     
@@ -11,6 +13,9 @@ class QueryBuilder:
                 raise Exception("target must be specified in search query")
             if query.limit is None:
                 raise Exception("limit must be specified in search query")
+            if query.limit > os.getenv('QUERY_MAX_LIMIT', 50):
+                raise Exception("limit exceeded in search query")
+            
             if query.where is None:
                 query.where = {}
             
