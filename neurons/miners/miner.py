@@ -275,9 +275,7 @@ class Miner(BaseMinerNeuron):
 
         bt.logging.info(f"Set weights: {chain_weights}")
     
-    def should_send_metadata(self):
-        self.miner_config
-        
+    def should_send_metadata(self):        
         return (
             self.block - self.last_message_send
         ) > self.miner_config.store_metadata_frequency
