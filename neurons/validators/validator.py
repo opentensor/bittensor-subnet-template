@@ -236,9 +236,9 @@ class Validator(BaseValidatorNeuron):
         store_validator_metadata(self.config, self.wallet, self.uid)
 
 
-
 if __name__ == "__main__":
     from dotenv import load_dotenv
+    os.environ['CUDA_VISIBLE_DEVICES'] = ''
     load_dotenv()
 
     with Validator() as validator:
