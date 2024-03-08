@@ -3,7 +3,7 @@ import bittensor as bt
 from pydantic import BaseModel
 
 # protocol version
-VERSION = 4
+VERSION = 5
 
 
 # Model types
