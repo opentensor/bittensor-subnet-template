@@ -43,6 +43,7 @@ class VOUT:
 
 @dataclass
 class VIN:
+    tx_id: str
     vin_id: int
     vout_id: int
     script_sig: Optional[str]
@@ -84,6 +85,7 @@ class GraphCreator:
 
             for vin_data in tx_data["vin"]:
                 vin = VIN(
+                    tx_id=vin_data.get("txid", 0),
                     vin_id=vin_data.get("sequence", 0),
                     vout_id=vin_data.get("vout", 0),
                     script_sig=vin_data.get("scriptSig", {}).get("asm", ""),

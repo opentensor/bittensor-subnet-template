@@ -5,24 +5,14 @@ class Scorer:
     def __init__(self, config: ValidatorConfig):
         self.config = config
 
-    def calculate_score(self, network,  process_time, indexed_start_block_height, indexed_end_block_height, blockchain_last_block_height, miner_distribution, multiple_ips, multiple_run_ids):
+    def calculate_score(self, network,  process_time, indexed_start_block_height, indexed_end_block_height, blockchain_last_block_height, miner_distribution):
         log =  (f'🔄 Network: {network} | ' \
                 f'Process time: {process_time:4f} | ' \
                 f'Indexed start block height: {indexed_start_block_height} | ' \
                 f'Indexed end block height: {indexed_end_block_height} | ' \
                 f'Blockchain last block height: {blockchain_last_block_height} | ' \
-                f'Miner distribution: {miner_distribution} | ' \
-                f'Multiple IPs: {multiple_ips} | ' \
-                f'Multiple run id: {multiple_run_ids} | ')
+                f'Miner distribution: {miner_distribution} | ')
         bt.logging.info(log)
-
-        if multiple_ips:
-            bt.logging.info(f"🔄 Final score: 0")
-            return 0
-        if multiple_run_ids:
-            bt.logging.info(f"🔄 Final score: 0")
-            return 0
-
         process_time_score = self.calculate_process_time_score(process_time, self.config.discovery_timeout)
         block_height_score = self.calculate_block_height_score(network, indexed_start_block_height, indexed_end_block_height, blockchain_last_block_height)
         block_height_recency_score = self.calculate_block_height_recency_score(network, indexed_end_block_height, blockchain_last_block_height)

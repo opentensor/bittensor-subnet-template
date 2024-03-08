@@ -9,16 +9,15 @@ class Node(ABC):
 
     @abstractmethod
     def get_current_block_height(self):
-        pass
-
+        ...
 
     @abstractmethod
     def get_block_by_height(self, block_height):
-        pass
+        ...
 
     @abstractmethod
-    def get_transaction_by_hash(self, tx_hash):
-        pass
+    def create_challenge(self, start_block_height, last_block_height):
+        ...
 
     def validate_data_sample(self, data_sample):
         block_data = self.get_block_by_height(data_sample['block_height'])

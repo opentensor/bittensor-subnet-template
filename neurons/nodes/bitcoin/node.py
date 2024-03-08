@@ -1,5 +1,8 @@
+from decimal import Decimal
 import bittensor as bt
 from bitcoinrpc.authproxy import AuthServiceProxy
+from insights.protocol import Challenge
+from neurons.miners.bitcoin.funds_flow.graph_creator import SATOSHI, VIN, VOUT, Transaction
 
 
 from neurons.nodes.abstract_node import Node
@@ -8,6 +11,7 @@ from neurons.nodes.bitcoin.node_utils import (
     construct_redeem_script,
     hash_redeem_script,
     create_p2sh_address,
+    check_if_block_is_valid_for_challenge
 )
 from neurons.setup_logger import setup_logger
 
@@ -17,6 +21,7 @@ import argparse
 import pickle
 import time
 import os
+import random
 
 parser = argparse.ArgumentParser()
 bt.logging.add_args(parser)
@@ -25,9 +30,15 @@ logger = setup_logger("BitcoinNode")
 class BitcoinNode(Node):
     def __init__(self, node_rpc_url: str = None):
         self.tx_out_hash_table = initialize_tx_out_hash_table()
-        # self.load_tx_out_hash_table("/home/tx_out_hashmap/tx_out_hashmap-700000-799999.pkl")
-        # self.load_tx_out_hash_table("/home/tx_out_hashmap/tx_out_hashmap-600000-699999.pkl")
-        # self.load_tx_out_hash_table("/home/tx_out_hashmap/tx_out_hashmap-500000-599999.pkl")
+        pickle_files_env = os.environ.get("BITCOIN_V2_TX_OUT_HASHMAP_PICKLES")
+        pickle_files = []
+        if pickle_files_env:
+            pickle_files = pickle_files_env.split(',')
+
+        for pickle_file in pickle_files:
+            if pickle_file:
+                self.load_tx_out_hash_table(pickle_file)
+                
         if node_rpc_url is None:
             self.node_rpc_url = (
                 os.environ.get("BITCOIN_NODE_RPC_URL")
@@ -99,12 +110,143 @@ class BitcoinNode(Node):
                         hashed_script = hash_redeem_script(redeem_script)
                         address = create_p2sh_address(hashed_script)
                     else:
-                        raise Exception(
-                            f"Unknown address type: {vout['scriptPubKey']}"
-                        )
+                        address = f"unknown-{txn_id}"
+                return address, amount
+            except Exception as e:
+                address = f"unknown-{txn_id}"
                 return address, amount
             finally:
                 rpc_connection._AuthServiceProxy__conn.close()  # Close the connection
         else: # get from hash table if exists
             address, amount = self.tx_out_hash_table[txn_id[:3]][(txn_id, vout_id)]
             return address, int(amount)
+
+    def create_challenge(self, start_block_height, last_block_height):
+        num_retries = 10 # to prevent infinite loop
+        is_valid_block = False
+        while num_retries and not is_valid_block:
+            block_to_check = random.randint(start_block_height, last_block_height)
+            is_valid_block = check_if_block_is_valid_for_challenge(block_to_check)
+            num_retries -= 1
+
+        # if failed ot find valid block, return invalid response
+        if not num_retries:
+            raise Exception(
+                f"Failed to create a valid challenge."
+            )
+        
+        block_data = self.get_block_by_height(block_to_check)
+        num_transactions = len(block_data["tx"])
+
+        out_total_amount = 0
+        while out_total_amount == 0:
+            selected_txn = block_data["tx"][random.randint(0, num_transactions - 1)]
+            txn_id = selected_txn.get('txid')
+        
+            txn_data = self.get_txn_data_by_id(txn_id)
+            tx = self.create_in_memory_txn(txn_data)
+
+            *_, in_total_amount, out_total_amount = self.process_in_memory_txn_for_indexing(tx)
+            
+        challenge = Challenge(in_total_amount=in_total_amount, out_total_amount=out_total_amount, tx_id_last_4_chars=txn_id[-4:])
+        return challenge, txn_id
+
+
+    def get_txn_data_by_id(self, txn_id: str):
+        rpc_connection = AuthServiceProxy(self.node_rpc_url)
+        return rpc_connection.getrawtransaction(txn_id, 1)
+
+    def create_in_memory_txn(self, tx_data):
+        tx = Transaction(
+            tx_id=tx_data.get('txid'),
+            block_height=0,
+            timestamp=0,
+            fee_satoshi=0
+        )
+        
+        for vin_data in tx_data["vin"]:
+            vin = VIN(
+                tx_id=vin_data.get("txid", 0),
+                vin_id=vin_data.get("sequence", 0),
+                vout_id=vin_data.get("vout", 0),
+                script_sig=vin_data.get("scriptSig", {}).get("asm", ""),
+                sequence=vin_data.get("sequence", 0),
+            )
+            tx.vins.append(vin)
+            tx.is_coinbase = "coinbase" in vin_data
+            
+        for vout_data in tx_data["vout"]:
+            script_type = vout_data["scriptPubKey"].get("type", "")
+            if "nonstandard" in script_type or script_type == "nulldata":
+                continue
+
+            value_satoshi = int(Decimal(vout_data["value"]) * SATOSHI)
+            n = vout_data["n"]
+            script_pub_key_asm = vout_data["scriptPubKey"].get("asm", "")
+
+            address = vout_data["scriptPubKey"].get("address", "")
+            if not address:
+                addresses = vout_data["scriptPubKey"].get("addresses", [])
+                if addresses:
+                    address = addresses[0]
+                elif "OP_CHECKSIG" in script_pub_key_asm:
+                    pubkey = script_pub_key_asm.split()[0]
+                    address = pubkey_to_address(pubkey)
+                elif "OP_CHECKMULTISIG" in script_pub_key_asm:
+                    pubkeys = script_pub_key_asm.split()[1:-2]
+                    m = int(script_pub_key_asm.split()[0])
+                    redeem_script = construct_redeem_script(pubkeys, m)
+                    hashed_script = hash_redeem_script(redeem_script)
+                    address = create_p2sh_address(hashed_script)
+                else:
+                    raise Exception(
+                        f"Unknown address type: {vout_data['scriptPubKey']}"
+                    )
+
+            vout = VOUT(
+                vout_id=n,
+                value_satoshi=value_satoshi,
+                script_pub_key=script_pub_key_asm,
+                is_spent=False,
+                address=address,
+            )
+            tx.vouts.append(vout)
+            
+        return tx
+    
+    def process_in_memory_txn_for_indexing(self, tx):
+        input_amounts = {} # input amounts by address in satoshi
+        output_amounts = {} # output amounts by address in satoshi
+
+        for vin in tx.vins:
+            if vin.tx_id == 0:
+                continue
+            address, amount = self.get_address_and_amount_by_txn_id_and_vout_id(vin.tx_id, str(vin.vout_id))
+            input_amounts[address] = input_amounts.get(address, 0) + amount
+
+        for vout in tx.vouts:
+            amount = vout.value_satoshi
+            address = vout.address or f"unknown-{tx.tx_id}"
+            output_amounts[address] = output_amounts.get(address, 0) + amount
+
+
+        for address in input_amounts:
+            if address in output_amounts:
+                diff = input_amounts[address] - output_amounts[address]
+                if diff > 0:
+                    input_amounts[address] = diff
+                    output_amounts[address] = 0
+                elif diff < 0:
+                    output_amounts[address] = -diff
+                    input_amounts[address] = 0
+                else:
+                    input_amounts[address] = 0
+                    output_amounts[address] = 0
+
+        input_addresses = [address for address, amount in input_amounts.items() if amount != 0]
+        output_addresses = [address for address, amount in output_amounts.items() if amount != 0]
+                    
+        in_total_amount = sum(input_amounts.values())
+        out_total_amount = sum(output_amounts.values())
+
+        return input_amounts, output_amounts, input_addresses, output_addresses, in_total_amount, out_total_amount

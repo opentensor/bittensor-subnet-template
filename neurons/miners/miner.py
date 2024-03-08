@@ -1,6 +1,7 @@
 import argparse
 import os
 import time
+import torch
 import typing
 import traceback
 from random import sample
@@ -16,7 +17,7 @@ from insights import protocol
 from template.base.miner import BaseMinerNeuron
 
 from neurons.miners import blacklist
-from insights.protocol import MODEL_TYPE_FUNDS_FLOW, NETWORK_BITCOIN
+from insights.protocol import MODEL_TYPE_FUNDS_FLOW, NETWORK_BITCOIN, NETWORK_ETHEREUM
 from neurons.storage import store_miner_metadata
 from neurons.remote_config import MinerConfig
 from neurons.nodes.factory import NodeFactory
@@ -31,6 +32,8 @@ class Miner(BaseMinerNeuron):
 
     This class provides reasonable default behavior for a miner such as blacklisting unrecognized hotkeys, prioritizing requests based on stake, and forwarding requests to the forward function. If you need to define custom
     """
+    
+        
     @staticmethod
     def get_config():
 
@@ -84,7 +87,7 @@ class Miner(BaseMinerNeuron):
         
         super(Miner, self).__init__(config=config)
         
-
+        self.last_weight_update = self.block - 1000
         self.request_timestamps: dict = {}
         
         self.axon = bt.axon(wallet=self.wallet, port=self.config.axon.port)        
@@ -102,21 +105,10 @@ class Miner(BaseMinerNeuron):
             forward_fn=self.query,
             blacklist_fn=self.query_blacklist,
             priority_fn=self.query_priority,
-        )
-
-        #to_remove_after_merge:
-        self.axon.attach(
-            forward_fn=self.deprecated_block_check,
-            blacklist_fn=self.deprecated_block_check_blacklist,
-            priority_fn=self.deprecated_block_check_priority,
         ).attach(
-            forward_fn=self.deprecated_discovery,
-            blacklist_fn=self.deprecated_discovery_blacklist,
-            priority_fn=self.deprecated_discovery_priority,
-        ).attach(
-            forward_fn=self.deprecated_query,
-            blacklist_fn=self.deprecated_query_blacklist,
-            priority_fn=self.deprecated_query_priority,
+            forward_fn=self.challenge,
+            blacklist_fn=self.challenge_blacklist,
+            priority_fn=self.challenge_priority,
         )
 
         bt.logging.info(f"Axon created: {self.axon}")
@@ -124,8 +116,6 @@ class Miner(BaseMinerNeuron):
         self.graph_search = get_graph_search(config)
 
         self.miner_config = MinerConfig().load_and_get_config_values()        
-
-
     
     async def block_check(self, synapse: protocol.BlockCheck) -> protocol.BlockCheck:
         try:
@@ -142,15 +132,18 @@ class Miner(BaseMinerNeuron):
             
     async def discovery(self, synapse: protocol.Discovery ) -> protocol.Discovery:
         try:
-            block_range = self.graph_search.get_block_range()
-            start_block = block_range['start_block_height']
-            last_block = block_range['latest_block_height']
+            # block_range = self.graph_search.get_block_range()
+            # start_block = block_range['start_block_height']
+            # last_block = block_range['latest_block_height']
+            
+            start_block, last_block = self.graph_search.get_min_max_block_height_cache()
+            
             run_id = self.graph_search.get_run_id()
 
             synapse.output = protocol.DiscoveryOutput(
                 metadata=protocol.DiscoveryMetadata(
                     network=self.config.network,
-                    model_type=self.config.model_type,
+                    model_type=self.config.model_type
                 ),
                 start_block_height=start_block,
                 block_height=last_block,
@@ -163,9 +156,31 @@ class Miner(BaseMinerNeuron):
         return synapse
 
     async def query(self, synapse: protocol.Query ) -> protocol.Query:
+        synapse.output = {}
         try:
-            synapse.output = self.graph_search.execute_query(
-                network=synapse.network, query=synapse.query)
+            synapse.output["result"] = self.graph_search.execute_query(query=synapse)
+        except Exception as e:
+            bt.logging.error(traceback.format_exc())
+            synapse.output["error"] = e
+        return synapse
+
+    async def challenge(self, synapse: protocol.Challenge ) -> protocol.Challenge:
+        try:
+            bt.logging.info(f"challenge recieved: {synapse}")
+
+            if self.config.network == NETWORK_BITCOIN:
+                synapse.output = self.graph_search.solve_challenge(
+                    in_total_amount=synapse.in_total_amount,
+                    out_total_amount=synapse.out_total_amount,
+                    tx_id_last_4_chars=synapse.tx_id_last_4_chars
+                )
+            if self.config.network == NETWORK_ETHEREUM:
+                synapse.output = self.graph_search.solve_challenge(
+                    checksum=synapse.checksum,
+                )
+
+            bt.logging.info(f"Serving miner challenge output: {synapse.output}")
+
         except Exception as e:
             bt.logging.error(traceback.format_exc())
             synapse.output = None
@@ -179,6 +194,9 @@ class Miner(BaseMinerNeuron):
 
     async def query_blacklist(self, synapse: protocol.Query) -> typing.Tuple[bool, str]:
         return blacklist.query_blacklist(self, synapse=synapse)
+
+    async def challenge_blacklist(self, synapse: protocol.Challenge) -> typing.Tuple[bool, str]:
+        return blacklist.base_blacklist(self, synapse=synapse)
 
 
     def base_priority(self, synapse: bt.Synapse) -> float:
@@ -202,81 +220,68 @@ class Miner(BaseMinerNeuron):
     async def query_priority(self, synapse: protocol.Query) -> float:
         return self.base_priority(synapse=synapse)
 
+    async def challenge_priority(self, synapse: protocol.Challenge) -> float:
+        return self.base_priority(synapse=synapse)
+
     def resync_metagraph(self):
+        self.miner_config = MinerConfig().load_and_get_config_values()
         super(Miner, self).resync_metagraph()
-        store_miner_metadata(self.config, self.graph_search, self.wallet)
+        
+    def should_set_weights(self) -> bool:
+        
+        # Don't set weights on initialization.
+        if self.step == 0:
+            return False
 
-    def save_state(self):
-        #empty function to remove logging WARNING
-        pass
+        # Check if enough epoch blocks have elapsed since the last epoch.
+        if self.miner_config.set_weights == False:
+            return False
 
-    ### TO REMOVE AFTER MERGE WITH MAIN
-    async def deprecated_block_check_priority(self, synapse: protocol.MinerRandomBlockCheck) -> float:
-        return self.base_priority(synapse=synapse)
-
-    async def deprecated_discovery_priority(self, synapse: protocol.MinerDiscovery) -> float:
-        return self.base_priority(synapse=synapse)
-
-    async def deprecated_query_priority(self, synapse: protocol.MinerQuery) -> float:
-        return self.base_priority(synapse=synapse)
+        # Define appropriate logic for when set weights.
+        if self.block - self.last_weight_update > self.miner_config.set_weights_frequency:
+            self.last_weight_update = self.block
+            return True
+        return False
     
-    async def deprecated_block_check_blacklist(self, synapse: protocol.MinerRandomBlockCheck) -> typing.Tuple[bool, str]:
-        return blacklist.base_blacklist(self, synapse=synapse)
+    def set_weights(self):
+        """
+        Self-assigns a weight of 1 to the current miner (identified by its UID) and
+        a weight of 0 to all other peers in the network. The weights determine the trust level the miner assigns to other nodes on the network.
 
-    async def deprecated_discovery_blacklist(self, synapse: protocol.MinerDiscovery) -> typing.Tuple[bool, str]:
-        return blacklist.discovery_blacklist(self, synapse=synapse)
-
-    async def deprecated_query_blacklist(self, synapse: protocol.MinerQuery) -> typing.Tuple[bool, str]:
-        return blacklist.query_blacklist(self, synapse=synapse)
-
-    async def deprecated_block_check(self, synapse: protocol.MinerRandomBlockCheck) -> protocol.MinerRandomBlockCheck:
+        Raises:
+            Exception: If there's an error while setting weights, the exception is logged for diagnosis.
+        """
         try:
-            block_heights = synapse.blocks_to_check
-            data_samples = self.graph_search.get_block_transactions(block_heights)
-            synapse.output = protocol.MinerRandomBlockCheckOutput(
-                data_samples=data_samples,
+            # --- query the chain for the most current number of peers on the network
+            chain_weights = torch.zeros(
+                self.subtensor.subnetwork_n(netuid=self.metagraph.netuid)
             )
-            bt.logging.info(f"Serving miner random block check output: {synapse.output}")
-        except Exception as e:
-            bt.logging.error(traceback.format_exc())
-            synapse.output = None
-        return synapse
-            
-    async def deprecated_discovery(self, synapse: protocol.MinerDiscovery ) -> protocol.MinerDiscovery:
-        try:
-            block_range = self.graph_search.get_block_range()
-            start_block = block_range['start_block_height']
-            last_block = block_range['latest_block_height']
-            run_id = self.graph_search.get_run_id()
-            block_heights = sample(range(start_block, last_block + 1), 10)
-            data_samples = self.graph_search.get_block_transactions(block_heights)
+            chain_weights[self.uid] = 1
 
-            synapse.output = protocol.MinerDiscoveryOutput(
-                metadata=protocol.MinerDiscoveryMetadata(
-                    network=self.config.network,
-                    model_type=self.config.model_type,
-                ),
-                start_block_height=start_block,
-                block_height=last_block,
-                data_samples=data_samples,
-                run_id=run_id,
-                version=4
+            # --- Set weights.
+            self.subtensor.set_weights(
+                wallet=self.wallet,
+                netuid=self.metagraph.netuid,
+                uids=torch.arange(0, len(chain_weights)),
+                weights=chain_weights.to("cpu"),
+                wait_for_inclusion=False,
+                version_key=self.spec_version
             )
-            bt.logging.info(f"Serving miner discovery output: {synapse.output}")
-        except Exception as e:
-            bt.logging.error(traceback.format_exc())
-            synapse.output = None
-        return synapse
 
-    async def deprecated_query(self, synapse: protocol.MinerQuery ) -> protocol.MinerQuery:
-        try:
-            synapse.output = self.graph_search.execute_query(
-                network=synapse.network, query=synapse.query)
         except Exception as e:
-            bt.logging.error(traceback.format_exc())
-            synapse.output = None
-        return synapse
+            bt.logging.error(
+                f"Failed to set weights on chain with exception: { e }"
+            )
 
+        bt.logging.info(f"Set weights: {chain_weights}")
+    
+    def should_send_metadata(self):        
+        return (
+            self.block - self.last_message_send
+        ) > self.miner_config.store_metadata_frequency
+    
+    def send_metadata(self):
+        store_miner_metadata(self.config, self.graph_search, self.wallet)
 
 def wait_for_blocks_sync():
         is_synced=False

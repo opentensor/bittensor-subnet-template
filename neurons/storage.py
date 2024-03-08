@@ -77,10 +77,18 @@ def store_miner_metadata(config, graph_search, wallet):
         bt.logging.warning(f"Skipping storing miner metadata, error: {e}")
 
 def store_validator_metadata(config, wallet, uid):
-
-    subtensor = bt.subtensor(config=config)
-
+    def get_commitment(netuid: int, uid: int, block: Optional[int] = None) -> str:
+        metadata = serving.get_metadata(subtensor, netuid, hotkey, block)
+        if metadata is None:
+            return None
+        commitment = metadata["info"]["fields"][0]
+        hex_data = commitment[list(commitment.keys())[0]][2:]
+        return bytes.fromhex(hex_data).decode()
+    
     try:
+        subtensor = bt.subtensor(config=config)
+        bt.logging.info(f"Storing validator metadata")
+
         docker_image = get_docker_image_version()
         metadata =  ValidatorMetadata(
             b=subtensor.block,
@@ -90,13 +98,6 @@ def store_validator_metadata(config, wallet, uid):
 
         hotkey= wallet.hotkey.ss58_address
 
-        def get_commitment(netuid: int, uid: int, block: Optional[int] = None) -> str:
-            metadata = serving.get_metadata(subtensor, netuid, hotkey, block)
-            if metadata is None:
-                return None
-            commitment = metadata["info"]["fields"][0]
-            hex_data = commitment[list(commitment.keys())[0]][2:]
-            return bytes.fromhex(hex_data).decode()
 
         subtensor.get_commitment = get_commitment
 
@@ -112,25 +113,25 @@ def store_validator_metadata(config, wallet, uid):
     except bt.errors.MetadataError as e:
         bt.logging.warning(f"Skipping storing validator metadata, error: {e}")
     except Exception as e:
-        bt.logging.warning(f"Skipping storing miner metadata, error: {e}")
+        bt.logging.warning(f"Skipping storing validator metadata, error: {e}")
 
 def get_miners_metadata(config, metagraph):
-    miners_metadata = {}
-    bt.logging.info(f"Getting miners metadata")
+    def get_commitment(netuid: int, uid: int, block: Optional[int] = None) -> str:
+        metadata = serving.get_metadata(subtensor, netuid, hotkey, block)
+        if metadata is None:
+            return None
+        commitment = metadata["info"]["fields"][0]
+        hex_data = commitment[list(commitment.keys())[0]][2:]
+        return bytes.fromhex(hex_data).decode()
 
     subtensor = bt.subtensor(config=config)
+    subtensor.get_commitment = get_commitment
+    miners_metadata = {}
+    
+    bt.logging.info(f"Getting miners metadata")
     for axon in metagraph.axons:
         if axon.is_serving:
             hotkey = axon.hotkey
-            def get_commitment(netuid: int, uid: int, block: Optional[int] = None) -> str:
-                metadata = serving.get_metadata(subtensor, netuid, hotkey, block)
-                if metadata is None:
-                    return None
-                commitment = metadata["info"]["fields"][0]
-                hex_data = commitment[list(commitment.keys())[0]][2:]
-                return bytes.fromhex(hex_data).decode()
-
-            subtensor.get_commitment = get_commitment
             try:
                 metadata_str = subtensor.get_commitment(config.netuid, 0)
                 if metadata_str is None:

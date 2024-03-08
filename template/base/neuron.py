@@ -26,6 +26,7 @@ from abc import ABC, abstractmethod
 from template.utils.config import check_config, add_args, config
 from template.utils.misc import ttl_get_block
 from template import __spec_version__ as spec_version
+from template.mock import MockSubtensor, MockMetagraph
 
 
 class BaseNeuron(ABC):
@@ -34,6 +35,8 @@ class BaseNeuron(ABC):
 
     In addition to creating a wallet, subtensor, and metagraph, this class also handles the synchronization of the network state via a basic checkpointing mechanism based on epoch length.
     """
+
+    neuron_type: str = "BaseNeuron"
 
     @classmethod
     def check_config(cls, config: "bt.Config"):
@@ -76,15 +79,21 @@ class BaseNeuron(ABC):
         bt.logging.info("Setting up bittensor objects.")
 
         # The wallet holds the cryptographic key pairs for the miner.
-        self.wallet = bt.wallet(config=self.config)
+        if self.config.mock:
+            self.wallet = bt.MockWallet(config=self.config)
+            self.subtensor = MockSubtensor(
+                self.config.netuid, wallet=self.wallet
+            )
+            self.metagraph = MockMetagraph(
+                self.config.netuid, subtensor=self.subtensor
+            )
+        else:
+            self.wallet = bt.wallet(config=self.config)
+            self.subtensor = bt.subtensor(config=self.config)
+            self.metagraph = self.subtensor.metagraph(self.config.netuid)
+
         bt.logging.info(f"Wallet: {self.wallet}")
-
-        # The subtensor is our connection to the Bittensor blockchain.
-        self.subtensor = bt.subtensor(config=self.config)
         bt.logging.info(f"Subtensor: {self.subtensor}")
-
-        # The metagraph holds the state of the network, letting us know about other validators and miners.
-        self.metagraph = self.subtensor.metagraph(self.config.netuid)
         bt.logging.info(f"Metagraph: {self.metagraph}")
         
         # Check if the miner is registered on the Bittensor network before proceeding further.
@@ -98,6 +107,7 @@ class BaseNeuron(ABC):
             f"Running neuron on subnet: {self.config.netuid} with uid {self.uid} using network: {self.subtensor.chain_endpoint}"
         )
         self.step = 0
+        self.last_message_send = 0
 
     @abstractmethod
     async def forward(self, synapse: bt.Synapse) -> bt.Synapse: ...
@@ -117,6 +127,10 @@ class BaseNeuron(ABC):
 
         if self.should_set_weights():
             self.set_weights()
+
+        if self.should_send_metadata():
+            self.send_metadata()
+            self.last_message_send = self.block
 
         # Always save state.
         self.save_state()
@@ -152,13 +166,18 @@ class BaseNeuron(ABC):
 
         # Define appropriate logic for when set weights.
         return (
-            self.block - self.metagraph.last_update[self.uid]
-        ) > self.config.neuron.epoch_length
+            (self.block - self.metagraph.last_update[self.uid])
+            > self.config.neuron.epoch_length
+            and self.neuron_type != "MinerNeuron"
+        )  # don't set weights if you're a miner
+
+    def should_send_metadata(self):
+        return (
+            self.block - self.last_message_send
+        ) > 100
 
     def save_state(self):
-        bt.logging.warning(
-            "save_state() not implemented for this neuron. You can implement this function to save model checkpoints or other useful data."
-        )
+        pass
 
     def load_state(self):
         bt.logging.warning(

@@ -10,6 +10,7 @@ UPDATE_INTERVAL = 3600  # Time interval for updating configuration in seconds
 MAX_RETRIES = 10
 RETRY_INTERVAL = 5
 
+
 class RemoteConfig:
     _instances = {}
 
@@ -84,6 +85,7 @@ class RemoteConfig:
         self.stop_event.set()
         self.thread.join()
 
+
 class MinerConfig(RemoteConfig):
     def __init__(self):
         super().__init__()
@@ -95,6 +97,9 @@ class MinerConfig(RemoteConfig):
         self.config_url = os.getenv("MINER_REMOTE_CONFIG_URL", 'https://subnet-15-cfg.s3.fr-par.scw.cloud/miner.json')
         self.blockchain_sync_delta = None
         self.grace_period = None
+        self.set_weights = True
+        self.set_weights_frequency = 6011
+        self.store_metadata_frequency = 6000
 
     def load_and_get_config_values(self):
         # Load remote configuration
@@ -108,12 +113,18 @@ class MinerConfig(RemoteConfig):
         self.whitelisted_hotkeys = self.get_config_value('whitelisted_hotkeys', ["5FFApaS75bv5pJHfAp2FVLBj9ZaXuFDjEypsaBNc1wCfe52v", "5HK5tp6t2S59DywmHRWPBVJeJ86T61KjurYqeooqj8sREpeN", "5EhvL1FVkQPpMjZX4MAADcW42i3xPSF1KiCpuaxTYVr28sux", "5CXRfP2ekFhe62r7q3vppRajJmGhTi7vwvb2yr79jveZ282w", "5DvTpiniW9s3APmHRYn8FroUWyfnLtrsid5Mtn5EwMXHN2ed", "5F4tQyWrhfGVcNhoqeiNsR6KjD4wMZ2kfhLj4oHYuyHbZAc3", "5Hddm3iBFD2GLT5ik7LZnT3XJUnRnN8PoeCFgGQgawUVKNm8", "5HEo565WAy4Dbq3Sv271SAi7syBSofyfhhwRNjFNSM2gP9M2", "5FcXnzNo3mrqReTEY4ftkg5iXRBi61iyvM4W1bywZLRqfxAY", "5HNQURvmjjYhTSksi8Wfsw676b4owGwfLR2BFAQzG7H3HhYf", "5FLKnbMjHY8LarHZvk2q2RY9drWFbpxjAcR5x8tjr3GqtU6F", "5Gpt8XWFTXmKrRF1qaxcBQLvnPLpKi6Pt2XC4vVQR7gqNKtU"])
         self.blockchain_sync_delta = self.get_config_value('blockchain_sync_delta', {'bitcoin': 100, 'doge': 100})
         self.grace_period = self.get_config_value('grace_period', False)
-
+        
+        # Set_weights, send metadata
+        self.set_weights = self.get_config_value('set_weights', True)
+        self.set_weights_frequency = self.get_config_value('set_weights_frequency', 6011)
+        self.store_metadata_frequency = self.get_config_value('store_metadata_frequency', 6000)
+        
         return self
     
     def get_blockchain_sync_delta(self, network):
         return self.get_config_value(f'blockchain_sync_delta.{network}', 100)
-    
+
+
 class ValidatorConfig(RemoteConfig):
     def __init__(self):
         super().__init__()
@@ -123,13 +134,13 @@ class ValidatorConfig(RemoteConfig):
         self.blockchain_importance_weight = None
         
         self.discovery_timeout = None
+        self.challenge_timeout = None
 
         self.blockchain_importance = None
         self.blockchain_recency_weight = None
         self.grace_period = None
         
         self.config_url = os.getenv("VALIDATOR_REMOTE_CONFIG_URL", 'https://subnet-15-cfg.s3.fr-par.scw.cloud/validator3.json')
-
 
     def load_and_get_config_values(self):
         self.load_remote_config()
@@ -141,6 +152,7 @@ class ValidatorConfig(RemoteConfig):
         self.blockchain_importance_weight = self.get_config_value('blockchain_importance_weight', 1)
         
         self.discovery_timeout = self.get_config_value('discovery_timeout', 100)
+        self.challenge_timeout = self.get_config_value('challenge_timeout', 100)
 
         self.blockchain_importance = self.get_config_value('blockchain_importance', {"bitcoin": 0.9, "doge": 0.1})
         self.blockchain_recency_weight = self.get_config_value('blockchain_recency_weight',  {"bitcoin": 2, "doge": 2})
@@ -149,7 +161,6 @@ class ValidatorConfig(RemoteConfig):
 
     def get_blockchain_min_blocks(self, network):
         return self.get_config_value(f'blockchain_min_blocks.{network}', 51840)
-
 
     def get_network_importance(self, network):
         return self.get_config_value(f'blockchain_importance.{network}', 0.9)
