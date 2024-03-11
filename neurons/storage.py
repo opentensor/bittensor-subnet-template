@@ -11,12 +11,11 @@ class Metadata(BaseModel):
         return ','.join(f"{key}:{repr(getattr(self, key))}" for key in self.__dict__)
 
 class MinerMetadata(Metadata):
-    b: int
-    v: int
-    di: str
-    n: Optional[int]
-    mt: Optional[int]
-    ri: Optional[str]
+    sb: Optional[int] #start_block_height
+    lb: Optional[int] #end_block_height
+    n: Optional[int] #network
+    mt: Optional[int] #model_type
+    ri: Optional[str] #run_id
 
     @staticmethod
     def from_compact(compact_str):
@@ -50,19 +49,16 @@ def get_commitment_wrapper(subtensor, netuid, _, hotkey, block=None):
 
     return get_commitment()
 
-def store_miner_metadata(config, graph_search, wallet):
+def store_miner_metadata(config, graph_search, wallet, start_block, last_block):
     def get_metadata():
         run_id = graph_search.get_run_id()
-        docker_image = get_docker_image_version()
         return MinerMetadata(
-            b=subtensor.block,
+            sb=start_block,
+            lb=last_block,
             n=get_network_id(config.network),
             mt=get_model_id(config.model_type),
-            v=VERSION,
-            di=docker_image,
             ri=run_id,
         )
-
 
     try:
         subtensor = bt.subtensor(config=config)

@@ -132,10 +132,6 @@ class Miner(BaseMinerNeuron):
             
     async def discovery(self, synapse: protocol.Discovery ) -> protocol.Discovery:
         try:
-            # block_range = self.graph_search.get_block_range()
-            # start_block = block_range['start_block_height']
-            # last_block = block_range['latest_block_height']
-            
             start_block, last_block = self.graph_search.get_min_max_block_height_cache()
             
             run_id = self.graph_search.get_run_id()
@@ -281,7 +277,8 @@ class Miner(BaseMinerNeuron):
         ) > self.miner_config.store_metadata_frequency
     
     def send_metadata(self):
-        store_miner_metadata(self.config, self.graph_search, self.wallet)
+        start_block, last_block = self.graph_search.get_min_max_block_height_cache()
+        store_miner_metadata(self.config, self.graph_search, self.wallet, start_block, last_block)
 
 def wait_for_blocks_sync():
         is_synced=False
