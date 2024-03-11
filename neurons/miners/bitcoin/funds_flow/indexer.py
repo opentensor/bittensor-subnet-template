@@ -209,8 +209,8 @@ if __name__ == "__main__":
         logger.info(f"Indexed block height (min, max): [{indexed_min_block_height}, {indexed_max_block_height}]")
 
         if start_height > -1 and smart_mode: # if smart mode, run both forward and reverse indexer
-            pass
-        if start_height > -1 and end_height > -1: # if specifed both start and end, then iterate range
+            do_smart_indexing(bitcoin_node, graph_creator, graph_indexer, graph_search, start_height)
+        elif start_height > -1 and end_height > -1: # if specifed both start and end, then iterate range
             iterate_range(bitcoin_node, graph_creator, graph_indexer, graph_search, start_height, end_height, bool(in_reverse_order))
         elif in_reverse_order: # if end is not specifed but in reverse order, then set end_height 1 and iterate range
             iterate_range(bitcoin_node, graph_creator, graph_indexer, graph_search, start_height, 1, bool(in_reverse_order))
