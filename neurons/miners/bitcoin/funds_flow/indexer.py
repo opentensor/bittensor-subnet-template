@@ -120,6 +120,54 @@ def move_forward(_bitcoin_node, _graph_creator, _graph_indexer, _graph_search, s
         else:
             logger.error(f"Failed to index block {block_height}.")
             time.sleep(30)
+            
+            
+def do_smart_indexing(_bitcoin_node, _graph_creator, _graph_indexer, _graph_search, start_height: int):
+    global shutdown_flag
+
+    skip_blocks = 6
+    
+    forward_block_height = start_height
+    backward_block_height = start_height - 1
+    
+    
+    while not shutdown_flag:
+        current_block_height = _bitcoin_node.get_current_block_height() - skip_blocks
+        block_height = forward_block_height
+        is_indexing_reverse = False
+        
+        if block_height > current_block_height: # if forward indexer has reached the latest block
+            if backward_block_height == 0: # if finished reverse indexer, just wait for new blocks
+                logger.info(
+                    f"Waiting for new blocks. Current height is {current_block_height}"
+                )
+                time.sleep(10)
+                continue
+            else: # if has something to index in the reverser indexer, run reverse indexer
+                logger.info(
+                    f"Current height is {current_block_height}. Running reverse indexer while waiting for new blocks..."
+                )
+                block_height = backward_block_height
+                is_indexing_reverse = True
+        
+        while _graph_indexer.check_if_block_is_indexed(block_height): # skip blocks already indexed
+            logger.info(f"Skipping block #{block_height}. Already indexed.")
+            block_height += -1 if is_indexing_reverse else 1
+
+        if block_height == 0: # if backward indexer has reached the genesis, just continue
+            backward_block_height = 0
+            time.sleep(10)
+            continue
+        
+        success = index_block(_bitcoin_node, _graph_creator, _graph_indexer, _graph_search, block_height)        
+        if success:
+            if is_indexing_reverse:
+                backward_block_height = block_height - 1
+            else:
+                forward_block_height = block_height + 1
+        else:
+            logger.error(f"Failed to index block {block_height}.")
+            time.sleep(30)
 
 
 # Register the shutdown handler for SIGINT and SIGTERM
@@ -135,6 +183,7 @@ if __name__ == "__main__":
     graph_indexer = GraphIndexer()
     graph_search = GraphSearch()
     
+    smart_mode_str = os.getenv('BITCOIN_INDEXER_SMART_MODE', '0') or '0'
     start_height_str = os.getenv('BITCOIN_INDEXER_START_BLOCK_HEIGHT', None)
     end_height_str = os.getenv('BITCOIN_INDEXER_END_BLOCK_HEIGHT', '-1') or '-1'
     in_reverse_order_str = os.getenv('BITCOIN_INDEXER_IN_REVERSE_ORDER', '0') or '0'
@@ -144,6 +193,7 @@ if __name__ == "__main__":
     if start_height_str is None:
         logger.info("Please specify BITCOIN_INDEXER_START_BLOCK_HEIGHT")
     else:
+        smart_mode = int(smart_mode_str)
         start_height = int(start_height_str)
         end_height = int(end_height_str)
         in_reverse_order = int(in_reverse_order_str)
@@ -158,7 +208,9 @@ if __name__ == "__main__":
         graph_indexer.set_min_max_block_height_cache(indexed_min_block_height, indexed_max_block_height)
         logger.info(f"Indexed block height (min, max): [{indexed_min_block_height}, {indexed_max_block_height}]")
 
-        if start_height > -1 and end_height > -1: # if specifed both start and end, then iterate range
+        if start_height > -1 and smart_mode: # if smart mode, run both forward and reverse indexer
+            do_smart_indexing(bitcoin_node, graph_creator, graph_indexer, graph_search, start_height)
+        elif start_height > -1 and end_height > -1: # if specifed both start and end, then iterate range
             iterate_range(bitcoin_node, graph_creator, graph_indexer, graph_search, start_height, end_height, bool(in_reverse_order))
         elif in_reverse_order: # if end is not specifed but in reverse order, then set end_height 1 and iterate range
             iterate_range(bitcoin_node, graph_creator, graph_indexer, graph_search, start_height, 1, bool(in_reverse_order))
