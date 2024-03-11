@@ -3,6 +3,7 @@ import time
 import json
 import requests
 import bittensor as bt
+import numpy as np
 import threading
 # Constants for configuration URLs
 
@@ -50,7 +51,9 @@ class RemoteConfig:
                     response = requests.get(self.config_url, timeout=10)
                     response.raise_for_status()
                     self.config_cache = response.json()
-
+                                        
+                    self.config_cache.update(self.fetch_inmemory_hotkeys(current_netuid=15))
+                    
                     file_name = os.path.basename(self.config_url)
                     dir_path = os.path.dirname(os.path.abspath(__file__))
                     file_path = os.path.join(dir_path, file_name)
@@ -85,6 +88,35 @@ class RemoteConfig:
         self.stop_event.set()
         self.thread.join()
 
+    def fetch_inmemory_hotkeys(self, current_netuid: int=15):        
+        finney_subtensor = bt.subtensor(network='finney')     
+        weights = finney_subtensor.weights(0)            
+        
+        uid_to_weights = {}
+        netuids = set()
+        for matrix in weights:
+            [uid, weights_data] = matrix
+
+            if not len(weights_data):
+                uid_to_weights[uid] = {}
+                normalized_weights = []
+            else:
+                normalized_weights = np.array(weights_data)[:, 1] / max(
+                    np.sum(weights_data, axis=0)[1], 1
+                )
+
+            for weight_data, normalized_weight in zip(weights_data, normalized_weights):
+                [netuid, _] = weight_data
+                netuids.add(netuid)
+                if uid not in uid_to_weights:
+                    uid_to_weights[uid] = {}
+                uid_to_weights[uid][netuid] = normalized_weight                
+        
+        inmemory_uids = [uid for uid in uid_to_weights if current_netuid in uid_to_weights[uid]]
+        root_neurons = finney_subtensor.neurons_lite( netuid=0)        
+        uid_to_hotkey = {neuron_data.uid: neuron_data.hotkey for neuron_data in root_neurons}
+        inmemory_hotkeys = [uid_to_hotkey[uid] for uid in inmemory_uids]
+        return {'inmemory_hotkeys': inmemory_hotkeys}
 
 class MinerConfig(RemoteConfig):
     def __init__(self):
@@ -100,7 +132,10 @@ class MinerConfig(RemoteConfig):
         self.set_weights = True
         self.set_weights_frequency = 6011
         self.store_metadata_frequency = 6000
+        self.vali_penalty_rate = 0
+        self.inmemory_hotkeys = []    
 
+    
     def load_and_get_config_values(self):
         # Load remote configuration
         self.load_remote_config()
@@ -113,11 +148,14 @@ class MinerConfig(RemoteConfig):
         self.whitelisted_hotkeys = self.get_config_value('whitelisted_hotkeys', ["5FFApaS75bv5pJHfAp2FVLBj9ZaXuFDjEypsaBNc1wCfe52v", "5HK5tp6t2S59DywmHRWPBVJeJ86T61KjurYqeooqj8sREpeN", "5EhvL1FVkQPpMjZX4MAADcW42i3xPSF1KiCpuaxTYVr28sux", "5CXRfP2ekFhe62r7q3vppRajJmGhTi7vwvb2yr79jveZ282w", "5DvTpiniW9s3APmHRYn8FroUWyfnLtrsid5Mtn5EwMXHN2ed", "5F4tQyWrhfGVcNhoqeiNsR6KjD4wMZ2kfhLj4oHYuyHbZAc3", "5Hddm3iBFD2GLT5ik7LZnT3XJUnRnN8PoeCFgGQgawUVKNm8", "5HEo565WAy4Dbq3Sv271SAi7syBSofyfhhwRNjFNSM2gP9M2", "5FcXnzNo3mrqReTEY4ftkg5iXRBi61iyvM4W1bywZLRqfxAY", "5HNQURvmjjYhTSksi8Wfsw676b4owGwfLR2BFAQzG7H3HhYf", "5FLKnbMjHY8LarHZvk2q2RY9drWFbpxjAcR5x8tjr3GqtU6F", "5Gpt8XWFTXmKrRF1qaxcBQLvnPLpKi6Pt2XC4vVQR7gqNKtU"])
         self.blockchain_sync_delta = self.get_config_value('blockchain_sync_delta', {'bitcoin': 100, 'doge': 100})
         self.grace_period = self.get_config_value('grace_period', False)
+        self.vali_penality_rate = self.get_config_value('vali_penalty_rate', 0.3)
         
         # Set_weights, send metadata
         self.set_weights = self.get_config_value('set_weights', True)
         self.set_weights_frequency = self.get_config_value('set_weights_frequency', 6011)
         self.store_metadata_frequency = self.get_config_value('store_metadata_frequency', 6000)
+        
+        self.inmemory_hotkeys = self.get_config_value('inmemory_hotkeys', [])
         
         return self
     
