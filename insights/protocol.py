@@ -64,7 +64,7 @@ class DiscoveryOutput(BaseModel):
     block_height: int = None
     start_block_height: int = None
     run_id: str = None
-    version: Optional[int] = None
+    version: Optional[int] = VERSION
 
 class BlockCheckOutput(BaseModel):
     data_samples: List[Dict] = None
