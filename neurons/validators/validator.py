@@ -99,11 +99,11 @@ class Validator(BaseValidatorNeuron):
                 bt.logging.debug("Cross validation failed")
                 return False, 128
             
+            response_time = response.dendrite.process_time
+            
             # if the miner's response is different than the expected response and validation failed
             if not response.output == expected_response and not node.validate_challenge_response_output(challenge, response.output):
-                return False, 128
-                
-            response_time = response.dendrite.process_time
+                return False, response_time
             
             return True, response_time
         except Exception as e:
