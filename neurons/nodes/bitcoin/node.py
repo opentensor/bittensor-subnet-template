@@ -148,7 +148,7 @@ class BitcoinNode(Node):
 
             *_, in_total_amount, out_total_amount = self.process_in_memory_txn_for_indexing(tx)
             
-        challenge = Challenge(in_total_amount=in_total_amount, out_total_amount=out_total_amount, tx_id_last_4_chars=txn_id[-4:])
+        challenge = Challenge(in_total_amount=in_total_amount, out_total_amount=out_total_amount, tx_id_last_8_chars=txn_id[-8:])
         return challenge, txn_id
 
 

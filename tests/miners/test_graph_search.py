@@ -14,7 +14,7 @@ class TestGraphSearch(unittest.TestCase):
             graph_db_user=os.environ.get('GRAPH_DB_USER'),
             graph_db_password=os.environ.get('GRAPH_DB_PASSWORD'),
         )
-        output = graph_search.solve_challenge(in_total_amount=203216, out_total_amount=200000, tx_id_last_4_chars="d946")
+        output = graph_search.solve_challenge(in_total_amount=203216, out_total_amount=200000, tx_id_last_8_chars="5d66d946")
         graph_search.close()
         self.assertEqual(output, "93fa1edce68762615740fd35581fc337d508ca33e682057bed7b395b5d66d946")
         
