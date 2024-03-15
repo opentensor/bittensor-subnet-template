@@ -96,12 +96,12 @@ class Validator(BaseValidatorNeuron):
             )
             
             if response is None or response.output is None:
-                bt.logging.debug("Skipping: Challenge response empty")
-                return None, None
+                bt.logging.debug("Cross validation failed")
+                return False, 128
             
             # if the miner's response is different than the expected response and validation failed
             if not response.output == expected_response and not node.validate_challenge_response_output(challenge, response.output):
-                return None, None
+                return False, 128
                 
             response_time = response.dendrite.process_time
             
@@ -144,7 +144,7 @@ class Validator(BaseValidatorNeuron):
         try:
             if not is_discovery_response_valid(response):
                 bt.logging.debug(f'Discovery Response invalid {response}')
-                return None
+                return 0
             if not self.is_miner_metadata_valid(response):
                 return 0
             
