@@ -149,18 +149,18 @@ class GraphSearch:
             return min_block_height, max_block_height
         
 
-    def solve_challenge(self, in_total_amount: int, out_total_amount: int, tx_id_last_5_chars: str) -> str:
+    def solve_challenge(self, in_total_amount: int, out_total_amount: int, tx_id_last_4_chars: str) -> str:
         with self.driver.session() as session:
             result = session.run(
                 """
                 MATCH (t:Transaction {out_total_amount: $out_total_amount})
-                WHERE t.in_total_amount = $in_total_amount AND t.tx_id ENDS WITH $tx_id_last_5_chars
+                WHERE t.in_total_amount = $in_total_amount AND t.tx_id ENDS WITH $tx_id_last_4_chars
                 RETURN t.tx_id
                 LIMIT 1;
                 """,
                 in_total_amount=in_total_amount,
                 out_total_amount=out_total_amount,
-                tx_id_last_5_chars=tx_id_last_5_chars
+                tx_id_last_4_chars=tx_id_last_4_chars
             )
             single_result = result.single()
             if single_result is None or single_result[0] is None:

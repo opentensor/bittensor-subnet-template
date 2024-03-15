@@ -107,7 +107,7 @@ class Challenge(BaseSynapse):
     # For BTC
     in_total_amount: Optional[int] = None
     out_total_amount: Optional[int] = None
-    tx_id_last_5_chars: Optional[str] = None
+    tx_id_last_4_chars: Optional[str] = None
     
     # Altcoins
     checksum: Optional[str] = None

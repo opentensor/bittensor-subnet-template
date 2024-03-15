@@ -148,11 +148,11 @@ class BitcoinNode(Node):
 
             *_, in_total_amount, out_total_amount = self.process_in_memory_txn_for_indexing(tx)
             
-        challenge = Challenge(in_total_amount=in_total_amount, out_total_amount=out_total_amount, tx_id_last_5_chars=txn_id[-5:])
+        challenge = Challenge(in_total_amount=in_total_amount, out_total_amount=out_total_amount, tx_id_last_4_chars=txn_id[-4:])
         return challenge, txn_id
 
     def validate_challenge_response_output(self, challenge: Challenge, response_output):
-        if response_output[-5:] != challenge.tx_id_last_5_chars:
+        if response_output[-4:] != challenge.tx_id_last_4_chars:
             return False
         
         txn_data = self.get_txn_data_by_id(response_output)
