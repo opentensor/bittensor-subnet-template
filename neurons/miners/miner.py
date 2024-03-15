@@ -168,7 +168,7 @@ class Miner(BaseMinerNeuron):
                 synapse.output = self.graph_search.solve_challenge(
                     in_total_amount=synapse.in_total_amount,
                     out_total_amount=synapse.out_total_amount,
-                    tx_id_last_8_chars=synapse.tx_id_last_8_chars
+                    tx_id_last_5_chars=synapse.tx_id_last_5_chars
                 )
             if self.config.network == NETWORK_ETHEREUM:
                 synapse.output = self.graph_search.solve_challenge(
