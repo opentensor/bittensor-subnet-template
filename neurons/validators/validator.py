@@ -99,14 +99,13 @@ class Validator(BaseValidatorNeuron):
                 bt.logging.debug("Skipping: Challenge response empty")
                 return None, None
             
-            result = response.output == expected_response
-            # if the miner's response is different than the expected response, validate its response
-            if not result and not node.validate_challenge_response_output(challenge, response.output):
+            # if the miner's response is different than the expected response and validation failed
+            if not response.output == expected_response and not node.validate_challenge_response_output(challenge, response.output):
                 return None, None
                 
             response_time = response.dendrite.process_time
             
-            return result, response_time
+            return True, response_time
         except Exception as e:
             bt.logging.error(f"Cross validation error occurred: {e}")
             return None, None
