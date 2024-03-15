@@ -155,7 +155,8 @@ class GraphSearch:
                 """
                 MATCH (t:Transaction {out_total_amount: $out_total_amount})
                 WHERE t.in_total_amount = $in_total_amount AND t.tx_id ENDS WITH $tx_id_last_5_chars
-                RETURN t.tx_id;
+                RETURN t.tx_id
+                LIMIT 1;
                 """,
                 in_total_amount=in_total_amount,
                 out_total_amount=out_total_amount,
