@@ -100,6 +100,10 @@ class Validator(BaseValidatorNeuron):
                 return None, None
             
             result = response.output == expected_response
+            # if the miner's response is different than the expected response, validate its response
+            if not result and not node.validate_challenge_response_output(challenge, response.output):
+                return None, None
+                
             response_time = response.dendrite.process_time
             
             return result, response_time
