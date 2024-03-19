@@ -86,9 +86,3 @@ def get_random_uids(
     uids = torch.tensor(random.sample(candidate_uids, k))
     return uids
 
-if __name__ == "__main__":
-    metagraph = bt.subtensor("local").metagraph(netuid=15)
-    bt.logging.info(f"best miner uid is {get_best_miner_uid(metagraph)}")
-    best_uid = get_best_miner_uid(metagraph)
-    for uid in best_uid:
-        bt.logging.info(uid)
