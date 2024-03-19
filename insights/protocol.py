@@ -116,3 +116,12 @@ class Challenge(BaseSynapse):
     
     def deserialize(self) -> str:
         return self.output
+    
+class TextQueryResponse(BaseSynapse):
+    network: str = None    
+    # input_text: Plain text written in natural language
+    input_text: str = None    
+    # output
+    output: Optional[QueryOutput] = None
+    def deserialize(self) -> str:
+        return self.output
