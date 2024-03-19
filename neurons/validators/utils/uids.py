@@ -28,7 +28,7 @@ def check_uid_availability(
     # Available otherwise.
     return True
 
-def get_best_miner_uid(
+def get_top_miner_uid(
     metagraph: "bt.metagraph.Metagraph", vpermit_tao_limit: int = 4096, exclude: List[int] = None
 ) -> torch.LongTensor:
     """Returns the best available miner UID from the metagraph.
@@ -54,8 +54,8 @@ def get_best_miner_uid(
     
     # Consider only incentive
     # values = [(uid, metagraph.I[uid]) for uid in candidate_uids] 
-    best_miner_uid = torch.tensor(max(values, key=lambda x: x[1])[0])    
-    return best_miner_uid    
+    best_top_uid = torch.tensor(max(values, key=lambda x: x[1])[0])    
+    return best_top_uid    
     
     
 
