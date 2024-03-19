@@ -117,7 +117,7 @@ class Challenge(BaseSynapse):
     def deserialize(self) -> str:
         return self.output
     
-class TextQuery(BaseSynapse):
+class LlmQuery(BaseSynapse):
     network: str = None    
     # input_text: Plain text written in natural language
     input_text: str = None    
