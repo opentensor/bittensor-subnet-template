@@ -19,7 +19,7 @@
 
 import bittensor as bt
 from typing import List, Optional, Union, Any, Dict
-from insights.protocol import TextQueryResponse
+from insights.protocol import TextQuery
 from insights.api import SubnetsAPI
 
 
@@ -27,10 +27,10 @@ class TextQueryAPI(SubnetsAPI):
     def __init__(self, wallet: "bt.wallet"):
         super().__init__(wallet)
         self.netuid = 15
-        self.name = "TextQueryResponse"
+        self.name = "TextQuery"
 
-    def prepare_synapse(self, network:str, text: str) -> TextQueryResponse:
-        synapse = TextQueryResponse(
+    def prepare_synapse(self, network:str, text: str) -> TextQuery:
+        synapse = TextQuery(
             network=network,
             input_text=text,
             )
