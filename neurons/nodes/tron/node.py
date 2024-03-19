@@ -76,9 +76,9 @@ class TronNode(Node):
     # get the balance from addresses - batch request
     def get_balance_by_addresses(self, addresses):
         try:
-            batch_size = 500
-            sub_arrays = [addresses[i:i + batch_size] for i in range(0, len(addresses), batch_size)]
             responses = []
+            for address in addresses:
+                responses.append(self.get_account_balance(address))
 
             return responses
         except Exception as e:
@@ -87,9 +87,9 @@ class TronNode(Node):
     # get tx details from tx hash - batch request
     def get_transaction(self, transactions):
         try:
-            batch_size = 500
-            sub_arrays = [transactions[i:i + batch_size] for i in range(0, len(transactions), batch_size)]
             responses = []
+            for tx in transactions:
+                responses.append(self.get_transaction_by_hash(tx))
 
             return responses
         except Exception as e:
@@ -98,9 +98,9 @@ class TronNode(Node):
     # get txReceipt details from tx hash - batch request
     def get_transactionReceipt(self, transactions):
         try:
-            batch_size = 500
-            sub_arrays = [transactions[i:i + batch_size] for i in range(0, len(transactions), batch_size)]
             responses = []
+            for tx in transactions:
+                responses.append(self.get_transaction_info(tx))
 
             return responses
         except Exception as e:
