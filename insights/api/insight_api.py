@@ -48,7 +48,7 @@ def main():
         top_miner_uid = get_top_miner_uid(metagraph)
         bt.logging.info(f"Top miner UID is {top_miner_uid}")        
         top_miner_axons = await get_query_api_axons(wallet=wallet, metagraph=metagraph, uids=top_miner_uid)        
-        
+        # get miner response
         responses=  await text_query_api(
             axons=top_miner_axons,
             network=network,
