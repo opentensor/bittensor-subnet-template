@@ -87,8 +87,4 @@ def get_random_uids(
     k = max(1, min(len(candidate_uids), k))
     uids = torch.tensor(random.sample(candidate_uids, k))
     return uids
-# if __name__ == "__main__":
-#     metagraph = bt.subtensor("finney").metagraph(netuid=15)
-#     top_miner_uids = get_top_miner_uids(metagraph, 0.3)
-#     print(top_miner_uids)
     

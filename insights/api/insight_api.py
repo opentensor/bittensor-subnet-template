@@ -7,10 +7,9 @@ from datetime import datetime
 import bittensor as bt
 from insights.api.query import TextQueryAPI
 from insights.api.get_query_axons import get_query_api_axons
-from neurons.validators.utils.uids import get_top_miner_uid
+from neurons.validators.utils.uids import get_top_miner_uids
 from fastapi import FastAPI, Body
 import uvicorn
-
 
 bt.debug()
 
@@ -20,6 +19,7 @@ def get_config():
     parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
     parser.add_argument("--port", type=int, default=8001, help="API endpoint port.")
     parser.add_argument("--timeout", type=int, default=40, help="Timeout.")
+    parser.add_argument("--top_rate", type=float, default=1, help="Best selection percentage")
     
     bt.subtensor.add_args(parser)
     bt.logging.add_args(parser)
@@ -31,7 +31,7 @@ def get_config():
 
 def main():
     app = FastAPI()
-    config = get_config()    
+    config = get_config()
     wallet = bt.wallet(config=config)
     subtensor = bt.subtensor(config=config)
     metagraph = subtensor.metagraph(config.netuid)
@@ -41,6 +41,7 @@ def main():
     bt.logging.info(f"Metagraph: {metagraph}")
     bt.logging.info(f"Port: {config.port}")
     bt.logging.info(f"Timeout: {config.timeout}")
+    bt.logging.info(f"Top_rate: {config.top_rate}")
     
     text_query_api = TextQueryAPI(wallet=wallet)
     
@@ -48,18 +49,19 @@ def main():
     async def get_response(network:str, text: str):
         # select top miner
         metagraph = subtensor.metagraph(netuid=config.netuid)
-        top_miner_uid = get_top_miner_uid(metagraph)
-        bt.logging.info(f"Top miner UID is {top_miner_uid}")        
-        top_miner_axons = await get_query_api_axons(wallet=wallet, metagraph=metagraph, uids=top_miner_uid)        
+        top_miner_uids = get_top_miner_uids(metagraph, config.top_rate)
+        bt.logging.info(f"Top miner UIDs are {top_miner_uids}")
+        top_miner_axons = await get_query_api_axons(wallet=wallet, metagraph=metagraph, uids=top_miner_uids)        
+        
         # get miner response
-        responses=  await text_query_api(
+        response=  await text_query_api(
             axons=top_miner_axons,
             network=network,
             input_text=text,
             timeout=config.timeout
             )
         
-        return responses
+        return response
             
     @app.get("/")
     def healthcheck():
@@ -82,9 +84,10 @@ async def test_query(wallet: "bt.wallet" = None):
     bt.logging.info(f"Metagraph: {metagraph}")
     bt.logging.info(f"Port: {config.port}")
     bt.logging.info(f"Timeout: {config.timeout}")
+    bt.logging.info(f"Top_rate: {config.top_rate}")
     # Get the top miner UIDs
-    top_miner_uid = get_top_miner_uid(metagraph)
-    axons = await get_query_api_axons(wallet=wallet, metagraph=metagraph, uids=top_miner_uid)
+    top_miner_uids = get_top_miner_uids(metagraph, config.top_rate)
+    axons = await get_query_api_axons(wallet=wallet, metagraph=metagraph, uids=top_miner_uids)
 
     # Change user input
     network = "Bitcoin"

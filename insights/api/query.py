@@ -17,6 +17,7 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+import random
 import bittensor as bt
 from typing import List, Optional, Union, Any, Dict
 from insights.protocol import LlmQuery
@@ -45,4 +46,4 @@ class TextQueryAPI(SubnetsAPI):
             if response.dendrite.status_code != 200:
                 continue
             outputs.append(response.output)
-        return outputs
+        return random.choice(outputs)
