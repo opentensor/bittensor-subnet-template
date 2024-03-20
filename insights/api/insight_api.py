@@ -75,10 +75,13 @@ async def test_query(wallet: "bt.wallet" = None):
     wallet = bt.wallet(config=config)
     subtensor = bt.subtensor(config=config)
     metagraph = subtensor.metagraph(config.netuid)
+    
 
     bt.logging.info(f"Wallet: {wallet}")
     bt.logging.info(f"Subtensor: {subtensor}")
     bt.logging.info(f"Metagraph: {metagraph}")
+    bt.logging.info(f"Port: {config.port}")
+    bt.logging.info(f"Timeout: {config.timeout}")
     # Get the top miner UIDs
     top_miner_uid = get_top_miner_uid(metagraph)
     axons = await get_query_api_axons(wallet=wallet, metagraph=metagraph, uids=top_miner_uid)
@@ -94,7 +97,7 @@ async def test_query(wallet: "bt.wallet" = None):
         # Arugmnts for the proper synapse
         network=network,
         input_text=user_input,
-        timeout=20
+        timeout=config.timeout
     )
     print(fetch_response)
 
