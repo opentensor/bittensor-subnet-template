@@ -1,5 +1,7 @@
-import os
+import argparse
 import asyncio
+import os
+
 from datetime import datetime
 
 import bittensor as bt
@@ -12,21 +14,39 @@ import uvicorn
 
 bt.debug()
 
-def main():
-    app = FastAPI()    
-    wallet_name = os.getenv("WALLET_NAME")
-    wallet_hotkey = os.getenv("WALLET_HOTKEY")
-    netuid = os.getenv("NETUID", str(15))
+def get_config():
+    parser = argparse.ArgumentParser()
     
-    wallet = bt.wallet(name=wallet_name, hotkey=wallet_hotkey)
+    parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
+    parser.add_argument("--port", type=int, default=8001, help="API endpoint port.")
+    
+    bt.subtensor.add_args(parser)
+    bt.logging.add_args(parser)
+    bt.wallet.add_args(parser)
+
+    config = bt.config(parser)
+    return config
+
+def main():
+    config = get_config()
+    app = FastAPI()
+    wallet = bt.wallet(config=config)
+    subtensor = bt.subtensor(config=config)
+    metagraph = subtensor.metagraph(config.netuid)
+
+    bt.logging.info(f"Wallet: {wallet}")
+    bt.logging.info(f"Subtensor: {subtensor}")
+    bt.logging.info(f"Metagraph: {metagraph}")
+    bt.logging.info(f"Port: {config.port}")    
     
     text_query_api = TextQueryAPI(wallet=wallet)
     
     @app.get("/api/text_query")
     async def get_response(network:str, text: str):
         # select top miner
-        metagraph = bt.subtensor("local").metagraph(netuid=netuid)
+        metagraph = subtensor.metagraph(netuid=config.netuid)
         top_miner_uid = get_top_miner_uid(metagraph)
+        bt.logging.info(f"Top miner UID is {top_miner_uid}")        
         top_miner_axons = await get_query_api_axons(wallet=wallet, metagraph=metagraph, uids=top_miner_uid)        
         
         responses=  await text_query_api(
@@ -41,20 +61,24 @@ def main():
     @app.get("/")
     def healthcheck():
         return datetime.utcnow()
-
-    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", str(2510))))
+    
+    uvicorn.run(app, host="0.0.0.0", port=int(config.port))
 
 
 async def test_query(wallet: "bt.wallet" = None):
 
-    wallet = bt.wallet()
+    config = get_config()
+    
+    wallet = bt.wallet(config=config)
+    subtensor = bt.subtensor(config=config)
+    metagraph = subtensor.metagraph(config.netuid)
 
-    # Fetch the axons of the available API nodes, or specify UIDs directly
-    netuid = os.getenv("NETUID", str(15))
-    metagraph = bt.subtensor("local").metagraph(netuid=netuid)
-    # Get the best performance miner UIDs
-    best_miner_uid = get_top_miner_uid(metagraph)
-    axons = await get_query_api_axons(wallet=wallet, metagraph=metagraph, uids=best_miner_uid)
+    bt.logging.info(f"Wallet: {wallet}")
+    bt.logging.info(f"Subtensor: {subtensor}")
+    bt.logging.info(f"Metagraph: {metagraph}")
+    # Get the top miner UIDs
+    top_miner_uid = get_top_miner_uid(metagraph)
+    axons = await get_query_api_axons(wallet=wallet, metagraph=metagraph, uids=top_miner_uid)
 
     # Change user input
     network = "Bitcoin"
