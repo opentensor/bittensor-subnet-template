@@ -26,6 +26,10 @@ QUERY_TYPE_AGGREGATION = "aggregation"
 # Default settings for miners
 MAX_MINER_INSTANCE = 9
 
+# LLM Type
+LLM_TYPE_OPENAI = "openai"
+LLM_TYPE_CUSTOM = "custom"
+
 def get_network_by_id(id):
     return {
         NETWORK_BITCOIN_ID: NETWORK_BITCOIN,
@@ -114,5 +118,14 @@ class Challenge(BaseSynapse):
 
     output: Optional[str] = None
     
+    def deserialize(self) -> str:
+        return self.output
+
+class LlmQuery(BaseSynapse):
+    network: str = None    
+    # input_text: Plain text written in natural language
+    input_text: str = None    
+    # output
+    output: Optional[QueryOutput] = None
     def deserialize(self) -> str:
         return self.output
