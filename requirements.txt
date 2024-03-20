@@ -16,3 +16,5 @@ PyYAML
 asyncio
 fastapi
 uvicorn
+langchain
+langchain-openai

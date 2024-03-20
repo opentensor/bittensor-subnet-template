@@ -62,12 +62,11 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(result, expected_result)
         
     def test_generate_challenge_to_check(self):
-        graph_creator = GraphCreator()
         node = NodeFactory.create_node(NETWORK_BITCOIN)
         challenge, txn_id_to_check = generate_challenge_to_check(node, 500000, 600000)
 
         txn_data = node.get_txn_data_by_id(txn_id_to_check)
-        tx = graph_creator.create_in_memory_txn(txn_data)
+        tx = node.create_in_memory_txn(txn_data)
         in_amount_by_address, out_amount_by_address, input_addresses, output_addresses, in_total_amount, out_total_amount = process_in_memory_txn_for_indexing(tx, node)
         self.assertEqual(challenge.in_total_amount, in_total_amount)
         self.assertEqual(challenge.out_total_amount, out_total_amount)
