@@ -17,7 +17,7 @@ from insights import protocol
 from template.base.miner import BaseMinerNeuron
 
 from neurons.miners import blacklist
-from insights.protocol import MODEL_TYPE_FUNDS_FLOW, NETWORK_BITCOIN, NETWORK_ETHEREUM
+from insights.protocol import MODEL_TYPE_FUNDS_FLOW, NETWORK_BITCOIN, NETWORK_ETHEREUM, LLM_TYPE_CUSTOM, LLM_TYPE_OPENAI
 from neurons.storage import store_miner_metadata
 from neurons.remote_config import MinerConfig
 from neurons.nodes.factory import NodeFactory
@@ -48,6 +48,12 @@ class Miner(BaseMinerNeuron):
             type=str,
             default=MODEL_TYPE_FUNDS_FLOW,
             help="Set miner's supported model type.",
+        )
+        parser.add_argument(
+            "--llm_type",
+            type=str,
+            default=LLM_TYPE_OPENAI,
+            help="Set miner's supported LLM type.",
         )
 
         parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
