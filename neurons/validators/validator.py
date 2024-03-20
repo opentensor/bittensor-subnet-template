@@ -140,8 +140,16 @@ class Validator(BaseValidatorNeuron):
 
         return True
     
-    def get_reward(self, response: Discovery):
+    def get_reward(self, response: Discovery, uid: int):
         try:
+            status_code = response.axon.status_code
+            if status_code == 503:
+                bt.logging.debug(f'Discovery Response error: hotkey={response.axon.hotkey}, skipping reward')
+                return None
+            if status_code != 200:
+                score = self.metagraph.S[uid]/2
+                bt.logging.debug(f'Discovery Response error: hotkey={response.axon.hotkey}, setting score to {score}')
+                return score
             if not is_discovery_response_valid(response):
                 bt.logging.debug(f'Discovery Response invalid {response}')
                 return 0
@@ -180,47 +188,39 @@ class Validator(BaseValidatorNeuron):
             return None
 
     async def forward(self):
-        available_uids = get_random_uids(self, self.config.neuron.sample_size)
-
-        filtered_axons = [self.metagraph.axons[uid] for uid in available_uids]
+        uids = get_random_uids(self, self.config.neuron.sample_size)
+        axons = [self.metagraph.axons[uid] for uid in uids]
         
         responses = self.dendrite.query(
-            filtered_axons,
+            axons,
             Discovery(),
             deserialize=True,
             timeout = self.validator_config.discovery_timeout,
         )
 
-        valid_uids = []
-        valid_responses = []
-        for uid, response in zip(available_uids, responses):
-            if response and response.output:
-                valid_uids.append(uid)
-                valid_responses.append(response)
-
+        for response in responses:
             status_code = response.axon.status_code
             status_message = response.axon.status_message
             if response.is_failure:
-                bt.logging.info(f"Skipping response: Failure, miner {response.axon.hotkey} returned {status_code=}: {status_message=}")
+                bt.logging.info(f"Discovery response: Failure, miner {response.axon.hotkey} returned {status_code=}: {status_message=}")
             elif response.is_blacklist:
-                bt.logging.info(f"Skipping response: Blacklist, miner {response.axon.hotkey} returned {status_code=}: {status_message=}")
+                bt.logging.info(f"Discovery response: Blacklist, miner {response.axon.hotkey} returned {status_code=}: {status_message=}")
             elif response.is_timeout:
-                bt.logging.info(f"Skipping response: Timeout, miner {response.axon.hotkey}")
+                bt.logging.info(f"Discovery response: Timeout, miner {response.axon.hotkey}")
 
-        if valid_responses:
-            rewards = [
-                self.get_reward(response) for response in valid_responses
-            ]
-            # Remove None reward as they represent timeout cross validation
-            filtered_data = [(reward, uid) for reward, uid in zip(rewards, valid_uids) if reward is not None]
+        rewards = [
+            self.get_reward(response, uid) for response, uid in zip(responses, uids)
+        ]
+        # Remove None reward as they represent timeout cross validation
+        filtered_data = [(reward, uid) for reward, uid in zip(rewards, uids) if reward is not None]
 
-            if filtered_data:
-                rewards, valid_uids = zip(*filtered_data)
+        if filtered_data:
+            rewards, uids = zip(*filtered_data)
 
-                rewards = torch.FloatTensor(rewards)
-                self.update_scores(rewards, valid_uids)
-            else: 
-                bt.logging.info('Skipping update_scores() as no responses were valid')
+            rewards = torch.FloatTensor(rewards)
+            self.update_scores(rewards, uids)
+        else: 
+            bt.logging.info('Skipping update_scores() as no responses were valid')
 
     def sync_validator(self):
         self.metadata = Metadata.build(self.metagraph, self.config)
