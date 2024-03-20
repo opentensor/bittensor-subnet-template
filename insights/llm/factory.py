@@ -4,7 +4,7 @@ from insights.llm import BaseLLM, CustomLLM, OpenAILLM
 
 class LLMFactory:
     @classmethod
-    def create_llm(cls, llm_type: str):
+    def create_llm(cls, llm_type: str) -> BaseLLM:
         llm_class = {
             LLM_TYPE_CUSTOM: CustomLLM,
             LLM_TYPE_OPENAI: OpenAILLM

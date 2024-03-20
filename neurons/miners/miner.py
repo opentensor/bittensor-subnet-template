@@ -22,7 +22,7 @@ from neurons.storage import store_miner_metadata
 from neurons.remote_config import MinerConfig
 from neurons.nodes.factory import NodeFactory
 from neurons.miners.query import get_graph_search, get_graph_indexer
-
+from insights.llm import LLMFactory
 
 class Miner(BaseMinerNeuron):
     """
@@ -123,6 +123,7 @@ class Miner(BaseMinerNeuron):
 
         bt.logging.info(f"Axon created: {self.axon}")
 
+        self.llm = LLMFactory.create_llm(config.llm_type)
         self.graph_search = get_graph_search(config)
 
         self.miner_config = MinerConfig().load_and_get_config_values()        
@@ -193,16 +194,21 @@ class Miner(BaseMinerNeuron):
         return synapse
 
     async def llm_query(self, synapse: protocol.LlmQuery ) -> protocol.LlmQuery:
+        bt.logging.info(f"llm query recieved: {synapse}")
+        synapse.output = {}
+
         try:
-            bt.logging.info(f"llm query recieved: {synapse}")
-
             # TODO: handle llm query
-
-            bt.logging.info(f"Serving miner llm query output: {synapse.output}")
+            query = self.llm.build_query_from_text(synapse.input_text)
+            bt.logging.info(f"extracted query: {query}")
+            
+            synapse.output["result"] = self.graph_search.execute_query(query=query)
 
         except Exception as e:
             bt.logging.error(traceback.format_exc())
-            synapse.output = None
+            synapse.output["error"] = e
+            
+        bt.logging.info(f"Serving miner llm query output: {synapse.output}")
         return synapse
 
     async def block_check_blacklist(self, synapse: protocol.BlockCheck) -> typing.Tuple[bool, str]:
