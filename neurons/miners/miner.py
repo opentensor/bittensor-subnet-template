@@ -109,6 +109,10 @@ class Miner(BaseMinerNeuron):
             forward_fn=self.challenge,
             blacklist_fn=self.challenge_blacklist,
             priority_fn=self.challenge_priority,
+        ).attach(
+            forward_fn=self.llm_query,
+            blacklist_fn=self.llm_query_blacklist,
+            priority_fn=self.llm_query_priority,
         )
 
         bt.logging.info(f"Axon created: {self.axon}")
@@ -182,6 +186,19 @@ class Miner(BaseMinerNeuron):
             synapse.output = None
         return synapse
 
+    async def llm_query(self, synapse: protocol.LlmQuery ) -> protocol.LlmQuery:
+        try:
+            bt.logging.info(f"llm query recieved: {synapse}")
+
+            # TODO: handle llm query
+
+            bt.logging.info(f"Serving miner llm query output: {synapse.output}")
+
+        except Exception as e:
+            bt.logging.error(traceback.format_exc())
+            synapse.output = None
+        return synapse
+
     async def block_check_blacklist(self, synapse: protocol.BlockCheck) -> typing.Tuple[bool, str]:
         return blacklist.base_blacklist(self, synapse=synapse)
 
@@ -192,6 +209,9 @@ class Miner(BaseMinerNeuron):
         return blacklist.query_blacklist(self, synapse=synapse)
 
     async def challenge_blacklist(self, synapse: protocol.Challenge) -> typing.Tuple[bool, str]:
+        return blacklist.base_blacklist(self, synapse=synapse)
+
+    async def llm_query_blacklist(self, synapse: protocol.LlmQuery) -> typing.Tuple[bool, str]:
         return blacklist.base_blacklist(self, synapse=synapse)
 
 
@@ -217,6 +237,9 @@ class Miner(BaseMinerNeuron):
         return self.base_priority(synapse=synapse)
 
     async def challenge_priority(self, synapse: protocol.Challenge) -> float:
+        return self.base_priority(synapse=synapse)
+
+    async def llm_query_priority(self, synapse: protocol.LlmQuery) -> float:
         return self.base_priority(synapse=synapse)
 
     def resync_metagraph(self):
