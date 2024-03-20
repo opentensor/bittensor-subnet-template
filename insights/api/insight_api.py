@@ -19,10 +19,12 @@ def get_config():
     
     parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
     parser.add_argument("--port", type=int, default=8001, help="API endpoint port.")
+    parser.add_argument("--timeout", type=int, default=40, help="Timeout.")
     
     bt.subtensor.add_args(parser)
     bt.logging.add_args(parser)
     bt.wallet.add_args(parser)
+    
 
     config = bt.config(parser)
     return config
@@ -37,7 +39,8 @@ def main():
     bt.logging.info(f"Wallet: {wallet}")
     bt.logging.info(f"Subtensor: {subtensor}")
     bt.logging.info(f"Metagraph: {metagraph}")
-    bt.logging.info(f"Port: {config.port}")    
+    bt.logging.info(f"Port: {config.port}")
+    bt.logging.info(f"Timeout: {config.timeout}")
     
     text_query_api = TextQueryAPI(wallet=wallet)
     
@@ -53,7 +56,7 @@ def main():
             axons=top_miner_axons,
             network=network,
             input_text=text,
-            timeout=40
+            timeout=config.timeout
             )
         
         return responses
