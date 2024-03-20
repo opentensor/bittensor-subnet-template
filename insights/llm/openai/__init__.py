@@ -1,6 +1,10 @@
 import os
+import json
+
+import bittensor as bt
 
 from insights.llm.base_llm import BaseLLM
+from insights.llm.prompts import query_schema
 from insights.protocol import Query, QueryOutput
 
 from langchain_openai import ChatOpenAI
@@ -21,14 +25,19 @@ class OpenAILLM(BaseLLM):
     def build_query_from_text(self, query_text: str) -> Query:
         messages = [
             SystemMessage(
-                content="You are a senior blockchain engineer."
+                content=query_schema
             ),
             HumanMessage(
-                content="What is a smart contract in one sentence?"
+                content=query_text
             ),
         ]
-        ai_message = self.chat.invoke(messages)
-        return ai_message.content
+        try:
+            ai_message = self.chat.invoke(messages)
+            query = json.loads(ai_message.content)
+            return query
+        except Exception as e:
+            bt.logging.error(f"LlmQuery build error: {e}")
+            return None
         
     def generate_text_response_from_query_output(self, query_output: QueryOutput) -> str:
         pass
