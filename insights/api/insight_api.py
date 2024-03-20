@@ -28,8 +28,8 @@ def get_config():
     return config
 
 def main():
-    config = get_config()
     app = FastAPI()
+    config = get_config()    
     wallet = bt.wallet(config=config)
     subtensor = bt.subtensor(config=config)
     metagraph = subtensor.metagraph(config.netuid)
