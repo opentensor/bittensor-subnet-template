@@ -31,13 +31,13 @@ def check_uid_availability(
 def get_top_miner_uid(
     metagraph: "bt.metagraph.Metagraph", vpermit_tao_limit: int = 4096, exclude: List[int] = None
 ) -> torch.LongTensor:
-    """Returns the best available miner UID from the metagraph.
+    """Returns the available top miner UID from the metagraph.
     Args:
         metagraph (bt.metagraph.Metagraph): Metagraph object
         vpermit_tao_limit (int): Validator permit tao limit
         exclude (List[int]): List of uids to exclude from the random sampling.
     Returns:
-        best_miner_uid (torch.LongTensor): The best miner UID.    
+        top_miner_uid (torch.LongTensor): The top miner UID.    
     """
     candidate_uids = []
     for uid in range(metagraph.n.item()):
