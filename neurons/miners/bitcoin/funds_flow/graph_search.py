@@ -56,7 +56,9 @@ class GraphSearch:
     def execute_cypher_query(self, cypher_query: str):
         with self.driver.session() as session:
             result = session.run(cypher_query)
-            return result
+            if not result:
+                return None
+            return result.data()
 
 
     def get_run_id(self):
