@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import os
 import random
+import time
 import numpy as np
 
 from datetime import datetime
@@ -51,6 +52,7 @@ def main():
     @app.get("/api/text_query")
     async def get_response(network:str, text: str):
         global excluded_uids
+        
         # select top miner
         metagraph = subtensor.metagraph(config.netuid) # sync every request
         top_miner_uids = get_top_miner_uids(metagraph, config.top_rate, excluded_uids)
@@ -69,10 +71,15 @@ def main():
         blacklist_uids = np.where(np.isin(np.array(metagraph.axons), blacklist_axons))[0]
         excluded_uids = np.union1d(np.array(excluded_uids), blacklist_uids)
         excluded_uids = excluded_uids.astype(int).tolist()
+        
+        # If the number of excluded_uids is bigger than top x percentage of the whole axons, format it.
+        if len(excluded_uids) > int(metagraph.n * config.top_rate):
+            bt.logging.info(f"Excluded UID list is too long")
+            excluded_uids = []
         bt.logging.info(f"excluded_uids are {excluded_uids}")
         bt.logging.info(f"Responses are {responses}")
         if not responses:
-            return "This API is banned."
+            return "This hotkey is banned."
         response = random.choice(responses)
         return response
             
