@@ -4,8 +4,8 @@ import json
 import bittensor as bt
 
 from insights.llm.base_llm import BaseLLM
-from insights.llm.prompts import query_schema
-from insights.protocol import Query, QueryOutput, NETWORK_BITCOIN
+from insights.llm.prompts import query_schema, interpret_prompt
+from insights.protocol import Query, NETWORK_BITCOIN
 
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -46,10 +46,29 @@ class OpenAILLM(BaseLLM):
             bt.logging.error(f"LlmQuery build error: {e}")
             return None
         
-    def interpret_result(self, query_text: str, result: dict) -> str:
-        bt.logging.info(f"query_text: {query_text}")
-        bt.logging.info(f"result: {result}")
-        return "Interpreted result"
+    def interpret_result(self, query_text: str, result: list) -> str:
+        user_prompt = f"""- User's question
+        {query_text}
+        
+        - Result value
+        {json.dumps(result)}
+        """
+        
+        messages = [
+            SystemMessage(
+                content=interpret_prompt
+            ),
+            HumanMessage(
+                content=user_prompt
+            ),
+        ]
+        
+        try:
+            ai_message = self.chat.invoke(messages)
+            return ai_message.content
+        except Exception as e:
+            bt.logging.error(f"LlmQuery interpret result error: {e}")
+            return None
         
     def generate_llm_query_from_query(self, query: Query) -> str:
         pass
