@@ -119,7 +119,7 @@ async def test_query(wallet: "bt.wallet" = None):
         axons=axons,
         # Arugmnts for the proper synapse
         network=network,
-        input_text=user_input,
+        text=user_input,
         timeout=config.timeout
     )
     print(fetch_response)
