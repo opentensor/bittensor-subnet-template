@@ -24,14 +24,14 @@ class QueryBuilder:
 
                 # from address node
                 if "from_address" in query.where:
-                    cypher_query += f'(a1:Address{{address: "{query.where["from_address"]}"}})->[s1:SENT]->'
+                    cypher_query += f'(a1:Address{{address: "{query.where["from_address"]}"}})-[s1:SENT]->'
 
                 # main transaction node
                 cypher_query += '(t:Transaction{})'.format(f'{{tx_id: "{query.where["tx_id"]}"}}' if 'tx_id' in query.where else '')
 
                 # to address node
                 if "to_address" in query.where:
-                    cypher_query += f'->[s2:SENT]->(a2:Address{{address: "{query.where["to_address"]}"}})'
+                    cypher_query += f'-[s2:SENT]->(a2:Address{{address: "{query.where["to_address"]}"}})'
 
                 # where clause
                 conditionals = []
