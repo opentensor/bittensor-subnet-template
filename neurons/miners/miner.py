@@ -227,8 +227,8 @@ class Miner(BaseMinerNeuron):
         return self.base_priority(synapse=synapse)
     
     def fetch_inmemory_hotkeys(self):                
-        miner_subtensor = self.subtensor
-        weights = miner_subtensor.weights(0)            
+        subtensor = self.subtensor
+        weights = subtensor.weights(0)            
         
         uid_to_weights = {}
         netuids = set()
@@ -251,7 +251,7 @@ class Miner(BaseMinerNeuron):
                 uid_to_weights[uid][netuid] = normalized_weight                
         
         inmemory_uids = [uid for uid in uid_to_weights if self.config.netuid in uid_to_weights[uid]]
-        root_neurons = miner_subtensor.neurons_lite( netuid=0)        
+        root_neurons = subtensor.neurons_lite(netuid=0)        
         uid_to_hotkey = {neuron_data.uid: neuron_data.hotkey for neuron_data in root_neurons}
         inmemory_hotkeys = [uid_to_hotkey[uid] for uid in inmemory_uids]
         return inmemory_hotkeys
