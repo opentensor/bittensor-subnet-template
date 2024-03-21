@@ -88,6 +88,7 @@ class BlockCheck(BaseSynapse):
 
 class QueryOutput(BaseModel):
     result: Optional[Dict] = None
+    interpreted_result: Optional[str] = None
     error: Optional[str] = None
 
 class Query(BaseSynapse):
