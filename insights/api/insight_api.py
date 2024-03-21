@@ -1,6 +1,8 @@
 import argparse
 import asyncio
 import os
+import random
+import numpy as np
 
 from datetime import datetime
 
@@ -29,7 +31,8 @@ def get_config():
     config = bt.config(parser)
     return config
 
-def main():
+excluded_uids = []
+def main():        
     app = FastAPI()
     config = get_config()
     wallet = bt.wallet(config=config)
@@ -47,20 +50,30 @@ def main():
     
     @app.get("/api/text_query")
     async def get_response(network:str, text: str):
+        global excluded_uids
         # select top miner
-        metagraph = subtensor.metagraph(netuid=config.netuid)
-        top_miner_uids = get_top_miner_uids(metagraph, config.top_rate)
+        metagraph = subtensor.metagraph(config.netuid) # sync every request
+        top_miner_uids = get_top_miner_uids(metagraph, config.top_rate, excluded_uids)
         bt.logging.info(f"Top miner UIDs are {top_miner_uids}")
-        top_miner_axons = await get_query_api_axons(wallet=wallet, metagraph=metagraph, uids=top_miner_uids)        
+        top_miner_axons = await get_query_api_axons(wallet=wallet, metagraph=metagraph, uids=top_miner_uids)
+        bt.logging.info(f"top miner axons: {top_miner_axons}")
         
         # get miner response
-        response=  await text_query_api(
+        responses, blacklist_axon_ids =  await text_query_api(
             axons=top_miner_axons,
             network=network,
-            input_text=text,
+            text=text,
             timeout=config.timeout
             )
-        
+        blacklist_axons = np.array(top_miner_axons)[blacklist_axon_ids]
+        blacklist_uids = np.where(np.isin(np.array(metagraph.axons), blacklist_axons))[0]
+        excluded_uids = np.union1d(np.array(excluded_uids), blacklist_uids)
+        excluded_uids = excluded_uids.astype(int).tolist()
+        bt.logging.info(f"excluded_uids are {excluded_uids}")
+        bt.logging.info(f"Responses are {responses}")
+        if not responses:
+            return "This API is banned."
+        response = random.choice(responses)
         return response
             
     @app.get("/")
