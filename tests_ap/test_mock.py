@@ -11,8 +11,9 @@ class TemplateCgTestCase(unittest.TestCase):
 
     def test_run_single_step(self):
         s = Skeleton()
+        response = s.get_skeleton()
         if self.verbose:
-            print("Skeleton name: ", s.get_skeleton())
-        assert 1 == 1
+            print("Skeleton response: ", response)
+        assert response == "Skeleton"
 
 
