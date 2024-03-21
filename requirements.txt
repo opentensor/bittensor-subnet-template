@@ -14,5 +14,7 @@ urllib3
 web3
 PyYAML
 asyncio
+fastapi
+uvicorn
 langchain
 langchain-openai
