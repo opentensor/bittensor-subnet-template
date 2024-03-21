@@ -17,7 +17,6 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-import random
 import bittensor as bt
 from typing import List, Optional, Union, Any, Dict
 from insights.protocol import LlmQuery
@@ -39,11 +38,13 @@ class TextQueryAPI(SubnetsAPI):
 
     def process_responses(
         self, responses: List[Union["bt.Synapse", Any]]
-    ) -> List[int]:
+    ) -> List[int]:        
         outputs = []
-        for response in responses:
+        blacklist_axon_list = []
+        for id, response in enumerate(responses):
             print(response)
             if response.dendrite.status_code != 200:
+                blacklist_axon_list.append(id)
                 continue
             outputs.append(response.output)
-        return random.choice(outputs)
+        return outputs, blacklist_axon_list
