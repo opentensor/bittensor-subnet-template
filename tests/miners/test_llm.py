@@ -27,7 +27,11 @@ class TestLLM(unittest.TestCase):
             "limit": 15,
             "skip": 0
         }
-        self.assertDictEqual(query, expected_query)
+        self.assertEqual(query.type, expected_query["type"])
+        self.assertEqual(query.target, expected_query["target"])
+        self.assertDictEqual(query.where, expected_query["where"])
+        self.assertEqual(query.limit, expected_query["limit"])
+        self.assertEqual(query.skip, expected_query["skip"])
 
         # test case 2
         query_text = "I have sent more than 1.5 BTC to somewhere but I couldn't remember. Show me relevant transactions. My address is bc1q4s8yps9my6hun2tpd5ke5xmvgdnxcm2qspnp9r"
@@ -44,7 +48,11 @@ class TestLLM(unittest.TestCase):
             "limit": None,
             "skip": 0
         }
-        self.assertEqual(query, expected_query)
+        self.assertEqual(query.type, expected_query["type"])
+        self.assertEqual(query.target, expected_query["target"])
+        self.assertDictEqual(query.where, expected_query["where"])
+        self.assertEqual(query.limit, expected_query["limit"])
+        self.assertEqual(query.skip, expected_query["skip"])
         
     def test_llm_query_handler(self):
         query_text = "Return 15 transactions outgoing from my address bc1q4s8yps9my6hun2tpd5ke5xmvgdnxcm2qspnp9r"
