@@ -24,6 +24,43 @@
 - [License](#license)
 
 ---
+
+# Conversation Genome Project
+
+The Conversation Genome Project (CGP) is an open-source initiative aimed at enabling personalized conversational AI by providing a comprehensive dataset of indexed and tagged conversations.
+
+## Key Features
+
+- Indexing and tagging of billions of conversations across various sources (YouTube, podcasts, etc.)
+- Leveraging fractal data mining and conversation windows for efficient processing
+- Synthetic participant profiles generated from conversation metadata
+- Boring Index algorithm to assess conversation quality (relevance, engagement, novelty, coherence, and fluency)
+- Open-source dataset for training and fine-tuning conversational AI models
+- Incentivized mining and validation system for data contribution and integrity
+
+## Benefits
+
+- Addresses the lack of personalization in current conversational AI models
+- Enables natural and engaging conversations tailored to individual contexts and preferences
+- Provides a comprehensive and annotated dataset for conversational AI development
+- Encourages open-source community contributions and advancements
+- Maintains data integrity through validation and scoring mechanisms
+
+## System Design
+
+- Data stores: Primary source of truth, conversation windows, participant profiles, and vector database
+- Validator roles: Pull data, ground conversations, create windows, and score submissions
+- Miner roles: Process conversation windows, provide metadata and tags
+- Data flow: Ground truth establishment, window creation, miner submissions, scoring, and validation
+
+## Rewards and Incentives
+
+- Miners rewarded for accurate and valuable metadata contributions
+- Bell curve distribution of rewards to encourage high-quality submissions
+- Cross-referencing and vector space analysis to ensure data integrity
+- Boring Index algorithm for assessing conversation quality (not yet used for miner rewards)
+
+---
 ## Quickstarter template
 
 This template contains all the required installation instructions, scripts, and files and functions for:
