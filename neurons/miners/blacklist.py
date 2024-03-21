@@ -140,6 +140,4 @@ def base_blacklist(self, synapse: bt.Synapse) -> typing.Tuple[bool, str]:
         return True, f"Blacklisted hotkey: {hotkey}"
     if hotkey not in self.miner_config.whitelisted_hotkeys and self.config.mode == 'prod':
         return True, f"Not Whitelisted hotkey: {hotkey}"
-    if len(self.miner_config.inmemory_hotkeys) >= 1 and hotkey not in self.miner_config.inmemory_hotkeys and random.random() < self.miner_config.vali_penalty_rate:
-        return True, f"Not Inmemory hotkey"
     return False, "Hotkey recognized"
