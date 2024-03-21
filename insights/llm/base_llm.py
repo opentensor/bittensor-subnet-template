@@ -18,7 +18,7 @@ class BaseLLM(ABC):
         """
 
     @abstractmethod
-    def interpret_result(self, query_text: str, result: dict) -> str:
+    def interpret_result(self, query_text: str, result: list) -> str:
         """
         Interpret result into natural language based on user's query and structured result dict
         """
