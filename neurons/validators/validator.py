@@ -140,14 +140,22 @@ class Validator(BaseValidatorNeuron):
 
         return True
     
+    def is_response_status_code_valid(self, response):
+            status_code = response.axon.status_code
+            status_message = response.axon.status_message
+            if response.is_failure:
+                bt.logging.info(f"Discovery response: Failure, miner {response.axon.hotkey} returned {status_code=}: {status_message=}")
+            elif response.is_blacklist:
+                bt.logging.info(f"Discovery response: Blacklist, miner {response.axon.hotkey} returned {status_code=}: {status_message=}")
+            elif response.is_timeout:
+                bt.logging.info(f"Discovery response: Timeout, miner {response.axon.hotkey}")
+            return status_code == 200
+
     def get_reward(self, response: Discovery, uid: int):
         try:
-            status_code = response.axon.status_code
-            if status_code == 503:
-                bt.logging.debug(f'Discovery Response error: hotkey={response.axon.hotkey}, skipping reward')
-                return None
-            if status_code != 200:
-                score = self.metagraph.S[uid]/2
+
+            if not self.is_response_status_code_valid(response):
+                score = self.metagraph.T[uid]/2
                 bt.logging.debug(f'Discovery Response error: hotkey={response.axon.hotkey}, setting score to {score}')
                 return score
             if not is_discovery_response_valid(response):
@@ -184,7 +192,6 @@ class Validator(BaseValidatorNeuron):
             return score
         except Exception as e:
             bt.logging.error(f"Error occurred during cross-validation: {traceback.format_exc()}")
-            bt.logging.debug(f"Cross-Validation: {hotkey=} Timeout skipping response")
             return None
 
     async def forward(self):
@@ -197,16 +204,6 @@ class Validator(BaseValidatorNeuron):
             deserialize=True,
             timeout = self.validator_config.discovery_timeout,
         )
-
-        for response in responses:
-            status_code = response.axon.status_code
-            status_message = response.axon.status_message
-            if response.is_failure:
-                bt.logging.info(f"Discovery response: Failure, miner {response.axon.hotkey} returned {status_code=}: {status_message=}")
-            elif response.is_blacklist:
-                bt.logging.info(f"Discovery response: Blacklist, miner {response.axon.hotkey} returned {status_code=}: {status_message=}")
-            elif response.is_timeout:
-                bt.logging.info(f"Discovery response: Timeout, miner {response.axon.hotkey}")
 
         rewards = [
             self.get_reward(response, uid) for response, uid in zip(responses, uids)
