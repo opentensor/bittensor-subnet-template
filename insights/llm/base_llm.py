@@ -18,10 +18,9 @@ class BaseLLM(ABC):
         """
 
     @abstractmethod
-    def generate_text_response_from_query_output(self, query_output: QueryOutput) -> str:
+    def interpret_result(self, query_text: str, result: dict) -> str:
         """
-        Generate natural language response from query_output
-        Used by miner
+        Interpret result into natural language based on user's query and structured result dict
         """
     
     @abstractmethod

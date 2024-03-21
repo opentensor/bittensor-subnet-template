@@ -202,7 +202,11 @@ class Miner(BaseMinerNeuron):
             query = self.llm.build_query_from_text(synapse.input_text)
             bt.logging.info(f"extracted query: {query}")
             
-            synapse.output["result"] = self.graph_search.execute_query(query=query)
+            result = self.graph_search.execute_query(query=query)
+            interpreted_result = self.llm.interpret_result(query_text=synapse.input_text, result=result)
+            
+            synapse.output["result"] = result
+            synapse.output["interpreted_result"] = interpreted_result
 
         except Exception as e:
             bt.logging.error(traceback.format_exc())
