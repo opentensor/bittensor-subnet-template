@@ -1,4 +1,4 @@
-bittensor==6.8.2
+bittensor==6.9.3
 torch
 python-bitcoinrpc
 bitcoin
@@ -14,3 +14,7 @@ urllib3
 web3
 PyYAML
 asyncio
+fastapi
+uvicorn
+langchain
+langchain-openai

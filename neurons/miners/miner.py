@@ -18,12 +18,12 @@ from insights import protocol
 from template.base.miner import BaseMinerNeuron
 
 from neurons.miners import blacklist
-from insights.protocol import MODEL_TYPE_FUNDS_FLOW, NETWORK_BITCOIN, NETWORK_ETHEREUM
+from insights.protocol import MODEL_TYPE_FUNDS_FLOW, NETWORK_BITCOIN, NETWORK_ETHEREUM, LLM_TYPE_CUSTOM, LLM_TYPE_OPENAI
 from neurons.storage import store_miner_metadata
 from neurons.remote_config import MinerConfig
 from neurons.nodes.factory import NodeFactory
 from neurons.miners.query import get_graph_search, get_graph_indexer
-
+from insights.llm import LLMFactory
 
 class Miner(BaseMinerNeuron):
     """
@@ -49,6 +49,12 @@ class Miner(BaseMinerNeuron):
             type=str,
             default=MODEL_TYPE_FUNDS_FLOW,
             help="Set miner's supported model type.",
+        )
+        parser.add_argument(
+            "--llm_type",
+            type=str,
+            default=LLM_TYPE_OPENAI,
+            help="Set miner's supported LLM type.",
         )
 
         parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
@@ -111,14 +117,25 @@ class Miner(BaseMinerNeuron):
             forward_fn=self.challenge,
             blacklist_fn=self.challenge_blacklist,
             priority_fn=self.challenge_priority,
+        ).attach(
+            forward_fn=self.llm_query,
+            blacklist_fn=self.llm_query_blacklist,
+            priority_fn=self.llm_query_priority,
         )
 
         bt.logging.info(f"Axon created: {self.axon}")
+
 
         self.graph_search = get_graph_search(config)                
         
         self.miner_config = MinerConfig().load_and_get_config_values()
         self.miner_config.inmemory_hotkeys = self.fetch_inmemory_hotkeys()
+
+        self.llm = LLMFactory.create_llm(config.llm_type)
+        self.graph_search = get_graph_search(config)
+
+        self.miner_config = MinerConfig().load_and_get_config_values()        
+
     
     async def block_check(self, synapse: protocol.BlockCheck) -> protocol.BlockCheck:
         try:
@@ -135,10 +152,6 @@ class Miner(BaseMinerNeuron):
             
     async def discovery(self, synapse: protocol.Discovery ) -> protocol.Discovery:
         try:
-            # block_range = self.graph_search.get_block_range()
-            # start_block = block_range['start_block_height']
-            # last_block = block_range['latest_block_height']
-            
             start_block, last_block = self.graph_search.get_min_max_block_height_cache()
             
             run_id = self.graph_search.get_run_id()
@@ -189,6 +202,24 @@ class Miner(BaseMinerNeuron):
             synapse.output = None
         return synapse
 
+    async def llm_query(self, synapse: protocol.LlmQuery ) -> protocol.LlmQuery:
+        bt.logging.info(f"llm query recieved: {synapse}")
+        synapse.output = {}
+
+        try:
+            # TODO: handle llm query
+            query = self.llm.build_query_from_text(synapse.input_text)
+            bt.logging.info(f"extracted query: {query}")
+            
+            synapse.output["result"] = self.graph_search.execute_query(query=query)
+
+        except Exception as e:
+            bt.logging.error(traceback.format_exc())
+            synapse.output["error"] = e
+            
+        bt.logging.info(f"Serving miner llm query output: {synapse.output}")
+        return synapse
+
     async def block_check_blacklist(self, synapse: protocol.BlockCheck) -> typing.Tuple[bool, str]:
         return blacklist.base_blacklist(self, synapse=synapse)
 
@@ -199,6 +230,9 @@ class Miner(BaseMinerNeuron):
         return blacklist.query_blacklist(self, synapse=synapse)
 
     async def challenge_blacklist(self, synapse: protocol.Challenge) -> typing.Tuple[bool, str]:
+        return blacklist.base_blacklist(self, synapse=synapse)
+
+    async def llm_query_blacklist(self, synapse: protocol.LlmQuery) -> typing.Tuple[bool, str]:
         return blacklist.base_blacklist(self, synapse=synapse)
 
 
@@ -255,6 +289,9 @@ class Miner(BaseMinerNeuron):
         uid_to_hotkey = {neuron_data.uid: neuron_data.hotkey for neuron_data in root_neurons}
         inmemory_hotkeys = [uid_to_hotkey[uid] for uid in inmemory_uids]
         return inmemory_hotkeys
+
+    async def llm_query_priority(self, synapse: protocol.LlmQuery) -> float:
+        return self.base_priority(synapse=synapse)
 
     def resync_metagraph(self):
         self.miner_config = MinerConfig().load_and_get_config_values()       
@@ -315,7 +352,8 @@ class Miner(BaseMinerNeuron):
         ) > self.miner_config.store_metadata_frequency
     
     def send_metadata(self):
-        store_miner_metadata(self.config, self.graph_search, self.wallet)
+        start_block, last_block = self.graph_search.get_min_max_block_height_cache()
+        store_miner_metadata(self.config, self.graph_search, self.wallet, start_block, last_block)
 
 def wait_for_blocks_sync():
         is_synced=False

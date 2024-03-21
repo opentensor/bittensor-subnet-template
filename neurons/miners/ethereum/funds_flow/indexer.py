@@ -125,7 +125,7 @@ def index_blocks(_graph_creator, _graph_indexer, _graph_search, start_height):
     start_time = time.time()
 
     while not shutdown_flag:
-        current_block_height = ethereum_node.get_current_block_height() - 6
+        current_block_height = ethereum_node.get_current_block_height() - skip_blocks
         buf_time = time.time()
 
         if current_block_height - skip_blocks < 0:
@@ -207,12 +207,11 @@ def index_blocks_by_last_height(thread_index, _graph_creator, start, last):
     ethereum_node = EthereumNode()
     start_time = time.time()
 
-    skip_blocks = 6 # Set the number of block confirmations
     index = thread_index + 1
     log_display = False
 
     block_height = start
-    current_block_height = last - skip_blocks
+    current_block_height = last
 
     while block_height <= current_block_height and not shutdown_flag:
         try:
