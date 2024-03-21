@@ -55,3 +55,23 @@ def get_random_uids(
     k = max(1, min(len(candidate_uids), k))
     uids = torch.tensor(random.sample(candidate_uids, k))
     return uids
+
+def get_uids_batch(self, batch_size: int, exclude: List[int] = None):
+    candidate_uids = []
+    for uid in range(self.metagraph.n.item()):
+        uid_is_available = check_uid_availability(
+            self.metagraph, uid, self.config.neuron.vpermit_tao_limit
+        )
+        uid_is_not_excluded = exclude is None or uid not in exclude
+
+        if uid_is_available:
+            if uid_is_not_excluded:
+                candidate_uids.append(uid)
+
+    # Shuffle the list of available uids
+    random.shuffle(candidate_uids)
+    batch_size = max(1, min(len(candidate_uids), batch_size))
+
+    # Yield batches of uids
+    for i in range(0, len(candidate_uids), batch_size):
+        yield torch.tensor(candidate_uids[i:i+batch_size])

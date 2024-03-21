@@ -34,7 +34,7 @@ from neurons.validators.scoring import Scorer
 from neurons.validators.utils.metadata import Metadata
 from neurons.validators.utils.synapse import is_discovery_response_valid
 
-from neurons.validators.utils.uids import get_random_uids
+from neurons.validators.utils.uids import get_uids_batch
 
 from template.base.validator import BaseValidatorNeuron
 class Validator(BaseValidatorNeuron):
@@ -78,10 +78,10 @@ class Validator(BaseValidatorNeuron):
         networks = self.validator_config.get_networks()
         self.nodes = {network : NodeFactory.create_node(network) for network in networks}
         self.block_height_cache = {network: self.nodes[network].get_current_block_height() for network in networks}
-        
         super(Validator, self).__init__(config)
 
         self.sync_validator()
+        self.uid_batch_generator = get_uids_batch(self, self.config.neuron.sample_size)
 
         
     def cross_validate(self, axon, node, start_block_height, last_block_height):
@@ -195,7 +195,11 @@ class Validator(BaseValidatorNeuron):
             return None
 
     async def forward(self):
-        uids = get_random_uids(self, self.config.neuron.sample_size)
+        uids = next(self.uid_batch_generator, None)
+        if uids is None:
+            self.uid_batch_generator = get_uids_batch(self, self.config.neuron.sample_size)
+            uids = next(self.uid_batch_generator, None)
+
         axons = [self.metagraph.axons[uid] for uid in uids]
         
         responses = self.dendrite.query(
