@@ -6,6 +6,7 @@ import bittensor as bt
 from insights.llm.base_llm import BaseLLM
 from insights.llm.prompts import query_schema, interpret_prompt
 from insights.protocol import Query, NETWORK_BITCOIN
+from insights import protocol
 
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -44,7 +45,7 @@ class OpenAILLM(BaseLLM):
             )
         except Exception as e:
             bt.logging.error(f"LlmQuery build error: {e}")
-            return None
+            raise Exception(protocol.LLM_ERROR_QUERY_BUILD_FAILED)
         
     def interpret_result(self, query_text: str, result: list) -> str:
         user_prompt = f"""- User's question
@@ -68,7 +69,7 @@ class OpenAILLM(BaseLLM):
             return ai_message.content
         except Exception as e:
             bt.logging.error(f"LlmQuery interpret result error: {e}")
-            return None
+            raise Exception(protocol.LLM_ERROR_INTERPRETION_FAILED)
         
     def generate_llm_query_from_query(self, query: Query) -> str:
         pass
