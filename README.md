@@ -1,5 +1,3 @@
-<div align="center">
-
 # **Conversation Genome Project** <!-- omit in toc -->
 [![Discord Chat](https://img.shields.io/discord/308323056592486420.svg)](https://discord.gg/bittensor)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -56,7 +54,7 @@ The best way to begin to understand the Conversation Genome (CG) is to run the u
 
 Clone the repo and install the requirements:
 
-git clone xxx ap-cg-subnet
+git clone https://github.com/afterpartyai/bittensor-afterparty-conversation-genome-subnet.git ap-cg-subnet
 pip install -r requirements.txt
 cd ap-cg-subnet
 
