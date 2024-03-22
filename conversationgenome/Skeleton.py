@@ -1,4 +1,11 @@
-#print("Skeleton2")
+verbose = False
+
+bt = None
+try:
+    import bittensor as bt
+except:
+    if verbose:
+        print("bittensor not installed")
 
 class Skeleton:
     def __init__(self):
