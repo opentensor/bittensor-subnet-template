@@ -272,9 +272,8 @@ class BaseValidatorNeuron(BaseNeuron):
                     weights=uint_weights,
                     wait_for_finalization=False,
                     wait_for_inclusion=True,
-                    version_key=self.spec_version,
-                    ttl = 180
-                )
+                    version_key=self.spec_version
+            )
             if not result:
                 bt.logging.error("set_weights() failed")
         except Exception as e:
