@@ -39,6 +39,7 @@ flowchart TD
     E --- LLM(Local LLM API)
     A --> VECTOR(Vector Database)
     VECTOR --> PUBLIC(Hugging Face dataset)
+    VECTOR --> FIREBASE(Firebase database)
     click PUBLIC "https://huggingface.co/" _blank
 ```
 
@@ -204,6 +205,7 @@ You can launch your validator via pm2 using the following command.
 
 
 ```mermaid
+%%{init: {'theme':'neutral'}}%%
 mindmap
   root((Conversations))
     Output
