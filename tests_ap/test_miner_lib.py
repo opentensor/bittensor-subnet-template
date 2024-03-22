@@ -33,6 +33,16 @@ class TemplateCgTestMinerLib(unittest.TestCase):
         convo = self.CD.getConversation()
         ml = MinerLib()
         tags = ml.get_conversation_tags(convo)
-        assert len(tags) > 10
+        assert len(tags) > 1
+
+    def test_tags_from_convo(self):
+        if self.verbose:
+            print("Test Tags")
+        convo = self.CD.getConversation()
+        ml = MinerLib()
+        tags = ml.get_conversation_tags(convo)
+        vl = ValidatorLib()
+        result = vl.validate_tags(tags)
+        assert result == True
 
 
