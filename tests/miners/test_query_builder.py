@@ -24,7 +24,7 @@ class TestGraphSearch(unittest.TestCase):
             "to_address": "456",
         })
         cypher_query = QueryBuilder.build_query(query)
-        self.assertEqual(cypher_query, 'MATCH (a1:Address{address: "123"})->[s1:SENT]->(t:Transaction)->[s2:SENT]->(a2:Address{address: "456"})\nRETURN t\nLIMIT 20;')
+        self.assertEqual(cypher_query, 'MATCH (a1:Address{address: "123"})-[s1:SENT]->(t:Transaction)-[s2:SENT]->(a2:Address{address: "456"})\nRETURN t\nLIMIT 20;')
         
         # test case 4
         query = protocol.Query(type=protocol.QUERY_TYPE_SEARCH, target='Transaction', limit=20, where={
