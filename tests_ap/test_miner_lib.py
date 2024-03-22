@@ -1,8 +1,9 @@
+import unittest
 import pytest
-import conversationgenome as cg
+
 from conversationgenome.ConversationDatabase import ConversationDatabase
 from conversationgenome.MinerLib import MinerLib
-import unittest
+from conversationgenome.ValidatorLib import ValidatorLib
 
 class TemplateCgTestMinerLib(unittest.TestCase):
     verbose = True
