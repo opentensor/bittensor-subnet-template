@@ -2,7 +2,7 @@
 
 # **Conversation Genome Project** <!-- omit in toc -->
 [![Discord Chat](https://img.shields.io/discord/308323056592486420.svg)](https://discord.gg/bittensor)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ---
 - [Conversation Genome Project](#conversation-genome-project)
@@ -49,30 +49,146 @@ The Conversation Genome Project (CGP) is an open-source initiative aimed at enab
 - Cross-referencing and vector space analysis to ensure data integrity
 - Boring Index algorithm for assessing conversation quality (not yet used for miner rewards)
 
+
+# Quickstart Mock Tests
+
+The best way to begin to understand the Conversation Genome (CG) is to run the unit tests. These tests are meant to provide verbose output so you can see how the process works. They also execute against mock data sources and APIs so you don't need to have anything set up in terms of keys, etc. to see how this operatates.
+
+Clone the repo and install the requirements:
+
+git clone xxx ap-cg-subnet
+pip install -r requirements.txt
+cd ap-cg-subnet
+
+Once this is setup, let's run the Miner, so you can watch the process at work:
+
+```
+python -m unittest discover tests_ap testminer
+```
+
+You can follow the output to see the miner executes the following flow:
+
+* Receive a conversation from the validator
+* Process the conversation which will generate 3 main sets of data about the conversation:
+** Participant Profiles of each participant in the conversation
+** Semantic tags for different aspects of the conversation
+** Vector embeddings of the semantic tags
+* Return the processed data to the validator
+
+The data generated is explained in detail in the Overview section below. The output should look something like this:
+
+```
+OUTPUT
+```
+
+Let's run the validator tests which will make get a conversation, send the conversation to the miner, and validate the response.
+
+```
+python -m unittest discover tests_ap testvalidator
+```
+
+The output will show the following execution flow:
+
+* Establish a connection to the (mock) Conversation Server (CS)
+* Download a (mock) conversation to process
+* Send the conversation to a group of miners (3 in this test)
+* Receive the processed responses
+* Send each response to the CS and receive scopes for the tags and profile
+* Divide the reward based on those scores
+* Send for emissions
+
+The output should look something like this:
+
+```
+OUTPUT
+```
+
+# Quickstart Configuration and API Tests
+
+Now that you've seen the process execute, let's configure your instance and run the tests that verify everything is setup properly.
+
+First duplicate the dotenv file:
+
+```
+cp example.env .env
+```
+
+Use your editor to add your settings. You will need a ChatGPT key and a Bittensor hotkey. If you're on a Linux box, the nano editor is usually the easiest:
+
+```
+nano .env
+```
+
+Once this is configured, run the config tester that will do a baseline test to make sure all of the proper variables are set:
+
+```
+python -m unittest discover tests_ap testvalidator
+```
+
+
+If you have any reported errors in the .env and run again until all tests are finished. Now run the process tests. These will run outside the Bittensor network (so no emissions), but they will get a test conversation, process it using your OpenAI key, and report the results. That will make sure the process itself is running properly on your machine.
+
+```
+python -m unittest discover tests_ap processtest
+```
+
+If everything is working properly, you are ready to run against the testnet. Simply run this file:
+
+```
+bash run_testnet.sh
+```
+
+When you're ready to register and run on mainnet, use this file:
+
+```
+bash run_mainnet.sh
+```
+
+
+
+
+
+set of embeddings from the conversation
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ---
 ## Quickstarter template
 
 This template contains all the required installation instructions, scripts, and files and functions for:
 - Building Bittensor subnets.
-- Creating custom incentive mechanisms and running these mechanisms on the subnets. 
+- Creating custom incentive mechanisms and running these mechanisms on the subnets.
 
 In order to simplify the building of subnets, this template abstracts away the complexity of the underlying blockchain and other boilerplate code. While the default behavior of the template is sufficient for a simple subnet, you should customize the template in order to meet your specific requirements.
 ---
 
 ## Introduction
 
-**IMPORTANT**: If you are new to Bittensor subnets, read this section before proceeding to [Installation](#installation) section. 
+**IMPORTANT**: If you are new to Bittensor subnets, read this section before proceeding to [Installation](#installation) section.
 
 The Bittensor blockchain hosts multiple self-contained incentive mechanisms called **subnets**. Subnets are playing fields in which:
 - Subnet miners who produce value, and
 - Subnet validators who produce consensus
 
-determine together the proper distribution of TAO for the purpose of incentivizing the creation of value, i.e., generating digital commodities, such as intelligence or data. 
+determine together the proper distribution of TAO for the purpose of incentivizing the creation of value, i.e., generating digital commodities, such as intelligence or data.
 
 Each subnet consists of:
 - Subnet miners and subnet validators.
 - A protocol using which the subnet miners and subnet validators interact with one another. This protocol is part of the incentive mechanism.
-- The Bittensor API using which the subnet miners and subnet validators interact with Bittensor's onchain consensus engine [Yuma Consensus](https://bittensor.com/documentation/validating/yuma-consensus). The Yuma Consensus is designed to drive these actors: subnet validators and subnet miners, into agreement on who is creating value and what that value is worth. 
+- The Bittensor API using which the subnet miners and subnet validators interact with Bittensor's onchain consensus engine [Yuma Consensus](https://bittensor.com/documentation/validating/yuma-consensus). The Yuma Consensus is designed to drive these actors: subnet validators and subnet miners, into agreement on who is creating value and what that value is worth.
 
 This starter template is split into three primary files. To write your own incentive mechanism, you should edit these files. These files are:
 1. `template/protocol.py`: Contains the definition of the protocol used by subnet miners and subnet validators.
@@ -88,13 +204,13 @@ The Bittensor Subnet 1 for Text Prompting is built using this template. See [Bit
 ## Installation
 
 ### Before you proceed
-Before you proceed with the installation of the subnet, note the following: 
+Before you proceed with the installation of the subnet, note the following:
 
-- Use these instructions to run your subnet locally for your development and testing, or on Bittensor testnet or on Bittensor mainnet. 
+- Use these instructions to run your subnet locally for your development and testing, or on Bittensor testnet or on Bittensor mainnet.
 - **IMPORTANT**: We **strongly recommend** that you first run your subnet locally and complete your development and testing before running the subnet on Bittensor testnet. Furthermore, make sure that you next run your subnet on Bittensor testnet before running it on the Bittensor mainnet.
-- You can run your subnet either as a subnet owner, or as a subnet validator or as a subnet miner. 
+- You can run your subnet either as a subnet owner, or as a subnet validator or as a subnet miner.
 - **IMPORTANT:** Make sure you are aware of the minimum compute requirements for your subnet. See the [Minimum compute YAML configuration](./min_compute.yml).
-- Note that installation instructions differ based on your situation: For example, installing for local development and testing will require a few additional steps compared to installing for testnet. Similarly, installation instructions differ for a subnet owner vs a validator or a miner. 
+- Note that installation instructions differ based on your situation: For example, installing for local development and testing will require a few additional steps compared to installing for testnet. Similarly, installation instructions differ for a subnet owner vs a validator or a miner.
 
 ### Install
 
@@ -274,7 +390,7 @@ class RetrieveUserAPI(SubnetsAPI):
             )
         return data
 
- 
+
 Example usage of the `FileTao` interface, which can serve as an example for other subnets.
 
 # import the bespoke subnet API
@@ -291,7 +407,7 @@ cid = await StoreUserAPI(
       # Below: Parameters passed to `prepare_synapse` for this API subclass
       data=b"Hello Bittensor!",
       encrypt=False,
-      ttl=60 * 60 * 24 * 30, 
+      ttl=60 * 60 * 24 * 30,
       encoding="utf-8",
       uid=None,
 )
