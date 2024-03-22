@@ -28,14 +28,18 @@ If you are new to Bittensor, please checkout the [Bittensor Website](https://bit
 
 ```mermaid
 flowchart TD
-    A[ConvoDb] --> B(Validator Send)
-    B --> C(Miner1)
-    B --> D(Miner2)
-    B --> E(Miner3)
-    C --> B
-    D --> B
-    E --> B
-    B --> A
+    A(CGP API) === Validator1([Validator])
+    A -.- Validator2([Validator])
+    A -.- Validator3([Validator])
+    Validator1 --- C(Miner1)
+    Validator1 --- D(Miner2)
+    Validator1 --- E(Miner3)
+    C --- GPT(OpenAI GPT API)
+    D --- CLAUDE(Anthropic Claude API)
+    E --- LLM(Local LLM API)
+    A --> VECTOR(Vector Database)
+    VECTOR --> PUBLIC(Hugging Face dataset)
+    click PUBLIC "https://huggingface.co/" _blank
 ```
 
 ## Key Features
