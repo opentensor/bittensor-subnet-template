@@ -148,13 +148,28 @@ class BitcoinNode(Node):
 
             *_, in_total_amount, out_total_amount = self.process_in_memory_txn_for_indexing(tx)
             
-        challenge = Challenge(in_total_amount=in_total_amount, out_total_amount=out_total_amount, tx_id_last_8_chars=txn_id[-8:])
+        challenge = Challenge(in_total_amount=in_total_amount, out_total_amount=out_total_amount, tx_id_last_4_chars=txn_id[-4:])
         return challenge, txn_id
 
+    def validate_challenge_response_output(self, challenge: Challenge, response_output):
+        if response_output[-4:] != challenge.tx_id_last_4_chars:
+            return False
+        
+        txn_data = self.get_txn_data_by_id(response_output)
+        if txn_data is None:
+            return False
+        
+        tx = self.create_in_memory_txn(txn_data)
+
+        *_, in_total_amount, out_total_amount = self.process_in_memory_txn_for_indexing(tx)
+        return challenge.in_total_amount == in_total_amount and challenge.out_total_amount == out_total_amount
 
     def get_txn_data_by_id(self, txn_id: str):
-        rpc_connection = AuthServiceProxy(self.node_rpc_url)
-        return rpc_connection.getrawtransaction(txn_id, 1)
+        try:
+            rpc_connection = AuthServiceProxy(self.node_rpc_url)
+            return rpc_connection.getrawtransaction(txn_id, 1)
+        except Exception as e:
+            return None
 
     def create_in_memory_txn(self, tx_data):
         tx = Transaction(
