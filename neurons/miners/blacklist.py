@@ -29,7 +29,7 @@ def query_blacklist(self, synapse: protocol.Query) -> typing.Tuple[bool, str]:
         """
         hotkey = synapse.dendrite.hotkey
         # Check if the dendrite hotkey is not voting the sn or not.
-        if hotkey in self.miner_config.inmemory_hotkeys:
+        if hotkey not in self.miner_config.inmemory_hotkeys:
             return True, "Not support query synapse for this hotkey"
         
         is_blacklist, message = base_blacklist(self, synapse=synapse)
