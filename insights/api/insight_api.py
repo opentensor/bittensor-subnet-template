@@ -7,6 +7,7 @@ import numpy as np
 
 from datetime import datetime
 
+import protocol
 import bittensor as bt
 from insights.api.query import TextQueryAPI
 from insights.api.get_query_axons import get_query_api_axons
@@ -31,6 +32,9 @@ def get_config():
 
     config = bt.config(parser)
     return config
+
+def handle_llm_interpret_error(errorcode):
+    return protocol.errorcode
 
 excluded_uids = []
 def main():        
@@ -78,9 +82,12 @@ def main():
             excluded_uids = []
         bt.logging.info(f"excluded_uids are {excluded_uids}")
         bt.logging.info(f"Responses are {responses}")
+        
         if not responses:
             return "This hotkey is banned."
         response = random.choice(responses)
+        if response.error != protocol.LLM_ERROR_NO_ERROR:
+            return handle_llm_interpret_error(response.error)
         return response
             
     @app.get("/")
