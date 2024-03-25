@@ -1,4 +1,3 @@
-import unittest
 import pytest
 import asyncio
 import random
@@ -69,17 +68,11 @@ class ValidatorLib:
         }
         return data
 
-    async def doMining(self, convo, minerUid):
-        exampleTags = ["realistic", "business-minded", "conciliatory", "responsive", "caring", "understanding", "apologetic", "affectionate", "optimistic", "family-oriented"]
-        waitSec = random.randint(0, 3)
-        print("Mine result: %ds" % (waitSec))
-        await asyncio.sleep(waitSec)
-        return [minerUid, random.choice(exampleTags)]
-
-    async def sendToMiners(self, convo, miners):
-        print("Send to miners", miners)
+    async def sendToMiners(self, convoWindow, minerUids):
+        print("Send to miners", minerUids)
         results = []
-        tasks = [asyncio.create_task(self.doMining([], minerUid)) for minerUid in miners]
+        ml = MinerLib()
+        tasks = [asyncio.create_task(ml.doMining(convoWindow, minerUid)) for minerUid in minerUids]
         await asyncio.wait(tasks)
         for task in tasks:
             results.append(task.result())
@@ -96,8 +89,19 @@ class ValidatorLib:
         return True
 
 class MinerLib:
-    def mine(self):
-        print("Mining...")
+    async def doMining(self, convo, minerUid, dryrun=False):
+        exampleTags = ["realistic", "business-minded", "conciliatory", "responsive", "caring", "understanding", "apologetic", "affectionate", "optimistic", "family-oriented"]
+        waitSec = random.randint(0, 3)
+        out = [minerUid]
+        print("Mine result: %ds" % (waitSec))
+        if dryrun:
+            await asyncio.sleep(waitSec)
+            out.append(random.choice(exampleTags))
+        else:
+            # TODO: Make this actually tag content
+            out.append(random.choice(exampleTags))
+        return out
+
 
     def get_conversation_tags(self, convo):
         tags = {}
@@ -154,6 +158,14 @@ class TemplateCgTestMinerLib(): #unittest.TestCase):
         vl = ValidatorLib()
         result = vl.validate_tags(tags)
         assert result == True
+
+@pytest.mark.asyncio
+async def test_miner_no_convo():
+    ml = MinerLib()
+    convo = []
+    uid = 1111
+    result = await ml.doMining(convo, uid, dryrun=True)
+    assert result[0] == uid, "User ID didn't match"
 
 @pytest.mark.asyncio
 async def test_start():
