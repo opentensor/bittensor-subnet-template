@@ -88,6 +88,34 @@ class ValidatorLib:
     def validateMinimumTags(self, tags):
         return True
 
+    async def handleWindows(self, windows, miners):
+        # Loop through rows in db
+        for window in windows:
+            # Send first window to 3 miners
+            results = await self.sendToMiners(window, miners)
+            # Each miner returns data, write data into local db
+            print("Miner results", results)
+            # TODO: Write up incomplete errors, such as if timeout happens for miner, send to another miner
+            # When all miners have returned data for convo window
+            # Eval data
+            convoTags = ["realistic", "business-minded", "conciliatory", "responsive", "caring", "understanding"]
+            scores = {}
+            # Score each miner result
+            for result in results:
+                uid = result['uid']
+                tags = result['tags']
+                tag = None
+                if len(tags) > 0:
+                    tag = tags[0]
+                if tag in convoTags:
+                    print("FOUND!", tag)
+                    if not uid in scores:
+                        scores[uid] = 0
+                    scores[uid] += 3
+            # Send emission to forward
+            print("EMISSIONS", scores)
+
+
 class MinerLib:
     async def doMining(self, convo, minerUid, dryrun=False):
         exampleTags = ["realistic", "business-minded", "conciliatory", "responsive", "caring", "understanding", "apologetic", "affectionate", "optimistic", "family-oriented"]
@@ -194,31 +222,7 @@ async def test_start():
     # Write convo windows into local database with full convo metadata
     windows = [1,2]
     miners = uids[0:3]
-    # Loop through rows in db
-    for window in windows:
-        # Send first window to 3 miners
-        results = await vl.sendToMiners(window, miners)
-        # Each miner returns data, write data into local db
-        print("Miner results", results)
-        # TODO: Write up incomplete errors, such as if timeout happens for miner, send to another miner
-        # When all miners have returned data for convo window
-        # Eval data
-        convoTags = ["realistic", "business-minded", "conciliatory", "responsive", "caring", "understanding"]
-        scores = {}
-        # Score each miner result
-        for result in results:
-            uid = result['uid']
-            tags = result['tags']
-            tag = None
-            if len(tags) > 0:
-                tag = tags[0]
-            if tag in convoTags:
-                print("FOUND!", tag)
-                if not uid in scores:
-                    scores[uid] = 0
-                scores[uid] += 3
-        # Send emission to forward
-        print("EMISSIONS", scores)
+    await vl.handleWindows(windows, miners)
 
 
 
