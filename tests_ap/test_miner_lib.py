@@ -69,17 +69,17 @@ class ValidatorLib:
         }
         return data
 
-    async def doMining(self, convo):
+    async def doMining(self, convo, minerUid):
         exampleTags = ["realistic", "business-minded", "conciliatory", "responsive", "caring", "understanding", "apologetic", "affectionate", "optimistic", "family-oriented"]
-        waitSec = random.randint(0, 5)
+        waitSec = random.randint(0, 3)
         print("Mine result: %ds" % (waitSec))
         await asyncio.sleep(waitSec)
-        return random.choice(exampleTags)
+        return [minerUid, random.choice(exampleTags)]
 
     async def sendToMiners(self, convo, miners):
         print("Send to miners", miners)
         results = []
-        tasks = [asyncio.create_task(self.doMining(miner)) for miner in miners]
+        tasks = [asyncio.create_task(self.doMining([], minerUid)) for minerUid in miners]
         await asyncio.wait(tasks)
         for task in tasks:
             results.append(task.result())
@@ -191,10 +191,18 @@ async def test_start():
         # TODO: Write up incomplete errors, such as if timeout happens for miner, send to another miner
         # When all miners have returned data for convo window
         # Eval data
-        exampleTags = ["realistic", "business-minded", "conciliatory", "responsive", "caring", "understanding"]
-
+        convoTags = ["realistic", "business-minded", "conciliatory", "responsive", "caring", "understanding"]
+        scores = {}
         # Score each miner result
+        for result in results:
+            (uid, tag) = result
+            if tag in convoTags:
+                print("FOUND!", tag)
+                if not uid in scores:
+                    scores[uid] = 0
+                scores[uid] += 3
         # Send emission to forward
+        print("EMISSIONS", scores)
 
 
 
