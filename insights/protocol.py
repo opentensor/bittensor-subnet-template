@@ -30,6 +30,10 @@ MAX_MINER_INSTANCE = 9
 LLM_TYPE_OPENAI = "openai"
 LLM_TYPE_CUSTOM = "custom"
 
+# LLM MESSAGE TYEP
+LLM_MESSAGE_TYPE_USER = 1
+LLM_MESSAGE_TYPE_AGENT = 2
+
 # LLM Error Codes
 LLM_ERROR_NO_ERROR = 0
 LLM_ERROR_TYPE_NOT_SUPPORTED = 1
@@ -144,10 +148,14 @@ class Challenge(BaseSynapse):
     def deserialize(self) -> str:
         return self.output
 
+class LlmMessage(BaseModel):
+    type: int = None
+    content: str = None
+
 class LlmQuery(BaseSynapse):
     network: str = None    
-    # input_text: Plain text written in natural language
-    input_text: str = None    
+    # messages: conversation history for llm agent to use as context
+    messages: List[LlmMessage] = None
     # output
     output: Optional[QueryOutput] = None
     def deserialize(self) -> str:
