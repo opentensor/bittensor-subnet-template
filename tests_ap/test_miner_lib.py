@@ -57,7 +57,7 @@ class ForwardLib:
     async def sendConvo(self):
         vl = ValidatorLib()
         hotkey = "a123"
-        fullConvo = self.getConvo(hotkey)
+        fullConvo = await self.getConvo(hotkey)
         print("fullConvo", fullConvo)
         fullConvoMetaData = await vl.generateFullConvoMetaData(fullConvo)
         participantProfiles = Utils.get(fullConvoMetaData, "participantProfiles", [])
@@ -207,6 +207,8 @@ class TemplateCgTestMinerLib(): #unittest.TestCase):
         result = vl.validate_tags(tags)
         assert result == True
 
+bt = MockBt()
+
 @pytest.mark.asyncio
 async def test_miner_no_convo():
     ml = MinerLib()
@@ -215,17 +217,24 @@ async def test_miner_no_convo():
     result = await ml.doMining(convo, uid, dryrun=True)
     assert result["uid"] == uid, "User ID didn't match"
 
-bt = MockBt()
+@pytest.mark.asyncio
+async def test_validator_no_convo():
+    ml = MinerLib()
+    convo = []
+    uid = 1111
+    result = await ml.doMining(convo, uid, dryrun=True)
+    assert result["uid"] == uid, "User ID didn't match"
+    #assert len(participantProfiles) > 1,  "Conversation requires at least 2 participants"
+
+    #assert minValidTags,  "Conversation didn't generate minimum valid tags"
+    # TODO: Mark bad conversation in real enviroment
+
 
 @pytest.mark.asyncio
 async def test_full():
     fl = ForwardLib()
     await fl.sendConvo()
 
-    #assert len(participantProfiles) > 1,  "Conversation requires at least 2 participants"
-
-    #assert minValidTags,  "Conversation didn't generate minimum valid tags"
-    # TODO: Mark bad conversation in real enviroment
 
 
 
