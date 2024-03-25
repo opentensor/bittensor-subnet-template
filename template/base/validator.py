@@ -50,7 +50,14 @@ class BaseValidatorNeuron(BaseNeuron):
 
     def __init__(self, config=None):
         super().__init__(config=config)
+        # Create asyncio event loop to manage async tasks.
+        self.loop = asyncio.get_event_loop()
 
+        # Instantiate runners
+        self.should_exit: bool = False
+        self.is_running: bool = False
+        self.thread: threading.Thread = None
+        self.lock = threading.RLock()
         # Save a copy of the hotkeys to local memory.
         self.hotkeys = copy.deepcopy(self.metagraph.hotkeys)
 
@@ -80,15 +87,6 @@ class BaseValidatorNeuron(BaseNeuron):
             self.serve_axon()
         else:
             bt.logging.warning("axon off, not serving ip to chain.")
-
-        # Create asyncio event loop to manage async tasks.
-        self.loop = asyncio.get_event_loop()
-
-        # Instantiate runners
-        self.should_exit: bool = False
-        self.is_running: bool = False
-        self.thread: threading.Thread = None
-        self.lock = threading.RLock()
 
     def serve_axon(self):
         """Serve axon to enable external connections."""
@@ -265,7 +263,7 @@ class BaseValidatorNeuron(BaseNeuron):
             table.add_column("score", style="magenta")
             uids_and_weights = list(
                 zip(uint_uids, uint_weights)
-            )
+                )
             # Sort by weights descending.
             sorted_uids_and_weights = sorted(
                 uids_and_weights, key=lambda x: x[1], reverse=True
