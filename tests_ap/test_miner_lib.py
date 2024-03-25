@@ -55,12 +55,12 @@ class ForwardLib:
 
 
 class ValidatorLib:
-    def generateFullConvoMetaData(self, convo):
+    async def generateFullConvoMetaData(self, convo):
         cl = ConvoLib()
         # Get prompt template
         pt = cl.getConvoPromptTemplate()
         llml =  LlmApi()
-        data = llml.callFunction("convoParse", convo)
+        data = await llml.callFunction("convoParse", convo)
 
     def score(self):
         pass
@@ -180,13 +180,14 @@ def test_add():
     print("\nTest add")
     assert add(2, 3) == 5, "Addition failed: the result should be 6"
 
-def test_start():
+@pytest.mark.asyncio
+async def test_start():
     fl = ForwardLib()
     hotkey = "a123"
     fullConvo = fl.getConvo(hotkey)
     print("fullConvo", fullConvo)
     vl = ValidatorLib()
-    fullConvoMetaData = vl.generateFullConvoMetaData(fullConvo)
+    fullConvoMetaData = await vl.generateFullConvoMetaData(fullConvo)
     participantProfiles = Utils.get(fullConvoMetaData, "participantProfiles", [])
     semanticTags = Utils.get(fullConvoMetaData, "semanticTags", [])
 
