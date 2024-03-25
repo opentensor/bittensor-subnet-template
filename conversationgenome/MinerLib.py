@@ -31,6 +31,3 @@ class MinerLib:
             print("Found %d tags" % (len(tags)))
         return tags
 
-
-
-        return self.convo
