@@ -1,5 +1,6 @@
 import os
 import json
+from typing import List
 
 import bittensor as bt
 
@@ -9,7 +10,7 @@ from insights.protocol import Query, NETWORK_BITCOIN
 from insights import protocol
 
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 
 from neurons.setup_logger import setup_logger
 
@@ -23,15 +24,17 @@ class OpenAILLM(BaseLLM):
 
         self.chat = ChatOpenAI(api_key=api_key, model="gpt-4", temperature=0)
         
-    def build_query_from_text(self, query_text: str) -> Query:
+    def build_query_from_messages(self, llm_messages: List[protocol.LlmMessage]) -> Query:
         messages = [
             SystemMessage(
                 content=query_schema
             ),
-            HumanMessage(
-                content=query_text
-            ),
         ]
+        for llm_message in llm_messages:
+            if llm_message.type == protocol.LLM_MESSAGE_TYPE_USER:
+                messages.append(HumanMessage(content=llm_message.content))
+            else:
+                messages.append(AIMessage(content=llm_message.content))
         try:
             ai_message = self.chat.invoke(messages)
             query = json.loads(ai_message.content)
@@ -47,22 +50,17 @@ class OpenAILLM(BaseLLM):
             bt.logging.error(f"LlmQuery build error: {e}")
             raise Exception(protocol.LLM_ERROR_QUERY_BUILD_FAILED)
         
-    def interpret_result(self, query_text: str, result: list) -> str:
-        user_prompt = f"""- User's question
-        {query_text}
-        
-        - Result value
-        {json.dumps(result)}
-        """
-        
+    def interpret_result(self, llm_messages: str, result: list) -> str:
         messages = [
             SystemMessage(
-                content=interpret_prompt
-            ),
-            HumanMessage(
-                content=user_prompt
+                content=interpret_prompt.format(result=result)
             ),
         ]
+        for llm_message in llm_messages:
+            if llm_message.type == protocol.LLM_MESSAGE_TYPE_USER:
+                messages.append(HumanMessage(content=llm_message.content))
+            else:
+                messages.append(AIMessage(content=llm_message.content))
         
         try:
             ai_message = self.chat.invoke(messages)
