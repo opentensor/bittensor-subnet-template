@@ -11,8 +11,8 @@ class c:
     dotenv = {}
 
     @staticmethod
-    def get(obj, path):
-        return Utils.get(c.dotenv, path)
+    def get(obj, path, default):
+        return Utils.get(c.dotenv, path, default)
 
 
 
@@ -37,7 +37,7 @@ class ApiLib:
         return convo
 
 class ConvoLib:
-    def getConversation(self, hotkey):
+    async def getConversation(self, hotkey):
         api = ApiLib()
         convo = api.reserveConversation(hotkey)
         return convo
@@ -51,27 +51,29 @@ class ConvoLib:
 class ForwardLib:
     async def getConvo(self, hotkey):
         cl = ConvoLib()
-        convo = cl.getConversation(hotkey)
+        convo = await cl.getConversation(hotkey)
         return convo
+
+    def getConvoWindows(self, fullConvo):
+        minExchanges = c.get("convo_window", "min_lines", 5)
+        maxExchanges = c.get("convo_window", "max_lines", 10)
+        overlapExchanges = c.get("convo_window", "overlap_lines", 2)
+        # Write convo windows into local database with full convo metadata
+        windows = [1,2]
+        return windows
+
 
     async def sendConvo(self):
         vl = ValidatorLib()
         hotkey = "a123"
         fullConvo = await self.getConvo(hotkey)
-        print("fullConvo", fullConvo)
+        #print("fullConvo", fullConvo)
         fullConvoMetaData = await vl.generateFullConvoMetaData(fullConvo)
         participantProfiles = Utils.get(fullConvoMetaData, "participantProfiles", [])
         semanticTags = Utils.get(fullConvoMetaData, "semanticTags", [])
         minValidTags = vl.validateMinimumTags(semanticTags)
-        minLines = c.get("convo_window", "min_lines")
-        maxLines = c.get("convo_window", "max_lines")
-        overlapLines = c.get("convo_window", "overlap_lines")
-        #convoWindows = co.getConvoWindows(fullConvo, minLines=minLines, maxLines=maxLines, overlapLines=overlapLines)
-        uids = bt.getUids()
-        # Write convo windows into local database with full convo metadata
-        windows = [1,2]
-        miners = uids[0:3]
-        await vl.handleWindows(windows, miners)
+        convoWindows = self.getConvoWindows(fullConvo)
+        await vl.handleWindows(convoWindows)
 
 
 
@@ -108,7 +110,10 @@ class ValidatorLib:
     def validateMinimumTags(self, tags):
         return True
 
-    async def handleWindows(self, windows, miners):
+    async def handleWindows(self, windows):
+        uids = bt.getUids()
+        miners = uids[0:3]
+
         # Loop through rows in db
         for window in windows:
             # Send first window to 3 miners
@@ -163,49 +168,6 @@ class MockBt:
             uids.append(random.randint(1000, 9999))
         return uids
 
-class TemplateCgTestMinerLib(): #unittest.TestCase):
-    verbose = True
-    hotkey = "hk12233"
-
-    def setUp(self):
-        self.CD = ConvoLib()
-
-    def tearDown(self):
-        self.CD = None
-
-    def test_run_tag(self):
-        if self.verbose:
-            print("Tag: ")
-        assert 1 == 1
-
-    def test_run_eval(self):
-        if self.verbose:
-            print("Tag: ")
-        assert 1 == 1
-
-    def test_get_convo(self):
-        if self.verbose:
-            print("Test Convo")
-        convo = self.CD.getConversation(self.hotkey)
-        assert True #len(convo['exchanges']) == 3
-
-    def test_tags_from_convo(self):
-        if self.verbose:
-            print("Test Convo")
-        convo = self.CD.getConversation()
-        ml = MinerLib()
-        tags = ml.get_conversation_tags(convo)
-        assert len(tags) > 1
-
-    def test_tags_from_convo(self):
-        if self.verbose:
-            print("Test Tags")
-        convo = self.CD.getConversation(self.hotkey)
-        ml = MinerLib()
-        tags = ml.get_conversation_tags(convo)
-        vl = ValidatorLib()
-        result = vl.validate_tags(tags)
-        assert result == True
 
 bt = MockBt()
 
@@ -228,6 +190,34 @@ async def test_validator_no_convo():
 
     #assert minValidTags,  "Conversation didn't generate minimum valid tags"
     # TODO: Mark bad conversation in real enviroment
+
+@pytest.mark.asyncio
+async def test_get_convo():
+    hotkey = "hk12233"
+    cl = ConvoLib()
+
+    convo = await cl.getConversation(hotkey)
+    assert True #len(convo['exchanges']) == 3
+
+@pytest.mark.asyncio
+async def test_tags_from_convo():
+    hotkey = "hk12233"
+    cl = ConvoLib()
+    convo = await cl.getConversation()
+    ml = MinerLib()
+    tags = ml.get_conversation_tags(convo)
+    assert len(tags) > 1
+
+@pytest.mark.asyncio
+async def test_tags_from_convo():
+    hotkey = "hk12233"
+    cl = ConvoLib()
+    convo = await cl.getConversation(hotkey)
+    ml = MinerLib()
+    tags = ml.get_conversation_tags(convo)
+    vl = ValidatorLib()
+    result = vl.validate_tags(tags)
+    assert result == True
 
 
 @pytest.mark.asyncio
