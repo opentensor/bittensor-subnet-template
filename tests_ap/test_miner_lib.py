@@ -7,6 +7,15 @@ import time
 #from conversationgenome.MinerLib import MinerLib
 #from conversationgenome.ValidatorLib import ValidatorLib
 
+class MockBt:
+    def getUids(self, num=10):
+        uids = []
+        for i in range(num):
+            uids.append(random.randint(1000, 9999))
+        return uids
+
+
+
 class c:
     dotenv = {}
 
@@ -31,27 +40,28 @@ class LlmApi:
         pass
 
 class ApiLib:
-    def reserveConversation(self, hotkey):
-        # Call Convo server and get a conversation
-        convo = {"guid":"c1234", "exchanges":[1,2,3,4]}
+    def reserveConversation(self, hotkey, dryrun=False):
+        # Call Convo server and reserve a conversation
+        if dryrun:
+            convo = {"guid":"c1234", "exchanges":[1,2,3,4]}
+        else:
+            convo = {"guid":"c1234", "exchanges":[1,2,3,4]}
         return convo
 
 class ConvoLib:
-    async def getConversation(self, hotkey):
+    async def getConversation(self, hotkey, dryrun=False):
         api = ApiLib()
-        convo = api.reserveConversation(hotkey)
+        convo = api.reserveConversation(hotkey, dryrun=dryrun)
         return convo
 
     async def getConvoPromptTemplate(self):
         return "Parse this"
 
 
-
-
 class ForwardLib:
     async def getConvo(self, hotkey):
         cl = ConvoLib()
-        convo = await cl.getConversation(hotkey)
+        convo = await cl.getConversation(hotkey, dryrun=True)
         return convo
 
     def getConvoWindows(self, fullConvo):
@@ -160,13 +170,6 @@ class MinerLib:
         tags = {}
         return tags
 
-
-class MockBt:
-    def getUids(self, num=10):
-        uids = []
-        for i in range(num):
-            uids.append(random.randint(1000, 9999))
-        return uids
 
 
 bt = MockBt()
