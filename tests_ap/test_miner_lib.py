@@ -2,6 +2,7 @@ import unittest
 import pytest
 import asyncio
 import random
+import time
 
 #from conversationgenome.ConversationDatabase import ConversationDatabase
 #from conversationgenome.MinerLib import MinerLib
@@ -67,6 +68,22 @@ class ValidatorLib:
             "tags": {},
         }
         return data
+
+    async def doMining(self, convo):
+        waitSec = random.randint(0, 5)
+        print("Mine result: %ds" % (waitSec))
+        await asyncio.sleep(waitSec)
+        return 7
+
+    async def sendToMiners(self, convo):
+        print("Send to miners")
+        miners = [1, 2, 3]
+        results = []
+        tasks = [asyncio.create_task(self.doMining(miner)) for miner in miners]
+        await asyncio.wait(tasks)
+        for task in tasks:
+            results.append(task.result())
+        return results
 
     def score(self):
         pass
@@ -138,29 +155,13 @@ class TemplateCgTestMinerLib(): #unittest.TestCase):
         result = vl.validate_tags(tags)
         assert result == True
 
-# function to add two numbers
-def add(x, y):
-    return x + y
-
-async def divide(x, y):
-    return x / y
-
-@pytest.mark.asyncio
-async def test_divide():
-    result = await divide(15, 5)
-    assert result == 3, "Division failed: the result should be 3"
-
-def test_add():
-    print("\nTest add")
-    assert add(2, 3) == 5, "Addition failed: the result should be 6"
-
 @pytest.mark.asyncio
 async def test_start():
     fl = ForwardLib()
+    vl = ValidatorLib()
     hotkey = "a123"
     fullConvo = fl.getConvo(hotkey)
     print("fullConvo", fullConvo)
-    vl = ValidatorLib()
     fullConvoMetaData = await vl.generateFullConvoMetaData(fullConvo)
     participantProfiles = Utils.get(fullConvoMetaData, "participantProfiles", [])
     semanticTags = Utils.get(fullConvoMetaData, "semanticTags", [])
@@ -179,7 +180,10 @@ async def test_start():
     bt = MockBt()
     uids = bt.getUids()
     # Write convo windows into local database with full convo metadata
+    rows = [1,2]
     # Loop through rows in db
+    for row in rows:
+        results = await vl.sendToMiners(row)
         # Send first window to 3 miners
         # Each miner returns data, write data into local db
         # TODO: Write up incomplete errors
