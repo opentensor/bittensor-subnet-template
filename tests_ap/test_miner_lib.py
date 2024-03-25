@@ -41,7 +41,7 @@ class ConvoLib:
         convo = api.reserveConversation(hotkey)
         return convo
 
-    def getConvoPromptTemplate(self):
+    async def getConvoPromptTemplate(self):
         return "Parse this"
 
 
@@ -58,7 +58,7 @@ class ValidatorLib:
     async def generateFullConvoMetaData(self, convo):
         cl = ConvoLib()
         # Get prompt template
-        pt = cl.getConvoPromptTemplate()
+        pt = await cl.getConvoPromptTemplate()
         llml =  LlmApi()
         data = await llml.callFunction("convoParse", convo)
 
