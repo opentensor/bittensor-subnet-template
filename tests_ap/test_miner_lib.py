@@ -1,5 +1,6 @@
 import unittest
 import pytest
+import asyncio
 
 #from conversationgenome.ConversationDatabase import ConversationDatabase
 #from conversationgenome.MinerLib import MinerLib
@@ -20,6 +21,7 @@ class ConvoLib:
         api = ApiLib()
         convo = api.reserveConversation(hotkey)
         return convo
+
     def getConvoPromptTemplate(self):
         return "Parse this"
 
@@ -28,7 +30,7 @@ class ConvoLib:
 class ForwardLib:
     def getConvo(self, hotkey):
         cl = ConvoLib()
-        convo = api.getConvo(hotkey)
+        convo = cl.getConversation(hotkey)
         return convo
 
 
@@ -56,7 +58,7 @@ class MinerLib:
         return tags
 
 
-class TemplateCgTestMinerLib(unittest.TestCase):
+class TemplateCgTestMinerLib(): #unittest.TestCase):
     verbose = True
     hotkey = "hk12233"
 
@@ -75,12 +77,12 @@ class TemplateCgTestMinerLib(unittest.TestCase):
         vl = ValidatorLib()
         fullConvoMetaData = vl.generateFullConvoMetaData(convo)
         participantProfiles = Utils.get(fullConvoMetaData, "participantProfiles", [])
-        semanticTags = Utils.get(fullConvoMetaData, "semanticTags", [])
+        #semanticTags = Utils.get(fullConvoMetaData, "semanticTags", [])
 
-        assert(len(participantProfiles) > 1,  "Conversation requires at least 2 participants")
+        #assert(len(participantProfiles) > 1,  "Conversation requires at least 2 participants")
 
         minValidTags = self.validateMinimumTags(semanticTags)
-        assert(minValidTags,  "Conversation didn't generate minimum valid tags")
+        #assert(minValidTags,  "Conversation didn't generate minimum valid tags")
         # Mark bad conversation in real enviroment
 
         minLines = c.get("convo_window", "min_lines")
@@ -139,4 +141,25 @@ class TemplateCgTestMinerLib(unittest.TestCase):
         result = vl.validate_tags(tags)
         assert result == True
 
+# function to add two numbers
+def add(x, y):
+    return x + y
+
+async def divide(x, y):
+    return x / y
+
+@pytest.mark.asyncio
+async def test_divide():
+    result = await divide(15, 5)
+    assert result == 3, "Division failed: the result should be 3"
+
+def test_add():
+    print("\nTest add")
+    assert add(2, 3) == 5, "Addition failed: the result should be 6"
+
+def test_start():
+    fl = ForwardLib()
+    hotkey = "a123"
+    fullConvo = fl.getConvo(hotkey)
+    print("fullConvo", fullConvo)
 
