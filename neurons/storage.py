@@ -19,6 +19,7 @@ class MinerMetadata(Metadata):
     mt: Optional[int] #model_type
     ri: Optional[str] #run_id
     cv: Optional[str] #code_version
+    
     @staticmethod
     def from_compact(compact_str):
         data_dict = {}

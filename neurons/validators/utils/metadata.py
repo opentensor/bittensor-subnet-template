@@ -32,7 +32,7 @@ class Metadata:
         for neuron in metagraph.neurons:
             miner_metadata = miners_metadata.get(neuron.hotkey)
 
-            run_id, network_id = None, None
+            run_id, network_id, version = None, None, None
             if miner_metadata:
                 run_id = miner_metadata.ri
                 network_id = miner_metadata.n
@@ -44,7 +44,7 @@ class Metadata:
                 ip = neuron.axon_info.ip,
                 run_id = run_id,
                 network = get_network_by_id(network_id),
-                version = miner_metadata.cv
+                version = version
             )
             hotkeys_metadata.append(data)
         return hotkeys_metadata        
