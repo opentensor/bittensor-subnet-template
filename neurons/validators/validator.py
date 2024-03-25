@@ -35,7 +35,6 @@ from neurons.validators.utils.metadata import Metadata
 from neurons.validators.utils.synapse import is_discovery_response_valid
 
 from neurons.validators.utils.uids import get_uids_batch
-
 from template.base.validator import BaseValidatorNeuron
 class Validator(BaseValidatorNeuron):
 
@@ -79,7 +78,6 @@ class Validator(BaseValidatorNeuron):
         self.nodes = {network : NodeFactory.create_node(network) for network in networks}
         self.block_height_cache = {network: self.nodes[network].get_current_block_height() for network in networks}
         super(Validator, self).__init__(config)
-
         self.sync_validator()
         self.uid_batch_generator = get_uids_batch(self, self.config.neuron.sample_size)
 
