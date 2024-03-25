@@ -1,6 +1,7 @@
 import unittest
 import pytest
 import asyncio
+import random
 
 #from conversationgenome.ConversationDatabase import ConversationDatabase
 #from conversationgenome.MinerLib import MinerLib
@@ -61,6 +62,11 @@ class ValidatorLib:
         pt = await cl.getConvoPromptTemplate()
         llml =  LlmApi()
         data = await llml.callFunction("convoParse", convo)
+        data = {
+            "participantProfiles": [1,2,3],
+            "tags": {},
+        }
+        return data
 
     def score(self):
         pass
@@ -81,6 +87,13 @@ class MinerLib:
         return tags
 
 
+class MockBt:
+    def getUids(self, num=10):
+        uids = []
+        for i in range(num):
+            uids.append(random.randint(1000, 9999))
+        return uids
+
 class TemplateCgTestMinerLib(): #unittest.TestCase):
     verbose = True
     hotkey = "hk12233"
@@ -90,45 +103,6 @@ class TemplateCgTestMinerLib(): #unittest.TestCase):
 
     def tearDown(self):
         self.CD = None
-
-    # Convo
-    def start(self):
-        fl = ForwardLib()
-        hotkey = "a123"
-        fullConvo = fl.getConvo(hotkey)
-
-        vl = ValidatorLib()
-        fullConvoMetaData = vl.generateFullConvoMetaData(convo)
-        participantProfiles = Utils.get(fullConvoMetaData, "participantProfiles", [])
-        #semanticTags = Utils.get(fullConvoMetaData, "semanticTags", [])
-
-        #assert(len(participantProfiles) > 1,  "Conversation requires at least 2 participants")
-
-        minValidTags = self.validateMinimumTags(semanticTags)
-        #assert(minValidTags,  "Conversation didn't generate minimum valid tags")
-        # Mark bad conversation in real enviroment
-
-        minLines = c.get("convo_window", "min_lines")
-        maxLines = c.get("convo_window", "max_lines")
-        overlapLines = c.get("convo_window", "overlap_lines")
-        convoWindows = co.getConvoWindows(fullConvo, minLines=minLines, maxLines=maxLines, overlapLines=overlapLines)
-
-        # Write convo windows into local database with full convo metadata
-        # Loop through rows in db
-            # Send first window to 3 miners
-            # Each miner returns data, write data into local db
-            # TODO: Write up incomplete errors
-            # If timeout happens for miner, send to another miner
-            # When all miners have returned data for convo window
-            # Eval data
-            # Score each miner result
-            # Send emission to forward
-
-
-
-
-    # Validator
-    # Miner
 
     def test_run_tag(self):
         if self.verbose:
@@ -191,10 +165,10 @@ async def test_start():
     participantProfiles = Utils.get(fullConvoMetaData, "participantProfiles", [])
     semanticTags = Utils.get(fullConvoMetaData, "semanticTags", [])
 
-    #assert(len(participantProfiles) > 1,  "Conversation requires at least 2 participants")
+    assert len(participantProfiles) > 1,  "Conversation requires at least 2 participants"
 
     minValidTags = vl.validateMinimumTags(semanticTags)
-    #assert(minValidTags,  "Conversation didn't generate minimum valid tags")
+    assert minValidTags,  "Conversation didn't generate minimum valid tags"
     # Mark bad conversation in real enviroment
 
     minLines = c.get("convo_window", "min_lines")
@@ -202,6 +176,8 @@ async def test_start():
     overlapLines = c.get("convo_window", "overlap_lines")
     #convoWindows = co.getConvoWindows(fullConvo, minLines=minLines, maxLines=maxLines, overlapLines=overlapLines)
 
+    bt = MockBt()
+    uids = bt.getUids()
     # Write convo windows into local database with full convo metadata
     # Loop through rows in db
         # Send first window to 3 miners
