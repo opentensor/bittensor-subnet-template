@@ -70,14 +70,14 @@ class ValidatorLib:
         return data
 
     async def doMining(self, convo):
+        exampleTags = ["realistic", "business-minded", "conciliatory", "responsive", "caring", "understanding", "apologetic", "affectionate", "optimistic", "family-oriented"]
         waitSec = random.randint(0, 5)
         print("Mine result: %ds" % (waitSec))
         await asyncio.sleep(waitSec)
-        return 7
+        return random.choice(exampleTags)
 
-    async def sendToMiners(self, convo):
-        print("Send to miners")
-        miners = [1, 2, 3]
+    async def sendToMiners(self, convo, miners):
+        print("Send to miners", miners)
         results = []
         tasks = [asyncio.create_task(self.doMining(miner)) for miner in miners]
         await asyncio.wait(tasks)
@@ -180,16 +180,19 @@ async def test_start():
     bt = MockBt()
     uids = bt.getUids()
     # Write convo windows into local database with full convo metadata
-    rows = [1,2]
+    windows = [1,2]
+    miners = uids[0:3]
     # Loop through rows in db
-    for row in rows:
-        results = await vl.sendToMiners(row)
+    for window in windows:
         # Send first window to 3 miners
+        results = await vl.sendToMiners(window, miners)
         # Each miner returns data, write data into local db
-        # TODO: Write up incomplete errors
-        # If timeout happens for miner, send to another miner
+        print("Miner results", results)
+        # TODO: Write up incomplete errors, such as if timeout happens for miner, send to another miner
         # When all miners have returned data for convo window
         # Eval data
+        exampleTags = ["realistic", "business-minded", "conciliatory", "responsive", "caring", "understanding"]
+
         # Score each miner result
         # Send emission to forward
 
