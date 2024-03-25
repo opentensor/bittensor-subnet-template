@@ -36,13 +36,15 @@ class Metadata:
             if miner_metadata:
                 run_id = miner_metadata.ri
                 network_id = miner_metadata.n
+                version = miner_metadata.cv
 
             data = dict(
                 hotkey = neuron.hotkey,
                 coldkey = neuron.coldkey,
                 ip = neuron.axon_info.ip,
                 run_id = run_id,
-                network = get_network_by_id(network_id)
+                network = get_network_by_id(network_id),
+                version = miner_metadata.cv
             )
             hotkeys_metadata.append(data)
         return hotkeys_metadata        

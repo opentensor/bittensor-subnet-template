@@ -321,6 +321,7 @@ class BaseValidatorNeuron(BaseNeuron):
             wait_for_inclusion=False,
             version_key=self.spec_version
         )
+        bt.logging.success("set_weights() successful")
         if not result:
             bt.logging.error("set_weights() failed")
 
