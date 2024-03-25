@@ -26,7 +26,7 @@ class Utils:
         return out
 
 class LlmApi:
-    def callFunction(self, functionName, parameters):
+    async def callFunction(self, functionName, parameters):
         pass
 
 class ApiLib:
