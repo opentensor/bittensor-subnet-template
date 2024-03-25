@@ -92,14 +92,14 @@ class MinerLib:
     async def doMining(self, convo, minerUid, dryrun=False):
         exampleTags = ["realistic", "business-minded", "conciliatory", "responsive", "caring", "understanding", "apologetic", "affectionate", "optimistic", "family-oriented"]
         waitSec = random.randint(0, 3)
-        out = [minerUid]
+        out = {"uid":minerUid, "tags":[], "profiles":[], "convoChecksum":11}
         print("Mine result: %ds" % (waitSec))
         if dryrun:
             await asyncio.sleep(waitSec)
-            out.append(random.choice(exampleTags))
+            out["tags"].append(random.choice(exampleTags))
         else:
             # TODO: Make this actually tag content
-            out.append(random.choice(exampleTags))
+            out["tags"].append(random.choice(exampleTags))
         return out
 
 
@@ -165,7 +165,7 @@ async def test_miner_no_convo():
     convo = []
     uid = 1111
     result = await ml.doMining(convo, uid, dryrun=True)
-    assert result[0] == uid, "User ID didn't match"
+    assert result["uid"] == uid, "User ID didn't match"
 
 @pytest.mark.asyncio
 async def test_start():
@@ -207,7 +207,11 @@ async def test_start():
         scores = {}
         # Score each miner result
         for result in results:
-            (uid, tag) = result
+            uid = result['uid']
+            tags = result['tags']
+            tag = None
+            if len(tags) > 0:
+                tag = tags[0]
             if tag in convoTags:
                 print("FOUND!", tag)
                 if not uid in scores:
