@@ -76,11 +76,20 @@ class ApiLib:
             selectedConvoKey = random.choice(convoKeys)
             selectedConvo = convos[selectedConvoKey]
             print("convoTotal", selectedConvo)
+            participants = [
+                "Emily is a bubbly chatter who loves to talk about fashion and beauty. She enjoys trying out new makeup looks and sharing her tips and tricks with others. She is always up for a good laugh and her positive energy is contagious.",
+                "John is a sports enthusiast who can always be found discussing the latest game or match. He is competitive and passionate about his favorite teams, but also enjoys trying out different sports himself. He is a great listener and always offers insightful perspectives on any topic.",
+            ]
 
-            convo = {"guid":"c"+str(selectedConvoKey), "exchanges":selectedConvo['exchanges']}
+
+            convo = {
+                "guid":"c"+str(selectedConvoKey),
+                "participants": participants,
+                "exchanges":selectedConvo['exchanges']
+            }
         else:
 
-            convo = {"guid":"c1234", "exchanges":[1,2,3,4]}
+            convo = {"guid":"c1234", "exchanges":[1,2,3,4], "participants":["Emily", "John"]}
         return convo
 
 class ConvoLib:
@@ -93,7 +102,28 @@ class ConvoLib:
         return "Parse this"
 
 
-class ForwardLib:
+
+
+
+
+class ValidatorLib:
+    async def requestConvo(self):
+        hotkey = "a123"
+        fullConvo = await self.getConvo(hotkey)
+        #print("fullConvo", fullConvo)
+
+        if fullConvo:
+            fullConvoMetaData = await self.generateFullConvoMetaData(fullConvo)
+            participantProfiles = Utils.get(fullConvoMetaData, "participantProfiles", [])
+            semanticTags = Utils.get(fullConvoMetaData, "semanticTags", [])
+            minValidTags = self.validateMinimumTags(semanticTags)
+            convoWindows = self.getConvoWindows(fullConvo)
+            await self.handleWindows(convoWindows)
+
+    async def eventLoop(self):
+        while True:
+            await self.requestConvo()
+
     async def getConvo(self, hotkey):
         cl = ConvoLib()
         convo = await cl.getConversation(hotkey, dryrun=True)
@@ -107,22 +137,6 @@ class ForwardLib:
         windows = [1,2]
         return windows
 
-
-    async def sendConvo(self):
-        vl = ValidatorLib()
-        hotkey = "a123"
-        fullConvo = await self.getConvo(hotkey)
-        #print("fullConvo", fullConvo)
-        fullConvoMetaData = await vl.generateFullConvoMetaData(fullConvo)
-        participantProfiles = Utils.get(fullConvoMetaData, "participantProfiles", [])
-        semanticTags = Utils.get(fullConvoMetaData, "semanticTags", [])
-        minValidTags = vl.validateMinimumTags(semanticTags)
-        convoWindows = self.getConvoWindows(fullConvo)
-        await vl.handleWindows(convoWindows)
-
-
-
-class ValidatorLib:
     async def generateFullConvoMetaData(self, convo):
         cl = ConvoLib()
         # Get prompt template
@@ -289,8 +303,8 @@ async def test_tags_from_convo():
 
 @pytest.mark.asyncio
 async def test_full():
-    fl = ForwardLib()
-    await fl.sendConvo()
+    vl = ValidatorLib()
+    await vl.requestConvo()
 
 
 
