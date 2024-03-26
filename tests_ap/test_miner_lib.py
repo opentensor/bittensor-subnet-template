@@ -75,7 +75,7 @@ class ApiLib:
             #print("convoTotal", convoTotal)
             selectedConvoKey = random.choice(convoKeys)
             selectedConvo = convos[selectedConvoKey]
-            print("convoTotal", selectedConvo)
+            #print("convoTotal", selectedConvo)
             participants = [
                 "Emily is a bubbly chatter who loves to talk about fashion and beauty. She enjoys trying out new makeup looks and sharing her tips and tricks with others. She is always up for a good laugh and her positive energy is contagious.",
                 "John is a sports enthusiast who can always be found discussing the latest game or match. He is competitive and passionate about his favorite teams, but also enjoys trying out different sports himself. He is a great listener and always offers insightful perspectives on any topic.",
@@ -102,23 +102,32 @@ class ConvoLib:
         return "Parse this"
 
 
-
-
-
-
 class ValidatorLib:
     async def requestConvo(self):
+        minConvWindows = 1
         hotkey = "a123"
         fullConvo = await self.getConvo(hotkey)
         #print("fullConvo", fullConvo)
 
         if fullConvo:
+            # Do overview tagging and participant profiles
             fullConvoMetaData = await self.generateFullConvoMetaData(fullConvo)
             participantProfiles = Utils.get(fullConvoMetaData, "participantProfiles", [])
             semanticTags = Utils.get(fullConvoMetaData, "semanticTags", [])
+
+            # Make sure there are enough tags to make processing worthwhile
             minValidTags = self.validateMinimumTags(semanticTags)
-            convoWindows = self.getConvoWindows(fullConvo)
-            await self.handleWindows(convoWindows)
+            if minValidTags:
+                convoWindows = self.getConvoWindows(fullConvo)
+                numWindows = len(convoWindows)
+                if numWindows > minConvWindows:
+                    print("Found %d convo windows. Sending to miners..." % (numWindows))
+                    await self.sendWindowsToMiners(fullConvo, convoWindows)
+                else:
+                    print("Not enough convo windows -- only %d. Passing." % (numWindows))
+            else:
+                print("Not enough valid tags for conversation. Passing.")
+                return
 
     async def eventLoop(self):
         while True:
@@ -172,7 +181,7 @@ class ValidatorLib:
                     matches_dict[matchPhrase] = {"tag":matchPhrase, "count":0, "vectors":span.vector.tolist()}
                 matches_dict[matchPhrase]['count'] += 1
 
-        print("tags", matches_dict)
+        #print("tags", matches_dict)
         data = {
             "participantProfiles": [1,2,3],
             "tags": {},
@@ -199,12 +208,23 @@ class ValidatorLib:
     def validateMinimumTags(self, tags):
         return True
 
-    async def handleWindows(self, windows):
+    def selectStage1Miners(self, uids):
+        selectedMiners = uids[0:3]
+        return selectedMiners
+
+
+    async def sendWindowsToMiners(self, fullConvo, windows):
+        # Get uids of available miners
         uids = bt.getUids()
-        miners = uids[0:3]
+        if len(uids) < 6:
+            print("Not enough miners available.")
+            return
+
 
         # Loop through rows in db
         for window in windows:
+            # Pick initial minors
+            miners = self.selectStage1Miners(uids)
             # Send first window to 3 miners
             results = await self.sendToMiners(window, miners)
             # Each miner returns data, write data into local db
@@ -222,7 +242,7 @@ class ValidatorLib:
                 if len(tags) > 0:
                     tag = tags[0]
                 if tag in convoTags:
-                    print("FOUND!", tag)
+                    #print("FOUND!", tag)
                     if not uid in scores:
                         scores[uid] = 0
                     scores[uid] += 3
@@ -235,7 +255,7 @@ class MinerLib:
         exampleTags = ["realistic", "business-minded", "conciliatory", "responsive", "caring", "understanding", "apologetic", "affectionate", "optimistic", "family-oriented"]
         waitSec = random.randint(0, 3)
         out = {"uid":minerUid, "tags":[], "profiles":[], "convoChecksum":11}
-        print("Mine result: %ds" % (waitSec))
+        #print("Mine result: %ds" % (waitSec))
         if dryrun:
             await asyncio.sleep(waitSec)
             out["tags"].append(random.choice(exampleTags))
