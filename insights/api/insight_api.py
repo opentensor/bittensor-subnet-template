@@ -37,7 +37,7 @@ def handle_llm_interpret_error(errorcode: protocol.ERROR_TYPE):
     if errorcode == protocol.LLM_ERROR_TYPE_NOT_SUPPORTED:
         return "This Query is not allowed"
     elif errorcode == protocol.LLM_ERROR_SEARCH_TARGET_NOT_SUPPORTED:
-        # Todo
+        
         return "There's not required type"
     else:
         return "Can't handle this query"
@@ -59,7 +59,7 @@ def main():
     bt.logging.info(f"Top_rate: {config.top_rate}")
     
     text_query_api = TextQueryAPI(wallet=wallet)
-    
+        
     @app.get("/api/text_query")
     async def get_response(network:str, text: str):
         global excluded_uids
@@ -76,6 +76,7 @@ def main():
             axons=top_miner_axons,
             network=network,
             text=text,
+            is_generic_llm=False,
             timeout=config.timeout
             )
         blacklist_axons = np.array(top_miner_axons)[blacklist_axon_ids]
@@ -93,8 +94,22 @@ def main():
         if not responses:
             return "This hotkey is banned."
         response = random.choice(responses)
-        if response.error != protocol.LLM_ERROR_NO_ERROR:
-            return handle_llm_interpret_error(response.error)
+        
+        if response.error == protocol.LLM_ERROR_TYPE_NOT_SUPPORTED:
+            # If the validator received the error "Query is not allowed.", It should error out(ChatApp would handle it accordingly)
+            return "Query is not allowed"
+        
+        if response.error == protocol.LLM_ERROR_SEARCH_TARGET_NOT_SUPPORTED:
+            # If the validator receives the error 'Cannot find the specific template', it should invoke the generic LLM endpoint passing the same user text.
+            responses, blacklist_axon_ids =  await text_query_api(
+                axons=top_miner_axons,
+                network=network,
+                text=text,
+                is_generic_llm=True,
+                timeout=config.timeout
+            )
+            response = random.choice(responses)       
+        
         return response
             
     @app.get("/")
