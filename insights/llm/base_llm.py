@@ -1,7 +1,8 @@
+from insights import protocol
 from insights.protocol import Query, QueryOutput
 
 from abc import ABC, abstractmethod
-
+from typing import List
 
 class BaseLLM(ABC):
     @abstractmethod
@@ -11,14 +12,14 @@ class BaseLLM(ABC):
         """
     
     @abstractmethod
-    def build_query_from_text(self, query_text: str) -> Query:
+    def build_query_from_messages(self, llm_messages: List[protocol.LlmMessage]) -> Query:
         """
         Build query synapse from natural language query
         Used by miner
         """
 
     @abstractmethod
-    def interpret_result(self, query_text: str, result: list) -> str:
+    def interpret_result(self, llm_messages: List[protocol.LlmMessage], result: list) -> str:
         """
         Interpret result into natural language based on user's query and structured result dict
         """

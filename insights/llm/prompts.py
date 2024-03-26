@@ -46,7 +46,10 @@ You need to remove all the keys with value None in the generated JSON.
 """
 
 interpret_prompt = """
-A user asks about bitcoin transactions in natural language.
+A user asks about bitcoin transactions in natural language. You will be provided the entire chat history.
 You will also be provided the result value as JSON array, which contains all the answers.
 Please convert the provided result value into natural language without missing any information.
+
+- Result
+{result}
 """

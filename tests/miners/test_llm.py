@@ -17,7 +17,12 @@ class TestLLM(unittest.TestCase):
     def test_build_query(self):
         # test case 1
         query_text = "Return 15 transactions outgoing from my address bc1q4s8yps9my6hun2tpd5ke5xmvgdnxcm2qspnp9r"
-        query = self.llm.build_query_from_text(query_text=query_text)
+        query = self.llm.build_query_from_messages([
+            protocol.LlmMessage(
+                type=protocol.LLM_MESSAGE_TYPE_USER,
+                content=query_text
+            )
+        ])
         expected_query = {
             "type": "search",
             "target": "Transaction",
@@ -35,7 +40,12 @@ class TestLLM(unittest.TestCase):
 
         # test case 2
         query_text = "I have sent more than 1.5 BTC to somewhere but I couldn't remember. Show me relevant transactions. My address is bc1q4s8yps9my6hun2tpd5ke5xmvgdnxcm2qspnp9r"
-        query = self.llm.build_query_from_text(query_text=query_text)
+        query = self.llm.build_query_from_messages([
+            protocol.LlmMessage(
+                type=protocol.LLM_MESSAGE_TYPE_USER,
+                content=query_text
+            )
+        ])
         expected_query = {
             "type": "search",
             "target": "Transaction",
@@ -56,9 +66,15 @@ class TestLLM(unittest.TestCase):
         
     def test_llm_query_handler(self):
         query_text = "Return 15 transactions outgoing from my address bc1q4s8yps9my6hun2tpd5ke5xmvgdnxcm2qspnp9r"
-        query = self.llm.build_query_from_text(query_text=query_text)
+        llm_messages = [
+            protocol.LlmMessage(
+                type=protocol.LLM_MESSAGE_TYPE_USER,
+                content=query_text
+            )
+        ]
+        query = self.llm.build_query_from_messages(llm_messages)
         result = self.graph_search.execute_query(query=query)
-        interpreted_result = self.llm.interpret_result(query_text=query_text, result=result)
+        interpreted_result = self.llm.interpret_result(llm_messages=llm_messages, result=result)
         print("--- Interpreted result ---")
         print(interpreted_result)
 
