@@ -40,23 +40,17 @@ class GraphSearch:
         
     def execute_query(self, query: protocol.Query) -> protocol.QueryOutput:
         # build cypher query
-        try:
-            cypher_query = QueryBuilder.build_query(query)
-        except Exception as e:
-            raise Exception(f"query parse error: {e}")
-        
+        cypher_query = QueryBuilder.build_query(query)
         # execute cypher query
-        try:
-            result = self.execute_cypher_query(cypher_query)
-            return result
-        except Exception as e:
-            raise Exception(f"cypher query execution error: {e}")
-    
+        result = self.execute_cypher_query(cypher_query)
+        return result
     
     def execute_cypher_query(self, cypher_query: str):
         with self.driver.session() as session:
             result = session.run(cypher_query)
-            return result
+            if not result:
+                return None
+            return result.data()
 
 
     def get_run_id(self):

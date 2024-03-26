@@ -113,6 +113,7 @@ class QueryOutput(BaseModel):
     interpreted_result: Optional[str] = None
     error: Optional[ERROR_TYPE] = None
 
+
 class Query(BaseSynapse):
     network: str = None
     type: str = None
