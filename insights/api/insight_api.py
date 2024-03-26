@@ -33,8 +33,15 @@ def get_config():
     config = bt.config(parser)
     return config
 
-def handle_llm_interpret_error(errorcode):
-    return protocol.errorcode
+def handle_llm_interpret_error(errorcode: protocol.ERROR_TYPE):
+    if errorcode == protocol.LLM_ERROR_TYPE_NOT_SUPPORTED:
+        return "This Query is not allowed"
+    elif errorcode == protocol.LLM_ERROR_SEARCH_TARGET_NOT_SUPPORTED:
+        # Todo
+        return "There's not required type"
+    else:
+        return "Can't handle this query"
+    
 
 excluded_uids = []
 def main():        

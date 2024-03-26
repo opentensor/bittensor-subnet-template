@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 # protocol version
 VERSION = 5
-
+ERROR_TYPE = int
 
 # Model types
 MODEL_TYPE_FUNDS_FLOW = "funds_flow"
@@ -111,7 +111,7 @@ class BlockCheck(BaseSynapse):
 class QueryOutput(BaseModel):
     result: Optional[List[Dict]] = None
     interpreted_result: Optional[str] = None
-    error: Optional[str] = None
+    error: Optional[ERROR_TYPE] = None
 
 class Query(BaseSynapse):
     network: str = None
