@@ -108,8 +108,9 @@ def main():
                 is_generic_llm=True,
                 timeout=config.timeout
             )
-            response = random.choice(responses)       
-        
+            if not responses:
+                return "This hotkey is banned."
+            response = random.choice(responses)               
         return response
             
     @app.get("/")
