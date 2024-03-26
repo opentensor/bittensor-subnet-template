@@ -11,6 +11,8 @@ try:
     from spacy.matcher import Matcher
 except:
     print("Please install spacy to run locally")
+    # en_core_web_sm model vectors = 96 dimensions.
+    # en_core_web_md and en_core_web_lg = 300 dimensions
 
 #from conversationgenome.ConversationDatabase import ConversationDatabase
 #from conversationgenome.MinerLib import MinerLib
@@ -144,15 +146,19 @@ class ValidatorLib:
         #print("DOC", doc)
         matches = matcher(doc)
         matches_set = set()
+        matches_dict = {}
         for match_id, start, end in matches:
             span = doc[start:end]
             #matchPhrase = span.text
             matchPhrase = span.lemma_
             if len(matchPhrase) > 5:
-                print(f"Original: {span.text}, Lemma: {span.lemma_} Vectors: {span.vector.tolist()}")
+                #print(f"Original: {span.text}, Lemma: {span.lemma_} Vectors: {span.vector.tolist()}")
                 matches_set.add(matchPhrase)
+                if not matchPhrase in matches_dict:
+                    matches_dict[matchPhrase] = {"tag":matchPhrase, "count":0, "vectors":span.vector.tolist()}
+                matches_dict[matchPhrase]['count'] += 1
 
-        print("tags", matches_set)
+        print("tags", matches_dict)
         data = {
             "participantProfiles": [1,2,3],
             "tags": {},
