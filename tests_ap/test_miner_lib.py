@@ -117,15 +117,31 @@ class ValidatorLib:
         llml =  LlmApi()
         data = await llml.callFunction("convoParse", convo)
         nlp = spacy.load("en_core_web_sm")
-        pattern = [{"POS": "ADJ"}, {"POS": "NOUN"}]
+
+        # Define patterns
+        adj_noun_pattern = [{"POS": "ADJ"}, {"POS": "NOUN"}]
+        pronoun_pattern = [{"POS": "PRON"}]
+        unique_word_pattern = [{"POS": {"IN": ["NOUN", "VERB", "ADJ"]}, "IS_STOP": False}]
+
+        # Initialize the Matcher with the shared vocabulary
         matcher = Matcher(nlp.vocab)
-        matcher.add("ADJ_NOUN_PATTERN", [pattern])
+        matcher.add("ADJ_NOUN_PATTERN", [adj_noun_pattern])
+        matcher.add("PRONOUN_PATTERN", [pronoun_pattern])
+        matcher.add("UNIQUE_WORD_PATTERN", [unique_word_pattern])
+
         doc = nlp(json.dumps(convo))
         #print("DOC", doc)
         matches = matcher(doc)
+        matches_set = set()
         for match_id, start, end in matches:
             span = doc[start:end]
-            print("MATCH", span.text)
+            #matchPhrase = span.text
+            matchPhrase = span.lemma_
+            if len(matchPhrase) > 5:
+                #print(f"Original: {span.text}, Lemma: {span.lemma_}")
+                matches_set.add(matchPhrase)
+
+        print("tags", matches_set)
         data = {
             "participantProfiles": [1,2,3],
             "tags": {},
