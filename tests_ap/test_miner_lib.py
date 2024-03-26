@@ -1,7 +1,15 @@
 import pytest
 import asyncio
 import random
-import time
+import json
+
+spacy = None
+Matcher = None
+try:
+    import spacy
+    from spacy.matcher import Matcher
+except:
+    print("Please install spacy to run locally")
 
 #from conversationgenome.ConversationDatabase import ConversationDatabase
 #from conversationgenome.MinerLib import MinerLib
@@ -14,6 +22,7 @@ class MockBt:
             uids.append(random.randint(1000, 9999))
         return uids
 
+bt = MockBt()
 
 
 class c:
@@ -43,8 +52,21 @@ class ApiLib:
     def reserveConversation(self, hotkey, dryrun=False):
         # Call Convo server and reserve a conversation
         if dryrun:
-            convo = {"guid":"c1234", "exchanges":[1,2,3,4]}
+            path = 'facebook-chat-data.json'
+            f = open(path)
+            body = f.read()
+            f.close()
+            convos = json.loads(body)
+            convoKeys = list(convos.keys())
+            convoTotal = len(convoKeys)
+            #print("convoTotal", convoTotal)
+            selectedConvoKey = random.choice(convoKeys)
+            selectedConvo = convos[selectedConvoKey]
+            print("convoTotal", selectedConvo)
+
+            convo = {"guid":"c"+str(selectedConvoKey), "exchanges":selectedConvo['exchanges']}
         else:
+
             convo = {"guid":"c1234", "exchanges":[1,2,3,4]}
         return convo
 
@@ -94,6 +116,16 @@ class ValidatorLib:
         pt = await cl.getConvoPromptTemplate()
         llml =  LlmApi()
         data = await llml.callFunction("convoParse", convo)
+        nlp = spacy.load("en_core_web_sm")
+        pattern = [{"POS": "ADJ"}, {"POS": "NOUN"}]
+        matcher = Matcher(nlp.vocab)
+        matcher.add("ADJ_NOUN_PATTERN", [pattern])
+        doc = nlp(json.dumps(convo))
+        #print("DOC", doc)
+        matches = matcher(doc)
+        for match_id, start, end in matches:
+            span = doc[start:end]
+            print("MATCH", span.text)
         data = {
             "participantProfiles": [1,2,3],
             "tags": {},
@@ -172,7 +204,6 @@ class MinerLib:
 
 
 
-bt = MockBt()
 
 @pytest.mark.asyncio
 async def test_miner_no_convo():
