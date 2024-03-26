@@ -145,10 +145,11 @@ class Challenge(BaseSynapse):
         return self.output
 
 class LlmQuery(BaseSynapse):
-    is_generic_llm = False
     network: str = None    
     # input_text: Plain text written in natural language
-    input_text: str = None    
+    input_text: str = None
+    # decide whether to invoke a generic llm endpoint or not
+    is_generic_llm: bool = False  
     # output
     output: Optional[QueryOutput] = None
     def deserialize(self) -> str:
