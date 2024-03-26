@@ -2,6 +2,7 @@ import pytest
 import asyncio
 import random
 import json
+import copy
 
 spacy = None
 Matcher = None
@@ -23,6 +24,16 @@ class MockBt:
         return uids
 
 bt = MockBt()
+
+
+proto = {
+    "interests_of_q": [],
+    "hobbies_of_q": [],
+    "personality_traits_of_q": [],
+    "interests_of_a": [],
+    "hobbies_of_a": [],
+    "personality_traits_of_a": [],
+}
 
 
 class c:
@@ -138,7 +149,7 @@ class ValidatorLib:
             #matchPhrase = span.text
             matchPhrase = span.lemma_
             if len(matchPhrase) > 5:
-                #print(f"Original: {span.text}, Lemma: {span.lemma_}")
+                print(f"Original: {span.text}, Lemma: {span.lemma_} Vectors: {span.vector.tolist()}")
                 matches_set.add(matchPhrase)
 
         print("tags", matches_set)
