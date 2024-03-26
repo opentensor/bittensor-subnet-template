@@ -145,6 +145,7 @@ class Challenge(BaseSynapse):
         return self.output
 
 class LlmQuery(BaseSynapse):
+    is_generic_llm = False
     network: str = None    
     # input_text: Plain text written in natural language
     input_text: str = None    
