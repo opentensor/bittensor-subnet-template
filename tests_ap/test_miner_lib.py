@@ -62,6 +62,17 @@ class LlmApi:
     async def callFunction(self, functionName, parameters):
         pass
 
+    async def conversation_to_tags(self,  convo, dryrun=True):
+        # Get prompt template
+        #pt = await cl.getConvoPromptTemplate()
+        #llml =  LlmApi()
+        #data = await llml.callFunction("convoParse", convo)
+        if dryrun:
+            matches_dict = await self.simple_text_to_tags(json.dumps(convo['exchanges']))
+        return matches_dict
+
+
+
     async def simple_text_to_tags(self, body):
         nlp = self.nlp
         if not nlp:
@@ -187,13 +198,9 @@ class ValidatorLib:
     async def generateFullConvoMetaData(self, convo):
         cl = ConvoLib()
         #print("METACONVO participants", convo['participants'])
-        # Get prompt template
-        #pt = await cl.getConvoPromptTemplate()
-        #llml =  LlmApi()
-        #data = await llml.callFunction("convoParse", convo)
 
         llml = LlmApi()
-        matches_dict = await llml.simple_text_to_tags(json.dumps(convo['exchanges']))
+        matches_dict = await llml.conversation_to_tags(convo)
         tags = list(matches_dict.keys())
 
         #half = int(len(tags) / 2)
