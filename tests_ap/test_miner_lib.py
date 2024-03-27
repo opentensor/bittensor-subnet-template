@@ -148,10 +148,11 @@ class ValidatorLib:
 
     async def generateFullConvoMetaData(self, convo):
         cl = ConvoLib()
+        #print("METACONVO participants", convo['participants'])
         # Get prompt template
-        pt = await cl.getConvoPromptTemplate()
-        llml =  LlmApi()
-        data = await llml.callFunction("convoParse", convo)
+        #pt = await cl.getConvoPromptTemplate()
+        #llml =  LlmApi()
+        #data = await llml.callFunction("convoParse", convo)
         nlp = spacy.load("en_core_web_sm")
 
         # Define patterns
@@ -165,7 +166,7 @@ class ValidatorLib:
         matcher.add("PRONOUN_PATTERN", [pronoun_pattern])
         matcher.add("UNIQUE_WORD_PATTERN", [unique_word_pattern])
 
-        doc = nlp(json.dumps(convo))
+        doc = nlp( json.dumps(convo['exchanges']) )
         #print("DOC", doc)
         matches = matcher(doc)
         matches_set = set()
@@ -181,10 +182,19 @@ class ValidatorLib:
                     matches_dict[matchPhrase] = {"tag":matchPhrase, "count":0, "vectors":span.vector.tolist()}
                 matches_dict[matchPhrase]['count'] += 1
 
-        #print("tags", matches_dict)
+        tags = list(matches_dict.keys())
+        #half = int(len(tags) / 2)
+        #tagsQ = half[0:half]
+        #tagsA = half[half:]
+        #info = copy.deepcopy(proto)
+        #info["interests_of_q"] = tagsQ
+        #info["interests_of_a"] = tagsA
+        ##print("FullConvo tags",  tags)
+        print("Found %d FullConvo tags" % len(tags) )
         data = {
-            "participantProfiles": [1,2,3],
-            "tags": {},
+            "participantProfiles": convo['participants'],
+            "tags": tags,
+            "tag_vectors": matches_dict,
         }
         return data
 
