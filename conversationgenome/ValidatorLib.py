@@ -186,11 +186,10 @@ class ValidatorLib:
         for key, fullConvoTagVector in fullConvoTagVectors.items():
             #print(fullConvoTagVector)
             vectorNeightborhood.append(fullConvoTagVector['vectors'])
-            print(len(fullConvoTagVector['vectors']))
-        print("LEN", len(vectorNeightborhood))
+            #print("num vectors", len(fullConvoTagVector['vectors']))
+        #print("vectorNeightborhood LEN", len(vectorNeightborhood))
         semantic_neighborhood = np.mean(vectorNeightborhood, axis=0)
         #print("Full convo semantic_neighborhood", semantic_neighborhood)
-        #return
 
         # Get uids of available miners
         uids = bt.getUids()
@@ -224,20 +223,25 @@ class ValidatorLib:
                 #print("COMPARE", compareResults)
                 scoreToFullConvo = await self.calculate_base_score(compareResults)
                 minerResult['score'] = scoreToFullConvo
-                for unique_tag in compareResults['unique_2']:
-                    if unique_tag in vectors:
-                        tagVectors = vectors[unique_tag]['vectors']
-                        #print("VECTOR", unique_tag, tagVectors[0:2])
-                        # similarity_score
-                        #  0 = orthogonal (perpendicular), no similarity
-                        #  1 = identical in orientation, maximum similarity
-                        # -1 = diametrically opposed, maximum dissimilarity
-                        similarity_score = 0
-                        if not Utils.is_empty_vector(tagVectors):
-                            similarity_score = np.dot(semantic_neighborhood, tagVectors) / (np.linalg.norm(semantic_neighborhood) * np.linalg.norm(tagVectors))
-                            print(f"Similarity score between the content and the tag '{unique_tag}': {similarity_score}")
-
-                    #print("UNIQUE", unique_tag)
+                similarity_scores = []
+                uniqueTags = compareResults['unique_2']
+                if len(uniqueTags) > 0:
+                    for unique_tag in uniqueTags:
+                        if unique_tag in vectors:
+                            tagVectors = vectors[unique_tag]['vectors']
+                            #print("VECTOR", unique_tag, tagVectors[0:2])
+                            # similarity_score
+                            #  0 = orthogonal (perpendicular), no similarity
+                            #  1 = identical in orientation, maximum similarity
+                            # -1 = diametrically opposed, maximum dissimilarity
+                            similarity_score = 0
+                            if not Utils.is_empty_vector(tagVectors):
+                                similarity_score = np.dot(semantic_neighborhood, tagVectors) / (np.linalg.norm(semantic_neighborhood) * np.linalg.norm(tagVectors))
+                                #print(f"Similarity score between the content and the tag '{unique_tag}': {similarity_score}")
+                            similarity_scores.append(similarity_score)
+                    print("MEDIAN similarity_score of %d unique tags for miner %s" % (len(uniqueTags), str(uid)), np.median(similarity_scores), similarity_scores)
+                else:
+                    print( "No unique tags for miner %s" % (str(uid)) )
 
             await self.calculate_emission_rewards(minerResults, 'score')
 
