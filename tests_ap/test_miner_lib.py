@@ -4,6 +4,8 @@ import random
 import json
 import copy
 import math
+import uuid
+import time
 
 spacy = None
 Matcher = None
@@ -78,6 +80,29 @@ class Utils:
             if key in dictionary:
                 values.append(dictionary[key])
         return values
+
+    @staticmethod
+    def guid():
+        current_time = int(round(time.time() * 1000))
+        guid = uuid.uuid1(node=current_time)
+        guid_int = int(guid.int)
+        return guid_int
+
+    @staticmethod
+    def split_overlap_array(array, size=10, overlap=2):
+        result = []
+        lenArray = len(array)
+        num_splits = lenArray//(size-overlap) + 1
+
+        for i in range(num_splits):
+            start = i*(size-overlap)
+            end = start + size
+            window = array[start:end]
+            #print("Start/end/elements", start, end, window)
+            result.append(array[start:end])
+            if end >= lenArray:
+                break
+        return result
 
 
 class LlmApi:
@@ -328,6 +353,11 @@ class ValidatorLib:
 
 
     async def sendWindowsToMiners(self, fullConvoTags, windows):
+        testArray = [1,2,3,4,5,6,7,8,9,10]
+        Utils.split_overlap_array(testArray, size=5, overlap=2)
+        return
+
+
         # Get uids of available miners
         uids = bt.getUids()
         if len(uids) < 6:
