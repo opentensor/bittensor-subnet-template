@@ -291,13 +291,16 @@ class ValidatorLib:
         # TODO: Create real splitter
         windows = []
         curWindow = []
-        for exchange in fullConvo['exchanges']:
-            curWindow.append(exchange)
-            if len(curWindow) > 3:
+        if False:
+            for exchange in fullConvo['exchanges']:
+                curWindow.append(exchange)
+                if len(curWindow) > 3:
+                    windows.append(curWindow)
+                    curWindow = []
+            if len(curWindow) > 0:
                 windows.append(curWindow)
-                curWindow = []
-        if len(curWindow) > 0:
-            windows.append(curWindow)
+        else:
+            windows = Utils.split_overlap_array(fullConvo['exchanges'], size=minExchanges, overlap=2)
 
         # TODO: Write convo windows into local database with full convo metadata
         return windows
@@ -353,9 +356,9 @@ class ValidatorLib:
 
 
     async def sendWindowsToMiners(self, fullConvoTags, windows):
-        testArray = [1,2,3,4,5,6,7,8,9,10]
-        Utils.split_overlap_array(testArray, size=5, overlap=2)
-        return
+        #testArray = [1,2,3,4,5,6,7,8,9,10]
+        #Utils.split_overlap_array(testArray, size=5, overlap=2)
+        #return
 
 
         # Get uids of available miners
