@@ -53,4 +53,7 @@ class Utils:
                 break
         return result
 
+    @staticmethod
+    def is_empty_vector(vector):
+        return all(v == 0.0 for v in vector)
 

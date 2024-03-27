@@ -1,5 +1,6 @@
 import json
 import spacy
+import numpy as np
 
 spacy = None
 Matcher = None
@@ -14,8 +15,20 @@ except:
 
 class LlmLib:
     nlp = None
+
     async def callFunction(self, functionName, parameters):
         pass
+
+    def get_nlp(self):
+        nlp = self.nlp
+        if not nlp:
+            # python -m spacy download en_core_web_sm
+            #nlp = spacy.load("en_core_web_sm")
+            #nlp = spacy.load("en_core_web_md")
+            nlp = spacy.load("en_core_web_lg") # ~600mb
+            #print(f"Vector dimensionality: {nlp.vocab.vectors_length}")
+            self.nlp = nlp
+        return nlp
 
     async def conversation_to_tags(self,  convo, dryrun=True):
         # Get prompt template
@@ -31,14 +44,7 @@ class LlmLib:
 
 
     async def simple_text_to_tags(self, body):
-        nlp = self.nlp
-        if not nlp:
-            # python -m spacy download en_core_web_sm
-            #nlp = spacy.load("en_core_web_sm")
-            #nlp = spacy.load("en_core_web_md")
-            nlp = spacy.load("en_core_web_lg") # ~600mb
-            #print(f"Vector dimensionality: {nlp.vocab.vectors_length}")
-            self.nlp = nlp
+        nlp = self.get_nlp()
 
         # Define patterns
         adj_noun_pattern = [{"POS": "ADJ"}, {"POS": "NOUN"}]
@@ -66,3 +72,24 @@ class LlmLib:
                 matches_dict[matchPhrase]['count'] += 1
 
         return matches_dict
+
+    async def test(self):
+        print("STRT")
+        nlp = self.get_nlp()
+
+        # Process the content and the individual tag
+        content = "I love playing football and basketball. Sports are a great way to stay active."
+        tag = "sports"
+        content_doc = nlp(content)
+        tag_doc = nlp(tag)
+
+        allVectors = [token.vector for token in content_doc]
+        #print("allVectors",allVectors )
+        # Create a vector representing the entire content by averaging the vectors of all tokens
+        content_vector = np.mean(allVectors, axis=0)
+        #print("content_vector", content_vector)
+
+        # Calculate the similarity score between the content vector and the tag vector
+        tag_vector = tag_doc[0].vector
+        similarity_score = np.dot(content_vector, tag_vector) / (np.linalg.norm(content_vector) * np.linalg.norm(tag_vector))
+        print(f"Similarity score between the content and the tag '{tag}': {similarity_score}")

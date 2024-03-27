@@ -181,6 +181,16 @@ class ValidatorLib:
         participantProfiles = Utils.get(fullConvoMetaData, "participantProfiles", [])
         fullConvoTags = Utils.get(fullConvoMetaData, "tags", [])
         fullConvoTagVectors = Utils.get(fullConvoMetaData, "tag_vectors", {})
+        #print("fullConvoTagVectors", fullConvoTagVectors)
+        vectorNeightborhood = []
+        for key, fullConvoTagVector in fullConvoTagVectors.items():
+            #print(fullConvoTagVector)
+            vectorNeightborhood.append(fullConvoTagVector['vectors'])
+            print(len(fullConvoTagVector['vectors']))
+        print("LEN", len(vectorNeightborhood))
+        semantic_neighborhood = np.mean(vectorNeightborhood, axis=0)
+        #print("Full convo semantic_neighborhood", semantic_neighborhood)
+        #return
 
         # Get uids of available miners
         uids = bt.getUids()
@@ -206,12 +216,28 @@ class ValidatorLib:
             for minerResult in minerResults:
                 uid = Utils.get(minerResult, 'uid')
                 tags = Utils.get(minerResult, 'tags')
+                vectors = Utils.get(minerResult, 'vectors')
+                #print("VECTORS", vectors)
                 compareResults = Utils.compare_arrays(fullConvoTags, tags)
                 compareResults['total_1'] = len(fullConvoTags)
                 compareResults['total_2'] = len(tags)
                 #print("COMPARE", compareResults)
                 scoreToFullConvo = await self.calculate_base_score(compareResults)
                 minerResult['score'] = scoreToFullConvo
+                for unique_tag in compareResults['unique_2']:
+                    if unique_tag in vectors:
+                        tagVectors = vectors[unique_tag]['vectors']
+                        #print("VECTOR", unique_tag, tagVectors[0:2])
+                        # similarity_score
+                        #  0 = orthogonal (perpendicular), no similarity
+                        #  1 = identical in orientation, maximum similarity
+                        # -1 = diametrically opposed, maximum dissimilarity
+                        similarity_score = 0
+                        if not Utils.is_empty_vector(tagVectors):
+                            similarity_score = np.dot(semantic_neighborhood, tagVectors) / (np.linalg.norm(semantic_neighborhood) * np.linalg.norm(tagVectors))
+                            print(f"Similarity score between the content and the tag '{unique_tag}': {similarity_score}")
+
+                    #print("UNIQUE", unique_tag)
 
             await self.calculate_emission_rewards(minerResults, 'score')
 
@@ -224,4 +250,9 @@ class ValidatorLib:
         if success == True:
             cl = ConvoLib()
             await cl.markConversionComplete(self.hotkey, cguid)
+
+    async def neighborhood_test(self):
+        print("Quick test")
+        llml = LlmLib()
+        await llml.test()
 

@@ -52,10 +52,9 @@ class MinerLib:
             matches_dict = await llml.conversation_to_tags({"lines":lines})
             tags = list(matches_dict.keys())
             out["tags"] = tags
-            waitSec = random.randint(0, 3)
+            out["vectors"] = matches_dict
+            #waitSec = random.randint(0, 3)
             #await asyncio.sleep(waitSec)
-            if False:
-                out["tags"].append(random.choice(exampleTags))
         else:
             # TODO: Make this actually tag content
             exampleTags = ["realistic", "business-minded", "conciliatory", "responsive", "caring", "understanding", "apologetic", "affectionate", "optimistic", "family-oriented"]

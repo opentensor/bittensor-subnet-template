@@ -5,4 +5,5 @@ from conversationgenome.ValidatorLib import ValidatorLib
 async def test_full():
     vl = ValidatorLib()
     await vl.requestConvo()
+    #await vl.neighborhood_test()
 
