@@ -103,6 +103,8 @@ class ConvoLib:
 
 
 class ValidatorLib:
+    nlp = None
+
     async def requestConvo(self):
         minConvWindows = 1
         hotkey = "a123"
@@ -146,14 +148,11 @@ class ValidatorLib:
         windows = [1,2]
         return windows
 
-    async def generateFullConvoMetaData(self, convo):
-        cl = ConvoLib()
-        #print("METACONVO participants", convo['participants'])
-        # Get prompt template
-        #pt = await cl.getConvoPromptTemplate()
-        #llml =  LlmApi()
-        #data = await llml.callFunction("convoParse", convo)
-        nlp = spacy.load("en_core_web_sm")
+    async def simple_text_to_tags(self, body):
+        nlp = self.nlp
+        if not nlp:
+            nlp = spacy.load("en_core_web_sm")
+            self.nlp = nlp
 
         # Define patterns
         adj_noun_pattern = [{"POS": "ADJ"}, {"POS": "NOUN"}]
@@ -166,10 +165,9 @@ class ValidatorLib:
         matcher.add("PRONOUN_PATTERN", [pronoun_pattern])
         matcher.add("UNIQUE_WORD_PATTERN", [unique_word_pattern])
 
-        doc = nlp( json.dumps(convo['exchanges']) )
+        doc = nlp( body )
         #print("DOC", doc)
         matches = matcher(doc)
-        matches_set = set()
         matches_dict = {}
         for match_id, start, end in matches:
             span = doc[start:end]
@@ -177,10 +175,23 @@ class ValidatorLib:
             matchPhrase = span.lemma_
             if len(matchPhrase) > 5:
                 #print(f"Original: {span.text}, Lemma: {span.lemma_} Vectors: {span.vector.tolist()}")
-                matches_set.add(matchPhrase)
                 if not matchPhrase in matches_dict:
                     matches_dict[matchPhrase] = {"tag":matchPhrase, "count":0, "vectors":span.vector.tolist()}
                 matches_dict[matchPhrase]['count'] += 1
+
+        return matches_dict
+
+
+
+    async def generateFullConvoMetaData(self, convo):
+        cl = ConvoLib()
+        #print("METACONVO participants", convo['participants'])
+        # Get prompt template
+        #pt = await cl.getConvoPromptTemplate()
+        #llml =  LlmApi()
+        #data = await llml.callFunction("convoParse", convo)
+
+        matches_dict = await self.simple_text_to_tags(json.dumps(convo['exchanges']))
 
         tags = list(matches_dict.keys())
         #half = int(len(tags) / 2)
