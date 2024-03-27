@@ -58,6 +58,7 @@ class Utils:
             pass
         return out
 
+    @staticmethod
     def compare_arrays(arr1, arr2):
         result_dict = {}
 
@@ -69,6 +70,14 @@ class Utils:
         result_dict["unique_2"] = list(set2.difference(set1))
 
         return result_dict
+
+    @staticmethod
+    def pluck(dicts, key):
+        values = []
+        for dictionary in dicts:
+            if key in dictionary:
+                values.append(dictionary[key])
+        return values
 
 
 class LlmApi:
@@ -193,7 +202,8 @@ class ValidatorLib:
 
         return score
 
-    async def calculate_emmision_rewards(self, scores):
+    async def calculate_emmision_rewards(self, dicts, scoreKey):
+        scores = Utils.pluck(dicts, scoreKey)
         total_scores = sum(scores)
         mean = total_scores / len(scores)
         stdev = math.sqrt(sum((x - mean) ** 2 for x in scores) / len(scores))
@@ -202,9 +212,11 @@ class ValidatorLib:
             return math.exp(-(x - mean) ** 2 / (2 * stdev ** 2)) / (stdev * math.sqrt(2 * math.pi))
 
         rewards = []
-        for score in scores:
+        for cur_dict in dicts:
+            score = Utils.get(cur_dict, scoreKey)
             pdf_value = normal_pdf(score, mean, stdev)
             reward_percentage = pdf_value / sum(normal_pdf(x, mean, stdev) for x in scores)
+            cur_dict['reward'] = reward_percentage
             rewards.append(reward_percentage)
 
         return rewards
@@ -345,6 +357,7 @@ class ValidatorLib:
                 compareResults['total_2'] = len(tags)
                 #print("COMPARE", compareResults)
                 scoreToFullConvo = await self.calculate_base_score(compareResults)
+                minerResult['score'] = scoreToFullConvo
                 scores2.append(scoreToFullConvo)
                 #print("BASE SCORE", scoreToFullConvo )
                 continue
@@ -357,7 +370,7 @@ class ValidatorLib:
                         scores[uid] = 0
                     scores[uid] += 3
 
-            print(await self.calculate_emmision_rewards(scores2))
+            print(await self.calculate_emmision_rewards(minerResults, 'score'))
             # Send emission to forward
             print("EMISSIONS", scores)
 
