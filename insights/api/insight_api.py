@@ -2,10 +2,12 @@ import argparse
 import asyncio
 import os
 import random
+import time
 import numpy as np
 
 from datetime import datetime
 
+import protocol
 import bittensor as bt
 from insights.api.query import TextQueryAPI
 from insights.api.get_query_axons import get_query_api_axons
@@ -31,6 +33,16 @@ def get_config():
     config = bt.config(parser)
     return config
 
+def handle_llm_interpret_error(errorcode: protocol.ERROR_TYPE):
+    if errorcode == protocol.LLM_ERROR_TYPE_NOT_SUPPORTED:
+        return "This Query is not allowed"
+    elif errorcode == protocol.LLM_ERROR_SEARCH_TARGET_NOT_SUPPORTED:
+        
+        return "There's not required type"
+    else:
+        return "Can't handle this query"
+    
+
 excluded_uids = []
 def main():        
     app = FastAPI()
@@ -47,10 +59,11 @@ def main():
     bt.logging.info(f"Top_rate: {config.top_rate}")
     
     text_query_api = TextQueryAPI(wallet=wallet)
-    
+        
     @app.get("/api/text_query")
     async def get_response(network:str, text: str):
         global excluded_uids
+        
         # select top miner
         metagraph = subtensor.metagraph(config.netuid) # sync every request
         top_miner_uids = get_top_miner_uids(metagraph, config.top_rate, excluded_uids)
@@ -63,17 +76,41 @@ def main():
             axons=top_miner_axons,
             network=network,
             text=text,
+            is_generic_llm=False,
             timeout=config.timeout
             )
         blacklist_axons = np.array(top_miner_axons)[blacklist_axon_ids]
         blacklist_uids = np.where(np.isin(np.array(metagraph.axons), blacklist_axons))[0]
         excluded_uids = np.union1d(np.array(excluded_uids), blacklist_uids)
         excluded_uids = excluded_uids.astype(int).tolist()
+        
+        # If the number of excluded_uids is bigger than top x percentage of the whole axons, format it.
+        if len(excluded_uids) > int(metagraph.n * config.top_rate):
+            bt.logging.info(f"Excluded UID list is too long")
+            excluded_uids = []
         bt.logging.info(f"excluded_uids are {excluded_uids}")
         bt.logging.info(f"Responses are {responses}")
+        
         if not responses:
-            return "This API is banned."
+            return "This hotkey is banned."
         response = random.choice(responses)
+        
+        if response.error == protocol.LLM_ERROR_TYPE_NOT_SUPPORTED:
+            # If the validator received the error "Query is not allowed.", It should error out(ChatApp would handle it accordingly)
+            return "Query is not allowed"
+        
+        if response.error == protocol.LLM_ERROR_SEARCH_TARGET_NOT_SUPPORTED:
+            # If the validator receives the error 'Cannot find the specific template', it should invoke the generic LLM endpoint passing the same user text.
+            responses, blacklist_axon_ids =  await text_query_api(
+                axons=top_miner_axons,
+                network=network,
+                text=text,
+                is_generic_llm=True,
+                timeout=config.timeout
+            )
+            if not responses:
+                return "This hotkey is banned."
+            response = random.choice(responses)               
         return response
             
     @app.get("/")
@@ -112,7 +149,7 @@ async def test_query(wallet: "bt.wallet" = None):
         axons=axons,
         # Arugmnts for the proper synapse
         network=network,
-        input_text=user_input,
+        text=user_input,
         timeout=config.timeout
     )
     print(fetch_response)

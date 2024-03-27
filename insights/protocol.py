@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 # protocol version
 VERSION = 5
-
+ERROR_TYPE = int
 
 # Model types
 MODEL_TYPE_FUNDS_FLOW = "funds_flow"
@@ -115,7 +115,8 @@ class BlockCheck(BaseSynapse):
 class QueryOutput(BaseModel):
     result: Optional[List[Dict]] = None
     interpreted_result: Optional[str] = None
-    error: Optional[str] = None
+    error: Optional[ERROR_TYPE] = None
+
 
 class Query(BaseSynapse):
     network: str = None
@@ -154,8 +155,13 @@ class LlmMessage(BaseModel):
 
 class LlmQuery(BaseSynapse):
     network: str = None    
+    # input_text: Plain text written in natural language
+    input_text: str = None
+    # decide whether to invoke a generic llm endpoint or not
+    is_generic_llm: bool = False  
     # messages: conversation history for llm agent to use as context
     messages: List[LlmMessage] = None
+
     # output
     output: Optional[QueryOutput] = None
     def deserialize(self) -> str:
