@@ -4,6 +4,8 @@ import copy
 import random
 import asyncio
 import math
+import numpy as np
+
 
 from conversationgenome.Utils import Utils
 from conversationgenome.MinerLib import MinerLib
@@ -92,9 +94,7 @@ class ValidatorLib:
             # Do overview tagging and participant profiles
             fullConvoMetaData = await self.generateFullConvoMetaData(fullConvo)
             #print("fullConvoMetaData", fullConvoMetaData)
-            participantProfiles = Utils.get(fullConvoMetaData, "participantProfiles", [])
             fullConvoTags = Utils.get(fullConvoMetaData, "tags", [])
-            fullConvoTagVectors = Utils.get(fullConvoMetaData, "tag_vectors", {})
 
             # Make sure there are enough tags to make processing worthwhile
             minValidTags = self.validateMinimumTags(fullConvoTags)
@@ -103,7 +103,7 @@ class ValidatorLib:
                 numWindows = len(convoWindows)
                 if numWindows > minConvWindows:
                     print("Found %d convo windows. Sending to miners..." % (numWindows))
-                    await self.sendWindowsToMiners(fullConvoTags, convoWindows, fullConvo)
+                    await self.sendWindowsToMiners(convoWindows, fullConvo=fullConvo, fullConvoMetaData=fullConvoMetaData)
                 else:
                     print("Not enough convo windows -- only %d. Passing." % (numWindows))
             else:
@@ -166,13 +166,6 @@ class ValidatorLib:
             results.append(task.result())
         return results
 
-    def score(self):
-        pass
-
-    def validate_tags(self, tags):
-        print("validate_tags")
-        return True
-
     def validateMinimumTags(self, tags):
         return True
 
@@ -183,13 +176,16 @@ class ValidatorLib:
     async def outputEmissions(self, convoId, windowId, emissionRewards):
         print("EMISSIONS for %d window %d" % (convoId, windowId), emissionRewards)
 
-
-    async def sendWindowsToMiners(self, fullConvoTags, windows, fullConvo=None):
+    async def sendWindowsToMiners(self, windows, fullConvo=None, fullConvoMetaData=None):
         cguid = Utils.get(fullConvo, "uid")
+        participantProfiles = Utils.get(fullConvoMetaData, "participantProfiles", [])
+        fullConvoTags = Utils.get(fullConvoMetaData, "tags", [])
+        fullConvoTagVectors = Utils.get(fullConvoMetaData, "tag_vectors", {})
+
         # Get uids of available miners
         uids = bt.getUids()
         if len(uids) < 6:
-            print("Not enough miners available.")
+            print("Not enough miners available. Aborting.")
             return
 
         print("Full convo tags", fullConvoTags)
@@ -200,12 +196,13 @@ class ValidatorLib:
             # Pick initial minors
             minersPerWindow = c.get("validator", "miners_per_window", 3)
             miners = self.selectStage1Miners(uids, minersPerWindow)
-            # Send first window to 3 miners
+            # Send first window to miners
             minerResults = await self.sendToMiners(window, miners)
-            # Each miner returns data, write data into local db
             #print("Miner results", minerResults)
+            # TODO: Each miner returns data, write data into local db
             # TODO: Write up incomplete errors, such as if timeout happens for miner, send to another miner
-            # When all miners have returned data for convo window
+
+            # When all miners have returned data for convo window, score compared to full convo tags
             for minerResult in minerResults:
                 uid = Utils.get(minerResult, 'uid')
                 tags = Utils.get(minerResult, 'tags')
@@ -217,11 +214,13 @@ class ValidatorLib:
                 minerResult['score'] = scoreToFullConvo
 
             await self.calculate_emission_rewards(minerResults, 'score')
+
             rewards = {}
             for minerResult in minerResults:
                 rewards[minerResult['uid']] = minerResult['reward']
             # Send emissions
             await self.outputEmissions(1, idx, rewards)
+
         if success == True:
             cl = ConvoLib()
             await cl.markConversionComplete(self.hotkey, cguid)
