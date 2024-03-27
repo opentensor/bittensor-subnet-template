@@ -8,26 +8,47 @@ except:
         print("bittensor not installed")
 
 class MinerLib:
-    verbose = True
+    async def doMining(self, convoWindow, minerUid, dryrun=True):
+        #print("MINERCONVO", convoWindow, minerUid)
+        out = {"uid":minerUid, "tags":[], "profiles":[], "convoChecksum":11}
 
-    def __init__(self):
-        pass
+        #print("Mine result: %ds" % (waitSec))
+        if dryrun:
+            llml = LlmApi()
+            exampleSentences = [
+                "Who's there?",
+                "Nay, answer me. Stand and unfold yourself.",
+                "Long live the King!",
+                "Barnardo?",
+                "He.",
+                "You come most carefully upon your hour.",
+                "Tis now struck twelve. Get thee to bed, Francisco.",
+                "For this relief much thanks. Tis bitter cold, And I am sick at heart.",
+                "Have you had quiet guard?",
+                "Not a mouse stirring.",
+                "Well, good night. If you do meet Horatio and Marcellus, The rivals of my watch, bid them make haste.",
+                "I think I hear them. Stand, ho! Who is there?",
+                "Friends to this ground.",
+                "And liegemen to the Dane.",
+            ]
+            lines = copy.deepcopy(convoWindow)
+            lines.append(random.choice(exampleSentences))
+            lines.append(random.choice(exampleSentences))
+            matches_dict = await llml.conversation_to_tags({"lines":lines})
+            tags = list(matches_dict.keys())
+            out["tags"] = tags
+            waitSec = random.randint(0, 3)
+            #await asyncio.sleep(waitSec)
+            if False:
+                out["tags"].append(random.choice(exampleTags))
+        else:
+            # TODO: Make this actually tag content
+            exampleTags = ["realistic", "business-minded", "conciliatory", "responsive", "caring", "understanding", "apologetic", "affectionate", "optimistic", "family-oriented"]
+            out["tags"].append(random.choice(exampleTags))
+        return out
 
-    def get_conversation_tags(self, conversation):
-        # Create mock tag generator
-        tagDict = {}
-        for exchange in conversation:
-            question = exchange[0]
-            answer = exchange[1]
-            words = question.split(' ')
-            words = words + answer.split(' ')
-            for word in words:
-                word = word.strip().lower()
-                if not word in tagDict:
-                    tagDict[word] = 0
-                tagDict[word] += 1
-        tags = tagDict.keys()
-        if self.verbose:
-            print("Found %d tags" % (len(tags)))
+
+    def get_conversation_tags(self, convo):
+        tags = {}
         return tags
 
