@@ -284,23 +284,13 @@ class ValidatorLib:
         return convo
 
     def getConvoWindows(self, fullConvo):
-        minExchanges = c.get("convo_window", "min_lines", 5)
-        maxExchanges = c.get("convo_window", "max_lines", 10)
-        overlapExchanges = c.get("convo_window", "overlap_lines", 2)
-        #print("WIN", len(fullConvo['exchanges']))
-        # TODO: Create real splitter
-        windows = []
-        curWindow = []
-        if False:
-            for exchange in fullConvo['exchanges']:
-                curWindow.append(exchange)
-                if len(curWindow) > 3:
-                    windows.append(curWindow)
-                    curWindow = []
-            if len(curWindow) > 0:
-                windows.append(curWindow)
-        else:
-            windows = Utils.split_overlap_array(fullConvo['exchanges'], size=minExchanges, overlap=2)
+        minLines = c.get("convo_window", "min_lines", 5)
+        maxLines = c.get("convo_window", "max_lines", 10)
+        overlapLines = c.get("convo_window", "overlap_lines", 2)
+
+        windows = Utils.split_overlap_array(fullConvo['exchanges'], size=maxLines, overlap=overlapLines)
+        if len(windows) < 2:
+            windows = Utils.split_overlap_array(fullConvo['exchanges'], size=minLines, overlap=overlapLines)
 
         # TODO: Write convo windows into local database with full convo metadata
         return windows
@@ -356,11 +346,6 @@ class ValidatorLib:
 
 
     async def sendWindowsToMiners(self, fullConvoTags, windows):
-        #testArray = [1,2,3,4,5,6,7,8,9,10]
-        #Utils.split_overlap_array(testArray, size=5, overlap=2)
-        #return
-
-
         # Get uids of available miners
         uids = bt.getUids()
         if len(uids) < 6:
@@ -450,6 +435,13 @@ async def test_miner_no_convo():
     result = await ml.doMining(convo, uid, dryrun=True)
     assert result["uid"] == uid, "User ID didn't match"
 
+def test_utils_split_overlap_array():
+    testArray = [1,2,3,4,5,6,7,8,9,10]
+    result = Utils.split_overlap_array(testArray, size=5, overlap=2)
+    assert len(result) == 3, "Length of split didn't match"
+
+
+
 @pytest.mark.asyncio
 async def test_validator_no_convo():
     ml = MinerLib()
@@ -498,5 +490,28 @@ async def test_full():
 
 
 
+"""
+TODO: Error happened once. Debug.
+tests_ap\test_miner_lib.py:489:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests_ap\test_miner_lib.py:270: in requestConvo
+    await self.sendWindowsToMiners(fullConvoTags, convoWindows)
+tests_ap\test_miner_lib.py:376: in sendWindowsToMiners
+    await self.calculate_emission_rewards(minerResults, 'score')
+tests_ap\test_miner_lib.py:242: in calculate_emission_rewards
+    pdf_value = normal_pdf(score, mean, stdev)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
+x = 0.5805194805194805, mean = 0.5805194805194805, stdev = 0.0
+
+    def normal_pdf(x, mean, stdev):
+>       return math.exp(-(x - mean) ** 2 / (2 * stdev ** 2)) / (stdev * math.sqrt(2 * math.pi))
+E       ZeroDivisionError: float division by zero
+
+tests_ap\test_miner_lib.py:237: ZeroDivisionError
+========================================================================= short test summary info =========================================================================
+FAILED tests_ap/test_miner_lib.py::test_full - ZeroDivisionError: float division by zero
+======================================================================= 1 failed, 5 passed in 6.05s =======================================================================
+
+"""
 
