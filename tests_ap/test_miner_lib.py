@@ -3,6 +3,7 @@ import asyncio
 import random
 import json
 import copy
+import math
 
 spacy = None
 Matcher = None
@@ -56,6 +57,19 @@ class Utils:
         except:
             pass
         return out
+
+    def compare_arrays(arr1, arr2):
+        result_dict = {}
+
+        set1 = set(arr1)
+        set2 = set(arr2)
+
+        result_dict["both"] = list(set1.intersection(set2))
+        result_dict["unique_1"] = list(set1.difference(set2))
+        result_dict["unique_2"] = list(set2.difference(set1))
+
+        return result_dict
+
 
 class LlmApi:
     nlp = None
@@ -152,6 +166,33 @@ class ConvoLib:
 
 class ValidatorLib:
 
+    async def calculate_base_score(self, result_dict):
+        total_1 = result_dict['total_1']
+        total_2 = result_dict['total_2']
+        unique_1_count = len(result_dict['unique_1'])
+        unique_2_count = len(result_dict['unique_2'])
+        both_count = len(result_dict['both'])
+
+        # If all elements match, return a very low score
+        if unique_1_count == 0 and unique_2_count == 0:
+            return 0.1
+
+        # If a large percentage of array 2 is unique, return a low score
+        unique_2_ratio = unique_2_count / total_2
+        if unique_2_ratio > 0.5:
+            return 0.2
+
+        # Calculate the percentage of matches
+        matches_ratio = both_count / max(total_1, total_2)
+
+        # Calculate the percentage of desired unique elements in array 2
+        desired_unique_ratio = min(unique_2_count / (total_1 + unique_2_count), 0.2)
+
+        # Combine the two ratios to get the final score
+        score = (matches_ratio * 0.8) + (desired_unique_ratio * 0.2)
+
+        return score
+
     async def requestConvo(self):
         minConvWindows = 1
         hotkey = "a123"
@@ -161,17 +202,19 @@ class ValidatorLib:
         if fullConvo:
             # Do overview tagging and participant profiles
             fullConvoMetaData = await self.generateFullConvoMetaData(fullConvo)
+            #print("fullConvoMetaData", fullConvoMetaData)
             participantProfiles = Utils.get(fullConvoMetaData, "participantProfiles", [])
-            semanticTags = Utils.get(fullConvoMetaData, "semanticTags", [])
+            fullConvoTags = Utils.get(fullConvoMetaData, "tags", [])
+            fullConvoTagVectors = Utils.get(fullConvoMetaData, "tag_vectors", {})
 
             # Make sure there are enough tags to make processing worthwhile
-            minValidTags = self.validateMinimumTags(semanticTags)
+            minValidTags = self.validateMinimumTags(fullConvoTags)
             if minValidTags:
                 convoWindows = self.getConvoWindows(fullConvo)
                 numWindows = len(convoWindows)
                 if numWindows > minConvWindows:
                     print("Found %d convo windows. Sending to miners..." % (numWindows))
-                    await self.sendWindowsToMiners(fullConvo, convoWindows)
+                    await self.sendWindowsToMiners(fullConvoTags, convoWindows)
                 else:
                     print("Not enough convo windows -- only %d. Passing." % (numWindows))
             else:
@@ -256,30 +299,36 @@ class ValidatorLib:
         return selectedMiners
 
 
-    async def sendWindowsToMiners(self, fullConvo, windows):
+    async def sendWindowsToMiners(self, fullConvoTags, windows):
         # Get uids of available miners
         uids = bt.getUids()
         if len(uids) < 6:
             print("Not enough miners available.")
             return
 
+        print("Full convo tags", fullConvoTags)
         # Loop through rows in db
         for window in windows:
             # Pick initial minors
             miners = self.selectStage1Miners(uids)
             # Send first window to 3 miners
-            results = await self.sendToMiners(window, miners)
+            minerResults = await self.sendToMiners(window, miners)
             # Each miner returns data, write data into local db
-            print("Miner results", results)
+            #print("Miner results", minerResults)
             # TODO: Write up incomplete errors, such as if timeout happens for miner, send to another miner
             # When all miners have returned data for convo window
             # Eval data
-            convoTags = ["realistic", "business-minded", "conciliatory", "responsive", "caring", "understanding"]
             scores = {}
             # Score each miner result
-            for result in results:
-                uid = result['uid']
-                tags = result['tags']
+            for minerResult in minerResults:
+                uid = Utils.get(minerResult, 'uid')
+                tags = Utils.get(minerResult, 'tags')
+                compareResults = Utils.compare_arrays(fullConvoTags, tags)
+                compareResults['total_1'] = len(fullConvoTags)
+                compareResults['total_2'] = len(tags)
+                print("COMPARE", compareResults)
+                print("BASE SCORE", await self.calculate_base_score(compareResults) )
+                break
                 tag = None
                 if len(tags) > 0:
                     tag = tags[0]
@@ -335,8 +384,6 @@ class MinerLib:
     def get_conversation_tags(self, convo):
         tags = {}
         return tags
-
-
 
 
 @pytest.mark.asyncio
