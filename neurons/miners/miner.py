@@ -1,6 +1,7 @@
 import argparse
 import os
 import time
+import numpy as np
 import torch
 import typing
 import traceback
@@ -82,6 +83,7 @@ class Miner(BaseMinerNeuron):
 
         return config
     
+        
     def __init__(self, config=None):
         config = Miner.get_config()
         
@@ -113,9 +115,10 @@ class Miner(BaseMinerNeuron):
 
         bt.logging.info(f"Axon created: {self.axon}")
 
-        self.graph_search = get_graph_search(config)
-
-        self.miner_config = MinerConfig().load_and_get_config_values()        
+        self.graph_search = get_graph_search(config)                
+        
+        self.miner_config = MinerConfig().load_and_get_config_values()
+        self.miner_config.inmemory_hotkeys = self.fetch_inmemory_hotkeys()
     
     async def block_check(self, synapse: protocol.BlockCheck) -> protocol.BlockCheck:
         try:
@@ -218,9 +221,40 @@ class Miner(BaseMinerNeuron):
 
     async def challenge_priority(self, synapse: protocol.Challenge) -> float:
         return self.base_priority(synapse=synapse)
+    
+    def fetch_inmemory_hotkeys(self):                
+        subtensor = self.subtensor
+        weights = subtensor.weights(0)            
+        
+        uid_to_weights = {}
+        netuids = set()
+        for matrix in weights:
+            [uid, weights_data] = matrix
+
+            if not len(weights_data):
+                uid_to_weights[uid] = {}
+                normalized_weights = []
+            else:
+                normalized_weights = np.array(weights_data)[:, 1] / max(
+                    np.sum(weights_data, axis=0)[1], 1
+                )
+
+            for weight_data, normalized_weight in zip(weights_data, normalized_weights):
+                [netuid, _] = weight_data
+                netuids.add(netuid)
+                if uid not in uid_to_weights:
+                    uid_to_weights[uid] = {}
+                uid_to_weights[uid][netuid] = normalized_weight                
+        
+        inmemory_uids = [uid for uid in uid_to_weights if self.config.netuid in uid_to_weights[uid]]
+        root_neurons = subtensor.neurons_lite(netuid=0)        
+        uid_to_hotkey = {neuron_data.uid: neuron_data.hotkey for neuron_data in root_neurons}
+        inmemory_hotkeys = [uid_to_hotkey[uid] for uid in inmemory_uids]
+        return inmemory_hotkeys
 
     def resync_metagraph(self):
-        self.miner_config = MinerConfig().load_and_get_config_values()
+        self.miner_config = MinerConfig().load_and_get_config_values()       
+        self.miner_config.inmemory_hotkeys = self.fetch_inmemory_hotkeys() 
         super(Miner, self).resync_metagraph()
         
     def should_set_weights(self) -> bool:
@@ -289,6 +323,7 @@ def wait_for_blocks_sync():
             return is_synced
         
         miner_config = MinerConfig().load_and_get_config_values()
+        
         delta = miner_config.get_blockchain_sync_delta(config.network)
         bt.logging.info(f"Waiting for graph model to sync with blockchain.")
         while not is_synced:
