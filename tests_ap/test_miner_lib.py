@@ -58,8 +58,43 @@ class Utils:
         return out
 
 class LlmApi:
+    nlp = None
     async def callFunction(self, functionName, parameters):
         pass
+
+    async def simple_text_to_tags(self, body):
+        nlp = self.nlp
+        if not nlp:
+            nlp = spacy.load("en_core_web_sm")
+            self.nlp = nlp
+
+        # Define patterns
+        adj_noun_pattern = [{"POS": "ADJ"}, {"POS": "NOUN"}]
+        pronoun_pattern = [{"POS": "PRON"}]
+        unique_word_pattern = [{"POS": {"IN": ["NOUN", "VERB", "ADJ"]}, "IS_STOP": False}]
+
+        # Initialize the Matcher with the shared vocabulary
+        matcher = Matcher(nlp.vocab)
+        matcher.add("ADJ_NOUN_PATTERN", [adj_noun_pattern])
+        matcher.add("PRONOUN_PATTERN", [pronoun_pattern])
+        matcher.add("UNIQUE_WORD_PATTERN", [unique_word_pattern])
+
+        doc = nlp( body )
+        #print("DOC", doc)
+        matches = matcher(doc)
+        matches_dict = {}
+        for match_id, start, end in matches:
+            span = doc[start:end]
+            #matchPhrase = span.text
+            matchPhrase = span.lemma_
+            if len(matchPhrase) > 5:
+                #print(f"Original: {span.text}, Lemma: {span.lemma_} Vectors: {span.vector.tolist()}")
+                if not matchPhrase in matches_dict:
+                    matches_dict[matchPhrase] = {"tag":matchPhrase, "count":0, "vectors":span.vector.tolist()}
+                matches_dict[matchPhrase]['count'] += 1
+
+        return matches_dict
+
 
 class ApiLib:
     def reserveConversation(self, hotkey, dryrun=False):
@@ -103,7 +138,6 @@ class ConvoLib:
 
 
 class ValidatorLib:
-    nlp = None
 
     async def requestConvo(self):
         minConvWindows = 1
@@ -148,39 +182,6 @@ class ValidatorLib:
         windows = [1,2]
         return windows
 
-    async def simple_text_to_tags(self, body):
-        nlp = self.nlp
-        if not nlp:
-            nlp = spacy.load("en_core_web_sm")
-            self.nlp = nlp
-
-        # Define patterns
-        adj_noun_pattern = [{"POS": "ADJ"}, {"POS": "NOUN"}]
-        pronoun_pattern = [{"POS": "PRON"}]
-        unique_word_pattern = [{"POS": {"IN": ["NOUN", "VERB", "ADJ"]}, "IS_STOP": False}]
-
-        # Initialize the Matcher with the shared vocabulary
-        matcher = Matcher(nlp.vocab)
-        matcher.add("ADJ_NOUN_PATTERN", [adj_noun_pattern])
-        matcher.add("PRONOUN_PATTERN", [pronoun_pattern])
-        matcher.add("UNIQUE_WORD_PATTERN", [unique_word_pattern])
-
-        doc = nlp( body )
-        #print("DOC", doc)
-        matches = matcher(doc)
-        matches_dict = {}
-        for match_id, start, end in matches:
-            span = doc[start:end]
-            #matchPhrase = span.text
-            matchPhrase = span.lemma_
-            if len(matchPhrase) > 5:
-                #print(f"Original: {span.text}, Lemma: {span.lemma_} Vectors: {span.vector.tolist()}")
-                if not matchPhrase in matches_dict:
-                    matches_dict[matchPhrase] = {"tag":matchPhrase, "count":0, "vectors":span.vector.tolist()}
-                matches_dict[matchPhrase]['count'] += 1
-
-        return matches_dict
-
 
 
     async def generateFullConvoMetaData(self, convo):
@@ -191,9 +192,10 @@ class ValidatorLib:
         #llml =  LlmApi()
         #data = await llml.callFunction("convoParse", convo)
 
-        matches_dict = await self.simple_text_to_tags(json.dumps(convo['exchanges']))
-
+        llml = LlmApi()
+        matches_dict = await llml.simple_text_to_tags(json.dumps(convo['exchanges']))
         tags = list(matches_dict.keys())
+
         #half = int(len(tags) / 2)
         #tagsQ = half[0:half]
         #tagsA = half[half:]
