@@ -208,11 +208,11 @@ class Miner(BaseMinerNeuron):
 
         try:
             # TODO: handle llm query
-            query = self.llm.build_query_from_text(synapse.input_text)
+            query = self.llm.build_query_from_messages(synapse.messages)
             bt.logging.info(f"extracted query: {query}")
             
             result = self.graph_search.execute_query(query=query)
-            interpreted_result = self.llm.interpret_result(query_text=synapse.input_text, result=result)
+            interpreted_result = self.llm.interpret_result(llm_messages=synapse.messages, result=result)
             
             synapse.output["result"] = result
             synapse.output["interpreted_result"] = interpreted_result

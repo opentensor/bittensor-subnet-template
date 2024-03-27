@@ -19,7 +19,8 @@
 
 import bittensor as bt
 from typing import List, Optional, Union, Any, Dict
-from insights.protocol import LlmQuery
+from insights import protocol
+from insights.protocol import LlmQuery, LlmMessage
 from insights.api import SubnetsAPI
 
 
@@ -35,6 +36,13 @@ class TextQueryAPI(SubnetsAPI):
             input_text=text,
             is_generic_llm=is_generic_llm,
             )
+            messages=[
+                LlmMessage(
+                    type=protocol.LLM_MESSAGE_TYPE_USER,
+                    content=text
+                ),
+            ],
+        )
         return synapse
 
     def process_responses(
