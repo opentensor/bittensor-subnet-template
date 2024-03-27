@@ -69,6 +69,8 @@ class LlmApi:
         #data = await llml.callFunction("convoParse", convo)
         if dryrun:
             matches_dict = await self.simple_text_to_tags(json.dumps(convo['exchanges']))
+        else:
+            print("Send conversation to the LLM")
         return matches_dict
 
 
@@ -189,8 +191,19 @@ class ValidatorLib:
         minExchanges = c.get("convo_window", "min_lines", 5)
         maxExchanges = c.get("convo_window", "max_lines", 10)
         overlapExchanges = c.get("convo_window", "overlap_lines", 2)
-        # Write convo windows into local database with full convo metadata
-        windows = [1,2]
+        #print("WIN", len(fullConvo['exchanges']))
+        # TODO: Create real splitter
+        windows = []
+        curWindow = []
+        for exchange in fullConvo['exchanges']:
+            curWindow.append(exchange)
+            if len(curWindow) > 3:
+                windows.append(curWindow)
+                curWindow = []
+        if len(curWindow) > 0:
+            windows.append(curWindow)
+
+        # TODO: Write convo windows into local database with full convo metadata
         return windows
 
 
@@ -203,10 +216,10 @@ class ValidatorLib:
         matches_dict = await llml.conversation_to_tags(convo)
         tags = list(matches_dict.keys())
 
-        #half = int(len(tags) / 2)
-        #tagsQ = half[0:half]
-        #tagsA = half[half:]
-        #info = copy.deepcopy(proto)
+        half = int(len(tags) / 2)
+        tagsQ = tags[0:half]
+        tagsA = tags[half:]
+        info = copy.deepcopy(proto)
         #info["interests_of_q"] = tagsQ
         #info["interests_of_a"] = tagsA
         ##print("FullConvo tags",  tags)
@@ -250,7 +263,6 @@ class ValidatorLib:
             print("Not enough miners available.")
             return
 
-
         # Loop through rows in db
         for window in windows:
             # Pick initial minors
@@ -282,6 +294,7 @@ class ValidatorLib:
 
 class MinerLib:
     async def doMining(self, convo, minerUid, dryrun=False):
+        print("MINERCONVO", convo, minerUid)
         exampleTags = ["realistic", "business-minded", "conciliatory", "responsive", "caring", "understanding", "apologetic", "affectionate", "optimistic", "family-oriented"]
         waitSec = random.randint(0, 3)
         out = {"uid":minerUid, "tags":[], "profiles":[], "convoChecksum":11}
