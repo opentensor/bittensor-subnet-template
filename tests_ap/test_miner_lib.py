@@ -131,7 +131,11 @@ class LlmApi:
     async def simple_text_to_tags(self, body):
         nlp = self.nlp
         if not nlp:
-            nlp = spacy.load("en_core_web_sm")
+            # python -m spacy download en_core_web_sm
+            #nlp = spacy.load("en_core_web_sm")
+            #nlp = spacy.load("en_core_web_md")
+            nlp = spacy.load("en_core_web_lg") # ~600mb
+            #print(f"Vector dimensionality: {nlp.vocab.vectors_length}")
             self.nlp = nlp
 
         # Define patterns
