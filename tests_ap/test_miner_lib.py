@@ -22,10 +22,15 @@ except:
 #from conversationgenome.ValidatorLib import ValidatorLib
 
 class MockBt:
-    def getUids(self, num=10):
+    def getUids(self, num=10, useFullGuids=False):
         uids = []
         for i in range(num):
-            uids.append(random.randint(1000, 9999))
+            # useGuids is more realistic, but harder to read in testing
+            if useFullGuids:
+                uids.append(Utils.guid())
+            else:
+                uids.append(random.randint(1000, 9999))
+
         return uids
 
 bt = MockBt()
@@ -341,8 +346,11 @@ class ValidatorLib:
         return True
 
     def selectStage1Miners(self, uids, num=3):
-        selectedMiners = uids[0:num]
+        selectedMiners = random.sample(uids, num)
         return selectedMiners
+
+    async def outputEmissions(self, convoId, windowId, emissionRewards):
+        print("EMISSIONS for %d window %d" % (convoId, windowId), emissionRewards)
 
 
     async def sendWindowsToMiners(self, fullConvoTags, windows):
@@ -354,7 +362,7 @@ class ValidatorLib:
 
         print("Full convo tags", fullConvoTags)
         # Loop through rows in db
-        for window in windows:
+        for idx, window in enumerate(windows):
             # Pick initial minors
             miners = self.selectStage1Miners(uids, 5)
             # Send first window to 3 miners
@@ -378,8 +386,7 @@ class ValidatorLib:
             for minerResult in minerResults:
                 rewards[minerResult['uid']] = minerResult['reward']
             # Send emissions
-            print("EMISSIONS", rewards)
-            return rewards
+            await self.outputEmissions(1, idx, rewards)
 
 
 class MinerLib:
