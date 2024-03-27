@@ -121,7 +121,7 @@ class LlmApi:
         #llml =  LlmApi()
         #data = await llml.callFunction("convoParse", convo)
         if dryrun:
-            matches_dict = await self.simple_text_to_tags(json.dumps(convo['exchanges']))
+            matches_dict = await self.simple_text_to_tags(json.dumps(convo['lines']))
         else:
             print("Send conversation to the LLM")
         return matches_dict
@@ -173,24 +173,20 @@ class ApiLib:
             convos = json.loads(body)
             convoKeys = list(convos.keys())
             convoTotal = len(convoKeys)
-            #print("convoTotal", convoTotal)
+            print("convoTotal", convoTotal)
             selectedConvoKey = random.choice(convoKeys)
             selectedConvo = convos[selectedConvoKey]
-            #print("convoTotal", selectedConvo)
-            participants = [
-                "Emily is a bubbly chatter who loves to talk about fashion and beauty. She enjoys trying out new makeup looks and sharing her tips and tricks with others. She is always up for a good laugh and her positive energy is contagious.",
-                "John is a sports enthusiast who can always be found discussing the latest game or match. He is competitive and passionate about his favorite teams, but also enjoys trying out different sports himself. He is a great listener and always offers insightful perspectives on any topic.",
-            ]
+            print("selectedConvo", selectedConvo)
 
 
             convo = {
-                "guid":"c"+str(selectedConvoKey),
-                "participants": participants,
-                "exchanges":selectedConvo['exchanges']
+                "guid":Utils.get(selectedConvo, "guid"),
+                "participants": Utils.get(selectedConvo, "participants"),
+                "lines":Utils.get(selectedConvo, "lines"),
             }
         else:
 
-            convo = {"guid":"c1234", "exchanges":[1,2,3,4], "participants":["Emily", "John"]}
+            convo = {"guid":"c1234", "lines":[1,2,3,4], "participants":["Emily", "John"]}
         return convo
 
     async def completeConversation(self, hotkey, guid, dryrun=False):
@@ -301,9 +297,9 @@ class ValidatorLib:
         maxLines = c.get("convo_window", "max_lines", 10)
         overlapLines = c.get("convo_window", "overlap_lines", 2)
 
-        windows = Utils.split_overlap_array(fullConvo['exchanges'], size=maxLines, overlap=overlapLines)
+        windows = Utils.split_overlap_array(fullConvo['lines'], size=maxLines, overlap=overlapLines)
         if len(windows) < 2:
-            windows = Utils.split_overlap_array(fullConvo['exchanges'], size=minLines, overlap=overlapLines)
+            windows = Utils.split_overlap_array(fullConvo['lines'], size=minLines, overlap=overlapLines)
 
         # TODO: Write convo windows into local database with full convo metadata
         return windows
@@ -427,9 +423,10 @@ class MinerLib:
                 "Friends to this ground.",
                 "And liegemen to the Dane.",
             ]
-            exchanges = copy.deepcopy(convoWindow)
-            exchanges.append([random.choice(exampleSentences), random.choice(exampleSentences)])
-            matches_dict = await llml.conversation_to_tags({"exchanges":exchanges})
+            lines = copy.deepcopy(convoWindow)
+            lines.append(random.choice(exampleSentences))
+            lines.append(random.choice(exampleSentences))
+            matches_dict = await llml.conversation_to_tags({"lines":lines})
             tags = list(matches_dict.keys())
             out["tags"] = tags
             waitSec = random.randint(0, 3)
@@ -481,7 +478,7 @@ async def test_get_convo():
     cl = ConvoLib()
 
     convo = await cl.getConversation(hotkey)
-    assert True #len(convo['exchanges']) == 3
+    assert True #len(convo['lines']) == 3
 
 @pytest.mark.asyncio
 async def test_tags_from_convo():
