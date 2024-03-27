@@ -193,6 +193,22 @@ class ValidatorLib:
 
         return score
 
+    async def calculate_emmision_rewards(self, scores):
+        total_scores = sum(scores)
+        mean = total_scores / len(scores)
+        stdev = math.sqrt(sum((x - mean) ** 2 for x in scores) / len(scores))
+
+        def normal_pdf(x, mean, stdev):
+            return math.exp(-(x - mean) ** 2 / (2 * stdev ** 2)) / (stdev * math.sqrt(2 * math.pi))
+
+        rewards = []
+        for score in scores:
+            pdf_value = normal_pdf(score, mean, stdev)
+            reward_percentage = pdf_value / sum(normal_pdf(x, mean, stdev) for x in scores)
+            rewards.append(reward_percentage)
+
+        return rewards
+
     async def requestConvo(self):
         minConvWindows = 1
         hotkey = "a123"
@@ -320,15 +336,18 @@ class ValidatorLib:
             # Eval data
             scores = {}
             # Score each miner result
+            scores2 = []
             for minerResult in minerResults:
                 uid = Utils.get(minerResult, 'uid')
                 tags = Utils.get(minerResult, 'tags')
                 compareResults = Utils.compare_arrays(fullConvoTags, tags)
                 compareResults['total_1'] = len(fullConvoTags)
                 compareResults['total_2'] = len(tags)
-                print("COMPARE", compareResults)
-                print("BASE SCORE", await self.calculate_base_score(compareResults) )
-                break
+                #print("COMPARE", compareResults)
+                scoreToFullConvo = await self.calculate_base_score(compareResults)
+                scores2.append(scoreToFullConvo)
+                #print("BASE SCORE", scoreToFullConvo )
+                continue
                 tag = None
                 if len(tags) > 0:
                     tag = tags[0]
@@ -337,6 +356,8 @@ class ValidatorLib:
                     if not uid in scores:
                         scores[uid] = 0
                     scores[uid] += 3
+
+            print(await self.calculate_emmision_rewards(scores2))
             # Send emission to forward
             print("EMISSIONS", scores)
 
