@@ -345,10 +345,6 @@ class ValidatorLib:
             #print("Miner results", minerResults)
             # TODO: Write up incomplete errors, such as if timeout happens for miner, send to another miner
             # When all miners have returned data for convo window
-            # Eval data
-            scores = {}
-            # Score each miner result
-            scores2 = []
             for minerResult in minerResults:
                 uid = Utils.get(minerResult, 'uid')
                 tags = Utils.get(minerResult, 'tags')
@@ -358,17 +354,6 @@ class ValidatorLib:
                 #print("COMPARE", compareResults)
                 scoreToFullConvo = await self.calculate_base_score(compareResults)
                 minerResult['score'] = scoreToFullConvo
-                scores2.append(scoreToFullConvo)
-                #print("BASE SCORE", scoreToFullConvo )
-                continue
-                tag = None
-                if len(tags) > 0:
-                    tag = tags[0]
-                if tag in convoTags:
-                    #print("FOUND!", tag)
-                    if not uid in scores:
-                        scores[uid] = 0
-                    scores[uid] += 3
 
             await self.calculate_emission_rewards(minerResults, 'score')
             rewards = {}
