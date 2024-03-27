@@ -370,9 +370,13 @@ class ValidatorLib:
                         scores[uid] = 0
                     scores[uid] += 3
 
-            print(await self.calculate_emmision_rewards(minerResults, 'score'))
-            # Send emission to forward
-            print("EMISSIONS", scores)
+            await self.calculate_emmision_rewards(minerResults, 'score')
+            rewards = {}
+            for minerResult in minerResults:
+                rewards[minerResult['uid']] = minerResult['reward']
+            # Send emissions
+            print("EMISSIONS", rewards)
+            return rewards
 
 
 class MinerLib:
