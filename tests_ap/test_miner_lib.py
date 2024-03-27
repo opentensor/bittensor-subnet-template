@@ -163,7 +163,7 @@ class LlmApi:
 
 
 class ApiLib:
-    def reserveConversation(self, hotkey, dryrun=False):
+    async def reserveConversation(self, hotkey, dryrun=False):
         # Call Convo server and reserve a conversation
         if dryrun:
             path = 'facebook-chat-data.json'
@@ -193,17 +193,25 @@ class ApiLib:
             convo = {"guid":"c1234", "exchanges":[1,2,3,4], "participants":["Emily", "John"]}
         return convo
 
+    async def completeConversation(self, hotkey, guid, dryrun=False):
+        return True
+
 class ConvoLib:
     async def getConversation(self, hotkey, dryrun=False):
         api = ApiLib()
-        convo = api.reserveConversation(hotkey, dryrun=dryrun)
+        convo = await api.reserveConversation(hotkey, dryrun=dryrun)
         return convo
 
     async def getConvoPromptTemplate(self):
         return "Parse this"
 
+    async def markConversionComplete(self, hotkey, cguid, dryrun=False):
+        api = ApiLib()
+        result = await api.completeConversation(hotkey, cguid, dryrun=dryrun)
+        return result
 
 class ValidatorLib:
+    hotkey = "v1234"
 
     async def calculate_base_score(self, result_dict):
         total_1 = result_dict['total_1']
@@ -272,7 +280,7 @@ class ValidatorLib:
                 numWindows = len(convoWindows)
                 if numWindows > minConvWindows:
                     print("Found %d convo windows. Sending to miners..." % (numWindows))
-                    await self.sendWindowsToMiners(fullConvoTags, convoWindows)
+                    await self.sendWindowsToMiners(fullConvoTags, convoWindows, fullConvo)
                 else:
                     print("Not enough convo windows -- only %d. Passing." % (numWindows))
             else:
@@ -353,7 +361,8 @@ class ValidatorLib:
         print("EMISSIONS for %d window %d" % (convoId, windowId), emissionRewards)
 
 
-    async def sendWindowsToMiners(self, fullConvoTags, windows):
+    async def sendWindowsToMiners(self, fullConvoTags, windows, fullConvo=None):
+        cguid = Utils.get(fullConvo, "uid")
         # Get uids of available miners
         uids = bt.getUids()
         if len(uids) < 6:
@@ -361,7 +370,9 @@ class ValidatorLib:
             return
 
         print("Full convo tags", fullConvoTags)
+
         # Loop through rows in db
+        success = True
         for idx, window in enumerate(windows):
             # Pick initial minors
             miners = self.selectStage1Miners(uids, 5)
@@ -387,6 +398,9 @@ class ValidatorLib:
                 rewards[minerResult['uid']] = minerResult['reward']
             # Send emissions
             await self.outputEmissions(1, idx, rewards)
+        if success == True:
+            cl = ConvoLib()
+            await cl.markConversionComplete(self.hotkey, cguid)
 
 
 class MinerLib:
