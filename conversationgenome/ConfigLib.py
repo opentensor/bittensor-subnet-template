@@ -1,9 +1,13 @@
 from conversationgenome.Utils import Utils
 
 class c:
-    dotenv = {}
+    dotenv = {
+        "validator" : {
+            "miners_per_window": 3,
+        }
+    }
 
     @staticmethod
-    def get(obj, path, default):
-        return Utils.get(c.dotenv, path, default)
+    def get(section, key, default):
+        return Utils.get(section, key, default)
 

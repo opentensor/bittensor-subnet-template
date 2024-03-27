@@ -73,7 +73,10 @@ class ValidatorLib:
         for cur_dict in dicts:
             score = Utils.get(cur_dict, scoreKey)
             pdf_value = normal_pdf(score, mean, stdev)
-            reward_percentage = pdf_value / sum(normal_pdf(x, mean, stdev) for x in scores)
+            if stdev == 0:
+                reward_percentage = 0
+            else:
+                reward_percentage = pdf_value / sum(normal_pdf(x, mean, stdev) for x in scores)
             cur_dict['reward'] = reward_percentage
             rewards.append(reward_percentage)
 
@@ -195,7 +198,8 @@ class ValidatorLib:
         success = True
         for idx, window in enumerate(windows):
             # Pick initial minors
-            miners = self.selectStage1Miners(uids, 5)
+            minersPerWindow = c.get("validator", "miners_per_window", 3)
+            miners = self.selectStage1Miners(uids, minersPerWindow)
             # Send first window to 3 miners
             minerResults = await self.sendToMiners(window, miners)
             # Each miner returns data, write data into local db
