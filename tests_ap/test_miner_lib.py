@@ -202,7 +202,7 @@ class ValidatorLib:
 
         return score
 
-    async def calculate_emmision_rewards(self, dicts, scoreKey):
+    async def calculate_emission_rewards(self, dicts, scoreKey):
         scores = Utils.pluck(dicts, scoreKey)
         total_scores = sum(scores)
         mean = total_scores / len(scores)
@@ -322,8 +322,8 @@ class ValidatorLib:
     def validateMinimumTags(self, tags):
         return True
 
-    def selectStage1Miners(self, uids):
-        selectedMiners = uids[0:3]
+    def selectStage1Miners(self, uids, num=3):
+        selectedMiners = uids[0:num]
         return selectedMiners
 
 
@@ -338,7 +338,7 @@ class ValidatorLib:
         # Loop through rows in db
         for window in windows:
             # Pick initial minors
-            miners = self.selectStage1Miners(uids)
+            miners = self.selectStage1Miners(uids, 5)
             # Send first window to 3 miners
             minerResults = await self.sendToMiners(window, miners)
             # Each miner returns data, write data into local db
@@ -370,7 +370,7 @@ class ValidatorLib:
                         scores[uid] = 0
                     scores[uid] += 3
 
-            await self.calculate_emmision_rewards(minerResults, 'score')
+            await self.calculate_emission_rewards(minerResults, 'score')
             rewards = {}
             for minerResult in minerResults:
                 rewards[minerResult['uid']] = minerResult['reward']
