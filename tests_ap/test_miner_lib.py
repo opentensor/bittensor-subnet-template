@@ -21,17 +21,6 @@ except:
 #from conversationgenome.MinerLib import MinerLib
 from conversationgenome.ValidatorLib import ValidatorLib
 
-class MockBt:
-    def getUids(self, num=10, useFullGuids=False):
-        uids = []
-        for i in range(num):
-            # useGuids is more realistic, but harder to read in testing
-            if useFullGuids:
-                uids.append(Utils.guid())
-            else:
-                uids.append(random.randint(1000, 9999))
-
-        return uids
 
 bt = MockBt()
 
@@ -44,14 +33,6 @@ proto = {
     "hobbies_of_a": [],
     "personality_traits_of_a": [],
 }
-
-
-
-
-
-
-
-
 
 @pytest.mark.asyncio
 async def test_miner_no_convo():

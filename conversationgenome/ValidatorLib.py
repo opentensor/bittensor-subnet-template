@@ -1,11 +1,34 @@
 verbose = False
 
+import copy
+import random
+import asyncio
+import math
+
+from conversationgenome.Utils import Utils
+from conversationgenome.MinerLib import MinerLib
+from conversationgenome.ConvoLib import ConvoLib
+from conversationgenome.LlmLib import LlmLib
+from conversationgenome.ConfigLib import c
+from conversationgenome.MockBt import MockBt
+
 bt = None
 try:
     import bittensor as bt
 except:
     if verbose:
         print("bittensor not installed")
+    bt = MockBt()
+
+proto = {
+    "interests_of_q": [],
+    "hobbies_of_q": [],
+    "personality_traits_of_q": [],
+    "interests_of_a": [],
+    "hobbies_of_a": [],
+    "personality_traits_of_a": [],
+}
+
 
 class ValidatorLib:
     hotkey = "v1234"
@@ -111,7 +134,7 @@ class ValidatorLib:
         cl = ConvoLib()
         #print("METACONVO participants", convo['participants'])
 
-        llml = LlmApi()
+        llml = LlmLib()
         matches_dict = await llml.conversation_to_tags(convo)
         tags = list(matches_dict.keys())
 

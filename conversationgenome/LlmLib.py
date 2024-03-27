@@ -1,4 +1,18 @@
-class LlmApi:
+import json
+import spacy
+
+spacy = None
+Matcher = None
+try:
+    import spacy
+    from spacy.matcher import Matcher
+except:
+    print("Please install spacy to run locally")
+    # en_core_web_sm model vectors = 96 dimensions.
+    # en_core_web_md and en_core_web_lg = 300 dimensions
+
+
+class LlmLib:
     nlp = None
     async def callFunction(self, functionName, parameters):
         pass

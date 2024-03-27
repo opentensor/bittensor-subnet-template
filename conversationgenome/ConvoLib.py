@@ -1,4 +1,6 @@
 
+from conversationgenome.ApiLib import ApiLib
+
 
 class ConvoLib:
     async def getConversation(self, hotkey, dryrun=False):

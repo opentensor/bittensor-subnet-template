@@ -1,5 +1,15 @@
 verbose = False
 
+import copy
+import random
+import asyncio
+from conversationgenome.ConfigLib import c
+from conversationgenome.MockBt import MockBt
+
+
+from conversationgenome.Utils import Utils
+
+
 bt = None
 try:
     import bittensor as bt
@@ -7,14 +17,19 @@ except:
     if verbose:
         print("bittensor not installed")
 
+from conversationgenome.LlmLib import LlmLib
+
+
 class MinerLib:
+    verbose = False
+
     async def doMining(self, convoWindow, minerUid, dryrun=True):
         #print("MINERCONVO", convoWindow, minerUid)
         out = {"uid":minerUid, "tags":[], "profiles":[], "convoChecksum":11}
 
         #print("Mine result: %ds" % (waitSec))
         if dryrun:
-            llml = LlmApi()
+            llml = LlmLib()
             exampleSentences = [
                 "Who's there?",
                 "Nay, answer me. Stand and unfold yourself.",
