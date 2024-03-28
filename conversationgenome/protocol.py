@@ -18,6 +18,7 @@
 
 import bittensor as bt
 from typing import Optional, List
+import typing
 
 class Dummy(bt.Synapse):
     time_elapsed = 0
@@ -31,10 +32,10 @@ class Dummy(bt.Synapse):
     """
 
     # Required request input, filled by sending dendrite caller. It is a base64 encoded string.
-    dummy_input : str
+    dummy_input: int
 
     # Optional request output, filled by recieving axon.
-    response: Optional[List[dict]] = None
+    dummy_output: typing.Optional[int] = None
 
     def deserialize(self) -> int:
         """

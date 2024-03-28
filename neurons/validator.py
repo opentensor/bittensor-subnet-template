@@ -83,12 +83,14 @@ class Validator(BaseValidatorNeuron):
 
         # Create synapse object to send to the miner and attach the image.
         #baseImage = image_data['base64_image']
-        baseImage = "Hello World"
+        baseImage = 21
+        print("Send", baseImage)
 
         synapse = conversationgenome.protocol.Dummy(dummy_input = baseImage)
 
         rewards = None
         # The dendrite client queries the network.
+        print("Query")
         responses = self.dendrite.query(
             # Send the query to selected miner axons in the network.
             axons=[self.metagraph.axons[uid] for uid in miner_uids],
