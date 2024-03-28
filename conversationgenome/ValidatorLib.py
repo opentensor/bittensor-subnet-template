@@ -16,7 +16,8 @@ from conversationgenome.MockBt import MockBt
 
 bt = None
 try:
-    import bittensor as bt
+    #import bittensor as bt
+    bt = MockBt()
 except:
     if verbose:
         print("bittensor not installed")

@@ -1,3 +1,4 @@
 bittensor
 torch
 faker
+spacy
