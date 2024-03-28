@@ -19,7 +19,7 @@
 import bittensor as bt
 from typing import Optional, List
 
-class OCRSynapse(bt.Synapse):
+class CGPSynapse(bt.Synapse):
     time_elapsed = 0
     """
     A simple OCR synapse protocol representation which uses bt.Synapse as its base.

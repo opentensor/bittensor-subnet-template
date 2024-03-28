@@ -23,7 +23,7 @@ import time
 
 from scipy.optimize import linear_sum_assignment
 
-from conversationgenome.protocol import OCRSynapse
+from conversationgenome.protocol import CGPSynapse
 
 
 def get_position_reward(boxA: List[float], boxB: List[float] = None):
@@ -151,14 +151,14 @@ def sort_predictions(labels: List[dict], predictions: List[dict], draw=False) ->
     return sorted_predictions
 
 
-def reward(self, labels: List[dict], response: OCRSynapse) -> float:
+def reward(self, labels: List[dict], response: CGPSynapse) -> float:
     """
     Reward the miner response to the OCR request. This method returns a reward
     value for the miner, which is used to update the miner's score.
 
     Args:
     - labels (List[dict]): The true data underlying the image sent to the miner.
-    - response (OCRSynapse): Response from the miner.
+    - response (CGPSynapse): Response from the miner.
 
     The expected fields in each section of the response are:
     - position (List[int]): The bounding box of the section e.g. [x0, y0, x1, y1]
@@ -204,14 +204,14 @@ def reward(self, labels: List[dict], response: OCRSynapse) -> float:
 def get_rewards(
     self,
     labels: List[dict],
-    responses: List[OCRSynapse],
+    responses: List[CGPSynapse],
 ) -> torch.FloatTensor:
     """
     Returns a tensor of rewards for the given image and responses.
 
     Args:
     - image (List[dict]): The true data underlying the image sent to the miner.
-    - responses (List[OCRSynapse]): A list of responses from the miner.
+    - responses (List[CGPSynapse]): A list of responses from the miner.
 
     Returns:
     - torch.FloatTensor: A tensor of rewards for the given image and responses.

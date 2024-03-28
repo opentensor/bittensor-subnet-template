@@ -82,7 +82,10 @@ class Validator(BaseValidatorNeuron):
         #image_data = ocr_subnet.validator.generate.invoice(path=os.path.join(self.image_dir, f"{filename}.pdf"), corrupt=True)
 
         # Create synapse object to send to the miner and attach the image.
-        #synapse = ocr_subnet.protocol.OCRSynapse(base64_image = image_data['base64_image'])
+        #baseImage = image_data['base64_image']
+        baseImage = "Hello World"
+
+        synapse = conversationgenome.protocol.CGPSynapse(base64_image = baseImage)
 
         rewards = None
         # The dendrite client queries the network.
@@ -96,7 +99,7 @@ class Validator(BaseValidatorNeuron):
         #)
 
         # Log the results for monitoring purposes.
-        responses = [{"response":"Hello"},{"response":"World"}]
+        responses = [{"tag":"baseball"},{"response":"Florida"}]
         bt.logging.info(f"CGP Received responses: {responses}")
         #labels = image_data['labels']
         labels = ["Hello", "World"]
