@@ -5,6 +5,7 @@ from neurons.miners.query import is_query_only
 
 import typing
 import time
+import random
 
 from collections import deque
 
@@ -27,6 +28,10 @@ def query_blacklist(self, synapse: protocol.Query) -> typing.Tuple[bool, str]:
         - Illegal cypher keywords
         """
         hotkey = synapse.dendrite.hotkey
+        # Check if the dendrite hotkey is not voting the sn or not.
+        if hotkey not in self.miner_config.inmemory_hotkeys:
+            return True, "Not support query synapse for this hotkey"
+        
         is_blacklist, message = base_blacklist(self, synapse=synapse)
         if is_blacklist:
             return is_blacklist, message

@@ -62,7 +62,7 @@ def get_uids_batch(self, batch_size: int, exclude: List[int] = None):
         uid_is_available = check_uid_availability(
             self.metagraph, uid, self.config.neuron.vpermit_tao_limit
         )
-        uid_is_not_excluded = exclude is None or uid not in exclude
+        uid_is_not_excluded = exclude is None or uid not in exclude and uid != self.uid
 
         if uid_is_available:
             if uid_is_not_excluded:
