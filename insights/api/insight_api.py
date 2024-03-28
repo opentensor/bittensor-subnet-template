@@ -75,7 +75,7 @@ class APIServer:
                 )
             if not responses:
                 return "This hotkey is banned."
-            response = random.choice(responses)        
+            response = random.choice(responses)
             return response
                 
         @self.app.get("/")
