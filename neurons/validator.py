@@ -89,14 +89,14 @@ class Validator(BaseValidatorNeuron):
 
         rewards = None
         # The dendrite client queries the network.
-        #responses = self.dendrite.query(
-        #    # Send the query to selected miner axons in the network.
-        #    axons=[self.metagraph.axons[uid] for uid in miner_uids],
-        #    # Pass the synapse to the miner.
-        #    synapse=synapse,
-        #    # Do not deserialize the response so that we have access to the raw response.
-        #    deserialize=False,
-        #)
+        responses = self.dendrite.query(
+            # Send the query to selected miner axons in the network.
+            axons=[self.metagraph.axons[uid] for uid in miner_uids],
+            # Pass the synapse to the miner.
+            synapse=synapse,
+            # Do not deserialize the response so that we have access to the raw response.
+            deserialize=False,
+        )
 
         # Log the results for monitoring purposes.
         responses = [{"tag":"baseball"},{"response":"Florida"}]
@@ -115,5 +115,5 @@ class Validator(BaseValidatorNeuron):
 if __name__ == "__main__":
     with Validator() as validator:
         while True:
-            bt.logging.info("CGP running...", time.time())
+            bt.logging.info("CGP Validator running...", time.time())
             time.sleep(5)
