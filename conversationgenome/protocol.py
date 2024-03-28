@@ -36,11 +36,11 @@ class Dummy(bt.Synapse):
     # Optional request output, filled by recieving axon.
     response: Optional[List[dict]] = None
 
-    def deserialize(self) -> List[dict]:
+    def deserialize(self) -> int:
         """
         Deserialize the miner response.
 
         Returns:
         - List[dict]: The deserialized response, which is a list of dictionaries containing the extracted data.
         """
-        return self.response
+        return self.dummy_output
