@@ -85,7 +85,7 @@ class Validator(BaseValidatorNeuron):
         #baseImage = image_data['base64_image']
         baseImage = "Hello World"
 
-        synapse = conversationgenome.protocol.CGPSynapse(base64_image = baseImage)
+        synapse = conversationgenome.protocol.Dummy(dummy_input = baseImage)
 
         rewards = None
         # The dendrite client queries the network.

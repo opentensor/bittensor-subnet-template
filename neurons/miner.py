@@ -65,7 +65,7 @@ class Miner(BaseMinerNeuron):
         the miner's intended operation. This method demonstrates a basic transformation of input data.
         """
         # Get data
-        print("Miner received data", synapse.base64_image)
+        print("Miner received data", synapse.dummy_input)
         response = []
         for i in range(10):
             response.append(str(i))

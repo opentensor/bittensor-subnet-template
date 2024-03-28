@@ -19,7 +19,7 @@
 import bittensor as bt
 from typing import Optional, List
 
-class CGPSynapse(bt.Synapse):
+class Dummy(bt.Synapse):
     time_elapsed = 0
     """
     A simple OCR synapse protocol representation which uses bt.Synapse as its base.
@@ -31,7 +31,7 @@ class CGPSynapse(bt.Synapse):
     """
 
     # Required request input, filled by sending dendrite caller. It is a base64 encoded string.
-    base64_image: str
+    dummy_input : str
 
     # Optional request output, filled by recieving axon.
     response: Optional[List[dict]] = None
