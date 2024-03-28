@@ -26,7 +26,7 @@ class APIServer:
     
     def __init__(
             self,
-            config
+            config=None
     ):
         self.app = FastAPI()
         self.config = config
