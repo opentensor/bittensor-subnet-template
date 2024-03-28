@@ -134,7 +134,7 @@ def base_blacklist(self, synapse: bt.Synapse) -> typing.Tuple[bool, str]:
             f"Blacklisting unrecognized hotkey {hotkey}"
         )
         return True, "Unrecognized hotkey"
-    if not self.miner_config.grace_period and synapse.version != protocol.VERSION:
+    if not self.miner_config.is_grace_period and synapse.version != protocol.VERSION:
         return True, f"Blacklisted: Protocol Version differs miner_version={protocol.VERSION} validator_version={synapse.version} for hotkey: {hotkey}"
     if hotkey in self.miner_config.blacklisted_hotkeys:
         return True, f"Blacklisted hotkey: {hotkey}"
