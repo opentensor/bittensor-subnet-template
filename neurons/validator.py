@@ -33,6 +33,7 @@ from template.validator import forward
 from template.base.validator import BaseValidatorNeuron
 
 import conversationgenome.utils
+import conversationgenome.validator
 
 from conversationgenome.ValidatorLib import ValidatorLib
 
@@ -71,6 +72,8 @@ class Validator(BaseValidatorNeuron):
         # get_random_uids is an example method, but you can replace it with your own.
         miner_uids = conversationgenome.utils.uids.get_random_uids(self, k=min(self.config.neuron.sample_size, self.metagraph.n.item()))
         print("miner_uids", miner_uids)
+        vl = ValidatorLib()
+        vl.validateMinimumTags([])
 
         # make a hash from the timestamp
         filename = hashlib.md5(str(time.time()).encode()).hexdigest()
@@ -81,7 +84,6 @@ class Validator(BaseValidatorNeuron):
         # Create synapse object to send to the miner and attach the image.
         #synapse = ocr_subnet.protocol.OCRSynapse(base64_image = image_data['base64_image'])
 
-        responses = None
         rewards = None
         # The dendrite client queries the network.
         #responses = self.dendrite.query(
@@ -94,9 +96,12 @@ class Validator(BaseValidatorNeuron):
         #)
 
         # Log the results for monitoring purposes.
+        responses = [{"response":"Hello"},{"response":"World"}]
         bt.logging.info(f"CGP Received responses: {responses}")
+        #labels = image_data['labels']
+        labels = ["Hello", "World"]
 
-        #rewards = ocr_subnet.validator.reward.get_rewards(self, labels=image_data['labels'], responses=responses)
+        rewards = conversationgenome.validator.reward.get_rewards(self, labels=labels, responses=responses)
 
         bt.logging.info(f"CGP Scored responses: {rewards}")
 

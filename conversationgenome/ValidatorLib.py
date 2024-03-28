@@ -111,10 +111,6 @@ class ValidatorLib:
                 print("Not enough valid tags for conversation. Passing.")
                 return
 
-    async def eventLoop(self):
-        while True:
-            await self.requestConvo()
-
     async def getConvo(self, hotkey):
         cl = ConvoLib()
         convo = await cl.getConversation(hotkey, dryrun=True)
@@ -168,6 +164,7 @@ class ValidatorLib:
         return results
 
     def validateMinimumTags(self, tags):
+        print("Validating tags", tags)
         return True
 
     def selectStage1Miners(self, uids, num=3):

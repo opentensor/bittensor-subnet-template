@@ -15,16 +15,32 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-__version__ = "0.1.0"
-version_split = __version__.split(".")
-__spec_version__ = (
-    (1000 * int(version_split[0]))
-    + (10 * int(version_split[1]))
-    + (1 * int(version_split[2]))
-)
 
-# Import all submodules.
-from . import protocol
-#from . import base
-from . import validator
-from . import utils
+import bittensor as bt
+from typing import Optional, List
+
+class OCRSynapse(bt.Synapse):
+    time_elapsed = 0
+    """
+    A simple OCR synapse protocol representation which uses bt.Synapse as its base.
+    This protocol enables communication betweenthe miner and the validator.
+
+    Attributes:
+    - base64_image: Base64 encoding of pdf image to be processed by the miner.
+    - response: List[dict] containing data extracted from the image.
+    """
+
+    # Required request input, filled by sending dendrite caller. It is a base64 encoded string.
+    base64_image: str
+
+    # Optional request output, filled by recieving axon.
+    response: Optional[List[dict]] = None
+
+    def deserialize(self) -> List[dict]:
+        """
+        Deserialize the miner response.
+
+        Returns:
+        - List[dict]: The deserialized response, which is a list of dictionaries containing the extracted data.
+        """
+        return self.response
