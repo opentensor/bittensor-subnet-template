@@ -33,9 +33,7 @@ class TextQueryAPI(SubnetsAPI):
     def prepare_synapse(self, network:str, text: str, is_generic_llm: bool) -> LlmQuery:
         synapse = LlmQuery(
             network=network,
-            input_text=text,
             is_generic_llm=is_generic_llm,
-            )
             messages=[
                 LlmMessage(
                     type=protocol.LLM_MESSAGE_TYPE_USER,
