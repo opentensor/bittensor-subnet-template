@@ -99,10 +99,15 @@ class Validator(BaseValidatorNeuron):
             # Do not deserialize the response so that we have access to the raw response.
             deserialize=False,
         )
-
+        validResponses = []
+        for response in responses:
+            if not response.dummy_output:
+                continue
+            validResponses.append(response)
+            bt.logging.info(f"CGP Received responses: {response.dummy_output}")
         # Log the results for monitoring purposes.
         responses = [{"tag":"baseball"},{"response":"Florida"}]
-        bt.logging.info(f"CGP Received responses: {responses}")
+        #bt.logging.info(f"CGP Received responses: {responses}")
         #labels = image_data['labels']
         labels = ["Hello", "World"]
 

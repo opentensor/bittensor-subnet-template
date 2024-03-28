@@ -72,7 +72,7 @@ class Miner(BaseMinerNeuron):
 
 
         # Attach response to synapse and return it.
-        synapse.response = response
+        #synapse.response = response
 
         synapse.dummy_output = 17 #synapse.dummy_input * 2
         return synapse
