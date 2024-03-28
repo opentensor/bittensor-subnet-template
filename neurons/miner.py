@@ -18,14 +18,20 @@
 # DEALINGS IN THE SOFTWARE.
 
 import time
+import os
+import hashlib
 import typing
+
+# Bittensor
 import bittensor as bt
 
 # Bittensor Miner Template:
 import template
+from template.validator import forward
 
 # import base miner class which takes care of most of the boilerplate
 from template.base.miner import BaseMinerNeuron
+
 
 
 class Miner(BaseMinerNeuron):
@@ -58,8 +64,17 @@ class Miner(BaseMinerNeuron):
         The 'forward' function is a placeholder and should be overridden with logic that is appropriate for
         the miner's intended operation. This method demonstrates a basic transformation of input data.
         """
-        # TODO(developer): Replace with actual implementation logic.
-        synapse.dummy_output = synapse.dummy_input * 2
+        # Get data
+        print("Miner received data", synapse.base64_image)
+        response = []
+        for i in range(10):
+            response.append(str(i))
+
+
+        # Attach response to synapse and return it.
+        synapse.response = response
+
+        synapse.dummy_output = 17 #synapse.dummy_input * 2
         return synapse
 
     async def blacklist(
