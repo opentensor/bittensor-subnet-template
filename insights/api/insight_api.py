@@ -1,6 +1,3 @@
-import argparse
-import asyncio
-import os
 import random
 import time
 import numpy as np
@@ -9,37 +6,33 @@ from datetime import datetime
 
 import protocol
 import bittensor as bt
+from insights import protocol
 from insights.api.query import TextQueryAPI
 from insights.api.get_query_axons import get_query_api_axons
 from neurons.validators.utils.uids import get_top_miner_uids
 from fastapi import FastAPI, Body
 import uvicorn
 
+
 bt.debug()
 
-excluded_uids = []
-class APIServer:
-    app: FastAPI
-    wallet: bt.wallet
-    subtensor: bt.subtensor
-    text_query_api: TextQueryAPI
-    
+class APIServer:    
     def __init__(
             self,
             config=None
-    ):
+        ):
         self.app = FastAPI()
         self.config = config
         self.wallet = bt.wallet(config=self.config)
         self.subtensor = bt.subtensor(config=self.config)
         self.text_query_api = TextQueryAPI(wallet=self.wallet)
+        self.excluded_uids = []
         
         @self.app.get("/api/text_query")
-        async def get_response(network:str, text: str):
-            global excluded_uids
+        async def get_response(network:str, text: str):            
             # select top miner
             metagraph = self.subtensor.metagraph(self.config.netuid) # sync every request
-            top_miner_uids = get_top_miner_uids(metagraph, self.config.top_rate, excluded_uids)
+            top_miner_uids = get_top_miner_uids(metagraph, self.config.top_rate, self.excluded_uids)
             bt.logging.info(f"Top miner UIDs are {top_miner_uids}")
             top_miner_axons = await get_query_api_axons(wallet=self.wallet, metagraph=metagraph, uids=top_miner_uids)
             bt.logging.info(f"top miner axons: {top_miner_axons}")
@@ -49,17 +42,40 @@ class APIServer:
                 axons=top_miner_axons,
                 network=network,
                 text=text,
+                is_generic_llm=False,
                 timeout=self.config.timeout
                 )
             blacklist_axons = np.array(top_miner_axons)[blacklist_axon_ids]
             blacklist_uids = np.where(np.isin(np.array(metagraph.axons), blacklist_axons))[0]
-            excluded_uids = np.union1d(np.array(excluded_uids), blacklist_uids)
-            excluded_uids = excluded_uids.astype(int).tolist()
-            bt.logging.info(f"excluded_uids are {excluded_uids}")
+            self.excluded_uids = np.union1d(np.array(self.excluded_uids), blacklist_uids)
+            self.excluded_uids = self.excluded_uids.astype(int).tolist()
+            
+            # If the number of excluded_uids is bigger than top x percentage of the whole axons, format it.
+            if len(self.excluded_uids) > int(metagraph.n * self.config.top_rate):
+                bt.logging.info(f"Excluded UID list is too long")
+                self.excluded_uids = []
+            bt.logging.info(f"excluded_uids are {self.excluded_uids}")
             bt.logging.info(f"Responses are {responses}")
             if not responses:
                 return "This API is banned."
             response = random.choice(responses)
+            
+            if response.error == protocol.LLM_ERROR_TYPE_NOT_SUPPORTED:
+            # If the validator received the error "Query is not allowed.", It should error out(ChatApp would handle it accordingly)
+                return "Query is not allowed"
+        
+            if response.error == protocol.LLM_ERROR_SEARCH_TARGET_NOT_SUPPORTED:
+                # If the validator receives the error 'Cannot find the specific template', it should invoke the generic LLM endpoint passing the same user text.
+                responses, blacklist_axon_ids =  await self.text_query_api(
+                    axons=top_miner_axons,
+                    network=network,
+                    text=text,
+                    is_generic_llm=True,
+                    timeout=self.config.timeout
+                )
+            if not responses:
+                return "This hotkey is banned."
+            response = random.choice(responses)        
             return response
                 
         @self.app.get("/")
