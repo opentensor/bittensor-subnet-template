@@ -1,5 +1,5 @@
 # The MIT License (MIT)
-# Copyright © 2023 Yuma Rao
+# Copyright © 2024 Afterparty, Inc.
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
@@ -23,10 +23,10 @@ import bittensor as bt
 from abc import ABC, abstractmethod
 
 # Sync calls set weights and also resyncs the metagraph.
-from template.utils.config import check_config, add_args, config
-from template.utils.misc import ttl_get_block
-from template import __spec_version__ as spec_version
-from template.mock import MockSubtensor, MockMetagraph
+from conversationgenome.utils.config import check_config, add_args, config
+from conversationgenome.utils.misc import ttl_get_block
+from conversationgenome import __spec_version__ as spec_version
+from conversationgenome.mock import MockSubtensor, MockMetagraph
 
 
 class BaseNeuron(ABC):
