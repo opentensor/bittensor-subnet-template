@@ -20,7 +20,7 @@ import bittensor as bt
 from typing import Optional, List
 import typing
 
-class Dummy(bt.Synapse):
+class CgSynapse(bt.Synapse):
     time_elapsed = 0
     """
     A simple OCR synapse protocol representation which uses bt.Synapse as its base.
