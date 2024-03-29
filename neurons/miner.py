@@ -35,6 +35,7 @@ from template.validator import forward
 from template.base.miner import BaseMinerNeuron
 
 import conversationgenome
+from conversationgenome.MinerLib import MinerLib
 
 
 class Miner(BaseMinerNeuron):
@@ -68,7 +69,11 @@ class Miner(BaseMinerNeuron):
         the miner's intended operation. This method demonstrates a basic transformation of input data.
         """
         # Get data
-        print("Miner received data", synapse.dummy_input)
+        convoWindow = synapse.dummy_input[0]["windows"]
+        print("Miner received data", convoWindow)
+        ml = MinerLib()
+        tags = await ml.doMining(convoWindow, 1123)
+        print("Mined tags", tags)
         response = []
         for i in range(10):
             response.append(str(i))
@@ -78,7 +83,7 @@ class Miner(BaseMinerNeuron):
         #synapse.response = response
 
         #synapse.dummy_output = 17 #synapse.dummy_input * 2
-        synapse.dummy_output = [{"hello":"world"}] #synapse.dummy_input * 2
+        synapse.dummy_output = [tags] #synapse.dummy_input * 2
         return synapse
 
     async def blacklist(
