@@ -84,7 +84,9 @@ class Validator(BaseValidatorNeuron):
         # Create synapse object to send to the miner and attach the image.
         #baseImage = image_data['base64_image']
         #baseImage = 21
-        baseImage = [{"greetings":"bye"}]
+        windows = await vl.requestConvo()
+        #baseImage = [{"greetings":"bye"}]
+        baseImage = [windows]
         print("Send", baseImage)
 
         synapse = conversationgenome.protocol.Dummy(dummy_input = baseImage)

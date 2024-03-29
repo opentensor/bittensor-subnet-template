@@ -85,6 +85,7 @@ class ValidatorLib:
 
         return rewards
 
+
     async def requestConvo(self):
         minConvWindows = 1
         hotkey = "a123"
@@ -104,12 +105,18 @@ class ValidatorLib:
                 numWindows = len(convoWindows)
                 if numWindows > minConvWindows:
                     print("Found %d convo windows. Sending to miners..." % (numWindows))
-                    await self.sendWindowsToMiners(convoWindows, fullConvo=fullConvo, fullConvoMetaData=fullConvoMetaData)
+                    #await self.sendWindowsToMiners(convoWindows, fullConvo=fullConvo, fullConvoMetaData=fullConvoMetaData)
+                    return {
+                        "full_conversation": fullConvo,
+                        "full_conversation_metadata": fullConvoMetaData,
+                        "windows": convoWindows,
+                    }
                 else:
                     print("Not enough convo windows -- only %d. Passing." % (numWindows))
             else:
                 print("Not enough valid tags for conversation. Passing.")
                 return
+        return None
 
     async def getConvo(self, hotkey):
         cl = ConvoLib()
