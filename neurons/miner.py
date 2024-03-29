@@ -22,16 +22,11 @@ import os
 import hashlib
 import typing
 
-
-
 # Bittensor
 import bittensor as bt
 
-# Bittensor Miner Template:
-import template
 
-# import base miner class which takes care of most of the boilerplate
-from template.base.miner import BaseMinerNeuron
+from conversationgenome.base.miner import BaseMinerNeuron
 
 from conversationgenome.MinerLib import MinerLib
 from conversationgenome.protocol import Dummy
@@ -39,7 +34,7 @@ from conversationgenome.protocol import Dummy
 
 class Miner(BaseMinerNeuron):
     """
-    Your miner neuron class. You should use this class to define your miner's behavior. In particular, you should replace the forward function with your own logic. You may also want to override the blacklist and priority functions according to your needs.
+    You may also want to override the blacklist and priority functions according to your needs.
 
     This class inherits from the BaseMinerNeuron class, which in turn inherits from BaseNeuron. The BaseNeuron class takes care of routine tasks such as setting up wallet, subtensor, metagraph, logging directory, parsing config, etc. You can override any of the methods in BaseNeuron if you need to customize the behavior.
 
