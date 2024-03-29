@@ -30,7 +30,7 @@ import template
 from template.validator import forward
 
 # import base validator class which takes care of most of the boilerplate
-from template.base.validator import BaseValidatorNeuron
+from conversationgenome.base.validator import BaseValidatorNeuron
 
 import conversationgenome.utils
 import conversationgenome.validator

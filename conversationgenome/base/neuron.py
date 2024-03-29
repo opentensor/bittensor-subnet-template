@@ -28,7 +28,7 @@ from conversationgenome.utils.misc import ttl_get_block
 #from conversationgenome import __spec_version__ as spec_version
 from conversationgenome.mock import MockSubtensor, MockMetagraph
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 version_split = __version__.split(".")
 spec_version = (
     (1000 * int(version_split[0]))
