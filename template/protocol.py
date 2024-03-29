@@ -19,6 +19,7 @@
 
 import typing
 import bittensor as bt
+from typing import Optional, List
 
 # TODO(developer): Rewrite with your protocol definition.
 
@@ -48,23 +49,23 @@ class Dummy(bt.Synapse):
 
     Attributes:
     - dummy_input: An integer value representing the input request sent by the validator.
-    - dummy_output: An optional integer value which, when filled, represents the response from the miner.
     """
 
     # Required request input, filled by sending dendrite caller.
     dummy_input: int
 
     # Optional request output, filled by recieving axon.
-    dummy_output: typing.Optional[int] = None
+    #dummy_output: Optional[List[dict]] = None
+    dummy_output: Optional[List[dict]] = None
 
-    def deserialize(self) -> int:
+    def deserialize(self) -> List[dict]:
         """
         Deserialize the dummy output. This method retrieves the response from
         the miner in the form of dummy_output, deserializes it and returns it
         as the output of the dendrite.query() call.
 
         Returns:
-        - int: The deserialized response, which in this case is the value of dummy_output.
+        - List[dict]: The deserialized response, which is a list of dictionaries containing the extracted data.
 
         Example:
         Assuming a Dummy instance has a dummy_output value of 5:

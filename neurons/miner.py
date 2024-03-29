@@ -22,6 +22,8 @@ import os
 import hashlib
 import typing
 
+
+
 # Bittensor
 import bittensor as bt
 
@@ -32,6 +34,7 @@ from template.validator import forward
 # import base miner class which takes care of most of the boilerplate
 from template.base.miner import BaseMinerNeuron
 
+import conversationgenome
 
 
 class Miner(BaseMinerNeuron):
@@ -74,7 +77,8 @@ class Miner(BaseMinerNeuron):
         # Attach response to synapse and return it.
         #synapse.response = response
 
-        synapse.dummy_output = 17 #synapse.dummy_input * 2
+        #synapse.dummy_output = 17 #synapse.dummy_input * 2
+        synapse.dummy_output = [{"hello":"world"}] #synapse.dummy_input * 2
         return synapse
 
     async def blacklist(
