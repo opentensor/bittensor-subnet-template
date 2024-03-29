@@ -15,10 +15,10 @@ class ApiLib:
             convos = json.loads(body)
             convoKeys = list(convos.keys())
             convoTotal = len(convoKeys)
-            print("convoTotal", convoTotal)
+            #print("convoTotal", convoTotal)
             selectedConvoKey = random.choice(convoKeys)
             selectedConvo = convos[selectedConvoKey]
-            print("selectedConvo", selectedConvo)
+            #print("selectedConvo", selectedConvo)
 
 
             convo = {

@@ -16,8 +16,7 @@ from conversationgenome.MockBt import MockBt
 
 bt = None
 try:
-    #import bittensor as bt
-    bt = MockBt()
+    import bittensor as bt
 except:
     if verbose:
         print("bittensor not installed")
@@ -90,11 +89,14 @@ class ValidatorLib:
         minConvWindows = 1
         hotkey = "a123"
         fullConvo = await self.getConvo(hotkey)
+        bt.logging.info("Convo ID:", Utils.get(fullConvo, "guid"))
         #print("fullConvo", fullConvo)
 
         if fullConvo:
             # Do overview tagging and participant profiles
             fullConvoMetaData = await self.generateFullConvoMetaData(fullConvo)
+            bt.logging.info("Found %d FullConvo tags" % len(fullConvoMetaData['tags']) )
+
             #print("fullConvoMetaData", fullConvoMetaData)
             fullConvoTags = Utils.get(fullConvoMetaData, "tags", [])
 
@@ -152,7 +154,6 @@ class ValidatorLib:
         #info["interests_of_q"] = tagsQ
         #info["interests_of_a"] = tagsA
         ##print("FullConvo tags",  tags)
-        print("Found %d FullConvo tags" % len(tags) )
         data = {
             "participantProfiles": convo['participants'],
             "tags": tags,
@@ -171,7 +172,7 @@ class ValidatorLib:
         return results
 
     def validateMinimumTags(self, tags):
-        print("Validating tags", tags)
+        #print("Validating tags", tags)
         return True
 
     def selectStage1Miners(self, uids, num=3):
@@ -197,7 +198,7 @@ class ValidatorLib:
         #print("Full convo semantic_neighborhood", semantic_neighborhood)
 
         # Get uids of available miners
-        uids = bt.getUids()
+        uids = [1,2,3,4,5,6,7,8] #bt.getUids()
         if len(uids) < 6:
             print("Not enough miners available. Aborting.")
             return
