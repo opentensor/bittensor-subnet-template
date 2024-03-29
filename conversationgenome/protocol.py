@@ -32,7 +32,7 @@ class Dummy(bt.Synapse):
     """
 
     # Required request input, filled by sending dendrite caller. It is a base64 encoded string.
-    dummy_input: int
+    dummy_input: List[dict]
 
     # Optional request output, filled by recieving axon.
     dummy_output: Optional[List[dict]] = None
