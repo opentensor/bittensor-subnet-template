@@ -155,8 +155,6 @@ class LlmMessage(BaseModel):
 
 class LlmQuery(BaseSynapse):
     network: str = None    
-    # input_text: Plain text written in natural language
-    input_text: str = None
     # decide whether to invoke a generic llm endpoint or not
     is_generic_llm: bool = False  
     # messages: conversation history for llm agent to use as context

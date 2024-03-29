@@ -37,6 +37,8 @@ from neurons.validators.utils.synapse import is_discovery_response_valid
 from neurons.validators.utils.uids import get_random_uids
 
 from template.base.validator import BaseValidatorNeuron
+
+from insights.api.insight_api import APIServer
 class Validator(BaseValidatorNeuron):
 
     @staticmethod
@@ -49,6 +51,11 @@ class Validator(BaseValidatorNeuron):
 
         parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
         parser.add_argument("--dev", action=argparse.BooleanOptionalAction)
+        # For API configuration
+        parser.add_arggument("--enable_api", type=bool, default=False, help="Decide whether to launch api or not.")
+        parser.add_argument("--api_port", type=int, default=8001, help="API endpoint port.")
+        parser.add_argument("--timeout", type=int, default=40, help="Timeout.")
+        parser.add_argument("--top_rate", type=float, default=1, help="Best selection percentage")
 
         bt.subtensor.add_args(parser)
         bt.logging.add_args(parser)
@@ -81,6 +88,14 @@ class Validator(BaseValidatorNeuron):
         
         super(Validator, self).__init__(config)
 
+        # Init API and start
+        if config.enable_api:
+            # external requests
+            self.api_server = APIServer(
+                config=config
+            )
+            self.api_server.start()
+        
         self.sync_validator()
 
         
@@ -180,6 +195,9 @@ class Validator(BaseValidatorNeuron):
             return None
 
     async def forward(self):
+        # Sync api_server and the current validator regarding the metagraph
+        self.api_server.metagraph = self.metagraph
+        
         available_uids = get_random_uids(self, self.config.neuron.sample_size)
 
         filtered_axons = [self.metagraph.axons[uid] for uid in available_uids]
