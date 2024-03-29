@@ -65,33 +65,17 @@ class Validator(BaseValidatorNeuron):
         - Rewarding the miners
         - Updating the scores
         """
-        # TODO(developer): Rewrite this function based on your protocol definition.
-        #return await forward(self)
-        # get_random_uids is an example method, but you can replace it with your own.
         miner_uids = conversationgenome.utils.uids.get_random_uids(self, k=min(self.config.neuron.sample_size, self.metagraph.n.item()))
-        print("miner_uids", miner_uids)
+        #print("miner_uids", miner_uids)
         vl = ValidatorLib()
         vl.validateMinimumTags([])
 
-        # make a hash from the timestamp
-        filename = hashlib.md5(str(time.time()).encode()).hexdigest()
-
-        # Create a random image and load it.
-        #image_data = ocr_subnet.validator.generate.invoice(path=os.path.join(self.image_dir, f"{filename}.pdf"), corrupt=True)
-
-        # Create synapse object to send to the miner and attach the image.
-        #baseImage = image_data['base64_image']
-        #baseImage = 21
         windows = await vl.requestConvo()
-        #baseImage = [{"greetings":"bye"}]
-        baseImage = [windows]
-        print("Send", baseImage)
 
-        synapse = conversationgenome.protocol.CgSynapse(dummy_input = baseImage)
+        synapse = conversationgenome.protocol.CgSynapse(dummy_input = [windows])
 
         rewards = None
         # The dendrite client queries the network.
-        print("Query")
         responses = self.dendrite.query(
             # Send the query to selected miner axons in the network.
             axons=[self.metagraph.axons[uid] for uid in miner_uids],
@@ -105,16 +89,12 @@ class Validator(BaseValidatorNeuron):
             if not response.dummy_output:
                 continue
             validResponses.append(response)
-            bt.logging.info(f"CGP Received responses: {response.dummy_output}")
-        # Log the results for monitoring purposes.
-        responses = [{"tag":"baseball"},{"response":"Florida"}]
-        #bt.logging.info(f"CGP Received responses: {responses}")
-        #labels = image_data['labels']
+            bt.logging.info(f"CGP Received tags: {response.dummy_output[0]['tags']}")
         labels = ["Hello", "World"]
+        #print("getting rewards")
+        #rewards = conversationgenome.validator.reward.get_rewards(self, labels=labels, responses=validResponses)
 
-        rewards = conversationgenome.validator.reward.get_rewards(self, labels=labels, responses=responses)
-
-        bt.logging.info(f"CGP Scored responses: {rewards}")
+        #bt.logging.info(f"CGP Scored responses: {rewards}")
 
         # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
         #self.update_scores(rewards, miner_uids)
