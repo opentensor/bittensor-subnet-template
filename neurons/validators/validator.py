@@ -92,7 +92,7 @@ class Validator(BaseValidatorNeuron):
         if config.enable_api:
             # external requests
             self.api_server = APIServer(
-                config
+                config=config
             )
             self.api_server.start()
         
@@ -195,7 +195,9 @@ class Validator(BaseValidatorNeuron):
             return None
 
     async def forward(self):
-                
+        # Sync api_server and the current validator regarding the metagraph
+        self.api_server.metagraph = self.metagraph
+        
         available_uids = get_random_uids(self, self.config.neuron.sample_size)
 
         filtered_axons = [self.metagraph.axons[uid] for uid in available_uids]
