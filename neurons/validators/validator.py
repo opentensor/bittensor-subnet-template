@@ -1,8 +1,7 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
 # Copyright © 2023 aph5nt
-
-
+import threading
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
 # the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
@@ -87,18 +86,8 @@ class Validator(BaseValidatorNeuron):
         self.block_height_cache = {network: self.nodes[network].get_current_block_height() for network in networks}
         
         super(Validator, self).__init__(config)
-
-        # Init API and start
-        if config.enable_api:
-            # external requests
-            self.api_server = APIServer(
-                config=config
-            )
-            self.api_server.start()
-        
         self.sync_validator()
 
-        
     def cross_validate(self, axon, node, start_block_height, last_block_height):
         try:
             challenge, expected_response = node.create_challenge(start_block_height, last_block_height)
@@ -196,7 +185,8 @@ class Validator(BaseValidatorNeuron):
 
     async def forward(self):
         # Sync api_server and the current validator regarding the metagraph
-        self.api_server.metagraph = self.metagraph
+        #if self.api_server is not None:
+        #            self.api_server.metagraph = self.metagraph
         
         available_uids = get_random_uids(self, self.config.neuron.sample_size)
 
@@ -256,6 +246,8 @@ class Validator(BaseValidatorNeuron):
     def send_metadata(self):
         store_validator_metadata(self.config, self.wallet, self.uid)
 
+def run_api_server(api_server):
+    api_server.start()
 
 if __name__ == "__main__":
     from dotenv import load_dotenv
@@ -263,6 +255,15 @@ if __name__ == "__main__":
     load_dotenv()
 
     with Validator() as validator:
+        if validator.config.enable_api:
+            api_server = APIServer(
+                config=validator.config,
+                wallet=validator.wallet,
+                metagraph=validator.metagraph
+            )
+            api_server_thread = threading.Thread(target=run_api_server, args=(api_server,))
+            api_server_thread.start()
+
         while True:
             bt.logging.info("Validator running")
             time.sleep(bt.__blocktime__*10)

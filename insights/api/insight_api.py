@@ -1,3 +1,5 @@
+import argparse
+import os
 import random
 import time
 import numpy as np
@@ -5,6 +7,8 @@ import numpy as np
 from datetime import datetime
 
 import bittensor as bt
+import yaml
+
 from insights import protocol
 from insights.api.query import TextQueryAPI
 from insights.api.get_query_axons import get_query_api_axons
@@ -15,16 +19,18 @@ import uvicorn
 
 bt.debug()
 
-class APIServer:    
+class APIServer:
     def __init__(
             self,
-            config=None
+            config: None,
+            wallet: None,
+            metagraph: None,
         ):
         self.app = FastAPI()
         self.config = config
-        self.wallet = bt.wallet(config=self.config)
+        self.wallet = wallet
         self.text_query_api = TextQueryAPI(wallet=self.wallet)
-        self.metagraph = bt.subtensor(config=self.config).metagraph(netuid=self.config.netuid)
+        self.metagraph = metagraph
         self.excluded_uids = []
         
         @self.app.get("/api/text_query")
@@ -55,6 +61,7 @@ class APIServer:
             bt.logging.info(f"excluded_uids are {self.excluded_uids}")
             bt.logging.info(f"Responses are {responses}")
             if not responses:
+                # TODO: i have received 0 responses, this api is not banned, this api should return another message
                 return "This API is banned."
             response = random.choice(responses)
             
