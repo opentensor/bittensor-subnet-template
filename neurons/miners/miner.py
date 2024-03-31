@@ -291,7 +291,8 @@ class Miner(BaseMinerNeuron):
         inmemory_uids = [uid for uid in uid_to_weights if self.config.netuid in uid_to_weights[uid]]
         root_neurons = subtensor.neurons_lite(netuid=0)        
         uid_to_hotkey = {neuron_data.uid: neuron_data.hotkey for neuron_data in root_neurons}
-        inmemory_hotkeys = [uid_to_hotkey[uid] for uid in inmemory_uids]
+        inmemory_hotkeys = [uid_to_hotkey[uid] for uid in inmemory_uids if uid in uid_to_hotkey]
+
         return inmemory_hotkeys
 
     async def llm_query_priority(self, synapse: protocol.LlmQuery) -> float:
