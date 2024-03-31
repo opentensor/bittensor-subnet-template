@@ -52,7 +52,7 @@ class Validator(BaseValidatorNeuron):
         parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
         parser.add_argument("--dev", action=argparse.BooleanOptionalAction)
         # For API configuration
-        parser.add_arggument("--enable_api", type=bool, default=False, help="Decide whether to launch api or not.")
+        parser.add_argument("--enable_api", type=bool, default=False, help="Decide whether to launch api or not.")
         parser.add_argument("--api_port", type=int, default=8001, help="API endpoint port.")
         parser.add_argument("--timeout", type=int, default=40, help="Timeout.")
         parser.add_argument("--top_rate", type=float, default=1, help="Best selection percentage")

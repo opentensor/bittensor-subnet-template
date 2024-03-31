@@ -4,7 +4,6 @@ import numpy as np
 
 from datetime import datetime
 
-import protocol
 import bittensor as bt
 from insights import protocol
 from insights.api.query import TextQueryAPI
