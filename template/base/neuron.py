@@ -108,6 +108,7 @@ class BaseNeuron(ABC):
         )
         self.step = 0
         self.last_message_send = 0
+        self.last_weights_set_block = 0
 
     @abstractmethod
     async def forward(self, synapse: bt.Synapse) -> bt.Synapse: ...
@@ -166,7 +167,7 @@ class BaseNeuron(ABC):
 
         # Define appropriate logic for when set weights.
         return (
-            (self.block - self.metagraph.last_update[self.uid])
+            (self.block - self.last_weights_set_block)
             > self.config.neuron.epoch_length
             and self.neuron_type != "MinerNeuron"
         )  # don't set weights if you're a miner

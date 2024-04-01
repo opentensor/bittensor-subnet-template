@@ -1,5 +1,7 @@
 from typing import Optional
 
+import insights
+
 import bittensor as bt
 from bittensor.extrinsics import serving
 from pydantic import BaseModel
@@ -16,7 +18,8 @@ class MinerMetadata(Metadata):
     n: Optional[int] #network
     mt: Optional[int] #model_type
     ri: Optional[str] #run_id
-
+    cv: Optional[str] #code_version
+    
     @staticmethod
     def from_compact(compact_str):
         data_dict = {}
@@ -27,8 +30,9 @@ class MinerMetadata(Metadata):
 
 class ValidatorMetadata(Metadata):
     b: int
-    v: int
+    v: Optional[int]
     di: str
+    cv: Optional[str] #code_version
 
     @staticmethod
     def from_compact(compact_str):
@@ -58,6 +62,7 @@ def store_miner_metadata(config, graph_search, wallet, start_block, last_block):
             n=get_network_id(config.network),
             mt=get_model_id(config.model_type),
             ri=run_id,
+            cv=insights.__version__
         )
 
     try:
@@ -88,8 +93,8 @@ def store_validator_metadata(config, wallet, uid):
         docker_image = get_docker_image_version()
         metadata =  ValidatorMetadata(
             b=subtensor.block,
-            v=VERSION,
             di=docker_image,
+            cv=insights.__version__
         )
 
         hotkey= wallet.hotkey.ss58_address
