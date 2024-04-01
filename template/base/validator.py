@@ -31,6 +31,7 @@ from traceback import print_exception
 from template.base.neuron import BaseNeuron
 from template.mock import MockDendrite
 from template.utils.config import add_validator_args
+from template.utils.substrate import get_weights_min_stake
 
 
 class BaseValidatorNeuron(BaseNeuron):
@@ -221,6 +222,13 @@ class BaseValidatorNeuron(BaseNeuron):
         """
         Sets the validator weights to the metagraph hotkeys based on the scores it has received from the miners. The weights determine the trust and incentive level the validator assigns to miner nodes on the network.
         """
+        validator_stake = self.metagraph.S[self.uid]
+        weight_min_stake = get_weights_min_stake(self.subtensor.substrate)
+        if validator_stake < weight_min_stake:
+            bt.logging.warning(
+                f"Not enough stake t{validator_stake} to set weight, require a minimum of t{weight_min_stake}. Please stake more if you do not want to be de-registered!"
+            )
+            return
 
         # Check if self.scores contains any NaN values and log a warning if it does.
         if torch.isnan(self.scores).any():
