@@ -18,7 +18,8 @@ from insights import protocol
 from template.base.miner import BaseMinerNeuron
 
 from neurons.miners import blacklist
-from insights.protocol import MODEL_TYPE_FUNDS_FLOW, NETWORK_BITCOIN, NETWORK_ETHEREUM, LLM_TYPE_CUSTOM, LLM_TYPE_OPENAI
+from insights.protocol import MODEL_TYPE_FUNDS_FLOW, NETWORK_BITCOIN, NETWORK_ETHEREUM, LLM_TYPE_CUSTOM, LLM_TYPE_OPENAI, \
+    QueryOutput
 from neurons.storage import store_miner_metadata
 from neurons.remote_config import MinerConfig
 from neurons.nodes.factory import NodeFactory
@@ -213,14 +214,15 @@ class Miner(BaseMinerNeuron):
             
             result = self.graph_search.execute_query(query=query)
             interpreted_result = self.llm.interpret_result(llm_messages=synapse.messages, result=result)
-            
-            synapse.output["result"] = result
-            synapse.output["interpreted_result"] = interpreted_result
+
+            synapse.output = QueryOutput(result=result, interpreted_result=interpreted_result)
+            #synapse.output["result"] = result
+            #synapse.output["interpreted_result"] = interpreted_result
 
         except Exception as e:
             bt.logging.error(traceback.format_exc())
-            synapse.output["error"] = e
-            
+            synapse.output = QueryOutput(error=e)
+
         bt.logging.info(f"Serving miner llm query output: {synapse.output}")
         return synapse
 
