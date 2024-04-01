@@ -103,10 +103,6 @@ class Miner(BaseMinerNeuron):
         # Attach determiners which functions are called when servicing a request.
         bt.logging.info(f"Attaching forwards functions to miner axon.")
         self.axon.attach(
-            forward_fn=self.block_check,
-            blacklist_fn=self.block_check_blacklist,
-            priority_fn=self.block_check_priority,
-        ).attach(
             forward_fn=self.discovery,
             blacklist_fn=self.discovery_blacklist,
             priority_fn=self.discovery_priority,
@@ -137,26 +133,9 @@ class Miner(BaseMinerNeuron):
 
         self.miner_config = MinerConfig().load_and_get_config_values()        
 
-    
-    async def block_check(self, synapse: protocol.BlockCheck) -> protocol.BlockCheck:
-        try:
-            block_heights = synapse.blocks_to_check
-            data_samples = self.graph_search.get_block_transactions(block_heights)
-            synapse.output = protocol.BlockCheckOutput(
-                data_samples=data_samples,
-            )
-            bt.logging.info(f"Serving miner random block check output: {synapse.output}")
-        except Exception as e:
-            bt.logging.error(traceback.format_exc())
-            synapse.output = None
-        return synapse
-            
     async def discovery(self, synapse: protocol.Discovery ) -> protocol.Discovery:
         try:
             start_block, last_block = self.graph_search.get_min_max_block_height_cache()
-            
-            run_id = self.graph_search.get_run_id()
-
             synapse.output = protocol.DiscoveryOutput(
                 metadata=protocol.DiscoveryMetadata(
                     network=self.config.network,
@@ -164,7 +143,6 @@ class Miner(BaseMinerNeuron):
                 ),
                 start_block_height=start_block,
                 block_height=last_block,
-                run_id=run_id,
             )
             bt.logging.info(f"Serving miner discovery output: {synapse.output}")
         except Exception as e:
@@ -226,9 +204,6 @@ class Miner(BaseMinerNeuron):
         bt.logging.info(f"Serving miner llm query output: {synapse.output}")
         return synapse
 
-    async def block_check_blacklist(self, synapse: protocol.BlockCheck) -> typing.Tuple[bool, str]:
-        return blacklist.base_blacklist(self, synapse=synapse)
-
     async def discovery_blacklist(self, synapse: protocol.Discovery) -> typing.Tuple[bool, str]:
         return blacklist.discovery_blacklist(self, synapse=synapse)
 
@@ -254,9 +229,6 @@ class Miner(BaseMinerNeuron):
         )
         return prirority
     
-    async def block_check_priority(self, synapse: protocol.BlockCheck) -> float:
-        return self.base_priority(synapse=synapse)
-
     async def discovery_priority(self, synapse: protocol.Discovery) -> float:
         return self.base_priority(synapse=synapse)
 
@@ -359,8 +331,7 @@ class Miner(BaseMinerNeuron):
         ) > self.miner_config.store_metadata_frequency
     
     def send_metadata(self):
-        start_block, last_block = self.graph_search.get_min_max_block_height_cache()
-        store_miner_metadata(self.config, self.graph_search, self.wallet, start_block, last_block)
+        store_miner_metadata(self)
 
 def wait_for_blocks_sync():
         is_synced=False

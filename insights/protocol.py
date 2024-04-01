@@ -88,16 +88,12 @@ class DiscoveryMetadata(BaseModel):
     graph_schema: Optional[Dict] = None
     #TODO: implement method for getting graph schema from miner
 
-
 class DiscoveryOutput(BaseModel):
     metadata: DiscoveryMetadata = None
     block_height: int = None
     start_block_height: int = None
     run_id: str = None
     version: Optional[int] = VERSION
-
-class BlockCheckOutput(BaseModel):
-    data_samples: List[Dict] = None
 
 class BaseSynapse(bt.Synapse):
     version: int = VERSION
@@ -107,10 +103,6 @@ class Discovery(BaseSynapse):
 
     def deserialize(self):
         return self
-
-class BlockCheck(BaseSynapse):
-    blocks_to_check: List[int] = None
-    output: BlockCheckOutput = None
 
 class QueryOutput(BaseModel):
     result: Optional[List[Dict]] = None
