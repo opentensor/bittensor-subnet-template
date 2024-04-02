@@ -78,6 +78,20 @@ class TestLLM(unittest.TestCase):
         print("--- Interpreted result ---")
         print(interpreted_result)
 
+    def test_edge_cases(self):
+        with self.assertRaises(Exception) as context:
+            query_text = "What is React.js?"
+            llm_messages = [
+                protocol.LlmMessage(
+                    type=protocol.LLM_MESSAGE_TYPE_USER,
+                    content=query_text
+                )
+            ]
+            query = self.llm.build_query_from_messages(llm_messages)
+            result = self.graph_search.execute_query(query=query)
+            interpreted_result = self.llm.interpret_result(llm_messages=llm_messages, result=result)
+        self.assertEqual(str(context.exception), str(protocol.LLM_ERROR_TYPE_NOT_SUPPORTED))
+        
 if __name__ == '__main__':
     from dotenv import load_dotenv
     load_dotenv()
