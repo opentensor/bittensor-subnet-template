@@ -126,14 +126,16 @@ class GraphSearch:
             result_min = session.run(
                 """
                 MATCH (n:Cache {field: 'min_block_height'})
-                RETURN n.value;
+                RETURN n.value
+                LIMIT 1;
                 """
             ).single()
             
             result_max = session.run(
                 """
                 MATCH (n:Cache {field: 'max_block_height'})
-                RETURN n.value;
+                RETURN n.value
+                LIMIT 1;
                 """
             ).single()
             
