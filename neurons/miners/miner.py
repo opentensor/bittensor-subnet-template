@@ -173,12 +173,11 @@ class Miner(BaseMinerNeuron):
         return synapse
 
     async def query(self, synapse: protocol.Query ) -> protocol.Query:
-        synapse.output = {}
         try:
-            synapse.output["result"] = self.graph_search.execute_query(query=synapse)
+            synapse.output = QueryOutput(result=self.graph_search.execute_query(query=synapse))
         except Exception as e:
             bt.logging.error(traceback.format_exc())
-            synapse.output["error"] = e
+            synapse.output = QueryOutput(error=e)
         return synapse
 
     async def challenge(self, synapse: protocol.Challenge ) -> protocol.Challenge:
