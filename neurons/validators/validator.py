@@ -1,7 +1,6 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
 # Copyright © 2023 aph5nt
-import threading
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
 # the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
@@ -23,6 +22,7 @@ import torch
 import bittensor as bt
 import os
 import yaml
+import threading
 
 from insights.protocol import Discovery, DiscoveryOutput, MAX_MINER_INSTANCE
 
@@ -86,6 +86,12 @@ class Validator(BaseValidatorNeuron):
         super(Validator, self).__init__(config)
         self.sync_validator()
         self.uid_batch_generator = get_uids_batch(self, self.config.neuron.sample_size)
+        if config.enable_api:
+            self.api_server = APIServer(
+                config=self.config,
+                wallet=self.wallet,
+                metagraph=self.metagraph
+            )
 
     def cross_validate(self, axon, node, start_block_height, last_block_height):
         try:
@@ -192,6 +198,8 @@ class Validator(BaseValidatorNeuron):
             return None
 
     async def forward(self):
+        # Update the metagraph of api_server as the one of validator is updated.
+        self.api_server.metagraph = self.metagraph
         uids = next(self.uid_batch_generator, None)
         if uids is None:
             self.uid_batch_generator = get_uids_batch(self, self.config.neuron.sample_size)
@@ -246,12 +254,13 @@ if __name__ == "__main__":
 
     with Validator() as validator:
         if validator.config.enable_api:
-            api_server = APIServer(
-                config=validator.config,
-                wallet=validator.wallet,
-                metagraph=validator.metagraph
-            )
-            api_server_thread = threading.Thread(target=run_api_server, args=(api_server,))
+            if not validator.api_server:
+                validator.api_server = APIServer(
+                    config=validator.config,
+                    wallet=validator.wallet,
+                    metagraph=validator.metagraph
+                )
+            api_server_thread = threading.Thread(target=run_api_server, args=(validator.api_server,))
             api_server_thread.start()
 
         while True:
