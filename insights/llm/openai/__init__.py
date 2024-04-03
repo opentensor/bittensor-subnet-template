@@ -83,7 +83,10 @@ class OpenAILLM(BaseLLM):
                 
         try:
             ai_message = self.chat.invoke(messages)
-            return ai_message.content
+            if ai_message == "not applicable questions":
+                raise Exception(protocol.LLM_ERROR_NOT_APPLICAPLE_QUESTIONS)
+            else:
+                return ai_message.content
         except Exception as e:
             bt.logging.error(f"LlmQuery general response error: {e}")
             raise Exception(protocol.LLM_ERROR_GENERAL_RESPONSE_FAILED)

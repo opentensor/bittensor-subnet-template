@@ -44,6 +44,7 @@ LLM_ERROR_INTERPRETION_FAILED = 5
 LLM_ERROR_EXECUTION_FAILED = 6
 LLM_ERROR_QUERY_BUILD_FAILED = 7
 LLM_ERROR_GENERAL_RESPONSE_FAILED = 8
+LLM_ERROR_NOT_APPLICAPLE_QUESTIONS = 9
 
 # LLM Error Messages
 LLM_ERROR_MESSAGES = {
@@ -55,7 +56,8 @@ LLM_ERROR_MESSAGES = {
     LLM_ERROR_INTERPRETION_FAILED: "Unexpected error occurs while interpreting results.",
     LLM_ERROR_EXECUTION_FAILED: "Unexpected error occurs during database interaction.",
     LLM_ERROR_QUERY_BUILD_FAILED: "Unexpected error occurs while inferencing AI models.",
-    LLM_ERROR_GENERAL_RESPONSE_FAILED: "Unexpected error occurs while answering general questions."
+    LLM_ERROR_GENERAL_RESPONSE_FAILED: "Unexpected error occurs while answering general questions.",
+    LLM_ERROR_NOT_APPLICAPLE_QUESTIONS: "Your question is not applicable to our subnet. We only answer questions related blockchain or cryptocurrency."
 }
 
 def get_network_by_id(id):
