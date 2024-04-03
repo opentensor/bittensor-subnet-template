@@ -46,7 +46,6 @@ class APIServer:
                 axons=top_miner_axons,
                 network=network,
                 text=text,
-                is_generic_llm=False,
                 timeout=self.config.timeout
                 )
             blacklist_axons = np.array(top_miner_axons)[blacklist_axon_ids]
