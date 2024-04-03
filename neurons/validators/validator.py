@@ -192,6 +192,8 @@ class Validator(BaseValidatorNeuron):
             return None
 
     async def forward(self):
+        # Update the metagraph of api_server as the one of validator is updated.
+        self.api_server.metagraph = self.metagraph
         uids = next(self.uid_batch_generator, None)
         if uids is None:
             self.uid_batch_generator = get_uids_batch(self, self.config.neuron.sample_size)
