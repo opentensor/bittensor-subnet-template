@@ -61,26 +61,9 @@ class APIServer:
             bt.logging.info(f"excluded_uids are {self.excluded_uids}")
             bt.logging.info(f"Responses are {responses}")
             if not responses:
-                # TODO: i have received 0 responses, this api is not banned, this api should return another message
-                return "This API is banned."
+                # TODO: I have received 0 responses due to some issues
+                return "Please try again. Can't receive any responses due to the poor network connection."
             response = random.choice(responses)
-            
-            if response.error == protocol.LLM_ERROR_TYPE_NOT_SUPPORTED:
-            # If the validator received the error "Query is not allowed.", It should error out(ChatApp would handle it accordingly)
-                return "Query is not allowed"
-        
-            if response.error == protocol.LLM_ERROR_SEARCH_TARGET_NOT_SUPPORTED:
-                # If the validator receives the error 'Cannot find the specific template', it should invoke the generic LLM endpoint passing the same user text.
-                responses, blacklist_axon_ids =  await self.text_query_api(
-                    axons=top_miner_axons,
-                    network=network,
-                    text=text,
-                    is_generic_llm=True,
-                    timeout=self.config.timeout
-                )
-            if not responses:
-                return "This hotkey is banned."
-            response = random.choice(responses)        
             return response
                 
         @self.app.get("/")
