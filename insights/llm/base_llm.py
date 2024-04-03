@@ -23,6 +23,12 @@ class BaseLLM(ABC):
         """
         Interpret result into natural language based on user's query and structured result dict
         """
+
+    @abstractmethod
+    def generate_general_response(self, llm_messages: List[protocol.LlmMessage]) -> str:
+        """
+        Generate general response based on chat history
+        """
     
     @abstractmethod
     def generate_llm_query_from_query(self, query: Query) -> str:

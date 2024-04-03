@@ -1,3 +1,9 @@
+general_prompt = """
+You'll be acting as a blockchain and cryptocurrency expert.
+Your name is Chain Insights.
+Answer users' questions in a professional manner.
+"""
+
 query_schema = """
 A user asks about bitcoin transactions in natural language.
 I want to convert the natural language query into a pre-defined query structure.

@@ -5,7 +5,7 @@ from typing import List
 import bittensor as bt
 
 from insights.llm.base_llm import BaseLLM
-from insights.llm.prompts import query_schema, interpret_prompt
+from insights.llm.prompts import query_schema, interpret_prompt, general_prompt
 from insights.protocol import Query, NETWORK_BITCOIN
 from insights import protocol
 
@@ -68,6 +68,25 @@ class OpenAILLM(BaseLLM):
         except Exception as e:
             bt.logging.error(f"LlmQuery interpret result error: {e}")
             raise Exception(protocol.LLM_ERROR_INTERPRETION_FAILED)
+        
+    def generate_general_response(self, llm_messages: List[protocol.LlmMessage]) -> str:
+        messages = [
+            SystemMessage(
+                content=general_prompt
+            ),
+        ]
+        for llm_message in llm_messages:
+            if llm_message.type == protocol.LLM_MESSAGE_TYPE_USER:
+                messages.append(HumanMessage(content=llm_message.content))
+            else:
+                messages.append(AIMessage(content=llm_message.content))
+                
+        try:
+            ai_message = self.chat.invoke(messages)
+            return ai_message.content
+        except Exception as e:
+            bt.logging.error(f"LlmQuery general response error: {e}")
+            raise Exception(protocol.LLM_ERROR_GENERAL_RESPONSE_FAILED)
         
     def generate_llm_query_from_query(self, query: Query) -> str:
         pass

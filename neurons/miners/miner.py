@@ -197,7 +197,12 @@ class Miner(BaseMinerNeuron):
         except Exception as e:
             bt.logging.error(traceback.format_exc())
             error_code = e.args[0]
-            synapse.output = QueryOutput(error=error_code, interpreted_result=protocol.LLM_ERROR_MESSAGES[error_code])
+            if error_code == protocol.LLM_ERROR_TYPE_NOT_SUPPORTED:
+                # handle unsupported query templates
+                interpreted_result = self.llm.generate_general_response(llm_messages=synapse.messages)
+                synapse.output = QueryOutput(error=error_code, interpreted_result=interpreted_result)
+            else:
+                synapse.output = QueryOutput(error=error_code, interpreted_result=protocol.LLM_ERROR_MESSAGES[error_code])
 
         bt.logging.info(f"Serving miner llm query output: {synapse.output}")
         return synapse

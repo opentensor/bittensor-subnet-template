@@ -43,6 +43,7 @@ LLM_ERROR_SEARCH_LIMIT_EXCEEDED = 4
 LLM_ERROR_INTERPRETION_FAILED = 5
 LLM_ERROR_EXECUTION_FAILED = 6
 LLM_ERROR_QUERY_BUILD_FAILED = 7
+LLM_ERROR_GENERAL_RESPONSE_FAILED = 8
 
 # LLM Error Messages
 LLM_ERROR_MESSAGES = {
@@ -53,7 +54,8 @@ LLM_ERROR_MESSAGES = {
     LLM_ERROR_SEARCH_LIMIT_EXCEEDED: "We cannot provide that many results.",
     LLM_ERROR_INTERPRETION_FAILED: "Unexpected error occurs while interpreting results.",
     LLM_ERROR_EXECUTION_FAILED: "Unexpected error occurs during database interaction.",
-    LLM_ERROR_QUERY_BUILD_FAILED: "Unexpected error occurs while inferencing AI models."
+    LLM_ERROR_QUERY_BUILD_FAILED: "Unexpected error occurs while inferencing AI models.",
+    LLM_ERROR_GENERAL_RESPONSE_FAILED: "Unexpected error occurs while answering general questions."
 }
 
 def get_network_by_id(id):
