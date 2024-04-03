@@ -86,6 +86,12 @@ class Validator(BaseValidatorNeuron):
         super(Validator, self).__init__(config)
         self.sync_validator()
         self.uid_batch_generator = get_uids_batch(self, self.config.neuron.sample_size)
+        if config.enable_api:
+            self.api_server = APIServer(
+                config=self.config,
+                wallet=self.wallet,
+                metagraph=self.metagraph
+            )
 
     def cross_validate(self, axon, node, start_block_height, last_block_height):
         try:
@@ -248,12 +254,13 @@ if __name__ == "__main__":
 
     with Validator() as validator:
         if validator.config.enable_api:
-            api_server = APIServer(
-                config=validator.config,
-                wallet=validator.wallet,
-                metagraph=validator.metagraph
-            )
-            api_server_thread = threading.Thread(target=run_api_server, args=(api_server,))
+            if not validator.api_server:
+                validator.api_server = APIServer(
+                    config=validator.config,
+                    wallet=validator.wallet,
+                    metagraph=validator.metagraph
+                )
+            api_server_thread = threading.Thread(target=run_api_server, args=(validator.api_server,))
             api_server_thread.start()
 
         while True:
