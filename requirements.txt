@@ -18,3 +18,5 @@ fastapi
 uvicorn
 langchain
 langchain-openai
+pandas
+psycopg2-binary
