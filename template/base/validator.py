@@ -70,12 +70,17 @@ class BaseValidatorNeuron(BaseNeuron):
 
         # Set up initial scoring weights for validation
         bt.logging.info("Building validation weights.")
+        zeroes = torch.zeros_like(self.metagraph.S, dtype=torch.float32)
         try:
-           self.load_state()
-           bt.logging.info("Scores loaded from file")
+            self.load_state()
+            bt.logging.info("Scores loaded from file")
 
+            # Check if loaded scores have the same shape as metagraph's S
+            if self.scores.shape != zeroes.shape:
+                self.scores = zeroes
+                bt.logging.warning("Initialized scores to zeros due to score shape mismatch.")
         except:
-            self.scores = torch.zeros_like(self.metagraph.S, dtype=torch.float32)
+            self.scores = zeroes
             bt.logging.info(f"Initialized all scores to 0")
 
 
