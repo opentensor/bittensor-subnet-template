@@ -69,15 +69,13 @@ class BalanceIndexer:
         self.engine.dispose()
 
     def get_latest_block_number(self):
-        session = self.Session()
-        try:
-            latest_balance_change = session.query(BalanceChange).order_by(BalanceChange.block.desc()).first()
-            latest_block = latest_balance_change.block
-        except Exception as e:
-            latest_block = 0
-        finally:
-            session.close()
-        return latest_block
+        with self.Session() as session:
+            try:
+                latest_balance_change = session.query(BalanceChange).order_by(BalanceChange.block.desc()).first()
+                latest_block = latest_balance_change.block
+            except Exception as e:
+                latest_block = 0
+            return latest_block
 
 
     from decimal import getcontext
@@ -112,25 +110,19 @@ class BalanceIndexer:
         
         new_rows = [BalanceChange(address=address, d_balance=balance_changes_by_address[address], block=block_height) for address in changed_addresses]
 
-        session = self.Session()
-
-        try:
-            # Add the new rows to the session
-            session.add_all(new_rows)
-            
-            # Commit the session to save the changes to the database
-            session.commit()
-            
-            return True
-            
-        except SQLAlchemyError as e:
-            # Rollback the session in case of an error
-            session.rollback()
-            logger.error(f"An exception occurred: {e}")
-            
-            return False
-            
-        finally:
-            # Close the session
-            session.close()
-        
+        with self.Session() as session:
+            try:
+                # Add the new rows to the session
+                session.add_all(new_rows)
+                
+                # Commit the session to save the changes to the database
+                session.commit()
+                
+                return True
+                
+            except SQLAlchemyError as e:
+                # Rollback the session in case of an error
+                session.rollback()
+                logger.error(f"An exception occurred: {e}")
+                
+                return False
