@@ -47,31 +47,8 @@ class BalanceIndexer:
         self.engine.dispose()
 
     def get_latest_block_number(self):
-        with self.driver.session() as session:
-            result = session.run(
-                """
-                MATCH (t:Transaction)
-                RETURN MAX(t.block_height) AS latest_block_height
-                """
-            )
-            single_result = result.single()
-            if single_result[0] is None:
-               return 0
-
-            return single_result[0]
-        
-    def check_if_block_is_indexed(self, block_height: int) -> bool:
-        with self.driver.session() as session:
-            result = session.run(
-                """
-                MATCH (t: Transaction{block_height: $block_height})
-                RETURN t
-                LIMIT 1;
-                """,
-                block_height=block_height
-            )
-            single_result = result.single()
-            return single_result is not None
+        # TODO: get latest block number from postgres
+        pass
 
 
     from decimal import getcontext
@@ -80,34 +57,8 @@ class BalanceIndexer:
     getcontext().prec = 28
 
     def create_indexes(self):
-        with self.driver.session() as session:
-            # Fetch existing indexes
-            existing_indexes = session.run("SHOW INDEX INFO")
-            existing_index_set = set()
-            for record in existing_indexes:
-                label = record["label"]
-                property = record["property"]
-                index_name = f"{label}-{property}" if property else label
-                if index_name:
-                    existing_index_set.add(index_name)
-
-            index_creation_statements = {
-                "Cache": "CREATE INDEX ON :Cache;",
-                "Transaction": "CREATE INDEX ON :Transaction;",
-                "Transaction-tx_id": "CREATE INDEX ON :Transaction(tx_id);",
-                "Transaction-block_height": "CREATE INDEX ON :Transaction(block_height);",
-                "Transaction-out_total_amount": "CREATE INDEX ON :Transaction(out_total_amount)",
-                "Address-address": "CREATE INDEX ON :Address(address);",
-                "SENT-value_satoshi": "CREATE INDEX ON :SENT(value_satoshi)",
-            }
-
-            for index_name, statement in index_creation_statements.items():
-                if index_name not in existing_index_set:
-                    try:
-                        logger.info(f"Creating index: {index_name}")
-                        session.run(statement)
-                    except Exception as e:
-                        logger.error(f"An exception occurred while creating index {index_name}: {e}")
+        # TODO: create indexes on postgres
+        pass
 
     def create_rows_focused_on_balance_changes(self, in_memory_graph, _bitcoin_node):
         block_node = in_memory_graph["block"]
@@ -133,11 +84,11 @@ class BalanceIndexer:
                         changed_addresses.append(address)
                     balance_changes_by_address[address] += out_amount_by_address[address]
 
-            logger.info(len(changed_addresses))
+            logger.info(f"Adding {len(changed_addresses)} rows...")
+            # TODO: add rows to postgres
             
             return True
 
         except Exception as e:
             logger.error(f"An exception occurred: {e}")
             return False
-
