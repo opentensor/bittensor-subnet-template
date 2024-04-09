@@ -4,7 +4,7 @@ import signal
 from neurons.setup_logger import setup_logger
 from neurons.nodes.factory import NodeFactory
 from neurons.miners.bitcoin.funds_flow.graph_creator import GraphCreator
-from neurons.miners.bitcoin.funds_flow.graph_indexer import GraphIndexer
+from neurons.miners.bitcoin.funds_flow.balance_indexer import BalanceIndexer
 from neurons.miners.bitcoin.funds_flow.graph_search import GraphSearch
 
 from insights.protocol import NETWORK_BITCOIN
@@ -23,12 +23,12 @@ def shutdown_handler(signum, frame):
     )
     shutdown_flag = True
 
-def index_block(_bitcoin_node, _graph_creator, _graph_indexer, _graph_search, block_height):
+def index_block(_bitcoin_node, _graph_creator, _balance_indexer, _graph_search, block_height):
     block = _bitcoin_node.get_block_by_height(block_height)
     num_transactions = len(block["tx"])
     start_time = time.time()
     in_memory_graph = _graph_creator.create_in_memory_graph_from_block(block)
-    success = _graph_indexer.create_graph_focused_on_money_flow(in_memory_graph, _bitcoin_node)
+    success = _balance_indexer.create_rows_focused_on_balance_changes(in_memory_graph, _bitcoin_node)
     end_time = time.time()
     time_taken = end_time - start_time
     formatted_num_transactions = "{:>4}".format(num_transactions)
@@ -53,22 +53,14 @@ def index_block(_bitcoin_node, _graph_creator, _graph_indexer, _graph_search, bl
             )
         )
         
-    min_block_height_cache, max_block_height_cache = _graph_search.get_min_max_block_height_cache()
-    if min_block_height_cache is None:
-        min_block_height_cache = block_height
-    if max_block_height_cache is None:
-        max_block_height_cache = block_height
-        
-    _graph_indexer.set_min_max_block_height_cache(min(min_block_height_cache, block_height), max(max_block_height_cache, block_height))
-
     return success
 
 
-def move_forward(_bitcoin_node, _graph_creator, _graph_indexer, _graph_search, start_height: int):
+def move_forward(_bitcoin_node, _graph_creator, _balance_indexer, _graph_search, start_block_height = 1):
     global shutdown_flag
 
     skip_blocks = 6
-    block_height = start_height
+    block_height = start_block_height
     
     while not shutdown_flag:
         current_block_height = _bitcoin_node.get_current_block_height() - skip_blocks
@@ -79,12 +71,7 @@ def move_forward(_bitcoin_node, _graph_creator, _graph_indexer, _graph_search, s
             time.sleep(10)
             continue
         
-        if _graph_indexer.check_if_block_is_indexed(block_height):
-            logger.info(f"Skipping block #{block_height}. Already indexed.")
-            block_height += 1
-            continue
-        
-        success = index_block(_bitcoin_node, _graph_creator, _graph_indexer, _graph_search, block_height)
+        success = index_block(_bitcoin_node, _graph_creator, _balance_indexer, _graph_search, block_height)
         
         if success:
             block_height += 1
@@ -102,5 +89,11 @@ if __name__ == "__main__":
 
     bitcoin_node = NodeFactory.create_node(NETWORK_BITCOIN)
     graph_creator = GraphCreator()
-    graph_indexer = GraphIndexer()
     graph_search = GraphSearch()
+    balance_indexer = BalanceIndexer()
+    
+    move_forward(bitcoin_node, graph_creator, balance_indexer, graph_search)
+
+    balance_indexer.close()
+    graph_search.close()
+    logger.info("Indexer stopped")

@@ -8,11 +8,11 @@ logger = setup_logger("BalanceIndexer")
 class BalanceIndexer:
     def __init__(
         self,
-        postgres_host,
-        postgres_port,
-        postgres_db,
-        postgres_user,
-        postgres_password,
+        postgres_host: str = None,
+        postgres_port: int = 0,
+        postgres_db: str = None,
+        postgres_user: str = None,
+        postgres_password: str = None,
     ):
         if postgres_host is None:
             self.postgres_host = (
@@ -21,8 +21,8 @@ class BalanceIndexer:
         else:
             self.postgres_host = postgres_host
 
-        if postgres_port is None:
-            self.postgres_port = os.environ.get("POSTGRES_PORT") or 5432
+        if postgres_port == 0:
+            self.postgres_port = int(os.environ.get("POSTGRES_PORT")) or 5432
         else:
             self.postgres_port = postgres_port
 
@@ -111,6 +111,7 @@ class BalanceIndexer:
 
     def create_rows_focused_on_balance_changes(self, in_memory_graph, _bitcoin_node):
         block_node = in_memory_graph["block"]
+        block_height = block_node.block_height
         transactions = block_node.transactions
 
         balance_changes_by_address = {}
@@ -132,6 +133,8 @@ class BalanceIndexer:
                         changed_addresses.append(address)
                     balance_changes_by_address[address] += out_amount_by_address[address]
 
+            logger.info(len(changed_addresses))
+            
             return True
 
         except Exception as e:
