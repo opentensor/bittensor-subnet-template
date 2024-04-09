@@ -44,7 +44,7 @@ class BalanceIndexer:
         self.engine = create_engine(f'postgresql://{postgres_user}:{postgres_password}@{postgres_host}:{postgres_port}/{postgres_db}')
 
     def close(self):
-        self.driver.close()
+        self.engine.dispose()
 
     def get_latest_block_number(self):
         with self.driver.session() as session:
@@ -109,81 +109,32 @@ class BalanceIndexer:
                     except Exception as e:
                         logger.error(f"An exception occurred while creating index {index_name}: {e}")
 
-    def create_graph_focused_on_money_flow(self, in_memory_graph, _bitcoin_node, batch_size=8):
+    def create_rows_focused_on_balance_changes(self, in_memory_graph, _bitcoin_node):
         block_node = in_memory_graph["block"]
         transactions = block_node.transactions
 
-        with self.driver.session() as session:
-            # Start a transaction
-            transaction = session.begin_transaction()
+        balance_changes_by_address = {}
+        changed_addresses = []
 
-            try:
-                for i in range(0, len(transactions), batch_size):
-                    batch_transactions = transactions[i : i + batch_size]
+        try:
+            for tx in transactions:
+                in_amount_by_address, out_amount_by_address, input_addresses, output_addresses, in_total_amount, out_total_amount = _bitcoin_node.process_in_memory_txn_for_indexing(tx)
+                
+                for address in input_addresses:
+                    if not address in balance_changes_by_address:
+                        balance_changes_by_address[address] = 0
+                        changed_addresses.append(address)
+                    balance_changes_by_address[address] -= in_amount_by_address[address]
+                
+                for address in output_addresses:
+                    if not address in balance_changes_by_address:
+                        balance_changes_by_address[address] = 0
+                        changed_addresses.append(address)
+                    balance_changes_by_address[address] += out_amount_by_address[address]
 
-                    # Process all transactions, inputs, and outputs in the current batch
-                    batch_txns = []
-                    batch_inputs = []
-                    batch_outputs = []
-                    for tx in batch_transactions:
-                        in_amount_by_address, out_amount_by_address, input_addresses, output_addresses, in_total_amount, out_total_amount = _bitcoin_node.process_in_memory_txn_for_indexing(tx)
-                        
-                        inputs = [{"address": address, "amount": in_amount_by_address[address], "tx_id": tx.tx_id } for address in input_addresses]
-                        outputs = [{"address": address, "amount": out_amount_by_address[address], "tx_id": tx.tx_id } for address in output_addresses]
+            return True
 
-                        batch_txns.append({
-                            "tx_id": tx.tx_id,
-                            "in_total_amount": in_total_amount,
-                            "out_total_amount": out_total_amount,
-                            "timestamp": tx.timestamp,
-                            "block_height": tx.block_height,
-                            "is_coinbase": tx.is_coinbase,
-                        })
-                        batch_inputs += inputs
-                        batch_outputs += outputs
+        except Exception as e:
+            logger.error(f"An exception occurred: {e}")
+            return False
 
-                    transaction.run(
-                        """
-                        UNWIND $transactions AS tx
-                        MERGE (t:Transaction {tx_id: tx.tx_id})
-                        ON CREATE SET t.timestamp = tx.timestamp,
-                                    t.in_total_amount = tx.in_total_amount,
-                                    t.out_total_amount = tx.out_total_amount,
-                                    t.timestamp = tx.timestamp,
-                                    t.block_height = tx.block_height,
-                                    t.is_coinbase = tx.is_coinbase
-                        """,
-                        transactions=batch_txns,
-                    )
-                    
-                    transaction.run(
-                        """
-                        UNWIND $inputs AS input
-                        MERGE (a:Address {address: input.address})
-                        MERGE (t:Transaction {tx_id: input.tx_id})
-                        CREATE (a)-[:SENT { value_satoshi: input.amount }]->(t)
-                        """,
-                        inputs=batch_inputs
-                    )
-                    
-                    transaction.run(
-                        """
-                        UNWIND $outputs AS output
-                        MERGE (a:Address {address: output.address})
-                        MERGE (t:Transaction {tx_id: output.tx_id})
-                        CREATE (t)-[:SENT { value_satoshi: output.amount }]->(a)
-                        """,
-                        outputs=batch_outputs
-                    )
-
-                transaction.commit()
-                return True
-
-            except Exception as e:
-                transaction.rollback()
-                logger.error(f"An exception occurred: {e}")
-                return False
-
-            finally:
-                if transaction.closed() is False:
-                    transaction.close()
