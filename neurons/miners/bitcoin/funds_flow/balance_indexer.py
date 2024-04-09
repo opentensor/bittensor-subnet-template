@@ -1,7 +1,7 @@
 import os
 from neurons.setup_logger import setup_logger
 
-from sqlalchemy import create_engine, types
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -48,6 +48,21 @@ class BalanceIndexer:
 
         self.engine = create_engine(f'postgresql://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}')
         self.Session = sessionmaker(bind=self.engine)
+        
+        # check if table exists and create if not
+        connection = self.engine.connect()
+
+        # Create an inspector
+        inspector = inspect(self.engine)
+
+        # Check if the table already exists
+        if not inspector.has_table('balance_changes'):
+            # Create the table in the database
+            Base.metadata.create_all(self.engine)
+            logger.info("Created `balance_changes` table")
+
+        # Close the connection
+        connection.close()
 
     def close(self):
         self.engine.dispose()
