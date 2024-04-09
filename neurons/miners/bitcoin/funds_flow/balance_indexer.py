@@ -108,7 +108,7 @@ class BalanceIndexer:
                     changed_addresses.append(address)
                 balance_changes_by_address[address] += out_amount_by_address[address]
 
-        logger.info(f"Adding {len(changed_addresses)} rows...")
+        logger.info(f"Adding {len(changed_addresses)} row(s)...")
         
         new_rows = [BalanceChange(address=address, d_balance=balance_changes_by_address[address], block=block_height) for address in changed_addresses]
 
