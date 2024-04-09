@@ -77,10 +77,6 @@ class BalanceIndexer:
     # Set the precision high enough to handle satoshis for Bitcoin transactions
     getcontext().prec = 28
 
-    def create_indexes(self):
-        # TODO: create indexes on postgres
-        pass
-
     def create_rows_focused_on_balance_changes(self, in_memory_graph, _bitcoin_node):
         block_node = in_memory_graph["block"]
         block_height = block_node.block_height

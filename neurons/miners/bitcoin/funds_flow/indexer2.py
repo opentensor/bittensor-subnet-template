@@ -90,9 +90,6 @@ if __name__ == "__main__":
     
     logger.info("Starting indexer")
 
-    logger.info("Creating indexes...")
-    balance_indexer.create_indexes()
-
     logger.info("Getting latest block number...")
     latest_block_height = balance_indexer.get_latest_block_number()
     logger.info(f"Latest block number is {latest_block_height}")
