@@ -1,6 +1,11 @@
 import os
 from neurons.setup_logger import setup_logger
+
 from sqlalchemy import create_engine, types
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import SQLAlchemyError
+
+from .balance_model import Base, BalanceChange
 
 logger = setup_logger("BalanceIndexer")
 
@@ -41,14 +46,15 @@ class BalanceIndexer:
         else:
             self.postgres_password = postgres_password
 
-        self.engine = create_engine(f'postgresql://{postgres_user}:{postgres_password}@{postgres_host}:{postgres_port}/{postgres_db}')
+        self.engine = create_engine(f'postgresql://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}')
+        self.Session = sessionmaker(bind=self.engine)
 
     def close(self):
         self.engine.dispose()
 
     def get_latest_block_number(self):
         # TODO: get latest block number from postgres
-        pass
+        return 0
 
 
     from decimal import getcontext
@@ -68,27 +74,44 @@ class BalanceIndexer:
         balance_changes_by_address = {}
         changed_addresses = []
 
-        try:
-            for tx in transactions:
-                in_amount_by_address, out_amount_by_address, input_addresses, output_addresses, in_total_amount, out_total_amount = _bitcoin_node.process_in_memory_txn_for_indexing(tx)
-                
-                for address in input_addresses:
-                    if not address in balance_changes_by_address:
-                        balance_changes_by_address[address] = 0
-                        changed_addresses.append(address)
-                    balance_changes_by_address[address] -= in_amount_by_address[address]
-                
-                for address in output_addresses:
-                    if not address in balance_changes_by_address:
-                        balance_changes_by_address[address] = 0
-                        changed_addresses.append(address)
-                    balance_changes_by_address[address] += out_amount_by_address[address]
+        for tx in transactions:
+            in_amount_by_address, out_amount_by_address, input_addresses, output_addresses, in_total_amount, out_total_amount = _bitcoin_node.process_in_memory_txn_for_indexing(tx)
+            
+            for address in input_addresses:
+                if not address in balance_changes_by_address:
+                    balance_changes_by_address[address] = 0
+                    changed_addresses.append(address)
+                balance_changes_by_address[address] -= in_amount_by_address[address]
+            
+            for address in output_addresses:
+                if not address in balance_changes_by_address:
+                    balance_changes_by_address[address] = 0
+                    changed_addresses.append(address)
+                balance_changes_by_address[address] += out_amount_by_address[address]
 
-            logger.info(f"Adding {len(changed_addresses)} rows...")
-            # TODO: add rows to postgres
+        logger.info(f"Adding {len(changed_addresses)} rows...")
+        
+        new_rows = [BalanceChange(address=address, d_balance=balance_changes_by_address[address], block=block_height) for address in changed_addresses]
+
+        session = self.Session()
+
+        try:
+            # Add the new rows to the session
+            session.add_all(new_rows)
+            
+            # Commit the session to save the changes to the database
+            session.commit()
             
             return True
-
-        except Exception as e:
+            
+        except SQLAlchemyError as e:
+            # Rollback the session in case of an error
+            session.rollback()
             logger.error(f"An exception occurred: {e}")
+            
             return False
+            
+        finally:
+            # Close the session
+            session.close()
+        
