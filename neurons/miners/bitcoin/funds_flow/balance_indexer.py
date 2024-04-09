@@ -4,6 +4,7 @@ from neurons.setup_logger import setup_logger
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.sql import select
 
 from .balance_model import Base, BalanceChange
 
@@ -68,8 +69,15 @@ class BalanceIndexer:
         self.engine.dispose()
 
     def get_latest_block_number(self):
-        # TODO: get latest block number from postgres
-        return 0
+        session = self.Session()
+        try:
+            latest_balance_change = session.query(BalanceChange).order_by(BalanceChange.block.desc()).first()
+            latest_block = latest_balance_change.block
+        except Exception as e:
+            latest_block = 0
+        finally:
+            session.close()
+        return latest_block
 
 
     from decimal import getcontext
