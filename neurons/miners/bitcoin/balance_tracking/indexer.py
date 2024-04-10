@@ -4,7 +4,7 @@ import signal
 from neurons.setup_logger import setup_logger
 from neurons.nodes.factory import NodeFactory
 from neurons.nodes.bitcoin.node_utils import parse_block_data
-from neurons.miners.bitcoin.balance_history.balance_indexer import BalanceIndexer
+from neurons.miners.bitcoin.balance_tracking.balance_indexer import BalanceIndexer
 
 from insights.protocol import NETWORK_BITCOIN
 
