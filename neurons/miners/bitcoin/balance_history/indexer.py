@@ -3,8 +3,8 @@ import time
 import signal
 from neurons.setup_logger import setup_logger
 from neurons.nodes.factory import NodeFactory
-from neurons.miners.bitcoin.funds_flow.graph_creator import GraphCreator
-from neurons.miners.bitcoin.funds_flow.balance_indexer import BalanceIndexer
+from neurons.nodes.bitcoin.node_utils import parse_block_data
+from neurons.miners.bitcoin.balance_history.balance_indexer import BalanceIndexer
 
 from insights.protocol import NETWORK_BITCOIN
 
@@ -20,12 +20,12 @@ def shutdown_handler(signum, frame):
     )
     shutdown_flag = True
 
-def index_block(_bitcoin_node, _graph_creator, _balance_indexer, block_height):
+def index_block(_bitcoin_node, _balance_indexer, block_height):
     block = _bitcoin_node.get_block_by_height(block_height)
     num_transactions = len(block["tx"])
     start_time = time.time()
-    in_memory_graph = _graph_creator.create_in_memory_graph_from_block(block)
-    success = _balance_indexer.create_rows_focused_on_balance_changes(in_memory_graph, _bitcoin_node)
+    block_data = parse_block_data(block)
+    success = _balance_indexer.create_rows_focused_on_balance_changes(block_data, _bitcoin_node)
     end_time = time.time()
     time_taken = end_time - start_time
     formatted_num_transactions = "{:>4}".format(num_transactions)
@@ -53,7 +53,7 @@ def index_block(_bitcoin_node, _graph_creator, _balance_indexer, block_height):
     return success
 
 
-def move_forward(_bitcoin_node, _graph_creator, _balance_indexer, start_block_height = 1):
+def move_forward(_bitcoin_node, _balance_indexer, start_block_height = 1):
     global shutdown_flag
 
     skip_blocks = 6
@@ -68,7 +68,7 @@ def move_forward(_bitcoin_node, _graph_creator, _balance_indexer, start_block_he
             time.sleep(10)
             continue
         
-        success = index_block(_bitcoin_node, _graph_creator, _balance_indexer, block_height)
+        success = index_block(_bitcoin_node, _balance_indexer, block_height)
         
         if success:
             block_height += 1
@@ -85,7 +85,6 @@ if __name__ == "__main__":
     load_dotenv()
 
     bitcoin_node = NodeFactory.create_node(NETWORK_BITCOIN)
-    graph_creator = GraphCreator()
     balance_indexer = BalanceIndexer()
     
     logger.info("Starting indexer")
@@ -94,7 +93,7 @@ if __name__ == "__main__":
     latest_block_height = balance_indexer.get_latest_block_number()
     logger.info(f"Latest block number is {latest_block_height}")
     
-    move_forward(bitcoin_node, graph_creator, balance_indexer, latest_block_height + 1)
+    move_forward(bitcoin_node, balance_indexer, latest_block_height + 1)
 
     balance_indexer.close()
     logger.info("Indexer stopped")
