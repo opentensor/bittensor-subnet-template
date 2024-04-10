@@ -2,7 +2,7 @@ from decimal import Decimal
 import bittensor as bt
 from bitcoinrpc.authproxy import AuthServiceProxy
 from insights.protocol import Challenge
-from neurons.miners.bitcoin.funds_flow.graph_creator import SATOSHI, VIN, VOUT, Transaction
+from neurons.nodes.bitcoin.node_utils import SATOSHI, VIN, VOUT, Transaction
 
 
 from neurons.nodes.abstract_node import Node

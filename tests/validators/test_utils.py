@@ -4,7 +4,6 @@ from unittest.mock import Mock
 from neurons.validators.utils.utils import get_miner_distributions, generate_challenge_to_check
 from neurons.nodes.bitcoin.node_utils import process_in_memory_txn_for_indexing
 from neurons.nodes.factory import NodeFactory
-from neurons.miners.bitcoin.funds_flow.graph_creator import GraphCreator
 from insights.protocol import NETWORK_BITCOIN
 
 class TestUtils(unittest.TestCase):
