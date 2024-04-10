@@ -80,11 +80,12 @@ def get_network_id(network):
 
 def get_model_id(model_type):
     return {
-        MODEL_TYPE_FUNDS_FLOW: MODEL_TYPE_FUNDS_FLOW_ID
+        MODEL_TYPE_FUNDS_FLOW: MODEL_TYPE_FUNDS_FLOW_ID,
+        MODEL_TYPE_BALANCE_TRACKING: MODEL_TYPE_BALANCE_TRACKING_ID,
     }.get(model_type)
 
 def get_model_types():
-    return [MODEL_TYPE_FUNDS_FLOW]
+    return [MODEL_TYPE_FUNDS_FLOW, MODEL_TYPE_BALANCE_TRACKING]
 
 def get_networks():
     return [NETWORK_BITCOIN]
