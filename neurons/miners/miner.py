@@ -18,7 +18,7 @@ from insights import protocol
 from template.base.miner import BaseMinerNeuron
 
 from neurons.miners import blacklist
-from insights.protocol import MODEL_TYPE_FUNDS_FLOW, NETWORK_BITCOIN, NETWORK_ETHEREUM, LLM_TYPE_CUSTOM, LLM_TYPE_OPENAI, \
+from insights.protocol import MODEL_TYPE_FUNDS_FLOW, MODEL_TYPE_BALANCE_TRACKING, NETWORK_BITCOIN, NETWORK_ETHEREUM, LLM_TYPE_CUSTOM, LLM_TYPE_OPENAI, \
     QueryOutput
 from neurons.storage import store_miner_metadata
 from neurons.remote_config import MinerConfig
@@ -46,10 +46,10 @@ class Miner(BaseMinerNeuron):
             help="Set miner's supported blockchain network.",
         )
         parser.add_argument(
-            "--model_type",
-            type=str,
-            default=MODEL_TYPE_FUNDS_FLOW,
-            help="Set miner's supported model type.",
+            "--model_types",
+            type=lambda x: x.split(','),
+            default=[MODEL_TYPE_FUNDS_FLOW, MODEL_TYPE_BALANCE_TRACKING],
+            help="Set miner's supported model types.",
         )
         parser.add_argument(
             "--llm_type",
@@ -139,7 +139,7 @@ class Miner(BaseMinerNeuron):
             synapse.output = protocol.DiscoveryOutput(
                 metadata=protocol.DiscoveryMetadata(
                     network=self.config.network,
-                    model_type=self.config.model_type
+                    model_types=self.config.model_types
                 ),
                 start_block_height=start_block,
                 block_height=last_block,

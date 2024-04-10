@@ -92,7 +92,7 @@ def get_networks():
 
 class DiscoveryMetadata(BaseModel):
     network: str = None
-    model_type: str = None
+    model_types: List[str] = None
     #TODO: implement method for getting graph schema from miner
 
 class DiscoveryOutput(BaseModel):
