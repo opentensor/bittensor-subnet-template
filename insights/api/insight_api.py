@@ -154,6 +154,7 @@ class APIServer:
         self.config = config
         self.wallet = wallet
         self.text_query_api = TextQueryAPI(wallet=self.wallet)
+        self.subtensor = subtensor
         self.metagraph = metagraph
         self.excluded_uids = []
         self.scores = scores
