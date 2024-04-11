@@ -14,6 +14,7 @@ class Metadata(BaseModel):
 class MinerMetadata(Metadata):
     sb: Optional[int] #start_block_height
     lb: Optional[int] #end_block_height
+    bl: Optional[int] #balance_model_last_block_height
     n: Optional[int] #network
     mt: Optional[List[int]] #model_types
     cv: Optional[str] #code_version
@@ -59,6 +60,7 @@ def store_miner_metadata(self):
         return MinerMetadata(
             sb=start_block,
             lb=last_block,
+            bl=balance_model_last_block,
             n=get_network_id(self.config.network),
             mt=[get_model_id(model_type) for model_type in self.model_types],
             cv=insights.__version__
@@ -66,6 +68,7 @@ def store_miner_metadata(self):
 
     try:
         start_block, last_block = self.graph_search.get_min_max_block_height_cache()
+        balance_model_last_block = self.balance_search.get_latest_block_number()
         subtensor = self.subtensor
         bt.logging.info(f"Storing miner metadata")
         metadata = get_metadata()
