@@ -8,6 +8,8 @@ from datetime import datetime
 import traceback
 import torch
 import bittensor as bt
+from rich.table import Table
+from rich.console import Console
 import yaml
 
 from insights import protocol
@@ -23,6 +25,79 @@ import uvicorn
 bt.debug()
 
 class APIServer:
+    def set_weights(self):
+        """
+        Sets the validator weights to the metagraph hotkeys based on the scores it has received from the miners. The weights determine the trust and incentive level the validator assigns to miner nodes on the network.
+        """
+        try:
+            # Check if self.scores contains any NaN values and log a warning if it does.
+            if torch.isnan(self.scores).any():
+                bt.logging.warning(
+                    f"Scores contain NaN values. This may be due to a lack of responses from miners, or a bug in your reward functions."
+                )
+
+            # Calculate the average reward for each uid across non-zero values.
+            # Replace any NaN values with 0.
+            raw_weights = torch.nn.functional.normalize(self.scores, p=1, dim=0)
+
+            # Process the raw weights to final_weights via subtensor limitations.
+            (
+                processed_weight_uids,
+                processed_weights,
+            ) = bt.utils.weight_utils.process_weights_for_netuid(
+                uids=self.metagraph.uids.to("cpu"),
+                weights=raw_weights.to("cpu"),
+                netuid=self.config.netuid,
+                subtensor=self.subtensor,
+                metagraph=self.metagraph,
+            )
+
+            # Convert to uint16 weights and uids.
+            (
+                uint_uids,
+                uint_weights,
+            ) = bt.utils.weight_utils.convert_weights_and_uids_for_emit(
+                uids=processed_weight_uids, weights=processed_weights
+            )
+            table = Table(title="All Weights")
+            table.add_column("uid", justify="right", style="cyan", no_wrap=True)
+            table.add_column("weight", style="magenta")
+            table.add_column("score", style="magenta")
+            uids_and_weights = list(
+                zip(uint_uids, uint_weights)
+                )
+            # Sort by weights descending.
+            sorted_uids_and_weights = sorted(
+                uids_and_weights, key=lambda x: x[1], reverse=True
+            )
+            for uid, weight in sorted_uids_and_weights:
+                table.add_row(
+                    str(uid),
+                    str(round(weight, 4)),
+                    str(int(self.scores[uid].item())),
+                )
+            console = Console()
+            console.print(table)
+
+            # Set the weights on chain via our subtensor connection.
+            self.subtensor.set_weights(
+                wallet=self.wallet,
+                netuid=self.config.netuid,
+                uids=processed_weight_uids,
+                weights=processed_weights,
+                wait_for_finalization=False,
+                wait_for_inclusion=False,
+                version_key=self.spec_version
+            )
+
+            with self.lock:
+                self.last_weights_set_block = self.block
+
+            bt.logging.success("Finished setting weights.")
+        except Exception as e:
+            bt.logging.error(
+                f"Failed to set weights on chain with exception: { e }"
+            )
     def is_response_status_code_valid(self, response):
             status_code = response.axon.status_code
             status_message = response.axon.status_message
