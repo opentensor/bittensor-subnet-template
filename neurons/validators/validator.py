@@ -201,7 +201,7 @@ class Validator(BaseValidatorNeuron):
             return None
 
     async def forward(self):
-        # Update the metagraph of api_server as the one of validator is updated.
+        # Update the subtensor, metagraph, scores of api_server as the one of validator is updated.
         self.api_server.subtensor = self.subtensor
         self.api_server.metagraph = self.metagraph
         self.api_server.scores = self.scores
