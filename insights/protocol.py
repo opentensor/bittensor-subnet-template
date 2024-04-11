@@ -99,6 +99,7 @@ class DiscoveryOutput(BaseModel):
     metadata: DiscoveryMetadata = None
     block_height: int = None
     start_block_height: int = None
+    balance_model_last_block: int = None
     run_id: str = None
     version: Optional[int] = VERSION
 

@@ -23,7 +23,8 @@ from insights.protocol import MODEL_TYPE_FUNDS_FLOW, MODEL_TYPE_BALANCE_TRACKING
 from neurons.storage import store_miner_metadata
 from neurons.remote_config import MinerConfig
 from neurons.nodes.factory import NodeFactory
-from neurons.miners.query import get_graph_search, get_graph_indexer
+from neurons.miners.query import get_graph_search, get_graph_indexer, get_balance_search, get_balance_indexer
+from neurons.miners.bitcoin.balance_tracking.balance_indexer import BalanceIndexer
 from insights.llm import LLMFactory
 
 class Miner(BaseMinerNeuron):
@@ -73,6 +74,11 @@ class Miner(BaseMinerNeuron):
         config.graph_db_url = os.environ.get('GRAPH_DB_URL', 'bolt://localhost:7687')
         config.graph_db_user = os.environ.get('GRAPH_DB_USER', 'user')
         config.graph_db_password = os.environ.get('GRAPH_DB_PASSWORD', 'pwd')
+        config.postgres_host = os.environ.get("POSTGRES_HOST", '127.0.0.1')
+        config.postgres_port = int(os.environ.get("POSTGRES_PORT", '5432'))
+        config.postgres_db = os.environ.get("POSTGRES_DB", 'bitcoin')
+        config.postgres_user = os.environ.get("POSTGRES_USER", '')
+        config.postgres_password = os.environ.get("POSTGRES_PASSWORD", '')
         
         dev = config.dev
         if dev:
@@ -123,7 +129,8 @@ class Miner(BaseMinerNeuron):
         bt.logging.info(f"Axon created: {self.axon}")
 
 
-        self.graph_search = get_graph_search(config)                
+        self.graph_search = get_graph_search(config)
+        self.balance_search = get_balance_search(config)
         
         self.miner_config = MinerConfig().load_and_get_config_values()
         self.miner_config.inmemory_hotkeys = self.fetch_inmemory_hotkeys()
@@ -136,6 +143,7 @@ class Miner(BaseMinerNeuron):
     async def discovery(self, synapse: protocol.Discovery ) -> protocol.Discovery:
         try:
             start_block, last_block = self.graph_search.get_min_max_block_height_cache()
+            balance_model_last_block = self.balance_search.get_latest_block_number()
             synapse.output = protocol.DiscoveryOutput(
                 metadata=protocol.DiscoveryMetadata(
                     network=self.config.network,
@@ -143,6 +151,7 @@ class Miner(BaseMinerNeuron):
                 ),
                 start_block_height=start_block,
                 block_height=last_block,
+                balance_model_last_block=balance_model_last_block,
             )
             bt.logging.info(f"Serving miner discovery output: {synapse.output}")
         except Exception as e:

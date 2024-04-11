@@ -4,10 +4,16 @@ from neurons.miners.bitcoin.funds_flow.graph_search import (
 from neurons.miners.bitcoin.funds_flow.graph_indexer import (
     GraphIndexer as BitcoinGraphIndexer,
 )
+from neurons.miners.bitcoin.balance_tracking.balance_search import (
+    BalanceSearch as BitcoinBalanceSearch,
+)
+from neurons.miners.bitcoin.balance_tracking.balance_indexer import (
+    BalanceIndexer as BitcoinBalanceIndexer,
+)
 from neurons.miners.ethereum.funds_flow.graph_search import (GraphSearch as EthereumGraphSearch)
 from neurons.miners.ethereum.funds_flow.graph_indexer import (GraphIndexer as EthereumGraphIndexer)
 
-from insights.protocol import NETWORK_BITCOIN, NETWORK_ETHEREUM, MODEL_TYPE_FUNDS_FLOW
+from insights.protocol import NETWORK_BITCOIN, NETWORK_ETHEREUM, MODEL_TYPE_FUNDS_FLOW, MODEL_TYPE_BALANCE_TRACKING
 
 def get_graph_search(config):
     switch = {
@@ -39,6 +45,34 @@ def get_graph_indexer(config):
     except:
         raise ValueError(f'Graph Indexer {config.model_type} not found for network {config.network}'
 )
+        
+def get_balance_search(config):
+    switch = {
+        NETWORK_BITCOIN: {
+            MODEL_TYPE_BALANCE_TRACKING: lambda: BitcoinBalanceSearch(
+                config.postgres_host, config.postgres_port, config.postgres_db, config.postgres_user, config.postgres_password,
+            ),
+        },
+    }
+
+    try:
+        return switch[config.network][config.model_type]()
+    except:
+        raise ValueError(f'Balance Search {config.model_type} not found for network {config.network}')
+        
+def get_balance_indexer(config):
+    switch = {
+        NETWORK_BITCOIN: {
+            MODEL_TYPE_BALANCE_TRACKING: lambda: BitcoinBalanceIndexer(
+                config.postgres_host, config.postgres_port, config.postgres_db, config.postgres_user, config.postgres_password,
+            ),
+        },
+    }
+
+    try:
+        return switch[config.network][config.model_type]()
+    except:
+        raise ValueError(f'Balance Indexer {config.model_type} not found for network {config.network}')
 
 
 def execute_query_proxy(network, model_type, query):
