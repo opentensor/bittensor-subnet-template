@@ -72,6 +72,7 @@ class APIServer:
             config: None,
             wallet: None,
             metagraph: None,
+            scores: None,
         ):
         self.app = FastAPI()
         self.config = config
@@ -79,6 +80,9 @@ class APIServer:
         self.text_query_api = TextQueryAPI(wallet=self.wallet)
         self.metagraph = metagraph
         self.excluded_uids = []
+        self.scores = scores
+        
+        bt.logging.info(f"Initialized all scores to 0")
         
         @self.app.get("/api/text_query")
         async def get_response(network:str, text: str):            
