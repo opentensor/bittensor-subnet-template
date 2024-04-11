@@ -54,7 +54,7 @@ class Validator(BaseValidatorNeuron):
         parser.add_argument("--api_port", type=int, default=8001, help="API endpoint port.")
         parser.add_argument("--timeout", type=int, default=40, help="Timeout.")
         parser.add_argument("--top_rate", type=float, default=1, help="Best selection percentage")
-        parser.add_argument("--user_query_moving_average_alpha", type=float, default=0.001, help="Moving average alpha for scoring user query miners.")
+        parser.add_argument("--user_query_moving_average_alpha", type=float, default=0.0001, help="Moving average alpha for scoring user query miners.")
 
         bt.subtensor.add_args(parser)
         bt.logging.add_args(parser)
