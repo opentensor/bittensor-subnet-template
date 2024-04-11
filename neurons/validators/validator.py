@@ -91,6 +91,7 @@ class Validator(BaseValidatorNeuron):
             self.api_server = APIServer(
                 config=self.config,
                 wallet=self.wallet,
+                subtensor=self.subtensor,
                 metagraph=self.metagraph,
                 scores=self.scores
             )
@@ -201,6 +202,7 @@ class Validator(BaseValidatorNeuron):
 
     async def forward(self):
         # Update the metagraph of api_server as the one of validator is updated.
+        self.api_server.subtensor = self.subtensor
         self.api_server.metagraph = self.metagraph
         self.api_server.scores = self.scores
         uids = next(self.uid_batch_generator, None)
@@ -261,6 +263,7 @@ if __name__ == "__main__":
                 validator.api_server = APIServer(
                     config=validator.config,
                     wallet=validator.wallet,
+                    subtensor=validator.subtensor,
                     metagraph=validator.metagraph,
                     scores=validator.scores
                 )
