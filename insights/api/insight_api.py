@@ -3,13 +3,15 @@ import os
 import random
 import time
 import numpy as np
-
+from typing import List, Optional, Union, Any, Dict
 from datetime import datetime
-
+import traceback
+import torch
 import bittensor as bt
 import yaml
 
 from insights import protocol
+from insights.protocol import QueryOutput
 from insights.api.query import TextQueryAPI
 from insights.api.get_query_axons import get_query_api_axons
 from insights.api.schema.chat import ChatMessageRequest, ChatMessageResponse, ChatMessageVariantRequest
@@ -21,6 +23,79 @@ import uvicorn
 bt.debug()
 
 class APIServer:
+    def is_response_status_code_valid(self, response):
+            status_code = response.axon.status_code
+            status_message = response.axon.status_message
+            if response.is_failure:
+                bt.logging.info(f"Discovery response: Failure, miner {response.axon.hotkey} returned {status_code=}: {status_message=}")
+            elif response.is_blacklist:
+                bt.logging.info(f"Discovery response: Blacklist, miner {response.axon.hotkey} returned {status_code=}: {status_message=}")
+            elif response.is_timeout:
+                bt.logging.info(f"Discovery response: Timeout, miner {response.axon.hotkey}")
+            return status_code == 200
+        
+    def get_reward(self, response: Union["bt.Synapse", Any], uid: int):
+        try:            
+            output: Optional[QueryOutput] = response.output
+            network = output.metadata.network
+            start_block_height = output.start_block_height
+            last_block_height = output.block_height
+            hotkey = response.axon.hotkey
+
+            cross_validation_result, response_time = self.cross_validate(response.axon, self.nodes[network], start_block_height, last_block_height)
+
+            if cross_validation_result is None:
+                bt.logging.debug(f"Cross-Validation: {hotkey=} Timeout skipping response")
+                return None
+            if not cross_validation_result:
+                bt.logging.info(f"Cross-Validation: {hotkey=} Test failed")
+                return 0
+            bt.logging.info(f"Cross-Validation: {hotkey=} Test passed")
+
+            score = self.scorer.calculate_score(
+                network,
+                response_time,
+                start_block_height,
+                last_block_height,
+                self.block_height_cache[network],
+                self.metadata.network_distribution
+            )
+
+            return score
+        except Exception as e:
+            bt.logging.error(f"Error occurred during cross-validation: {traceback.format_exc()}")
+            return None
+        
+    def update_scores(self, rewards: torch.FloatTensor, uids: List[int]):
+        """Performs exponential moving average on the scores based on the rewards received from the miners."""
+
+        # Check if rewards contains NaN values.
+        if torch.isnan(rewards).any():
+            bt.logging.warning(f"NaN values detected in rewards: {rewards}")
+            # Replace any NaN values in rewards with 0.
+            rewards = torch.nan_to_num(rewards, 0)
+
+        # Check if `uids` is already a tensor and clone it to avoid the warning.
+        if isinstance(uids, torch.Tensor):
+            uids_tensor = uids.clone().detach()
+        else:
+            uids_tensor = torch.tensor(uids).to(self.device)
+
+        # Compute forward pass rewards, assumes uids are mutually exclusive.
+        # shape: [ metagraph.n ]
+        scattered_rewards: torch.FloatTensor = self.scores.scatter(
+            0, uids_tensor, rewards
+        ).to(self.device)
+        bt.logging.debug(f"Scattered rewards: {rewards}")
+
+        # Update scores with rewards produced by this step.
+        # shape: [ metagraph.n ]
+        alpha: float = self.config.neuron.moving_average_alpha
+        self.scores: torch.FloatTensor = alpha * scattered_rewards + (
+            1 - alpha
+        ) * self.scores.to(self.device)
+        bt.logging.debug(f"Updated moving avg scores: {self.scores}")
+        
     def __init__(
             self,
             config: None,
@@ -49,6 +124,8 @@ class APIServer:
                 text=text,
                 timeout=self.config.timeout
                 )
+            
+            # Update exlucded_uids
             blacklist_axons = np.array(top_miner_axons)[blacklist_axon_ids]
             blacklist_uids = np.where(np.isin(np.array(self.metagraph.axons), blacklist_axons))[0]
             self.excluded_uids = np.union1d(np.array(self.excluded_uids), blacklist_uids)
@@ -92,7 +169,22 @@ class APIServer:
             responded_uids = np.setdiff1d(np.array(top_miner_uids), blacklist_uids)
             self.excluded_uids = np.union1d(np.array(self.excluded_uids), blacklist_uids)
             self.excluded_uids = self.excluded_uids.astype(int).tolist()
-            
+
+            # Add score to miners respond to user query
+            rewards = [
+                self.get_reward(response, uid) for response, uid in zip(responses, responded_uids)
+            ]
+            # Remove None reward as they represent timeout cross validation
+            filtered_data = [(reward, uid) for reward, uid in zip(rewards, responded_uids) if reward is not None]
+
+            if filtered_data:
+                rewards, uids = zip(*filtered_data)
+
+                rewards = torch.FloatTensor(rewards)
+                self.update_scores(rewards, uids)
+            else:  
+                bt.logging.info('Skipping update_scores() as no responses were valid')
+
             # If the number of excluded_uids is bigger than top x percentage of the whole axons, format it.
             if len(self.excluded_uids) > int(self.metagraph.n * self.config.top_rate):
                 bt.logging.info(f"Excluded UID list is too long")
