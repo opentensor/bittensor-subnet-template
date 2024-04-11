@@ -146,6 +146,7 @@ class APIServer:
             self,
             config: None,
             wallet: None,
+            subtensor: None,
             metagraph: None,
             scores: None,
         ):
