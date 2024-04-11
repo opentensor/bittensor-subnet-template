@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 import insights
 
@@ -9,21 +9,24 @@ from insights.protocol import get_network_id, get_model_id
 
 class Metadata(BaseModel):
     def to_compact(self):
-        return ','.join(f"{key}:{repr(getattr(self, key))}" for key in self.__dict__)
+        return '\n'.join(f"{key}:{repr(getattr(self, key))}" for key in self.__dict__)
 
 class MinerMetadata(Metadata):
     sb: Optional[int] #start_block_height
     lb: Optional[int] #end_block_height
     n: Optional[int] #network
-    mt: Optional[int] #model_type
+    mt: Optional[List[int]] #model_types
     cv: Optional[str] #code_version
     
     @staticmethod
     def from_compact(compact_str):
         data_dict = {}
-        for item in compact_str.split(','):
+        for item in compact_str.split('\n'):
             key, value = item.split(':', 1)
-            data_dict[key] = value.strip("'")
+            if value[0] == "'":
+                data_dict[key] = value.strip("'")
+            elif value[0] == "[":
+                data_dict[key] = [int(x.strip()) for x in value.strip("[]").split(',')]
         return MinerMetadata(**data_dict)
 
 class ValidatorMetadata(Metadata):
