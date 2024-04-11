@@ -91,7 +91,8 @@ class Validator(BaseValidatorNeuron):
             self.api_server = APIServer(
                 config=self.config,
                 wallet=self.wallet,
-                metagraph=self.metagraph
+                metagraph=self.metagraph,
+                scores=self.scores
             )
 
     def cross_validate(self, axon, node, start_block_height, last_block_height):
@@ -201,6 +202,7 @@ class Validator(BaseValidatorNeuron):
     async def forward(self):
         # Update the metagraph of api_server as the one of validator is updated.
         self.api_server.metagraph = self.metagraph
+        self.api_server.scores = self.scores
         uids = next(self.uid_batch_generator, None)
         if uids is None:
             self.uid_batch_generator = get_uids_batch(self, self.config.neuron.sample_size)
