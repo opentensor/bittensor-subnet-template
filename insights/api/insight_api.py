@@ -159,8 +159,6 @@ class APIServer:
         self.excluded_uids = []
         self.scores = scores
         
-        bt.logging.info(f"Initialized all scores to 0")
-        
         @self.app.get("/api/text_query")
         async def get_response(network:str, text: str):            
             # select top miner            
