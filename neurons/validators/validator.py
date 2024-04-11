@@ -261,7 +261,8 @@ if __name__ == "__main__":
                 validator.api_server = APIServer(
                     config=validator.config,
                     wallet=validator.wallet,
-                    metagraph=validator.metagraph
+                    metagraph=validator.metagraph,
+                    scores=validator.scores
                 )
             api_server_thread = threading.Thread(target=run_api_server, args=(validator.api_server,))
             api_server_thread.start()
