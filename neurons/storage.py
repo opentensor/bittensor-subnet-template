@@ -60,7 +60,7 @@ def store_miner_metadata(self):
             sb=start_block,
             lb=last_block,
             n=get_network_id(self.config.network),
-            mt=get_model_id(self.model_type),
+            mt=[get_model_id(model_type) for model_type in self.model_types],
             cv=insights.__version__
         )
 
