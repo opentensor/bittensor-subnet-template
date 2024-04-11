@@ -35,36 +35,7 @@ class APIServer:
             return status_code == 200
         
     def get_reward(self, response: Union["bt.Synapse", Any], uid: int):
-        try:            
-            output: Optional[QueryOutput] = response.output
-            network = output.metadata.network
-            start_block_height = output.start_block_height
-            last_block_height = output.block_height
-            hotkey = response.axon.hotkey
-
-            cross_validation_result, response_time = self.cross_validate(response.axon, self.nodes[network], start_block_height, last_block_height)
-
-            if cross_validation_result is None:
-                bt.logging.debug(f"Cross-Validation: {hotkey=} Timeout skipping response")
-                return None
-            if not cross_validation_result:
-                bt.logging.info(f"Cross-Validation: {hotkey=} Test failed")
-                return 0
-            bt.logging.info(f"Cross-Validation: {hotkey=} Test passed")
-
-            score = self.scorer.calculate_score(
-                network,
-                response_time,
-                start_block_height,
-                last_block_height,
-                self.block_height_cache[network],
-                self.metadata.network_distribution
-            )
-
-            return score
-        except Exception as e:
-            bt.logging.error(f"Error occurred during cross-validation: {traceback.format_exc()}")
-            return None
+        return 0.5
         
     def update_scores(self, rewards: torch.FloatTensor, uids: List[int]):
         """Performs exponential moving average on the scores based on the rewards received from the miners."""
@@ -90,7 +61,7 @@ class APIServer:
 
         # Update scores with rewards produced by this step.
         # shape: [ metagraph.n ]
-        alpha: float = self.config.neuron.moving_average_alpha
+        alpha: float = self.config.user_query_moving_average_alpha
         self.scores: torch.FloatTensor = alpha * scattered_rewards + (
             1 - alpha
         ) * self.scores.to(self.device)
@@ -171,11 +142,12 @@ class APIServer:
             self.excluded_uids = self.excluded_uids.astype(int).tolist()
 
             # Add score to miners respond to user query
+            uids = responded_uids.tolist()
             rewards = [
-                self.get_reward(response, uid) for response, uid in zip(responses, responded_uids)
+                self.get_reward(response, uid) for response, uid in zip(responses, uids)
             ]
             # Remove None reward as they represent timeout cross validation
-            filtered_data = [(reward, uid) for reward, uid in zip(rewards, responded_uids) if reward is not None]
+            filtered_data = [(reward, uid) for reward, uid in zip(rewards, uids) if reward is not None]
 
             if filtered_data:
                 rewards, uids = zip(*filtered_data)
