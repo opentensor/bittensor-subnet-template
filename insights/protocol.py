@@ -135,11 +135,15 @@ class Query(BaseSynapse):
         return self.output
 
 class Challenge(BaseSynapse):
+    model_type: str # model type
 
-    # For BTC
+    # For BTC funds flow model
     in_total_amount: Optional[int] = None
     out_total_amount: Optional[int] = None
     tx_id_last_4_chars: Optional[str] = None
+    
+    # For BTC balance tracking model
+    block_height: Optional[int] = None
     
     # Altcoins
     checksum: Optional[str] = None

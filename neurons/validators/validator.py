@@ -24,12 +24,13 @@ import os
 import yaml
 import threading
 
-from insights.protocol import Discovery, DiscoveryOutput, MAX_MINER_INSTANCE
+from insights.protocol import Discovery, DiscoveryOutput, MAX_MINER_INSTANCE, NETWORK_BITCOIN, MODEL_TYPE_BALANCE_TRACKING
 
 from neurons.remote_config import ValidatorConfig
 from neurons.nodes.factory import NodeFactory
 from neurons.storage import store_validator_metadata
 from neurons.validators.scoring import Scorer
+from neurons.validators.challenge_factory.balance_challenge_factory import BalanceChallengeFactory
 from neurons.validators.utils.metadata import Metadata
 from neurons.validators.utils.synapse import is_discovery_response_valid
 
@@ -83,6 +84,11 @@ class Validator(BaseValidatorNeuron):
         networks = self.validator_config.get_networks()
         self.nodes = {network : NodeFactory.create_node(network) for network in networks}
         self.block_height_cache = {network: self.nodes[network].get_current_block_height() for network in networks}
+        self.challenge_factory = {
+            NETWORK_BITCOIN: {
+                MODEL_TYPE_BALANCE_TRACKING: BalanceChallengeFactory(self.nodes[NETWORK_BITCOIN])
+            }
+        }
         super(Validator, self).__init__(config)
         self.sync_validator()
         self.uid_batch_generator = get_uids_batch(self, self.config.neuron.sample_size)
