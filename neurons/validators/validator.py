@@ -99,8 +99,9 @@ class Validator(BaseValidatorNeuron):
                 metagraph=self.metagraph
             )
 
-    def cross_validate(self, axon, node, start_block_height, last_block_height):
+    def cross_validate(self, axon, node, challenge_factory, start_block_height, last_block_height, balance_model_last_block):
         try:
+            # first, validate funds flow model response
             challenge, expected_response = node.create_challenge(start_block_height, last_block_height)
             
             response = self.dendrite.query(
@@ -118,6 +119,27 @@ class Validator(BaseValidatorNeuron):
             
             # if the miner's response is different than the expected response and validation failed
             if not response.output == expected_response and not node.validate_challenge_response_output(challenge, response.output):
+                bt.logging.debug("Cross validation failed")
+                return False, response_time
+            
+            # second, validate balance model response
+            challenge, expected_response = challenge_factory.get_challenge(balance_model_last_block)
+            
+            response = self.dendrite.query(
+                axon,
+                challenge,
+                deserialize=False,
+                timeout = self.validator_config.challenge_timeout,
+            )
+            
+            if response is None or response.output is None:
+                bt.logging.debug("Cross validation failed")
+                return False, 128
+            
+            response_time += response.dendrite.process_time
+            
+            if not str(response.output) == str(expected_response):
+                bt.logging.debug("Cross validation failed")
                 return False, response_time
             
             return True, response_time
@@ -177,9 +199,10 @@ class Validator(BaseValidatorNeuron):
             network = output.metadata.network
             start_block_height = output.start_block_height
             last_block_height = output.block_height
+            balance_model_last_block = output.balance_model_last_block
             hotkey = response.axon.hotkey
 
-            cross_validation_result, response_time = self.cross_validate(response.axon, self.nodes[network], start_block_height, last_block_height)
+            cross_validation_result, response_time = self.cross_validate(response.axon, self.nodes[network], self.challenge_factory[network], start_block_height, last_block_height, balance_model_last_block)
 
             if cross_validation_result is None:
                 bt.logging.debug(f"Cross-Validation: {hotkey=} Timeout skipping response")
