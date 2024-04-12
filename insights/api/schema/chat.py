@@ -1,13 +1,15 @@
+from uuid import UUID
+
 from pydantic import BaseModel
 
 class ChatMessageRequest(BaseModel):
     network: str
-    user_id: int
+    user_id: UUID
     prompt: str
     
 class ChatMessageVariantRequest(BaseModel):
     network: str
-    user_id: int
+    user_id: UUID
     prompt: str
     temperature: float
     miner_id: str
