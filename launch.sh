@@ -15,7 +15,15 @@ for tuple in "$@"; do
         echo "Creating wallet for $name:$version.."
         source venv/bin/activate
         pip install bittensor
-        btcli w create --wallet.name $name:$version --hotkey default --no_password --no_prompt
+        if [ "$name" == "miner" ]; then
+            for ((j=1; j<=3; j++)); do
+                btcli w create --wallet.name $name:$version$j --hotkey default --no_password --no_prompt
+            done
+        elif [ "$name" == "validator" ]; then
+            for ((j=1; j<=2; j++)); do
+                btcli w create --wallet.name $name:$version$j --hotkey default --no_password --no_prompt
+            done
+        fi
     fi
 
     echo "Building and running $name:$version.."
@@ -38,8 +46,13 @@ for tuple in "$@"; do
         "$name:$version" 
 done
 
+
+# create owner wallet to fund all miners and validators
+btcli w create --wallet.name owner --hotkey default --no_password --no_prompt
+
 # create chain container
 docker build -t chain \
+    --build-arg BT_DEFAULT_TOKEN_WALLET=owner \
     -f chain.Dockerfile \
     .
 
