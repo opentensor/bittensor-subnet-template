@@ -27,7 +27,6 @@ ENV AXON_EXTERNAL_PORT=$AXON_EXTERNAL_PORT
 ENV SUBTENSOR_NETWORK=$SUBTENSOR_NETWORK
 
 RUN echo "Building $NODE_TYPE with bittensor version $BITTENSOR_VERSION"
-RUN echo "Command: python -m pip install --prefix=/opt/template bittensor==$BITTENSOR_VERSION"
 RUN python -m pip install bittensor==$BITTENSOR_VERSION
 ENV PYTHONPATH=/source/
 
