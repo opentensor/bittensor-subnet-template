@@ -8,7 +8,7 @@ from neurons.storage import get_miners_metadata
 
 class Metadata:
     hotkeys: List[Dict[str, Union[str, int]]]
-    DISTRIBUTION_KEYS = ['network', 'hotkey', 'ip', 'run_id']
+    DISTRIBUTION_KEYS = ['network', 'hotkey', 'ip']
     
     def __init__(self, hotkeys: List[Dict[str, Union[str, int]]]) -> None:
         self.hotkeys = hotkeys
@@ -32,17 +32,17 @@ class Metadata:
         for neuron in metagraph.neurons:
             miner_metadata = miners_metadata.get(neuron.hotkey)
 
-            run_id, network_id = None, None
+            network_id, version = None, None
             if miner_metadata:
-                run_id = miner_metadata.ri
                 network_id = miner_metadata.n
+                version = miner_metadata.cv
 
             data = dict(
                 hotkey = neuron.hotkey,
                 coldkey = neuron.coldkey,
                 ip = neuron.axon_info.ip,
-                run_id = run_id,
-                network = get_network_by_id(network_id)
+                network = get_network_by_id(network_id),
+                version = version
             )
             hotkeys_metadata.append(data)
         return hotkeys_metadata        
@@ -68,10 +68,6 @@ class Metadata:
     @property
     def ip_distribution(self):
         return self.distributions['ip']
-
-    @property
-    def run_id_distribution(self):
-        return self.distributions['run_id']
 
     @property
     def coldkey_distribution(self):

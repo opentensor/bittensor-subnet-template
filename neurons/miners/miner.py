@@ -134,8 +134,6 @@ class Miner(BaseMinerNeuron):
         try:
             start_block, last_block = self.graph_search.get_min_max_block_height_cache()
             
-            run_id = self.graph_search.get_run_id()
-
             synapse.output = protocol.DiscoveryOutput(
                 metadata=protocol.DiscoveryMetadata(
                     network=self.config.network,
@@ -143,7 +141,6 @@ class Miner(BaseMinerNeuron):
                 ),
                 start_block_height=start_block,
                 block_height=last_block,
-                run_id=run_id,
             )
             bt.logging.info(f"Serving miner discovery output: {synapse.output}")
         except Exception as e:
