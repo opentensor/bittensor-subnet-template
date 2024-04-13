@@ -145,7 +145,6 @@ class ValidatorConfig(RemoteConfig):
 
     def load_and_get_config_values(self):
         self.load_remote_config()
-         # {"discovery_timeout": 6, "process_time_weight": 16, "block_height_weight": 62, "block_height_recency_weight": 5, "blockchain_importance_weight": 2, "blockchain_min_blocks": {"bitcoin": 51840}, "blockchain_importance": {"bitcoin": 1}, "is_grace_period": false}
 
         # Retrieve specific configuration values
         self.process_time_weight = self.get_config_value('process_time_weight', 16)
