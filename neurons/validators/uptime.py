@@ -113,9 +113,18 @@ class UptimeManager:
             active_period_end = miner.deregistered_date if miner.is_deregistered else datetime.utcnow()
             active_period_start = miner.uptime_start
             active_seconds = (active_period_end - active_period_start).total_seconds()
-            total_downtime = sum(log.duration for log in miner.downtimes if log.start_time >= active_period_start and log.end_time <= active_period_end)
+
+            total_downtime = sum(
+                (log.end_time - log.start_time).total_seconds()
+                for log in miner.downtimes
+                if log.start_time >= active_period_start and log.end_time and log.end_time <= active_period_end
+            )
+
+            print(f"Active Seconds: {active_seconds}, Total Downtime: {total_downtime}")  # Debug output
+
             actual_uptime_seconds = max(0, active_seconds - total_downtime)
             return actual_uptime_seconds / active_seconds if active_seconds > 0 else 0
+
 
     def get_uptime_scores(self, miner_id):
         day = self.calculate_uptime(miner_id, 86400)
