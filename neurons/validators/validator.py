@@ -36,7 +36,6 @@ from neurons.validators.utils.metadata import Metadata
 from neurons.validators.utils.synapse import is_discovery_response_valid
 
 from neurons.validators.utils.uids import get_uids_batch
-
 from template.base.validator import BaseValidatorNeuron
 class Validator(BaseValidatorNeuron):
 
@@ -80,7 +79,6 @@ class Validator(BaseValidatorNeuron):
         self.nodes = {network : NodeFactory.create_node(network) for network in networks}
         self.block_height_cache = {network: self.nodes[network].get_current_block_height() for network in networks}
         super(Validator, self).__init__(config)
-
         self.sync_validator()
         self.uid_batch_generator = get_uids_batch(self, self.config.neuron.sample_size)
         self.uptime_manager = UptimeManager(self, db_url='sqlite:///data/miners_uptime.db')
@@ -115,30 +113,25 @@ class Validator(BaseValidatorNeuron):
     def is_miner_metadata_valid(self, response: Discovery):
         hotkey = response.axon.hotkey
         ip = response.axon.ip
-        run_id = response.output.run_id
         
         hotkey_meta = self.metadata.get_metadata_for_hotkey(hotkey)
 
-        if not (hotkey_meta and hotkey_meta['run_id'] and hotkey_meta['network']):
+        if not (hotkey_meta and hotkey_meta['network']):
             bt.logging.info(f'Validation Failed: hotkey={hotkey} unable to retrieve miner metadata')
             return False
 
         ip_count = self.metadata.ip_distribution.get(ip, 0)
-        run_id_count = self.metadata.run_id_distribution.get(run_id, 0)
         coldkey_count = self.metadata.coldkey_distribution.get(hotkey, 0)
 
         bt.logging.info(f"🔄 Processing response for {hotkey}@{ip}")
         if ip_count > MAX_MINER_INSTANCE:
             bt.logging.info(f'Validation Failed: hotkey={hotkey} has {ip_count} ip')
             return False
-        if run_id_count > MAX_MINER_INSTANCE:
-            bt.logging.info(f'Validation Failed: hotkey={hotkey} has {run_id} run_id')
-            return False
         if coldkey_count > MAX_MINER_INSTANCE:
             bt.logging.info(f'Validation Failed: Coldkey of hotkey={hotkey} has {coldkey_count} hotkeys')
             return False
         
-        bt.logging.info(f'hotkey={hotkey} has {ip_count} ip, {run_id_count} run_id, {coldkey_count} hotkeys for its coldkey')
+        bt.logging.info(f'hotkey={hotkey} has {ip_count} ip, {coldkey_count} hotkeys for its coldkey')
 
         return True
     
