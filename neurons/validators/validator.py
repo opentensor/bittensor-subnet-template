@@ -31,6 +31,7 @@ from neurons.remote_config import ValidatorConfig
 from neurons.nodes.factory import NodeFactory
 from neurons.storage import store_validator_metadata
 from neurons.validators.scoring import Scorer
+from neurons.validators.uptime import UptimeManager
 from neurons.validators.utils.metadata import Metadata
 from neurons.validators.utils.synapse import is_discovery_response_valid
 
@@ -82,6 +83,7 @@ class Validator(BaseValidatorNeuron):
 
         self.sync_validator()
         self.uid_batch_generator = get_uids_batch(self, self.config.neuron.sample_size)
+        self.uptime_manager = UptimeManager(self, db_url='sqlite:///data/miners_uptime.db')
 
         
     def cross_validate(self, axon, node, start_block_height, last_block_height):
@@ -101,7 +103,7 @@ class Validator(BaseValidatorNeuron):
             
             response_time = response.dendrite.process_time
             
-            # if the miner's response is different than the expected response and validation failed
+            # if the miner's response is different from the expected response and validation failed
             if not response.output == expected_response and not node.validate_challenge_response_output(challenge, response.output):
                 return False, response_time
             
@@ -153,15 +155,19 @@ class Validator(BaseValidatorNeuron):
 
     def get_reward(self, response: Discovery, uid: int):
         try:
+            self.uptime_manager.try_update_miner(uid, response.axon.hotkey)
 
             if not self.is_response_status_code_valid(response):
                 score = self.metagraph.T[uid]/2
+                self.uptime_manager.down(uid, response.axon.hotkey)
                 bt.logging.debug(f'Discovery Response error: hotkey={response.axon.hotkey}, setting score to {score}')
                 return score
             if not is_discovery_response_valid(response):
+                self.uptime_manager.down(uid, response.axon.hotkey)
                 bt.logging.debug(f'Discovery Response invalid {response}')
                 return 0
             if not self.is_miner_metadata_valid(response):
+                self.uptime_manager.down(uid, response.axon.hotkey)
                 return 0
             
             output: DiscoveryOutput = response.output
@@ -173,12 +179,17 @@ class Validator(BaseValidatorNeuron):
             cross_validation_result, response_time = self.cross_validate(response.axon, self.nodes[network], start_block_height, last_block_height)
 
             if cross_validation_result is None:
+                self.uptime_manager.down(uid, response.axon.hotkey)
                 bt.logging.debug(f"Cross-Validation: {hotkey=} Timeout skipping response")
                 return None
             if not cross_validation_result:
+                self.uptime_manager.down(uid, response.axon.hotkey)
                 bt.logging.info(f"Cross-Validation: {hotkey=} Test failed")
                 return 0
             bt.logging.info(f"Cross-Validation: {hotkey=} Test passed")
+
+            self.uptime_manager.up(uid, response.axon.hotkey)
+            uptime_score = self.uptime_manager.get_uptime_scores(uid, response.axon.hotkey)
 
             score = self.scorer.calculate_score(
                 network,
