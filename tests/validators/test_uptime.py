@@ -89,7 +89,7 @@ class TestUptimeManager(unittest.TestCase):
         sleep(10)
         self.uptime_manager.up('123', 'key123')
 
-        uptime = self.uptime_manager.calculate_uptime(miner.id, 86400)
+        uptime = self.uptime_manager.calculate_uptime('123', 'key123')
         print(uptime)
 
 if __name__ == '__main__':
