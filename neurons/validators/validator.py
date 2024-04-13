@@ -197,7 +197,8 @@ class Validator(BaseValidatorNeuron):
                 start_block_height,
                 last_block_height,
                 self.block_height_cache[network],
-                self.metadata.network_distribution
+                self.metadata.network_distribution,
+                uptime_score
             )
 
             return score

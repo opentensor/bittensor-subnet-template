@@ -5,30 +5,34 @@ class Scorer:
     def __init__(self, config: ValidatorConfig):
         self.config = config
 
-    def calculate_score(self, network,  process_time, indexed_start_block_height, indexed_end_block_height, blockchain_last_block_height, miner_distribution):
+    def calculate_score(self, network,  process_time, indexed_start_block_height, indexed_end_block_height, blockchain_last_block_height, miner_distribution, uptime_avg):
         log =  (f'🔄 Network: {network} | ' \
                 f'Process time: {process_time:4f} | ' \
                 f'Indexed start block height: {indexed_start_block_height} | ' \
                 f'Indexed end block height: {indexed_end_block_height} | ' \
                 f'Blockchain last block height: {blockchain_last_block_height} | ' \
-                f'Miner distribution: {miner_distribution} | ')
+                f'Miner distribution: {miner_distribution} | ' \
+                f'Uptime avg: {uptime_avg:.4f} |')
+
         bt.logging.info(log)
         process_time_score = self.calculate_process_time_score(process_time, self.config.discovery_timeout)
         block_height_score = self.calculate_block_height_score(network, indexed_start_block_height, indexed_end_block_height, blockchain_last_block_height)
         block_height_recency_score = self.calculate_block_height_recency_score(network, indexed_end_block_height, blockchain_last_block_height)
         blockchain_score = self.calculate_blockchain_weight(network, miner_distribution)
+        uptime_score = self.calculate_uptime_score(uptime_avg)
 
-        final_score = self.final_score(process_time_score, block_height_score, block_height_recency_score, blockchain_score)
+        final_score = self.final_score(process_time_score, block_height_score, block_height_recency_score, blockchain_score, uptime_score)
 
         log =  (f'🔄 Process time score: {process_time_score:.4f} | ' \
                 f'Block height score: {block_height_score:.4f} | ' \
                 f'Block height recency score: {block_height_recency_score:.4f} | ' \
                 f'Blockchain score: {blockchain_score:.4f} | ' \
+                f'Uptime score: {uptime_score:.4f} |' \
                 f'Final score: {final_score:.4f} |')
         bt.logging.info(log)
         return final_score
 
-    def final_score(self, process_time_score, block_height_score, block_height_recency_score, blockchain_score):
+    def final_score(self, process_time_score, block_height_score, block_height_recency_score, blockchain_score, uptime_score):
 
         if process_time_score == 0 or block_height_score == 0 or block_height_recency_score == 0:
             return 0
@@ -37,14 +41,16 @@ class Scorer:
             process_time_score * self.config.process_time_weight +
             block_height_score * self.config.block_height_weight +
             block_height_recency_score * self.config.block_height_recency_weight +
-            blockchain_score * self.config.blockchain_importance_weight
+            blockchain_score * self.config.blockchain_importance_weight +
+            uptime_score * self.config.uptime_weight
         )
 
         total_weights = (
             self.config.process_time_weight +
             self.config.block_height_weight +
             self.config.block_height_recency_weight +
-            self.config.blockchain_importance_weight
+            self.config.blockchain_importance_weight +
+            self.config.uptime_weight
         )
 
         normalized_score = total_score / total_weights
@@ -99,3 +105,6 @@ class Scorer:
         overall_score = importance + 0.2 * miners_distribution_score
 
         return overall_score
+
+    def calculate_uptime_score(self, uptime_avg):
+        return uptime_avg

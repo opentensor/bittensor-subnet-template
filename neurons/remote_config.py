@@ -139,24 +139,29 @@ class ValidatorConfig(RemoteConfig):
         self.blockchain_importance = None
         self.blockchain_recency_weight = None
         self.grace_period = None
-        
+        self.uptime_weight = None
+
         self.config_url = os.getenv("VALIDATOR_REMOTE_CONFIG_URL", 'https://subnet-15-cfg.s3.fr-par.scw.cloud/validator3.json')
 
     def load_and_get_config_values(self):
         self.load_remote_config()
+         # {"discovery_timeout": 6, "process_time_weight": 16, "block_height_weight": 62, "block_height_recency_weight": 5, "blockchain_importance_weight": 2, "blockchain_min_blocks": {"bitcoin": 51840}, "blockchain_importance": {"bitcoin": 1}, "is_grace_period": false}
 
         # Retrieve specific configuration values
-        self.process_time_weight = self.get_config_value('process_time_weight', 1)
-        self.block_height_weight = self.get_config_value('block_height_weight', 1)
-        self.block_height_recency_weight = self.get_config_value('block_height_recency_weight',  1)
+        self.process_time_weight = self.get_config_value('process_time_weight', 16)
+        self.block_height_weight = self.get_config_value('block_height_weight', 54)
+        self.uptime_weight = self.get_config_value('uptime_weight', 16)
+
+        self.block_height_recency_weight = self.get_config_value('block_height_recency_weight',  5)
         self.blockchain_importance_weight = self.get_config_value('blockchain_importance_weight', 1)
         
-        self.discovery_timeout = self.get_config_value('discovery_timeout', 100)
-        self.challenge_timeout = self.get_config_value('challenge_timeout', 100)
+        self.discovery_timeout = self.get_config_value('discovery_timeout', 6)
+        self.challenge_timeout = self.get_config_value('challenge_timeout', 6)
 
         self.blockchain_importance = self.get_config_value('blockchain_importance', {"bitcoin": 0.9, "doge": 0.1})
         self.blockchain_recency_weight = self.get_config_value('blockchain_recency_weight',  {"bitcoin": 2, "doge": 2})
         self.grace_period = self.get_config_value('grace_period', False)
+
         return self
 
     def get_blockchain_min_blocks(self, network):

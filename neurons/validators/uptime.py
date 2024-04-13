@@ -120,8 +120,6 @@ class UptimeManager:
                 if log.start_time >= active_period_start and log.end_time and log.end_time <= active_period_end
             )
 
-            print(f"Active Seconds: {active_seconds}, Total Downtime: {total_downtime}")  # Debug output
-
             actual_uptime_seconds = max(0, active_seconds - total_downtime)
             return actual_uptime_seconds / active_seconds if active_seconds > 0 else 0
 
