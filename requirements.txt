@@ -1,2 +1,3 @@
 bittensor
 torch
+loguru
