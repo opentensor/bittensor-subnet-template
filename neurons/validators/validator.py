@@ -54,6 +54,7 @@ class Validator(BaseValidatorNeuron):
         parser.add_argument("--api_port", type=int, default=8001, help="API endpoint port.")
         parser.add_argument("--timeout", type=int, default=40, help="Timeout.")
         parser.add_argument("--top_rate", type=float, default=1, help="Best selection percentage")
+        parser.add_argument("--user_query_moving_average_alpha", type=float, default=0.0001, help="Moving average alpha for scoring user query miners.")
 
         bt.subtensor.add_args(parser)
         bt.logging.add_args(parser)
@@ -90,7 +91,9 @@ class Validator(BaseValidatorNeuron):
             self.api_server = APIServer(
                 config=self.config,
                 wallet=self.wallet,
-                metagraph=self.metagraph
+                subtensor=self.subtensor,
+                metagraph=self.metagraph,
+                scores=self.scores
             )
 
     def cross_validate(self, axon, node, start_block_height, last_block_height):
@@ -198,8 +201,10 @@ class Validator(BaseValidatorNeuron):
             return None
 
     async def forward(self):
-        # Update the metagraph of api_server as the one of validator is updated.
+        # Update the subtensor, metagraph, scores of api_server as the one of validator is updated.
+        self.api_server.subtensor = self.subtensor
         self.api_server.metagraph = self.metagraph
+        self.api_server.scores = self.scores
         uids = next(self.uid_batch_generator, None)
         if uids is None:
             self.uid_batch_generator = get_uids_batch(self, self.config.neuron.sample_size)
@@ -225,7 +230,7 @@ class Validator(BaseValidatorNeuron):
 
             rewards = torch.FloatTensor(rewards)
             self.update_scores(rewards, uids)
-        else: 
+        else:  
             bt.logging.info('Skipping update_scores() as no responses were valid')
 
     def sync_validator(self):
@@ -258,7 +263,9 @@ if __name__ == "__main__":
                 validator.api_server = APIServer(
                     config=validator.config,
                     wallet=validator.wallet,
-                    metagraph=validator.metagraph
+                    subtensor=validator.subtensor,
+                    metagraph=validator.metagraph,
+                    scores=validator.scores
                 )
             api_server_thread = threading.Thread(target=run_api_server, args=(validator.api_server,))
             api_server_thread.start()
