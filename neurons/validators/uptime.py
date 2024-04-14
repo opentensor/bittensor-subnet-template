@@ -6,10 +6,10 @@ from datetime import datetime
 
 Base = declarative_base()
 
-class Miner(Base):
-    __tablename__ = 'miners'
+class MinerUptime(Base):
+    __tablename__ = 'miner_uptimes'
     id = Column(Integer, primary_key=True)
-    uid = Column(String, nullable=False)
+    uid = Column(Integer, nullable=False)
     hotkey = Column(String, nullable=False)
     uptime_start = Column(DateTime, default=datetime.utcnow)
     deregistered_date = Column(DateTime, nullable=True)
@@ -20,12 +20,12 @@ class Miner(Base):
 class DowntimeLog(Base):
     __tablename__ = 'downtime_logs'
     id = Column(Integer, primary_key=True)
-    miner_id = Column(Integer, ForeignKey('miners.id'))
+    miner_id = Column(Integer, ForeignKey('miner_uptimes.id'))
     start_time = Column(DateTime)
     end_time = Column(DateTime, nullable=True)
-    miner = relationship('Miner', back_populates='downtimes')
+    miner = relationship('MinerUptime', back_populates='downtimes')
 
-class UptimeManager:
+class MinerUptimeManager:
     def __init__(self, db_url='sqlite:///miners.db'):
         self.engine = create_engine(db_url)
         Base.metadata.create_all(self.engine)
@@ -49,13 +49,13 @@ class UptimeManager:
     def get_miner(self, uid, hotkey):
         with self.session_scope() as session:
             # Initialize the query on Miner
-            query = session.query(Miner).options(joinedload(Miner.downtimes))
+            query = session.query(MinerUptime).options(joinedload(MinerUptime.downtimes))
 
             # Apply filtering
             if hotkey is not None:
-                query = query.filter(Miner.uid == uid, Miner.hotkey == hotkey)
+                query = query.filter(MinerUptime.uid == uid, MinerUptime.hotkey == hotkey)
             else:
-                query = query.filter(Miner.uid == uid)
+                query = query.filter(MinerUptime.uid == uid)
 
             # Fetch the first result that matches the query
             miner = query.first()
@@ -70,17 +70,17 @@ class UptimeManager:
 
     def try_update_miner(self, uid, hotkey):
         with self.session_scope() as session:
-            existing_miner = session.query(Miner).filter(Miner.uid == uid).first()
+            existing_miner = session.query(MinerUptime).filter(MinerUptime.uid == uid).first()
             if existing_miner and existing_miner.hotkey != hotkey:
                 existing_miner.is_deregistered = True
                 existing_miner.deregistered_date = datetime.utcnow()
             if not existing_miner or existing_miner.is_deregistered:
-                new_miner = Miner(uid=uid, hotkey=hotkey)
+                new_miner = MinerUptime(uid=uid, hotkey=hotkey)
                 session.add(new_miner)
 
     def up(self, uid, hotkey):
         with self.session_scope() as session:
-            miner = session.query(Miner).filter(Miner.uid == uid, Miner.hotkey == hotkey).one()
+            miner = session.query(MinerUptime).filter(MinerUptime.uid == uid, MinerUptime.hotkey == hotkey).one()
             if miner:
                 self.end_last_downtime(miner.id, session)
                 return True
@@ -89,7 +89,7 @@ class UptimeManager:
     def down(self, uid, hotkey):
         """Record the start of a new downtime for a miner, only if the last downtime is closed."""
         with self.session_scope() as session:
-            miner = session.query(Miner).filter(Miner.uid == uid, Miner.hotkey == hotkey).one()
+            miner = session.query(MinerUptime).filter(MinerUptime.uid == uid, MinerUptime.hotkey == hotkey).one()
             if miner:
                 # Check the most recent downtime entry
                 most_recent_downtime = session.query(DowntimeLog).filter(DowntimeLog.miner_id == miner.id).order_by(DowntimeLog.start_time.desc()).first()
@@ -109,7 +109,7 @@ class UptimeManager:
 
     def calculate_uptime(self, uid, hotkey, period_seconds):
         with self.session_scope() as session:
-            miner = session.query(Miner).filter(Miner.uid == uid, Miner.hotkey == hotkey).one()
+            miner = session.query(MinerUptime).filter(MinerUptime.uid == uid, MinerUptime.hotkey == hotkey).one()
             active_period_end = miner.deregistered_date if miner.is_deregistered else datetime.utcnow()
             active_period_start = miner.uptime_start
             active_seconds = (active_period_end - active_period_start).total_seconds()
