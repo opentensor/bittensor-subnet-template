@@ -10,25 +10,19 @@ from neurons.validators.uptime import DowntimeLog, Base, MinerUptimeManager, Min
 # Assuming the Miner and DowntimeLog classes have been imported from the module where they are defined.
 
 class TestMinerUptimeManager(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        # Create an in-memory SQLite database for testing.
-        engine = create_engine('sqlite:///:memory:')
-        Base.metadata.create_all(engine)
-        cls.session_factory = sessionmaker(bind=engine)
-        cls.Session = scoped_session(cls.session_factory)
-
     def setUp(self):
-        # Create a new session for each test
+        self.engine = create_engine('sqlite:///:memory:')
+        Base.metadata.create_all(self.engine)
+        self.Session = scoped_session(sessionmaker(bind=self.engine))
+        self.uptime_manager = MinerUptimeManager('sqlite:///:memory:')
+        self.uptime_manager.Session = self.Session  # Ensure we use the same session factory
         self.session = self.Session()
-        self.uptime_manager = MinerUptimeManager('sqlite:///:memory:')  # Re-init to bind to the in-memory DB
-        self.uptime_manager.Session = self.Session  # Override the session factory with the test session
 
     def tearDown(self):
-        # Rollback and close session after each test
         self.session.rollback()
         self.session.close()
         self.Session.remove()
+        self.engine.dispose()
 
     def test_get_miner(self):
         # Setup test data
@@ -89,7 +83,7 @@ class TestMinerUptimeManager(unittest.TestCase):
         sleep(10)
         self.uptime_manager.up(123, 'key123')
 
-        uptime = self.uptime_manager.calculate_uptime(123, 'key123')
+        uptime = self.uptime_manager.calculate_uptime(123, 'key123', 86400)
         print(uptime)
 
 if __name__ == '__main__':
