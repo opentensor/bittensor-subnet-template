@@ -21,19 +21,13 @@ class TestMiner(unittest.TestCase):
         config = Miner.get_config()
 
         self.assertEqual(config.network, "bitcoin")
-        self.assertEqual(config.model_types, [MODEL_TYPE_FUNDS_FLOW, MODEL_TYPE_BALANCE_TRACKING])
         self.assertEqual(config.netuid, 15)
 
     def test_get_config_custom_model_types(self):
         # Test with custom arguments
-        custom_args = [
-            "--model_types", "funds_flow"
-        ]
-        sys.argv = sys.argv + custom_args
         config = Miner.get_config()
 
         self.assertEqual(config.network, "bitcoin")
-        self.assertEqual(config.model_types, [MODEL_TYPE_FUNDS_FLOW])
         self.assertEqual(config.netuid, 15)
 
         

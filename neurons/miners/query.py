@@ -25,10 +25,7 @@ def get_graph_search(config):
         },
     }
 
-    try:
-        return switch[config.network][config.model_type]()
-    except:
-        raise ValueError(f'Graph search {config.model_type} not found for network {config.network}')
+    return switch[config.network][MODEL_TYPE_FUNDS_FLOW]()
     
 def get_graph_indexer(config):
     switch = {
@@ -41,9 +38,9 @@ def get_graph_indexer(config):
     }
 
     try:
-        return switch[config.network][config.model_type]()
+        return switch[config.network][MODEL_TYPE_FUNDS_FLOW]()
     except:
-        raise ValueError(f'Graph Indexer {config.model_type} not found for network {config.network}'
+        raise ValueError(f'Graph Indexer {MODEL_TYPE_FUNDS_FLOW} not found for network {config.network}'
 )
         
 def get_balance_search(config):
@@ -55,11 +52,8 @@ def get_balance_search(config):
         },
     }
 
-    try:
-        return switch[config.network][config.model_type]()
-    except:
-        raise ValueError(f'Balance Search {config.model_type} not found for network {config.network}')
-        
+    return switch[config.network][MODEL_TYPE_BALANCE_TRACKING]()
+
 def get_balance_indexer(config):
     switch = {
         NETWORK_BITCOIN: {
@@ -69,20 +63,7 @@ def get_balance_indexer(config):
         },
     }
 
-    try:
-        return switch[config.network][config.model_type]()
-    except:
-        raise ValueError(f'Balance Indexer {config.model_type} not found for network {config.network}')
-
-
-def execute_query_proxy(network, model_type, query):
-    graph_search = get_graph_search(network, model_type)
-    if callable(graph_search):
-        return graph_search.execute_query(network, query)
-    else:
-        return (
-            graph_search
-        )
+    return switch[config.network][MODEL_TYPE_BALANCE_TRACKING]()
 
 def is_query_only(cypher_query):
     modification_keywords = ['CREATE', 'SET', 'DELETE', 'DETACH', 'REMOVE', 'MERGE', 'CREATE INDEX', 'DROP INDEX', 'CREATE CONSTRAINT', 'DROP CONSTRAINT']
@@ -91,13 +72,3 @@ def is_query_only(cypher_query):
         if keyword in normalized_query:
             return False
     return True
-
-
-
-
-
-
-
-
-
-

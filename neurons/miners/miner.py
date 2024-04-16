@@ -47,12 +47,6 @@ class Miner(BaseMinerNeuron):
             help="Set miner's supported blockchain network.",
         )
         parser.add_argument(
-            "--model_types",
-            type=lambda x: x.split(','),
-            default=[MODEL_TYPE_FUNDS_FLOW, MODEL_TYPE_BALANCE_TRACKING],
-            help="Set miner's supported model types.",
-        )
-        parser.add_argument(
             "--llm_type",
             type=str,
             default=LLM_TYPE_OPENAI,
@@ -147,7 +141,6 @@ class Miner(BaseMinerNeuron):
             synapse.output = protocol.DiscoveryOutput(
                 metadata=protocol.DiscoveryMetadata(
                     network=self.config.network,
-                    model_types=self.config.model_types
                 ),
                 start_block_height=start_block,
                 block_height=last_block,

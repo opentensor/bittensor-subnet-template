@@ -14,8 +14,6 @@ def is_discovery_response_valid(discovery_output: Discovery) -> bool:
         return False
     
     metadata: DiscoveryMetadata = output.metadata
-    if metadata.model_type is None or metadata.model_type not in get_model_types():
-        return False
     
     if metadata.network is None or metadata.network not in get_networks():
         return False
