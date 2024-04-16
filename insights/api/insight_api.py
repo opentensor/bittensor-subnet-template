@@ -150,6 +150,11 @@ class APIServer:
             metagraph: None,
             scores: None,
         ):
+        """
+        API can be invoked while running a validator.
+        Receive config, wallet, subtensor, metagraph from the validator and share the score of miners with the validator.
+        subtensor and metagraph of APIs will change as the ones of validators change.
+        """
         self.app = FastAPI()
         self.config = config
         self.wallet = wallet
@@ -160,7 +165,42 @@ class APIServer:
         self.scores = scores
         
         @self.app.get("/api/text_query")
-        async def get_response(network:str, text: str):            
+        async def get_response(network:str, text: str):        
+            """Get Message-User Query
+            Generate a response to user query
+
+            This endpoint allows miners convert the natural language query from the user into a Cypher query, and then provide a concise response in natural language.
+            
+            **Parameters:**
+            `network` (string): blockchain network where the search is conducted.
+            `text` (string): natural language query from users.
+                            
+            **Returns:**
+            response in natural language from one of the top miners. It should be QueryOutput.
+                - `result`: Optional[List[Dict]] = None
+                - `interpreted_result`: Optional[str] = None
+                - `error`: Optional[ERROR_TYPE] = None
+                
+            **Example Request:**
+            ```json
+            GET /text-query
+            {
+                "network": "Bitcoin",                
+                "message_content": "Show me 15 transactions I sent after block height 800000. My address is bc1q4s8yps9my6hun2tpd5ke5xmvgdnxcm2qspnp9r"
+            }
+            ```
+
+            **Example Response:**
+            ```json
+            {
+                "result": "...",
+                "interpreted_result": "15 transactions you sent are as follows. ..."
+                "error": LLM_ERROR_NO_ERROR
+            }
+            ```
+            
+            """
+            
             # select top miner            
             top_miner_uids = get_top_miner_uids(self.metagraph, self.config.top_rate, self.excluded_uids)
             bt.logging.info(f"Top miner UIDs are {top_miner_uids}")
@@ -195,6 +235,40 @@ class APIServer:
         
         @self.app.post("/api/text_query")
         async def get_response(query: ChatMessageRequest = Body(...)):
+            """Post Message-User Query
+            Generate a response to user query
+
+            This endpoint allows miners convert the natural language query from the user into a Cypher query, and then provide a concise response in natural language.
+            
+            **Parameters:**
+            `query` (ChatMessageRequest): natural language query from users, network(Bitcoin, Ethereum, ...), User ID.
+                network: str
+                user_id: UUID
+                prompt: str
+
+            **Returns:**
+            `ChatMessageResponse`: response in natural language.
+                - `text` (str): miner response.                
+                - `miner_id` (str): responded miner uid
+            
+            **Example Request:**
+            ```json
+            POST /text-query
+            {
+                "network": "Bitcoin",
+                "user_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                "message_content": "Show me 15 transactions I sent after block height 800000. My address is bc1q4s8yps9my6hun2tpd5ke5xmvgdnxcm2qspnp9r"
+            }
+            ```
+
+            **Example Response:**
+            ```json
+            {
+                "text": "15 transactions you sent are as follows. ...",
+                "miner_id": "230",                
+            }
+            ```
+            """
             # select top miner            
             top_miner_uids = get_top_miner_uids(self.metagraph, self.config.top_rate, self.excluded_uids)
             bt.logging.info(f"Top miner UIDs are {top_miner_uids}")
@@ -251,6 +325,45 @@ class APIServer:
         
         @self.app.post("api/text_query/variant")
         async def get_response_variant(query: ChatMessageVariantRequest = Body(...)):
+            """Post Message/{Miner ID}/Variant
+            **Description:**
+            A validator would be able to receive a user request to generate a variation on a previously generated message. It will return the new message and store the fact that a specific miner's message had a variation request.
+            - Receive temperature. The temperature will determine the creativity of the response.
+            - Return generated variation text and miner ID.
+
+            
+            **Parameters:**
+            `query` (ChatMessageVariantRequest): natural language query from users, network(Bitcoin, Ethereum, ...), User ID, Miner UID, temperature.
+                network: str
+                user_id: UUID
+                prompt: str
+                temperature: float
+                miner_id: str
+            **Returns:**
+            - `ChatMessageResponse`: response in natural language.
+                - `text` (str): miner response.                
+                - `miner_id` (str): responded miner uid
+            
+            **Example Request:**
+            ```json
+            POST /text-query
+            {
+                "network": "Bitcoin",
+                "user_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                "message_content": "Show me 15 transactions I sent after block height 800000. My address is bc1q4s8yps9my6hun2tpd5ke5xmvgdnxcm2qspnp9r",
+                "temperature": "0.1",
+                miner_id: "230",
+            }
+            ```
+
+            **Example Response:**
+            ```json
+            {
+                "text": "15 transactions you sent are as follows. ...",
+                "miner_id": "230",                
+            }
+            ```
+            """
             bt.logging.info(f"Miner {query.miner_id} received a variant request.")
             
             miner_axon = await get_query_api_axons(wallet=self.wallet, metagraph=self.metagraph, uids=query.miner_id)
