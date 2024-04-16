@@ -150,6 +150,11 @@ class APIServer:
             metagraph: None,
             scores: None,
         ):
+        """
+        API can be invoked while running a validator.
+        Receive config, wallet, subtensor, metagraph from the validator and share the score of miners with the validator.
+        subtensor and metagraph of APIs will change as the ones of validators change.
+        """
         self.app = FastAPI()
         self.config = config
         self.wallet = wallet
@@ -162,8 +167,37 @@ class APIServer:
         @self.app.get("/api/text_query")
         async def get_response(network:str, text: str):        
             """Get Message-User Query
-            Generate a response to user query.
+            Generate a response to user query
+
             This endpoint allows miners convert the natural language query from the user into a Cypher query, and then provide a concise response in natural language.
+            
+            **Parameters:**
+            `network` (string): blockchain network where the search is conducted.
+            `text` (string): natural language query from users.
+                            
+            **Returns:**
+            response in natural language from one of the top miners. It should be QueryOutput.
+                - `result`: Optional[List[Dict]] = None
+                - `interpreted_result`: Optional[str] = None
+                - `error`: Optional[ERROR_TYPE] = None
+                
+            **Example Request:**
+            ```json
+            GET /text-query
+            {
+                "network": "Bitcoin",                
+                "message_content": "Show me 15 transactions I sent after block height 800000. My address is bc1q4s8yps9my6hun2tpd5ke5xmvgdnxcm2qspnp9r"
+            }
+            ```
+
+            **Example Response:**
+            ```json
+            {
+                "result": "...",
+                "interpreted_result": "15 transactions you sent are as follows. ..."
+                "error": LLM_ERROR_NO_ERROR
+            }
+            ```
             
             """
             
@@ -213,7 +247,7 @@ class APIServer:
                 prompt: str
 
             **Returns:**
-            - `ChatMessageResponse`: response in natural language.
+            `ChatMessageResponse`: response in natural language.
                 - `text` (str): miner response.                
                 - `miner_id` (str): responded miner uid
             
