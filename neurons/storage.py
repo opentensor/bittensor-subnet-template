@@ -5,29 +5,25 @@ import insights
 import bittensor as bt
 from bittensor.extrinsics import serving
 from pydantic import BaseModel
-from insights.protocol import get_network_id, get_model_id
+from insights.protocol import get_network_id
 
 class Metadata(BaseModel):
     def to_compact(self):
-        return '\n'.join(f"{key}:{repr(getattr(self, key))}" for key in self.__dict__)
+        return ','.join(f"{key}:{repr(getattr(self, key))}" for key in self.__dict__)
 
 class MinerMetadata(Metadata):
     sb: Optional[int] #start_block_height
     lb: Optional[int] #end_block_height
     bl: Optional[int] #balance_model_last_block_height
     n: Optional[int] #network
-    mt: Optional[List[int]] #model_types
     cv: Optional[str] #code_version
     
     @staticmethod
     def from_compact(compact_str):
         data_dict = {}
-        for item in compact_str.split('\n'):
+        for item in compact_str.split(','):
             key, value = item.split(':', 1)
-            if value[0] == "'":
-                data_dict[key] = value.strip("'")
-            elif value[0] == "[":
-                data_dict[key] = [int(x.strip()) for x in value.strip("[]").split(',')]
+            data_dict[key] = value.strip("'")
         return MinerMetadata(**data_dict)
 
 class ValidatorMetadata(Metadata):
@@ -62,7 +58,6 @@ def store_miner_metadata(self):
             lb=last_block,
             bl=balance_model_last_block,
             n=get_network_id(self.config.network),
-            mt=[get_model_id(model_type) for model_type in self.model_types],
             cv=insights.__version__
         )
 

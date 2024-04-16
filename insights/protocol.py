@@ -8,10 +8,7 @@ ERROR_TYPE = int
 
 # Model types
 MODEL_TYPE_FUNDS_FLOW = "funds_flow"
-MODEL_TYPE_FUNDS_FLOW_ID = 2
-
 MODEL_TYPE_BALANCE_TRACKING = "balance_tracking"
-MODEL_TYPE_BALANCE_TRACKING_ID = 3
 
 # Networks
 NETWORK_BITCOIN = "bitcoin"
@@ -76,13 +73,6 @@ def get_network_id(network):
         NETWORK_DOGE : NETWORK_DOGE_ID,
         NETWORK_ETHEREUM: NETWORK_ETHEREUM_ID
     }.get(network)
-
-
-def get_model_id(model_type):
-    return {
-        MODEL_TYPE_FUNDS_FLOW: MODEL_TYPE_FUNDS_FLOW_ID,
-        MODEL_TYPE_BALANCE_TRACKING: MODEL_TYPE_BALANCE_TRACKING_ID,
-    }.get(model_type)
 
 def get_model_types():
     return [MODEL_TYPE_FUNDS_FLOW, MODEL_TYPE_BALANCE_TRACKING]
