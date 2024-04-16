@@ -51,8 +51,9 @@ done
 btcli w create --wallet.name owner --hotkey default --no_password --no_prompt
 
 # create chain container
-docker build -t chain \
-    --build-arg BT_DEFAULT_TOKEN_WALLET=owner \
+docker build \
+    -t chain \
+    --build-arg WALLET=owner \
     -f chain.Dockerfile \
     .
 
