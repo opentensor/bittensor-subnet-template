@@ -1,11 +1,11 @@
-from typing import Optional
+from typing import Optional, List
 
 import insights
 
 import bittensor as bt
 from bittensor.extrinsics import serving
 from pydantic import BaseModel
-from insights.protocol import get_network_id, get_model_id
+from insights.protocol import get_network_id
 
 class Metadata(BaseModel):
     def to_compact(self):
@@ -14,8 +14,8 @@ class Metadata(BaseModel):
 class MinerMetadata(Metadata):
     sb: Optional[int] #start_block_height
     lb: Optional[int] #end_block_height
+    bl: Optional[int] #balance_model_last_block_height
     n: Optional[int] #network
-    mt: Optional[int] #model_type
     cv: Optional[str] #code_version
     
     @staticmethod
@@ -56,13 +56,14 @@ def store_miner_metadata(self):
         return MinerMetadata(
             sb=start_block,
             lb=last_block,
+            bl=balance_model_last_block,
             n=get_network_id(self.config.network),
-            mt=get_model_id(self.model_type),
             cv=insights.__version__
         )
 
     try:
         start_block, last_block = self.graph_search.get_min_max_block_height_cache()
+        balance_model_last_block = self.balance_search.get_latest_block_number()
         subtensor = self.subtensor
         bt.logging.info(f"Storing miner metadata")
         metadata = get_metadata()

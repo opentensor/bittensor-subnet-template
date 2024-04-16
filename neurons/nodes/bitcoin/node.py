@@ -1,8 +1,8 @@
 from decimal import Decimal
 import bittensor as bt
 from bitcoinrpc.authproxy import AuthServiceProxy
-from insights.protocol import Challenge
-from neurons.nodes.bitcoin.node_utils import SATOSHI, VIN, VOUT, Transaction
+from insights.protocol import Challenge, MODEL_TYPE_FUNDS_FLOW, MODEL_TYPE_BALANCE_TRACKING
+from neurons.nodes.bitcoin.node_utils import SATOSHI, VIN, VOUT, Transaction, parse_block_data
 
 
 from neurons.nodes.abstract_node import Node
@@ -148,7 +148,7 @@ class BitcoinNode(Node):
 
             *_, in_total_amount, out_total_amount = self.process_in_memory_txn_for_indexing(tx)
             
-        challenge = Challenge(in_total_amount=in_total_amount, out_total_amount=out_total_amount, tx_id_last_4_chars=txn_id[-4:])
+        challenge = Challenge(model_type=MODEL_TYPE_FUNDS_FLOW, in_total_amount=in_total_amount, out_total_amount=out_total_amount, tx_id_last_4_chars=txn_id[-4:])
         return challenge, txn_id
 
     def validate_challenge_response_output(self, challenge: Challenge, response_output):
@@ -163,6 +163,32 @@ class BitcoinNode(Node):
 
         *_, in_total_amount, out_total_amount = self.process_in_memory_txn_for_indexing(tx)
         return challenge.in_total_amount == in_total_amount and challenge.out_total_amount == out_total_amount
+    
+    def create_balance_challenge(self, block_height):
+        block = self.get_block_by_height(block_height)
+        block_data = parse_block_data(block)
+        transactions = block_data.transactions
+        
+        balance_changes_by_address = {}
+        changed_addresses = []
+        
+        for tx in transactions:
+            in_amount_by_address, out_amount_by_address, input_addresses, output_addresses, in_total_amount, out_total_amount = _bitcoin_node.process_in_memory_txn_for_indexing(tx)
+            
+            for address in input_addresses:
+                if not address in balance_changes_by_address:
+                    balance_changes_by_address[address] = 0
+                    changed_addresses.append(address)
+                balance_changes_by_address[address] -= in_amount_by_address[address]
+            
+            for address in output_addresses:
+                if not address in balance_changes_by_address:
+                    balance_changes_by_address[address] = 0
+                    changed_addresses.append(address)
+                balance_changes_by_address[address] += out_amount_by_address[address]
+                
+        challenge = Challenge(model_type=MODEL_TYPE_BALANCE_TRACKING, block_height=block_height)
+        return challenge, len(changed_addresses)
 
     def get_txn_data_by_id(self, txn_id: str):
         try:

@@ -24,12 +24,13 @@ import os
 import yaml
 import threading
 
-from insights.protocol import Discovery, DiscoveryOutput, MAX_MINER_INSTANCE
+from insights.protocol import Discovery, DiscoveryOutput, MAX_MINER_INSTANCE, NETWORK_BITCOIN, MODEL_TYPE_BALANCE_TRACKING
 
 from neurons.remote_config import ValidatorConfig
 from neurons.nodes.factory import NodeFactory
 from neurons.storage import store_validator_metadata
 from neurons.validators.scoring import Scorer
+from neurons.validators.challenge_factory.balance_challenge_factory import BalanceChallengeFactory
 from neurons.validators.utils.metadata import Metadata
 from neurons.validators.utils.synapse import is_discovery_response_valid
 
@@ -84,6 +85,11 @@ class Validator(BaseValidatorNeuron):
         networks = self.validator_config.get_networks()
         self.nodes = {network : NodeFactory.create_node(network) for network in networks}
         self.block_height_cache = {network: self.nodes[network].get_current_block_height() for network in networks}
+        self.challenge_factory = {
+            NETWORK_BITCOIN: {
+                MODEL_TYPE_BALANCE_TRACKING: BalanceChallengeFactory(self.nodes[NETWORK_BITCOIN])
+            }
+        }
         super(Validator, self).__init__(config)
         self.sync_validator()
         self.uid_batch_generator = get_uids_batch(self, self.config.neuron.sample_size)
@@ -96,8 +102,9 @@ class Validator(BaseValidatorNeuron):
                 scores=self.scores
             )
 
-    def cross_validate(self, axon, node, start_block_height, last_block_height):
+    def cross_validate(self, axon, node, challenge_factory, start_block_height, last_block_height, balance_model_last_block):
         try:
+            # first, validate funds flow model response
             challenge, expected_response = node.create_challenge(start_block_height, last_block_height)
             
             response = self.dendrite.query(
@@ -115,6 +122,27 @@ class Validator(BaseValidatorNeuron):
             
             # if the miner's response is different than the expected response and validation failed
             if not response.output == expected_response and not node.validate_challenge_response_output(challenge, response.output):
+                bt.logging.debug("Cross validation failed")
+                return False, response_time
+            
+            # second, validate balance model response
+            challenge, expected_response = challenge_factory.get_challenge(balance_model_last_block)
+            
+            response = self.dendrite.query(
+                axon,
+                challenge,
+                deserialize=False,
+                timeout = self.validator_config.challenge_timeout,
+            )
+            
+            if response is None or response.output is None:
+                bt.logging.debug("Cross validation failed")
+                return False, 128
+            
+            response_time += response.dendrite.process_time
+            
+            if not str(response.output) == str(expected_response):
+                bt.logging.debug("Cross validation failed")
                 return False, response_time
             
             return True, response_time
@@ -174,9 +202,10 @@ class Validator(BaseValidatorNeuron):
             network = output.metadata.network
             start_block_height = output.start_block_height
             last_block_height = output.block_height
+            balance_model_last_block = output.balance_model_last_block
             hotkey = response.axon.hotkey
 
-            cross_validation_result, response_time = self.cross_validate(response.axon, self.nodes[network], start_block_height, last_block_height)
+            cross_validation_result, response_time = self.cross_validate(response.axon, self.nodes[network], self.challenge_factory[network], start_block_height, last_block_height, balance_model_last_block)
 
             if cross_validation_result is None:
                 bt.logging.debug(f"Cross-Validation: {hotkey=} Timeout skipping response")

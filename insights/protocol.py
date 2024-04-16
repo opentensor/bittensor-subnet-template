@@ -8,7 +8,7 @@ ERROR_TYPE = int
 
 # Model types
 MODEL_TYPE_FUNDS_FLOW = "funds_flow"
-MODEL_TYPE_FUNDS_FLOW_ID = 2
+MODEL_TYPE_BALANCE_TRACKING = "balance_tracking"
 
 # Networks
 NETWORK_BITCOIN = "bitcoin"
@@ -74,28 +74,21 @@ def get_network_id(network):
         NETWORK_ETHEREUM: NETWORK_ETHEREUM_ID
     }.get(network)
 
-
-def get_model_id(model_type):
-    return {
-        MODEL_TYPE_FUNDS_FLOW: MODEL_TYPE_FUNDS_FLOW_ID
-    }.get(model_type)
-
 def get_model_types():
-    return [MODEL_TYPE_FUNDS_FLOW]
+    return [MODEL_TYPE_FUNDS_FLOW, MODEL_TYPE_BALANCE_TRACKING]
 
 def get_networks():
     return [NETWORK_BITCOIN]
 
 class DiscoveryMetadata(BaseModel):
     network: str = None
-    model_type: str = None
-    graph_schema: Optional[Dict] = None
     #TODO: implement method for getting graph schema from miner
 
 class DiscoveryOutput(BaseModel):
     metadata: DiscoveryMetadata = None
     block_height: int = None
     start_block_height: int = None
+    balance_model_last_block: int = None
     run_id: str = None
     version: Optional[int] = VERSION
 
@@ -131,11 +124,15 @@ class Query(BaseSynapse):
         return self.output
 
 class Challenge(BaseSynapse):
+    model_type: str # model type
 
-    # For BTC
+    # For BTC funds flow model
     in_total_amount: Optional[int] = None
     out_total_amount: Optional[int] = None
     tx_id_last_4_chars: Optional[str] = None
+    
+    # For BTC balance tracking model
+    block_height: Optional[int] = None
     
     # Altcoins
     checksum: Optional[str] = None
