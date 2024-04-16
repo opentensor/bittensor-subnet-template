@@ -57,11 +57,11 @@ class BalanceIndexer:
         inspector = inspect(self.engine)
 
         # Check if the table already exists
-        if not inspector.has_table('balance_changes'):
+        if (not inspector.has_table('balance_changes')) or (not inspector.has_table('current_balances')):
             # Create the table in the database
             Base.metadata.create_all(self.engine)
-            logger.info("Created `balance_changes` table")
-
+            logger.info("Created `balance_changes` and `current_balances` tables")
+            
         # Close the connection
         connection.close()
 
