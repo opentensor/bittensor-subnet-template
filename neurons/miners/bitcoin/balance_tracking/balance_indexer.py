@@ -2,11 +2,12 @@ import os
 from neurons.setup_logger import setup_logger
 
 from sqlalchemy import create_engine, inspect
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.sql import select
 
-from .balance_model import Base, BalanceChange
+from .balance_model import Base, BalanceChange, CurrentBalance
 
 logger = setup_logger("BalanceIndexer")
 
@@ -57,11 +58,11 @@ class BalanceIndexer:
         inspector = inspect(self.engine)
 
         # Check if the table already exists
-        if not inspector.has_table('balance_changes'):
+        if (not inspector.has_table('balance_changes')) or (not inspector.has_table('current_balances')):
             # Create the table in the database
             Base.metadata.create_all(self.engine)
-            logger.info("Created `balance_changes` table")
-
+            logger.info("Created `balance_changes` and `current_balances` tables")
+            
         # Close the connection
         connection.close()
 
@@ -111,8 +112,25 @@ class BalanceIndexer:
 
         with self.Session() as session:
             try:
-                # Add the new rows to the session
+                # Add the new rows to the balance_changes table
                 session.add_all(new_rows)
+                
+                # Update or add rows to the current_balance table
+                stmt = insert(CurrentBalance).values([
+                    {
+                        "address": change.address,
+                        "balance": change.d_balance
+                    } for change in new_rows])
+
+                do_update_stmt = stmt.on_conflict_do_update(
+                    index_elements=["address"],
+                    set_={'balance': stmt.excluded.balance + CurrentBalance.balance}
+                )
+                
+                session.execute(do_update_stmt)
+                
+                # Remove zero balances
+                session.query(CurrentBalance).filter(CurrentBalance.balance == 0).delete()
                 
                 # Commit the session to save the changes to the database
                 session.commit()
