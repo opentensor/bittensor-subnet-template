@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, BigInteger, String, PrimaryKeyConstraint
+from sqlalchemy import Column, Integer, BigInteger, String, PrimaryKeyConstraint, Index
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -24,4 +24,5 @@ class CurrentBalance(Base):
     
     __table_args__ = (
         PrimaryKeyConstraint('address'),
+        Index('idx_balance', 'balance')
     )
