@@ -40,8 +40,8 @@ from insights.api.insight_api import APIServer
 class Validator(BaseValidatorNeuron):
 
     @staticmethod
-    def get_config():
-
+    def get_config():       
+        
         parser = argparse.ArgumentParser()
         parser.add_argument(
             "--alpha", default=0.9, type=float, help="The weight moving average scoring.py."
@@ -50,6 +50,10 @@ class Validator(BaseValidatorNeuron):
         parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
         parser.add_argument("--dev", action=argparse.BooleanOptionalAction)
         # For API configuration
+        # Subnet Validator and validator API        
+        # You can invoke the API while instantiating the validator.
+        # To run API, it's needed to set `enable_api`, `api_port`, `top_rate`, `timeout`, `user_query_moving_average_alpha` additionally.
+        
         parser.add_argument("--enable_api", type=bool, default=False, help="Decide whether to launch api or not.")
         parser.add_argument("--api_port", type=int, default=8001, help="API endpoint port.")
         parser.add_argument("--timeout", type=int, default=40, help="Timeout.")
