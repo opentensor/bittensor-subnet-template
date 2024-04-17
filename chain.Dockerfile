@@ -1,16 +1,33 @@
-FROM rust:1.77-bullseye
+ARG BASE_IMAGE=ubuntu:20.04
+
+FROM $BASE_IMAGE as builder
+SHELL ["/bin/bash", "-c"]
 
 ARG NODES
-ARG WALLET
-ENV WALLET=$WALLET
+ARG WALLET_SS58_ADDRESS
+ENV WALLET_SS58_ADDRESS=$WALLET_SS58_ADDRESS
+
+# LABEL ai.opentensor.image.authors="sepehr@opentensor.ai" \
+#         ai.opentensor.image.vendor="Opentensor Foundation" \
+#         ai.opentensor.image.title="opentensor/subtensor" \
+#         ai.opentensor.image.description="Opentensor Subtensor Blockchain" \
+#         ai.opentensor.image.revision="${VCS_REF}" \
+#         ai.opentensor.image.created="${BUILD_DATE}" \
+#         ai.opentensor.image.documentation="https://docs.bittensor.com"
+
+ENV RUST_BACKTRACE 1
 
 RUN apt update && \
-    apt install --assume-yes make build-essential git clang curl libssl-dev llvm libudev-dev protobuf-compiler tmux
+    apt install -y make build-essential git clang curl libssl-dev llvm libudev-dev protobuf-compiler tmux && \ 
+    rm -rf /var/lib/apt/lists/*
+
+RUN set -o pipefail && curl https://sh.rustup.rs -sSf | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN git clone https://github.com/opentensor/subtensor.git
 WORKDIR /subtensor
 
-RUN echo "FEATURES='pow-faucet runtime-benchmarks' BT_DEFAULT_TOKEN_WALLET=$(cat ~/.bittensor/wallets/$WALLET/coldkeypub.txt | grep -oP '"ss58Address": "\K[^"]+') bash scripts/localnet.sh" >> setup_and_run.sh
+RUN echo "FEATURES='pow-faucet runtime-benchmarks' BT_DEFAULT_TOKEN_WALLET=$WALLET_SS58_ADDRESS bash scripts/localnet.sh" >> setup_and_run.sh
 RUN chmod +x setup_and_run.sh && \
     ./setup_and_run.sh
 

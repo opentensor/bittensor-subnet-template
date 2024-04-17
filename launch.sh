@@ -48,12 +48,17 @@ done
 
 
 # create owner wallet to fund all miners and validators
-btcli w create --wallet.name owner --hotkey default --no_password --no_prompt
+if [ -d $HOME/.bittensor/wallets/owner/ ]; then
+    echo "Owner wallet directory already exists. Skipping creation."
+else
+    echo "Creating owner wallet.."
+    btcli w create --wallet.name owner --hotkey default --no_password --no_prompt
+fi
 
 # create chain container
 docker build \
     -t chain \
-    --build-arg WALLET=owner \
+    --build-arg WALLET_SS58_ADDRESS=$(cat $HOME/.bittensor/wallets/owner/coldkeypub.txt | jq -r ".ss58Address") \
     -f chain.Dockerfile \
     .
 
