@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, BigInteger, String, PrimaryKeyConstraint, Index
+from sqlalchemy import Column, Integer, BigInteger, String, PrimaryKeyConstraint, Index, TIMESTAMP
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -25,4 +25,16 @@ class CurrentBalance(Base):
     __table_args__ = (
         PrimaryKeyConstraint('address'),
         Index('idx_balance', 'balance')
+    )
+
+
+class Block(Base):
+    __tablename__   = 'blocks'
+    
+    block_height     = Column(Integer, primary_key=True)
+    timestamp        = Column(TIMESTAMP)
+    
+    __table_args__ = (
+        PrimaryKeyConstraint('address'),
+        Index('idx_timestamp', 'timestamp')
     )
