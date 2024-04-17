@@ -155,7 +155,8 @@ class APIServer:
         Receive config, wallet, subtensor, metagraph from the validator and share the score of miners with the validator.
         subtensor and metagraph of APIs will change as the ones of validators change.
         """
-        self.app = FastAPI(title="Validator API")
+        self.app = FastAPI(title="validator-api",
+                           description="The goal of validator-api is to set up how to message between Chat API and validators.")
         self.config = config
         self.wallet = wallet
         self.text_query_api = TextQueryAPI(wallet=self.wallet)
@@ -164,9 +165,9 @@ class APIServer:
         self.excluded_uids = []
         self.scores = scores
         
-        @self.app.get("/api/text_query")
+        @self.app.get("/api/text_query", summary="Get /natual language query", tags=["validator api"])
         async def get_response(network:str, text: str):        
-            """Get
+            """
             Generate a response to user query
 
             This endpoint allows miners convert the natural language query from the user into a Cypher query, and then provide a concise response in natural language.
@@ -233,7 +234,7 @@ class APIServer:
             response = random.choice(responses)
             return response
         
-        @self.app.post("/api/text_query")
+        @self.app.post("/api/text_query", summary="POST /natural language query", tags=["validator api"])
         async def get_response(query: ChatMessageRequest = Body(...)):
             """
             Generate a response to user query
@@ -323,7 +324,7 @@ class APIServer:
             # return response and the hotkey of randomly selected miner
             return ChatMessageResponse(text=responses[selected], miner_id=self.metagraph.hotkeys[responded_uids[selected]])
         
-        @self.app.post("api/text_query/variant")
+        @self.app.post("api/text_query/variant", summary="POST /variation request for natual language query", tags=["validator api"])
         async def get_response_variant(query: ChatMessageVariantRequest = Body(...)):
             """            
             A validator would be able to receive a user request to generate a variation on a previously generated message. It will return the new message and store the fact that a specific miner's message had a variation request.
@@ -384,7 +385,7 @@ class APIServer:
             # return response and the hotkey of randomly selected miner
             return ChatMessageResponse(text=responses[0], miner_id=query.miner_id)
                 
-        @self.app.get("/")
+        @self.app.get("/", tags=["default"])
         def healthcheck():
             return datetime.utcnow()  
         
