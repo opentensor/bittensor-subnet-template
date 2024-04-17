@@ -24,8 +24,12 @@ import torch
 import bittensor as bt
 import os
 import yaml
+from collections import Counter
+from sklearn.cluster import KMeans
+import numpy as np
 
-from insights.protocol import Discovery, DiscoveryOutput, MAX_MINER_INSTANCE
+from insights import protocol
+from insights.protocol import Discovery, DiscoveryOutput, MAX_MINER_INSTANCE, QUERY_TYPE_SEARCH
 
 from neurons.remote_config import ValidatorConfig
 from neurons.nodes.factory import NodeFactory
@@ -33,6 +37,7 @@ from neurons.storage import store_validator_metadata
 from neurons.validators.scoring import Scorer
 from neurons.validators.uptime import MinerUptimeManager
 from neurons.validators.utils.metadata import Metadata
+from neurons.validators.utils.ping import ping
 from neurons.validators.utils.synapse import is_discovery_response_valid
 
 from neurons.validators.utils.uids import get_uids_batch
@@ -147,7 +152,16 @@ class Validator(BaseValidatorNeuron):
                 bt.logging.info(f"Discovery response: Timeout, miner {response.axon.hotkey}")
             return status_code == 200
 
-    def get_reward(self, response: Discovery, uid: int):
+    def is_response_valid(self, response: Discovery):
+        if not self.is_response_status_code_valid(response):
+            return False
+        if not is_discovery_response_valid(response):
+            return False
+        if not self.is_miner_metadata_valid(response):
+            return False
+        return True
+
+    def get_reward(self, response: Discovery, uid: int, benchmarks_result):
         try:
             uid_value = uid.item() if uid.numel() == 1 else int(uid.numpy())
             self.miner_uptime_manager.try_update_miner(uid_value, response.axon.hotkey)
@@ -164,14 +178,20 @@ class Validator(BaseValidatorNeuron):
             if not self.is_miner_metadata_valid(response):
                 self.miner_uptime_manager.down(uid_value, response.axon.hotkey)
                 return 0
-            
+
             output: DiscoveryOutput = response.output
             network = output.metadata.network
             start_block_height = output.start_block_height
             last_block_height = output.block_height
             hotkey = response.axon.hotkey
 
-            cross_validation_result, response_time = self.cross_validate(response.axon, self.nodes[network], start_block_height, last_block_height)
+            result, average_ping_time = ping(response.axon.ip, response.axon.port, attempts=10)
+            if not result:
+                bt.logging.info(f"Ping: {hotkey=} Test failed, setting score to avg_ping_time=0, continuing..")
+            else:
+                bt.logging.info(f"Ping: {hotkey=} average ping time: {average_ping_time} seconds")
+
+            cross_validation_result, _ = self.cross_validate(response.axon, self.nodes[network], start_block_height, last_block_height)
 
             if cross_validation_result is None:
                 self.miner_uptime_manager.down(uid_value, response.axon.hotkey)
@@ -182,6 +202,22 @@ class Validator(BaseValidatorNeuron):
                 bt.logging.info(f"Cross-Validation: {hotkey=} Test failed")
                 return 0
             bt.logging.info(f"Cross-Validation: {hotkey=} Test passed")
+
+            benchmark_result = benchmarks_result.get(uid_value)
+            if benchmark_result is None:
+                self.miner_uptime_manager.down(uid_value, response.axon.hotkey)
+                bt.logging.info(f"Benchmark-Validation: {hotkey=} Timeout skipping response")
+                return
+
+            response_time, benchmark_is_valid = benchmark_result
+            if not benchmark_is_valid:
+                self.miner_uptime_manager.down(uid_value, response.axon.hotkey)
+                bt.logging.info(f"Benchmark-Validation: {hotkey=} Test failed")
+                return 0
+
+            bt.logging.info(f"Benchmark-Validation: {hotkey=} Test passed")
+
+            response_time = response_time - average_ping_time
 
             self.miner_uptime_manager.up(uid_value, response.axon.hotkey)
             uptime_score = self.miner_uptime_manager.get_uptime_scores(uid_value, response.axon.hotkey)
@@ -208,7 +244,7 @@ class Validator(BaseValidatorNeuron):
             uids = next(self.uid_batch_generator, None)
 
         axons = [self.metagraph.axons[uid] for uid in uids]
-        
+
         responses = self.dendrite.query(
             axons,
             Discovery(),
@@ -216,10 +252,13 @@ class Validator(BaseValidatorNeuron):
             timeout = self.validator_config.discovery_timeout,
         )
 
+        filtered_response = [(response, uid) for response, uid in zip(responses, uids) if self.is_response_valid(response)]
+        benchmarks_result = await self.run_benchmarks(filtered_response)
+
         rewards = [
-            self.get_reward(response, uid) for response, uid in zip(responses, uids)
+            self.get_reward(response, uid, benchmarks_result) for response, uid in zip(responses, uids)
         ]
-        # Remove None reward as they represent timeout cross validation
+
         filtered_data = [(reward, uid) for reward, uid in zip(rewards, uids) if reward is not None]
 
         if filtered_data:
@@ -227,8 +266,105 @@ class Validator(BaseValidatorNeuron):
 
             rewards = torch.FloatTensor(rewards)
             self.update_scores(rewards, uids)
-        else: 
+        else:
             bt.logging.info('Skipping update_scores() as no responses were valid')
+
+    async def run_benchmarks(self, filtered_responses):
+        grouped_responses = self.group_responses(filtered_responses)
+
+        results = {}
+        for network, main_group in grouped_responses.items():
+            for label, group in main_group.items():
+                import textwrap
+                benchmark_query_script = textwrap.dedent(self.validator_config.get_benchmark_query_script(network))
+                benchmark_query_script_vars = {
+                    'network': network,
+                    'start_block': group['common_start'],
+                    'end_block': group['common_end']
+                }
+
+                exec(benchmark_query_script, benchmark_query_script_vars)
+                benchmark_query = benchmark_query_script_vars['query']
+
+                run_results = [self.run_benchmark(response, uid, benchmark_query) for (response, uid) in group['responses']]
+
+                filtered_run_results = []
+                for uid_value, response_time, response_output in run_results:
+                    if response_output is not None:
+                        filtered_run_results.append((uid_value, response_time, response_output))
+
+                if len(filtered_run_results) > 0:
+                    try:
+                        filtered_result = [response_output for uid_value, response_time, response_output in filtered_run_results]
+                        most_common_result, _ = Counter(filtered_result).most_common(1)[0]
+                        for uid_value, response_time, result in filtered_run_results:
+                            results[uid_value] = (response_time, result == most_common_result)
+                    except Exception as e:
+                        bt.logging.error(f"Error occurred during benchmarking: {traceback.format_exc()}")
+
+            return results
+
+    def run_benchmark(self, response: Discovery, uid, benchmark_query: str = "RETURN 1"):
+        try:
+            uid_value = uid.item() if uid.numel() == 1 else int(uid.numpy())
+            output: DiscoveryOutput = response.output
+
+            response = self.dendrite.query(
+                response.axon,
+                protocol.Benchmark(
+                    network=output.metadata.network,
+                    query=benchmark_query
+                ),
+                deserialize=False,
+                timeout=self.validator_config.benchmark_timeout,
+            )
+
+            if response is None or response.output is None:
+                bt.logging.debug("Benchmark validation failed")
+                return None, None, None
+
+            response_time = response.dendrite.process_time
+
+            return uid_value, response_time, response.output
+        except Exception as e:
+            bt.logging.error(f"Error occurred during benchmarking: {traceback.format_exc()}")
+            return None, None, None
+
+    def group_responses(self, responses) -> dict:
+        network_grouped_responses = {}
+
+        for resp, uid in responses:
+            net = resp.output.metadata.network
+            if net not in network_grouped_responses:
+                network_grouped_responses[net] = []
+            network_grouped_responses[net].append((resp, uid))
+
+        new_groups = {}
+        for network in network_grouped_responses:
+            data = np.array([(resp.output.start_block_height, resp.output.block_height) for (resp, uid) in network_grouped_responses[network]])
+            k = self.validator_config.benchmark_cluster_size
+
+            kmeans = KMeans(n_clusters=k, random_state=0).fit(data)
+            labels = kmeans.labels_
+
+            grouped_responses = {}
+            for label, response in zip(labels, network_grouped_responses[network]):
+                if label not in grouped_responses:
+                    grouped_responses[label] = []
+                grouped_responses[label].append(response)
+
+            for label, group in grouped_responses.items():
+                min_start = min(resp.output.start_block_height for (resp, uid) in group)
+                min_end = max(resp.output.block_height for (resp, uid) in group)
+                if network not in new_groups:
+                    new_groups[network] = {}
+                new_groups[network][label] = {
+                    'common_start': min_start,
+                    'common_end': min_end,
+                    'responses': group,
+                }
+
+        return new_groups
 
     def sync_validator(self):
         self.metadata = Metadata.build(self.metagraph, self.config)
