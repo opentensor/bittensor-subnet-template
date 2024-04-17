@@ -166,7 +166,7 @@ class APIServer:
         
         @self.app.get("/api/text_query")
         async def get_response(network:str, text: str):        
-            """Get Message-User Query
+            """Get
             Generate a response to user query
 
             This endpoint allows miners convert the natural language query from the user into a Cypher query, and then provide a concise response in natural language.
@@ -235,7 +235,7 @@ class APIServer:
         
         @self.app.post("/api/text_query")
         async def get_response(query: ChatMessageRequest = Body(...)):
-            """Post Message-User Query
+            """
             Generate a response to user query
 
             This endpoint allows miners convert the natural language query from the user into a Cypher query, and then provide a concise response in natural language.
@@ -325,7 +325,7 @@ class APIServer:
         
         @self.app.post("api/text_query/variant")
         async def get_response_variant(query: ChatMessageVariantRequest = Body(...)):
-            """Post Message/{Miner ID}/Variant
+            """
             **Description:**
             A validator would be able to receive a user request to generate a variation on a previously generated message. It will return the new message and store the fact that a specific miner's message had a variation request.
             - Receive temperature. The temperature will determine the creativity of the response.
