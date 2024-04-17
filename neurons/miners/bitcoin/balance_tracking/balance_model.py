@@ -35,6 +35,6 @@ class Block(Base):
     timestamp        = Column(TIMESTAMP)
     
     __table_args__ = (
-        PrimaryKeyConstraint('address'),
+        PrimaryKeyConstraint('block_height'),
         Index('idx_timestamp', 'timestamp')
     )
