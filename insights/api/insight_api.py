@@ -155,7 +155,7 @@ class APIServer:
         Receive config, wallet, subtensor, metagraph from the validator and share the score of miners with the validator.
         subtensor and metagraph of APIs will change as the ones of validators change.
         """
-        self.app = FastAPI()
+        self.app = FastAPI(title="Validator API")
         self.config = config
         self.wallet = wallet
         self.text_query_api = TextQueryAPI(wallet=self.wallet)
@@ -325,8 +325,7 @@ class APIServer:
         
         @self.app.post("api/text_query/variant")
         async def get_response_variant(query: ChatMessageVariantRequest = Body(...)):
-            """
-            **Description:**
+            """            
             A validator would be able to receive a user request to generate a variation on a previously generated message. It will return the new message and store the fact that a specific miner's message had a variation request.
             - Receive temperature. The temperature will determine the creativity of the response.
             - Return generated variation text and miner ID.
