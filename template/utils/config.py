@@ -17,11 +17,25 @@
 # DEALINGS IN THE SOFTWARE.
 
 import os
-import torch
+import subprocess
 import argparse
 import bittensor as bt
 from loguru import logger
 
+def is_cuda_available():
+    try:
+        output = subprocess.check_output(["nvidia-smi", "-L"], stderr=subprocess.STDOUT)
+        if "NVIDIA" in output.decode("utf-8"):
+            return "cuda"
+    except Exception:
+        pass
+    try:
+        output = subprocess.check_output(["nvcc", "--version"]).decode("utf-8")
+        if "release" in output:
+            return "cuda"
+    except Exception:
+        pass
+    return "cpu"
 
 def check_config(cls, config: "bt.Config"):
     r"""Checks/validates the config namespace object."""
@@ -67,7 +81,7 @@ def add_args(cls, parser):
         "--neuron.device",
         type=str,
         help="Device to run on.",
-        default="cuda" if torch.cuda.is_available() else "cpu",
+        default=is_cuda_available(),
     )
 
     parser.add_argument(
