@@ -1,4 +1,6 @@
 import os
+from datetime import datetime
+
 from neurons.setup_logger import setup_logger
 
 from sqlalchemy import create_engine, inspect
@@ -7,7 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.sql import select
 
-from .balance_model import Base, BalanceChange, CurrentBalance
+from .balance_model import Base, BalanceChange, CurrentBalance, Block
 
 logger = setup_logger("BalanceIndexer")
 
@@ -58,10 +60,10 @@ class BalanceIndexer:
         inspector = inspect(self.engine)
 
         # Check if the table already exists
-        if (not inspector.has_table('balance_changes')) or (not inspector.has_table('current_balances')):
+        if (not inspector.has_table('balance_changes')) or (not inspector.has_table('current_balances')) or (not inspector.has_table('blocks')):
             # Create the table in the database
             Base.metadata.create_all(self.engine)
-            logger.info("Created `balance_changes` and `current_balances` tables")
+            logger.info("Created 3 tables: `balance_changes`, `current_balances`, `blocks`")
             
         # Close the connection
         connection.close()
@@ -131,6 +133,10 @@ class BalanceIndexer:
                 
                 # Remove zero balances
                 session.query(CurrentBalance).filter(CurrentBalance.balance == 0).delete()
+                
+                # Add new row to blocks table
+                timestamp = datetime.utcfromtimestamp(block_data.timestamp)
+                session.add(Block(block_height=block_height, timestamp=timestamp))
                 
                 # Commit the session to save the changes to the database
                 session.commit()
