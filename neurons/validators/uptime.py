@@ -101,7 +101,6 @@ class MinerUptimeManager:
                     return True  # Indicate successful addition of new downtime
             return False  # No new downtime was added, either miner does not exist or last downtime is still open
 
-
     def end_last_downtime(self, miner_id, session):
         last_downtime = session.query(DowntimeLog).filter(DowntimeLog.miner_id == miner_id, DowntimeLog.end_time == None).first()
         if last_downtime:
@@ -122,7 +121,6 @@ class MinerUptimeManager:
 
             actual_uptime_seconds = max(0, active_seconds - total_downtime)
             return actual_uptime_seconds / active_seconds if active_seconds > 0 else 0
-
 
     def get_uptime_scores(self, uid, hotkey):
         day = self.calculate_uptime(uid, hotkey, 86400)

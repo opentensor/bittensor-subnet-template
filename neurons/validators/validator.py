@@ -255,8 +255,8 @@ class Validator(BaseValidatorNeuron):
             timeout=self.validator_config.discovery_timeout,
         )
 
-        filtered_response = [(response, uid) for response, uid in zip(responses, uids) if self.is_response_valid(response)]
-        benchmarks_result = await self.run_benchmarks(filtered_response)
+        responses_to_benchmark = [(response, uid) for response, uid in zip(responses, uids) if self.is_response_status_code_valid(response)]
+        benchmarks_result = await self.run_benchmarks(responses_to_benchmark)
 
         rewards = [
             self.get_reward(response, uid, benchmarks_result) for response, uid in zip(responses, uids)
