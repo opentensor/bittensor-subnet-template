@@ -364,6 +364,7 @@ class Validator(BaseValidatorNeuron):
                     grouped_responses[label] = []
                 grouped_responses[label].append(response)
 
+            # we find here common starting and ending block height for each group
             for label, group in grouped_responses.items():
                 min_start = min(resp.output.start_block_height for (resp, uid) in group)
                 min_end = min(resp.output.block_height for (resp, uid) in group)
