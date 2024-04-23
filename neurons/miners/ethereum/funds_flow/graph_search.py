@@ -59,10 +59,6 @@ class GraphSearch:
                 return result
             else:
                 return None
-            
-    def get_run_id(self):
-        records, summary, keys = self.driver.execute_query("RETURN 1")
-        return summary.metadata.get('run_id', None)
 
     def get_block_transactions(self, block_number: typing.List[int]):
         with self.driver.session() as session:

@@ -3,7 +3,6 @@ import time
 import json
 import requests
 import bittensor as bt
-import numpy as np
 import threading
 # Constants for configuration URLs
 
@@ -50,8 +49,8 @@ class RemoteConfig:
                 try:
                     response = requests.get(self.config_url, timeout=10)
                     response.raise_for_status()
-                    self.config_cache = response.json()                                        
-                                      
+                    self.config_cache = response.json()
+
                     file_name = os.path.basename(self.config_url)
                     dir_path = os.path.dirname(os.path.abspath(__file__))
                     file_path = os.path.join(dir_path, file_name)
@@ -85,7 +84,7 @@ class RemoteConfig:
     def stop_update_thread(self):
         self.stop_event.set()
         self.thread.join()
-    
+
 
 class MinerConfig(RemoteConfig):
     def __init__(self):
@@ -101,9 +100,7 @@ class MinerConfig(RemoteConfig):
         self.set_weights = True
         self.set_weights_frequency = 6011
         self.store_metadata_frequency = 6000
-        self.inmemory_hotkeys = []    
 
-    
     def load_and_get_config_values(self):
         # Load remote configuration
         self.load_remote_config()
@@ -121,8 +118,6 @@ class MinerConfig(RemoteConfig):
         self.set_weights = self.get_config_value('set_weights', True)
         self.set_weights_frequency = self.get_config_value('set_weights_frequency', 6011)
         self.store_metadata_frequency = self.get_config_value('store_metadata_frequency', 6000)
-        
-        self.inmemory_hotkeys = self.get_config_value('inmemory_hotkeys', [])
         
         return self
     
@@ -143,25 +138,29 @@ class ValidatorConfig(RemoteConfig):
 
         self.blockchain_importance = None
         self.blockchain_recency_weight = None
+        self.uptime_weight = None
         self.is_grace_period = None
-        
+
         self.config_url = os.getenv("VALIDATOR_REMOTE_CONFIG_URL", 'https://subnet-15-cfg.s3.fr-par.scw.cloud/validator3.json')
 
     def load_and_get_config_values(self):
         self.load_remote_config()
 
         # Retrieve specific configuration values
-        self.process_time_weight = self.get_config_value('process_time_weight', 1)
-        self.block_height_weight = self.get_config_value('block_height_weight', 1)
-        self.block_height_recency_weight = self.get_config_value('block_height_recency_weight',  1)
+        self.process_time_weight = self.get_config_value('process_time_weight', 16)
+        self.block_height_weight = self.get_config_value('block_height_weight', 54)
+        self.uptime_weight = self.get_config_value('uptime_weight', 16)
+
+        self.block_height_recency_weight = self.get_config_value('block_height_recency_weight',  5)
         self.blockchain_importance_weight = self.get_config_value('blockchain_importance_weight', 1)
         
-        self.discovery_timeout = self.get_config_value('discovery_timeout', 100)
-        self.challenge_timeout = self.get_config_value('challenge_timeout', 100)
+        self.discovery_timeout = self.get_config_value('discovery_timeout', 6)
+        self.challenge_timeout = self.get_config_value('challenge_timeout', 6)
 
         self.blockchain_importance = self.get_config_value('blockchain_importance', {"bitcoin": 0.9, "doge": 0.1})
         self.blockchain_recency_weight = self.get_config_value('blockchain_recency_weight',  {"bitcoin": 2, "doge": 2})
         self.is_grace_period = self.get_config_value('is_grace_period', False)
+
         return self
 
     def get_blockchain_min_blocks(self, network):
