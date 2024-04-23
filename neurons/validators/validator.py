@@ -1,8 +1,7 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
 # Copyright © 2023 aph5nt
-
-
+import concurrent
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
 # the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
@@ -20,6 +19,8 @@
 import time
 import argparse
 import traceback
+
+import asyncio
 import torch
 import bittensor as bt
 import os
@@ -39,9 +40,11 @@ from neurons.validators.uptime import MinerUptimeManager
 from neurons.validators.utils.metadata import Metadata
 from neurons.validators.utils.ping import ping
 from neurons.validators.utils.synapse import is_discovery_response_valid
-
+from concurrent.futures import ThreadPoolExecutor
 from neurons.validators.utils.uids import get_uids_batch
 from template.base.validator import BaseValidatorNeuron
+
+
 class Validator(BaseValidatorNeuron):
 
     @staticmethod
@@ -249,7 +252,7 @@ class Validator(BaseValidatorNeuron):
             axons,
             Discovery(),
             deserialize=True,
-            timeout = self.validator_config.discovery_timeout,
+            timeout=self.validator_config.discovery_timeout,
         )
 
         filtered_response = [(response, uid) for response, uid in zip(responses, uids) if self.is_response_valid(response)]
@@ -286,30 +289,26 @@ class Validator(BaseValidatorNeuron):
                 exec(benchmark_query_script, benchmark_query_script_vars)
                 benchmark_query = benchmark_query_script_vars['query']
 
-                run_results = [self.run_benchmark(response, uid, benchmark_query) for (response, uid) in group['responses']]
+                benchmark_results = await self.execute_benchmarks(group, benchmark_query)
 
-                filtered_run_results = []
-                for uid_value, response_time, response_output in run_results:
-                    if response_output is not None:
-                        filtered_run_results.append((uid_value, response_time, response_output))
-
-                if len(filtered_run_results) > 0:
+                if len(benchmark_results) > 0:
                     try:
-                        filtered_result = [response_output for uid_value, response_time, response_output in filtered_run_results]
+                        filtered_result = [response_output for uid_value, response_time, response_output in benchmark_results]
                         most_common_result, _ = Counter(filtered_result).most_common(1)[0]
-                        for uid_value, response_time, result in filtered_run_results:
+                        for uid_value, response_time, result in benchmark_results:
                             results[uid_value] = (response_time, result == most_common_result)
                     except Exception as e:
                         bt.logging.error(f"Error occurred during benchmarking: {traceback.format_exc()}")
 
             return results
 
-    def run_benchmark(self, response: Discovery, uid, benchmark_query: str = "RETURN 1"):
+    async def run_benchmark(self, response: Discovery, uid, benchmark_query: str = "RETURN 1"):
         try:
+            bt.logging.info(f"Running benchmark for {response.axon.hotkey}")
             uid_value = uid.item() if uid.numel() == 1 else int(uid.numpy())
             output: DiscoveryOutput = response.output
 
-            response = self.dendrite.query(
+            benchmark_response = self.dendrite.query(
                 response.axon,
                 protocol.Benchmark(
                     network=output.metadata.network,
@@ -319,16 +318,28 @@ class Validator(BaseValidatorNeuron):
                 timeout=self.validator_config.benchmark_timeout,
             )
 
-            if response is None or response.output is None:
-                bt.logging.debug("Benchmark validation failed")
+            if benchmark_response is None or benchmark_response.output is None:
+                bt.logging.debug(f"Benchmark validation failed for {response.axon.hotkey}")
                 return None, None, None
 
-            response_time = response.dendrite.process_time
+            response_time = benchmark_response.dendrite.process_time
 
-            return uid_value, response_time, response.output
+            bt.logging.info(f"Benchmark validation passed for {response.axon.hotkey} with response time {response_time}, output: {benchmark_response.output}, uid: {uid_value}")
+            return uid_value, response_time, benchmark_response.output
         except Exception as e:
-            bt.logging.error(f"Error occurred during benchmarking: {traceback.format_exc()}")
+            bt.logging.error(f"Error occurred during benchmarking {response.axon.hotkey}: {traceback.format_exc()}")
             return None, None, None
+
+    async def execute_benchmarks(self, group, benchmark_query):
+        tasks = [self.run_benchmark(response, uid, benchmark_query) for response, uid in group['responses']]
+        results = await asyncio.gather(*tasks)
+
+        filtered_run_results = []
+        for uid_value, response_time, response_output in results:
+            if response_output is not None:
+                filtered_run_results.append((uid_value, response_time, response_output))
+
+        return filtered_run_results
 
     def group_responses(self, responses) -> dict:
         network_grouped_responses = {}
@@ -355,7 +366,7 @@ class Validator(BaseValidatorNeuron):
 
             for label, group in grouped_responses.items():
                 min_start = min(resp.output.start_block_height for (resp, uid) in group)
-                min_end = max(resp.output.block_height for (resp, uid) in group)
+                min_end = min(resp.output.block_height for (resp, uid) in group)
                 if network not in new_groups:
                     new_groups[network] = {}
                 new_groups[network][label] = {

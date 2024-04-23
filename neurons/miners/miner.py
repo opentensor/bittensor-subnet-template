@@ -185,6 +185,8 @@ class Miner(BaseMinerNeuron):
 
     async def benchmark(self, synapse: protocol.Benchmark) -> protocol.Benchmark:
         try:
+            bt.logging.info(f"Executing benchmark query: {synapse.query}")
+
             result = self.graph_search.execute_benchmark_query(cypher_query=synapse.query)
             synapse.output = result[0]
 

@@ -146,7 +146,7 @@ class ValidatorConfig(RemoteConfig):
         self.benchmark_enabled = True
         self.benchmark_consensus = 0.51
         self.benchmark_query_script = None
-        self.benchmark_timeout = 60
+        self.benchmark_timeout = 600
         self.benchmark_cluster_size = 1
 
         self.config_url = os.getenv("VALIDATOR_REMOTE_CONFIG_URL", 'https://subnet-15-cfg.s3.fr-par.scw.cloud/validator3.json')
@@ -174,7 +174,7 @@ class ValidatorConfig(RemoteConfig):
 
         self.benchmark_query_script = self.get_config_value('benchmark_query_script',  {"bitcoin": "RETURN 1"})
 
-        self.benchmark_timeout = self.get_config_value('benchmark_timeout', 60)
+        self.benchmark_timeout = self.get_config_value('benchmark_timeout', 600)
         self.benchmark_cluster_size = self.get_config_value('benchmark_cluster_size', 1)
 
         return self
@@ -193,8 +193,11 @@ class ValidatorConfig(RemoteConfig):
 
     def get_benchmark_query_script(self, network):
         return self.get_config_value(f'benchmark_query_script.{network}', """
+        import random
+
         def build_query(network, start_block, end_block):
-            return "RETURN  1"
+            block_num = random.randint(start_block, end_block)
+            return f"MATCH (t:Transaction) WHERE t.block_height > {block_num} AND t.block_height < {block_num+2} RETURN SUM(t.block_height)"
 
         # Execute the function and store the result in a variable
         query = build_query(network, start_block, end_block)
