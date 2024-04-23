@@ -43,9 +43,10 @@ def check_config(cls, config: "bt.Config"):
 
     if not config.neuron.dont_save_events:
         # Add custom event logger for the events.
-        setup_events_logger(
+        events_logger = setup_events_logger(
             config.neuron.full_path, config.neuron.events_retention_size
         )
+        bt.logging.register_primary_logger(events_logger.name)
 
 
 def add_args(cls, parser):
@@ -80,7 +81,7 @@ def add_args(cls, parser):
         "--neuron.events_retention_size",
         type=str,
         help="Events retention size.",
-        default="2 GB",
+        default=2 * 1024 * 1024 * 1024,  # 2 GB
     )
 
     parser.add_argument(

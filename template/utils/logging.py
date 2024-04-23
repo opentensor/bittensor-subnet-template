@@ -7,16 +7,16 @@ DEFAULT_LOG_BACKUP_COUNT = 10
 
 
 def setup_events_logger(full_path, events_retention_size):
-    logging.addLevelName(EVENTS_LEVEL_NUM, "EVENTS")
+    logging.addLevelName(EVENTS_LEVEL_NUM, "EVENT")
 
-    logger = logging.getLogger("bittensor.events")
+    logger = logging.getLogger("event")
     logger.setLevel(EVENTS_LEVEL_NUM)
 
-    def events(self, message, *args, **kws):
+    def event(self, message, *args, **kws):
         if self.isEnabledFor(EVENTS_LEVEL_NUM):
             self._log(EVENTS_LEVEL_NUM, message, args, **kws)
 
-    logging.Logger.events = events
+    logging.Logger.event = event
 
     formatter = logging.Formatter(
         "%(asctime)s | %(levelname)s | %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
