@@ -100,6 +100,7 @@ class MinerConfig(RemoteConfig):
         self.set_weights = True
         self.set_weights_frequency = 6011
         self.store_metadata_frequency = 6000
+        self.query_restricted_keywords = None
 
     def load_and_get_config_values(self):
         # Load remote configuration
@@ -118,6 +119,7 @@ class MinerConfig(RemoteConfig):
         self.set_weights = self.get_config_value('set_weights', True)
         self.set_weights_frequency = self.get_config_value('set_weights_frequency', 6011)
         self.store_metadata_frequency = self.get_config_value('store_metadata_frequency', 6000)
+        self.query_restricted_keywords = self.get_config_value('benchmark_restricted_keywords', ['CREATE', 'SET', 'DELETE', 'DETACH', 'REMOVE', 'MERGE', 'CREATE INDEX', 'DROP INDEX', 'CREATE CONSTRAINT', 'DROP CONSTRAINT'])
         
         return self
     
@@ -141,6 +143,12 @@ class ValidatorConfig(RemoteConfig):
         self.uptime_weight = None
         self.is_grace_period = None
 
+        self.benchmark_enabled = True
+        self.benchmark_consensus = 0.51
+        self.benchmark_query_script = None
+        self.benchmark_timeout = 600
+        self.benchmark_cluster_size = 1
+
         self.config_url = os.getenv("VALIDATOR_REMOTE_CONFIG_URL", 'https://subnet-15-cfg.s3.fr-par.scw.cloud/validator3.json')
 
     def load_and_get_config_values(self):
@@ -161,6 +169,14 @@ class ValidatorConfig(RemoteConfig):
         self.blockchain_recency_weight = self.get_config_value('blockchain_recency_weight',  {"bitcoin": 2, "doge": 2})
         self.is_grace_period = self.get_config_value('is_grace_period', False)
 
+        self.benchmark_enabled = self.get_config_value('benchmark_enabled', True)
+        self.benchmark_consensus = self.get_config_value('benchmark_consensus', 0.51)
+
+        self.benchmark_query_script = self.get_config_value('benchmark_query_script',  {"bitcoin": "RETURN 1"})
+
+        self.benchmark_timeout = self.get_config_value('benchmark_timeout', 600)
+        self.benchmark_cluster_size = self.get_config_value('benchmark_cluster_size', 1)
+
         return self
 
     def get_blockchain_min_blocks(self, network):
@@ -174,3 +190,15 @@ class ValidatorConfig(RemoteConfig):
 
     def get_blockchain_recency_weight(self, network):
         return self.get_config_value(f'blockchain_recency_weight.{network}', 2)
+
+    def get_benchmark_query_script(self, network):
+        return self.get_config_value(f'benchmark_query_script.{network}', """
+        import random
+
+        def build_query(network, start_block, end_block):
+            block_num = random.randint(start_block, end_block)
+            return f"MATCH (t:Transaction) WHERE t.block_height > {block_num} AND t.block_height < {block_num+2} RETURN SUM(t.block_height)"
+
+        # Execute the function and store the result in a variable
+        query = build_query(network, start_block, end_block)
+        """)

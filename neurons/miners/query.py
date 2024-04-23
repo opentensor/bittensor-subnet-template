@@ -50,10 +50,10 @@ def execute_query_proxy(network, model_type, query):
             graph_search
         )
 
-def is_query_only(cypher_query):
-    modification_keywords = ['CREATE', 'SET', 'DELETE', 'DETACH', 'REMOVE', 'MERGE', 'CREATE INDEX', 'DROP INDEX', 'CREATE CONSTRAINT', 'DROP CONSTRAINT']
+
+def is_query_only(query_restricted_keywords, cypher_query):
     normalized_query = cypher_query.upper()
-    for keyword in modification_keywords:
+    for keyword in query_restricted_keywords:
         if keyword in normalized_query:
             return False
     return True

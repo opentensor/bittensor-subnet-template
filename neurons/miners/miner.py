@@ -17,7 +17,7 @@ from insights import protocol
 from template.base.miner import BaseMinerNeuron
 
 from neurons.miners import blacklist
-from insights.protocol import MODEL_TYPE_FUNDS_FLOW, NETWORK_BITCOIN, NETWORK_ETHEREUM
+from insights.protocol import MODEL_TYPE_FUNDS_FLOW, NETWORK_BITCOIN, NETWORK_ETHEREUM, QueryOutput
 from neurons.storage import store_miner_metadata
 from neurons.remote_config import MinerConfig
 from neurons.nodes.factory import NodeFactory
@@ -109,6 +109,10 @@ class Miner(BaseMinerNeuron):
             forward_fn=self.challenge,
             blacklist_fn=self.challenge_blacklist,
             priority_fn=self.challenge_priority,
+        ).attach(
+            forward_fn=self.benchmark,
+            blacklist_fn=self.benchmark_blacklist,
+            priority_fn=self.benchmark_priority,
         )
 
         bt.logging.info(f"Axon created: {self.axon}")
@@ -148,7 +152,7 @@ class Miner(BaseMinerNeuron):
             synapse.output = None
         return synapse
 
-    async def query(self, synapse: protocol.Query ) -> protocol.Query:
+    async def query(self, synapse: protocol.Query) -> protocol.Query:
         synapse.output = {}
         try:
             synapse.output["result"] = self.graph_search.execute_query(query=synapse)
@@ -179,6 +183,18 @@ class Miner(BaseMinerNeuron):
             synapse.output = None
         return synapse
 
+    async def benchmark(self, synapse: protocol.Benchmark) -> protocol.Benchmark:
+        try:
+            bt.logging.info(f"Executing benchmark query: {synapse.query}")
+
+            result = self.graph_search.execute_benchmark_query(cypher_query=synapse.query)
+            synapse.output = result[0]
+
+            bt.logging.info(f"Serving miner benchmark output: {synapse.output}")
+        except Exception as e:
+            bt.logging.error(traceback.format_exc())
+        return synapse
+
     async def block_check_blacklist(self, synapse: protocol.BlockCheck) -> typing.Tuple[bool, str]:
         return blacklist.base_blacklist(self, synapse=synapse)
 
@@ -191,6 +207,8 @@ class Miner(BaseMinerNeuron):
     async def challenge_blacklist(self, synapse: protocol.Challenge) -> typing.Tuple[bool, str]:
         return blacklist.base_blacklist(self, synapse=synapse)
 
+    async def benchmark_blacklist(self, synapse: protocol.Benchmark) -> typing.Tuple[bool, str]:
+        return blacklist.base_blacklist(self, synapse=synapse)
 
     def base_priority(self, synapse: bt.Synapse) -> float:
         caller_uid = self.metagraph.hotkeys.index(
@@ -214,6 +232,9 @@ class Miner(BaseMinerNeuron):
         return self.base_priority(synapse=synapse)
 
     async def challenge_priority(self, synapse: protocol.Challenge) -> float:
+        return self.base_priority(synapse=synapse)
+
+    async def benchmark_priority(self, synapse: protocol.Benchmark) -> float:
         return self.base_priority(synapse=synapse)
 
     def resync_metagraph(self):

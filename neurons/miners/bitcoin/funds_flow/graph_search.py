@@ -51,12 +51,16 @@ class GraphSearch:
             return result
         except Exception as e:
             raise Exception(f"cypher query execution error: {e}")
-    
-    
+
     def execute_cypher_query(self, cypher_query: str):
         with self.driver.session() as session:
             result = session.run(cypher_query)
             return result
+
+    def execute_benchmark_query(self, cypher_query: str):
+        with self.driver.session() as session:
+            result = session.run(cypher_query)
+            return result.single()
 
     def get_block_transactions(self, block_heights: typing.List[int]):
         with self.driver.session() as session:
