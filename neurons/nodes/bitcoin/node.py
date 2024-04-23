@@ -114,7 +114,7 @@ class BitcoinNode(Node):
                 return address, amount
             except Exception as e:
                 address = f"unknown-{txn_id}"
-                return address, amount
+                return address, 0
             finally:
                 rpc_connection._AuthServiceProxy__conn.close()  # Close the connection
         else: # get from hash table if exists
