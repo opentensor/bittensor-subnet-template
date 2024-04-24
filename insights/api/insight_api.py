@@ -320,7 +320,7 @@ class APIServer:
 
             bt.logging.info(f"Responses are {responses}")
             
-            selected = random.choice(len(responses))
+            selected = random.choice(responses)
 
             # return response and the hotkey of randomly selected miner
             return ChatMessageResponse(text=responses[selected], miner_id=self.metagraph.hotkeys[responded_uids[selected]])
