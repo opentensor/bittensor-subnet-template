@@ -232,6 +232,7 @@ class APIServer:
             if not responses:
                 # TODO: I have received 0 responses due to some issues
                 return "Please try again. Can't receive any responses due to the poor network connection."
+            r_count = len(responses)
             response = random.choice(responses)
             return response
         
@@ -320,10 +321,10 @@ class APIServer:
 
             bt.logging.info(f"Responses are {responses}")
             
-            selected = random.choice(responses)
+            selected_index = responses.index(random.choice(responses))
 
             # return response and the hotkey of randomly selected miner
-            return ChatMessageResponse(text=responses[selected], miner_id=self.metagraph.hotkeys[responded_uids[selected]])
+            return ChatMessageResponse(text=responses[selected_index], miner_id=self.metagraph.hotkeys[responded_uids[selected_index]])
         
         @self.app.post("api/text_query/variant", summary="POST /variation request for natual language query", tags=["validator api"])
         async def get_response_variant(query: ChatMessageVariantRequest = Body(...)):
