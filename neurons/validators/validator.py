@@ -102,15 +102,16 @@ class Validator(BaseValidatorNeuron):
                 axon,
                 challenge,
                 deserialize=False,
-                timeout = self.validator_config.challenge_timeout,
+                timeout=120#self.validator_config.challenge_timeout,
             )
-            
+
+            response_time = response.dendrite.process_time
+            bt.logging.info(f"Cross validation response time: {response_time}, status_code: {response.axon.status_code}")
+
             if response is None or response.output is None:
                 bt.logging.debug("Cross validation failed")
                 return False, 128
-            
-            response_time = response.dendrite.process_time
-            
+
             # if the miner's response is different from the expected response and validation failed
             if not response.output == expected_response and not node.validate_challenge_response_output(challenge, response.output):
                 return False, response_time
@@ -256,7 +257,7 @@ class Validator(BaseValidatorNeuron):
             timeout=self.validator_config.discovery_timeout,
         )
 
-        responses_to_benchmark = [(response, uid) for response, uid in zip(responses, uids) if self.is_response_status_code_valid(response)]
+        responses_to_benchmark = [(response, uid) for response, uid in zip(responses, uids) if self.is_response_valid(response)]
         benchmarks_result = await self.run_benchmarks(responses_to_benchmark)
 
         rewards = [
