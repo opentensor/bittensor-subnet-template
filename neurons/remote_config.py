@@ -4,6 +4,9 @@ import json
 import requests
 import bittensor as bt
 import threading
+
+import insights
+
 # Constants for configuration URLs
 
 UPDATE_INTERVAL = 3600  # Time interval for updating configuration in seconds
@@ -149,6 +152,9 @@ class ValidatorConfig(RemoteConfig):
         self.benchmark_timeout = 600
         self.benchmark_cluster_size = 1
 
+        self.version = None
+        self.version_update = True
+
         self.config_url = os.getenv("VALIDATOR_REMOTE_CONFIG_URL", 'https://subnet-15-cfg.s3.fr-par.scw.cloud/validator3.json')
 
     def load_and_get_config_values(self):
@@ -176,6 +182,9 @@ class ValidatorConfig(RemoteConfig):
 
         self.benchmark_timeout = self.get_config_value('benchmark_timeout', 600)
         self.benchmark_cluster_size = self.get_config_value('benchmark_cluster_size', 1)
+
+        self.version_update = self.get_config_value('version_update', True)
+        self.version = self.get_config_value('version', insights.__version__)
 
         return self
 
