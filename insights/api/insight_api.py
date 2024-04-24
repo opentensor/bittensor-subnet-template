@@ -158,6 +158,7 @@ class APIServer:
         self.app = FastAPI(title="validator-api",
                            description="The goal of validator-api is to set up how to message between Chat API and validators.")
         self.config = config
+        self.device = self.config.neuron.device
         self.wallet = wallet
         self.text_query_api = TextQueryAPI(wallet=self.wallet)
         self.subtensor = subtensor
