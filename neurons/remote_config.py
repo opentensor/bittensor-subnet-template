@@ -150,7 +150,7 @@ class ValidatorConfig(RemoteConfig):
         self.benchmark_consensus = 0.51
         self.benchmark_query_script = None
         self.benchmark_timeout = 600
-        self.benchmark_cluster_size = 1
+        self.benchmark_cluster_size = 32
 
         self.version = None
         self.version_update = True
@@ -204,9 +204,10 @@ class ValidatorConfig(RemoteConfig):
         return self.get_config_value(f'benchmark_query_script.{network}', """
         import random
 
-        def build_query(network, start_block, end_block):
-            block_num = random.randint(start_block, end_block)
-            return f"MATCH (t:Transaction) WHERE t.block_height > {block_num} AND t.block_height < {block_num+2} RETURN SUM(t.block_height)"
+        def build_query(network, start_block, end_block, diff = 1000):
+            mid_point = start_block + (end_block - start_block) // 2
+            block_num = random.randint(mid_point, end_block - diff)
+            return f"UNWIND range({block_num}, {block_num + diff}) AS block_height MATCH (p:Transaction) WHERE p.block_height = block_height RETURN SUM(p.block_height);"
 
         # Execute the function and store the result in a variable
         query = build_query(network, start_block, end_block)

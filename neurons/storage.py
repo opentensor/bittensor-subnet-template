@@ -88,7 +88,7 @@ def store_validator_metadata(config, wallet, uid):
         bt.logging.info(f"Storing validator metadata")
 
         docker_image = get_docker_image_version()
-        metadata =  ValidatorMetadata(
+        metadata = ValidatorMetadata(
             b=subtensor.block,
             di=docker_image,
             cv=insights.__version__
