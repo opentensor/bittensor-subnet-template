@@ -258,7 +258,7 @@ class Validator(BaseValidatorNeuron):
         )
 
         responses_to_benchmark = [(response, uid) for response, uid in zip(responses, uids) if self.is_response_valid(response)]
-        benchmarks_result = await self.run_benchmarks(responses_to_benchmark)
+        benchmarks_result = self.run_benchmarks(responses_to_benchmark)
 
         rewards = [
             self.get_reward(response, uid, benchmarks_result) for response, uid in zip(responses, uids)
@@ -274,7 +274,7 @@ class Validator(BaseValidatorNeuron):
         else:
             bt.logging.info('Skipping update_scores() as no responses were valid')
 
-    async def run_benchmarks(self, filtered_responses):
+    def run_benchmarks(self, filtered_responses):
         grouped_responses = self.group_responses(filtered_responses)
 
         results = {}
@@ -291,7 +291,7 @@ class Validator(BaseValidatorNeuron):
                 exec(benchmark_query_script, benchmark_query_script_vars)
                 benchmark_query = benchmark_query_script_vars['query']
 
-                benchmark_results = await self.execute_benchmarks(group, benchmark_query)
+                benchmark_results = self.execute_benchmarks(group, benchmark_query)
 
                 if len(benchmark_results) > 0:
                     try:
@@ -304,9 +304,8 @@ class Validator(BaseValidatorNeuron):
 
             return results
 
-    async def run_benchmark(self, response: Discovery, uid, benchmark_query: str = "RETURN 1"):
+    def run_benchmark(self, response: Discovery, uid, benchmark_query: str = "RETURN 1"):
         try:
-            bt.logging.info(f"Running benchmark for {response.axon.hotkey}")
             uid_value = uid.item() if uid.numel() == 1 else int(uid.numpy())
             output: DiscoveryOutput = response.output
 
@@ -332,9 +331,13 @@ class Validator(BaseValidatorNeuron):
             bt.logging.error(f"Error occurred during benchmarking {response.axon.hotkey}: {traceback.format_exc()}")
             return None, None, None
 
-    async def execute_benchmarks(self, group, benchmark_query):
-        tasks = [self.run_benchmark(response, uid, benchmark_query) for response, uid in group['responses']]
-        results = await asyncio.gather(*tasks)
+    def execute_benchmarks(self, group, benchmark_query):
+
+        results = []
+        for response, uid in group['responses']:
+            bt.logging.info(f"Running benchmark for {response.axon.hotkey}")
+            result = self.run_benchmark(response, uid, benchmark_query)
+            results.append(result)
 
         filtered_run_results = []
         for uid_value, response_time, response_output in results:
