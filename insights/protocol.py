@@ -102,6 +102,16 @@ class Query(BaseSynapse):
     def deserialize(self) -> Dict:
         return self.output
 
+class Benchmark(BaseSynapse):
+    network: str = None
+    query: str = None
+
+    # output
+    output: Optional[float] = None
+
+    def deserialize(self) -> Dict:
+        return self.output
+
 class Challenge(BaseSynapse):
 
     # For BTC

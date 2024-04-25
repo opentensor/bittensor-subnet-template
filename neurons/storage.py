@@ -17,7 +17,6 @@ class MinerMetadata(Metadata):
     lb: Optional[int] #end_block_height
     n: Optional[int] #network
     mt: Optional[int] #model_type
-    ri: Optional[str] #run_id
     cv: Optional[str] #code_version
     
     @staticmethod
@@ -55,13 +54,11 @@ def get_commitment_wrapper(subtensor, netuid, _, hotkey, block=None):
 
 def store_miner_metadata(config, graph_search, wallet, start_block, last_block):
     def get_metadata():
-        run_id = graph_search.get_run_id()
         return MinerMetadata(
             sb=start_block,
             lb=last_block,
             n=get_network_id(config.network),
             mt=get_model_id(config.model_type),
-            ri=run_id,
             cv=insights.__version__
         )
 
@@ -91,7 +88,7 @@ def store_validator_metadata(config, wallet, uid):
         bt.logging.info(f"Storing validator metadata")
 
         docker_image = get_docker_image_version()
-        metadata =  ValidatorMetadata(
+        metadata = ValidatorMetadata(
             b=subtensor.block,
             di=docker_image,
             cv=insights.__version__
@@ -105,7 +102,7 @@ def store_validator_metadata(config, wallet, uid):
         existing_commitment = subtensor.get_commitment(config.netuid, uid)
         if existing_commitment is not None:
             dual_miner = MinerMetadata.from_compact(existing_commitment)
-            if dual_miner.ri is not None:
+            if dual_miner.sb is not None:
                 bt.logging.info(f"Skipping storing validator metadata, as this is a dual hotkey for miner and validator: {metadata}")
                 return
 

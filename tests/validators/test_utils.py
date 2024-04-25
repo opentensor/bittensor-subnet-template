@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import Mock
 
-from neurons.validators.utils.utils import get_miner_distributions, count_run_id_per_hotkey, count_hotkeys_per_ip, generate_challenge_to_check
+from neurons.validators.utils.utils import count_hotkeys_per_ip, generate_challenge_to_check
 from neurons.nodes.bitcoin.node_utils import process_in_memory_txn_for_indexing
 from neurons.nodes.factory import NodeFactory
 from neurons.miners.bitcoin.funds_flow.graph_creator import GraphCreator
@@ -27,20 +27,6 @@ class TestUtils(unittest.TestCase):
     #     # Check the result
     #     expected_result = {1: 2, 2: 1}
     #     self.assertEqual(result, expected_result)
-
-    def test_count_run_id_per_hotkey(self):
-        # Mock data
-        metadata = {
-            'hotkey1': Mock(ri=1),
-            'hotkey2': Mock(ri=2),
-            'hotkey3': Mock(ri=1),
-        }
-
-        result = count_run_id_per_hotkey(metadata)
-
-        # Check the result
-        expected_result = {'hotkey1': 1, 'hotkey2': 1, 'hotkey3': 1}
-        self.assertEqual(result, expected_result)
 
     def test_count_hotkeys_per_ip(self):
         # Mock data
