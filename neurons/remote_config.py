@@ -204,7 +204,7 @@ class ValidatorConfig(RemoteConfig):
         return self.get_config_value(f'benchmark_query_script.{network}', """
         import random
 
-        def build_query(network, start_block, end_block, diff = 1000):
+        def build_query(network, start_block, end_block, diff = 10000):
             mid_point = start_block + (end_block - start_block) // 2
             block_num = random.randint(mid_point, end_block - diff)
             return f"UNWIND range({block_num}, {block_num + diff}) AS block_height MATCH (p:Transaction) WHERE p.block_height = block_height RETURN SUM(p.block_height);"

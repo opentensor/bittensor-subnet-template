@@ -102,7 +102,7 @@ class Validator(BaseValidatorNeuron):
                 axon,
                 challenge,
                 deserialize=False,
-                timeout=120#self.validator_config.challenge_timeout,
+                timeout=self.validator_config.challenge_timeout,
             )
 
             response_time = response.dendrite.process_time
