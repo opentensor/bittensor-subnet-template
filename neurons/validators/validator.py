@@ -147,7 +147,7 @@ class Validator(BaseValidatorNeuron):
                 return False, response_time
             
             # second, validate balance model response
-            challenge, expected_response = challenge_factory.get_challenge(balance_model_last_block)
+            challenge, expected_response = challenge_factory[MODEL_TYPE_BALANCE_TRACKING].get_challenge(balance_model_last_block)
             
             response = self.dendrite.query(
                 axon,
@@ -256,6 +256,13 @@ class Validator(BaseValidatorNeuron):
                 self.miner_uptime_manager.down(uid_value, response.axon.hotkey)
                 bt.logging.info(f"Cross-Validation: {hotkey=} Test failed")
                 return 0
+
+            cross_validation_result_is_valid, _ = cross_validation_result
+            if cross_validation_result_is_valid is False:
+                self.miner_uptime_manager.down(uid_value, response.axon.hotkey)
+                bt.logging.info(f"Cross-Validation: {hotkey=} Test failed")
+                return 0
+
             bt.logging.info(f"Cross-Validation: {hotkey=} Test passed")
 
             benchmark_result = benchmarks_result.get(uid_value)
