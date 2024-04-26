@@ -95,8 +95,6 @@ def store_validator_metadata(self):
         )
 
         hotkey= self.wallet.hotkey.ss58_address
-
-
         subtensor.get_commitment = get_commitment
 
         existing_commitment = subtensor.get_commitment(self.config.netuid, self.uid)

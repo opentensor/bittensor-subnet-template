@@ -41,7 +41,8 @@ def query_blacklist(self, synapse: protocol.Query) -> typing.Tuple[bool, str]:
                 f"Blacklisting hot key {hotkey} because of wrong blockchain"
             )
             return True, "Network not supported."
-        if not is_query_only(synapse.query):
+
+        if not is_query_only(self.miner_config.query_restricted_keywords, synapse.query):
             bt.logging.trace(
                 f"Blacklisting hot key {hotkey} because of illegal cypher keywords"
             )

@@ -9,11 +9,13 @@ setuptools
 neo4j
 python-dotenv
 sqlalchemy
+psycopg2-binary
 requests
 urllib3
 web3
 PyYAML
 asyncio
+scikit-learn
 fastapi
 uvicorn
 langchain
