@@ -240,6 +240,10 @@ class Validator(BaseValidatorNeuron):
             balance_model_last_block = output.balance_model_last_block
             hotkey = response.axon.hotkey
 
+            if self.block_height_cache[network] - last_block_height < 6:
+                bt.logging.debug(f"Indexed block cannot be higher than current_block - 6")
+                return 0
+
             result, average_ping_time = ping(response.axon.ip, response.axon.port, attempts=10)
             if not result:
                 bt.logging.info(f"Ping: {hotkey=} Test failed, setting score to avg_ping_time=0, continuing..")
@@ -293,6 +297,7 @@ class Validator(BaseValidatorNeuron):
             return None
 
     async def forward(self):
+        self.block_height_cache = {network: self.nodes[network].get_current_block_height() for network in self.networks}
         # Update the subtensor, metagraph, scores of api_server as the one of validator is updated.
         self.api_server.subtensor = self.subtensor
         self.api_server.metagraph = self.metagraph
@@ -443,7 +448,6 @@ class Validator(BaseValidatorNeuron):
         self.scorer = Scorer(self.validator_config)
 
         self.networks = self.validator_config.get_networks()
-        self.block_height_cache = {network: self.nodes[network].get_current_block_height() for network in self.networks}
 
         if self.validator_config.version_update is True and self.validator_config.version != insights.__version__:
             exit(3)
