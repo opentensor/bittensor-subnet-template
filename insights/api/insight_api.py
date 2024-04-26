@@ -165,77 +165,7 @@ class APIServer:
         self.metagraph = metagraph
         self.excluded_uids = []
         self.scores = scores
-        
-        @self.app.get("/api/text_query", summary="Get /natual language query", tags=["validator api"])
-        async def get_response(network:str, text: str):        
-            """
-            Generate a response to user query
 
-            This endpoint allows miners convert the natural language query from the user into a Cypher query, and then provide a concise response in natural language.
-            
-            **Parameters:**
-            `network` (string): blockchain network where the search is conducted.
-            `text` (string): natural language query from users.
-                            
-            **Returns:**
-            response in natural language from one of the top miners. It should be QueryOutput.
-                - `result`: Optional[List[Dict]] = None
-                - `interpreted_result`: Optional[str] = None
-                - `error`: Optional[ERROR_TYPE] = None
-                
-            **Example Request:**
-            ```json
-            GET /text-query
-            {
-                "network": "Bitcoin",                
-                "message_content": "Show me 15 transactions I sent after block height 800000. My address is bc1q4s8yps9my6hun2tpd5ke5xmvgdnxcm2qspnp9r"
-            }
-            ```
-
-            **Example Response:**
-            ```json
-            {
-                "result": "...",
-                "interpreted_result": "15 transactions you sent are as follows. ..."
-                "error": LLM_ERROR_NO_ERROR
-            }
-            ```
-            
-            """
-            
-            # select top miner            
-            top_miner_uids = get_top_miner_uids(self.metagraph, self.config.top_rate, self.excluded_uids)
-            bt.logging.info(f"Top miner UIDs are {top_miner_uids}")
-            top_miner_axons = await get_query_api_axons(wallet=self.wallet, metagraph=self.metagraph, uids=top_miner_uids)
-            bt.logging.info(f"top miner axons: {top_miner_axons}")
-            
-            # get miner response
-            responses, blacklist_axon_ids =  await self.text_query_api(
-                axons=top_miner_axons,
-                network=network,
-                text=text,
-                timeout=self.config.timeout
-                )
-            
-            # Update exlucded_uids
-            blacklist_axons = np.array(top_miner_axons)[blacklist_axon_ids]
-            blacklist_uids = np.where(np.isin(np.array(self.metagraph.axons), blacklist_axons))[0]
-            self.excluded_uids = np.union1d(np.array(self.excluded_uids), blacklist_uids)
-            self.excluded_uids = self.excluded_uids.astype(int).tolist()
-            
-            # If the number of excluded_uids is bigger than top x percentage of the whole axons, format it.
-            if len(self.excluded_uids) > int(self.metagraph.n * self.config.top_rate):
-                bt.logging.info(f"Excluded UID list is too long")
-                self.excluded_uids = []
-            bt.logging.info(f"excluded_uids are {self.excluded_uids}")
-            bt.logging.info(f"Responses are {responses}")
-            if not responses:
-                # TODO: I have received 0 responses due to some issues
-                return "Please try again. Can't receive any responses due to the poor network connection."
-            r_count = len(responses)
-            response = random.choice(responses)
-            return response
-        
         @self.app.post("/api/text_query", summary="POST /natural language query", tags=["validator api"])
         async def get_response(query: ChatMessageRequest = Body(...)):
             """
