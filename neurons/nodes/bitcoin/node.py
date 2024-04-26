@@ -173,7 +173,7 @@ class BitcoinNode(Node):
         changed_addresses = []
         
         for tx in transactions:
-            in_amount_by_address, out_amount_by_address, input_addresses, output_addresses, in_total_amount, out_total_amount = _bitcoin_node.process_in_memory_txn_for_indexing(tx)
+            in_amount_by_address, out_amount_by_address, input_addresses, output_addresses, in_total_amount, out_total_amount = self.process_in_memory_txn_for_indexing(tx)
             
             for address in input_addresses:
                 if not address in balance_changes_by_address:

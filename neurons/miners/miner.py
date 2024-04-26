@@ -139,7 +139,7 @@ class Miner(BaseMinerNeuron):
 
         self.miner_config = MinerConfig().load_and_get_config_values()        
 
-        async def discovery(self, synapse: protocol.Discovery ) -> protocol.Discovery:
+    async def discovery(self, synapse: protocol.Discovery ) -> protocol.Discovery:
         try:
             start_block, last_block = self.graph_search.get_min_max_block_height_cache()
             balance_model_last_block = self.balance_search.get_latest_block_number()
