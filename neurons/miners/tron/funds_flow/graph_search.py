@@ -1,9 +1,8 @@
 import os
 import typing
-from neo4j import GraphDatabase
 
-from insights import protocol
-from neurons.miners.bitcoin.funds_flow.query_builder import QueryBuilder
+from neo4j import GraphDatabase
+from neurons.utils import is_malicious
 
 
 class GraphSearch:
@@ -37,39 +36,43 @@ class GraphSearch:
 
     def close(self):
         self.driver.close()
-        
-    def execute_query(self, query: protocol.Query) -> protocol.QueryOutput:
-        # build cypher query
-        cypher_query = QueryBuilder.build_query(query)
-        # execute cypher query
-        result = self.execute_cypher_query(cypher_query)
-        return result
-    
-    def execute_cypher_query(self, cypher_query: str):
-        with self.driver.session() as session:
-            result = session.run(cypher_query)
-            if not result:
-                return None
-            return result.data()
-          
-    def execute_benchmark_query(self, cypher_query: str):
-        with self.driver.session() as session:
-            result = session.run(cypher_query)
-            return result.single()
 
-    def get_block_transactions(self, block_heights: typing.List[int]):
+    def get_block_transaction(self, block_number):
+        with self.driver.session() as session:
+            data_set = session.run(
+                """
+                MATCH (a1:Address)-[s: SENT { block_number: $block_number }]-> (a2: Address)
+                RETURN s.block_number AS block_number, COUNT(s) AS transaction_count
+                """,
+                block_number=block_number
+            )
+            result = data_set.single()
+            return {
+                "block_number": result["block_number"],
+                "transaction_count": result["transaction_count"]
+            }
+
+    def execute_query(self, query):
+        with self.driver.session() as session:
+            if not is_malicious(query):
+                result = session.run(query)
+                return result
+            else:
+                return None
+
+    def get_block_transactions(self, block_number: typing.List[int]):
         with self.driver.session() as session:
             query = """
-                UNWIND $block_heights AS block_height
-                MATCH (t:Transaction { block_height: block_height })
-                RETURN block_height, COUNT(t) AS transaction_count
+                UNWIND $block_number AS block_number
+                MATCH (a1:Address)-[s: SENT { block_number: block_number }]-> (a2: Address)
+                RETURN block_number, COUNT(s) AS transaction_count
             """
-            data_set = session.run(query, block_heights=block_heights)
+            data_set = session.run(query, block_number=block_number)
 
             results = []
             for record in data_set:
                 results.append({
-                    "block_height": record["block_height"],
+                    "block_number": record["block_number"],
                     "transaction_count": record["transaction_count"]
                 })
 
@@ -79,63 +82,76 @@ class GraphSearch:
         with self.driver.session() as session:
             result = session.run(
                 """
-                MATCH (t:Transaction)
-                RETURN MAX(t.block_height) AS latest_block_height, MIN(t.block_height) AS start_block_height
+                MATCH (a1:Address)-[s: SENT]-> (a2: Address)
+                RETURN MAX(s.block_number) AS latest_block_number, MIN(s.block_number) AS start_block_number
                 """
             )
             single_result = result.single()
             if single_result[0] is None:
                 return {
-                    'latest_block_height': 0,
-                    'start_block_height':0
+                    'latest_block_number': 0,
+                    'start_block_number':0
                 }
 
             return {
-                'latest_block_height': single_result[0],
-                'start_block_height': single_result[1]
+                'latest_block_number': single_result[0],
+                'start_block_number': single_result[1]
             }
 
     def get_latest_block_number(self):
         with self.driver.session() as session:
             result = session.run(
                 """
-                MATCH (t:Transaction)
-                RETURN MAX(t.block_height) AS latest_block_height
+                MATCH (a1:Address)-[s: SENT]-> (a2: Address)
+                RETURN MAX(s.block_number) AS latest_block_number
                 """
             )
             single_result = result.single()
             if single_result[0] is None:
                 return 0
             return single_result[0]
-        
+    
+    def solve_challenge(self, checksum):
+        with self.driver.session() as session:
+            data_set = session.run(
+                """
+                MATCH (s: Checksum { checksum: $checksum })
+                RETURN s.tx_hash
+                """,
+                checksum=checksum
+            )
+            single_result = data_set.single()
+
+            if single_result[0] is None:
+                return 0
+            return single_result[0]
+
     def get_min_max_block_height(self):
         with self.driver.session() as session:
             result = session.run(
                 """
-                MATCH (t:Transaction)
-                RETURN MIN(t.block_height) AS min_block_height, MAX(t.block_height) AS max_block_height
+                MATCH (t:SENT)
+                RETURN MIN(t.block_number) AS min_block_height, MAX(t.block_number) AS max_block_height
                 """
             )
             single_result = result.single()
             if single_result is None:
                 return [0, 0]
             return single_result.get('min_block_height'), single_result.get('max_block_height')
-        
+
     def get_min_max_block_height_cache(self):
         with self.driver.session() as session:
             result_min = session.run(
                 """
                 MATCH (n:Cache {field: 'min_block_height'})
-                RETURN n.value
-                LIMIT 1;
+                RETURN n.value;
                 """
             ).single()
             
             result_max = session.run(
                 """
                 MATCH (n:Cache {field: 'max_block_height'})
-                RETURN n.value
-                LIMIT 1;
+                RETURN n.value;
                 """
             ).single()
             
@@ -143,22 +159,3 @@ class GraphSearch:
             max_block_height = result_max[0] if result_max else 0
 
             return min_block_height, max_block_height
-        
-
-    def solve_challenge(self, in_total_amount: int, out_total_amount: int, tx_id_last_4_chars: str) -> str:
-        with self.driver.session() as session:
-            result = session.run(
-                """
-                MATCH (t:Transaction {out_total_amount: $out_total_amount})
-                WHERE t.in_total_amount = $in_total_amount AND t.tx_id ENDS WITH $tx_id_last_4_chars
-                RETURN t.tx_id
-                LIMIT 1;
-                """,
-                in_total_amount=in_total_amount,
-                out_total_amount=out_total_amount,
-                tx_id_last_4_chars=tx_id_last_4_chars
-            )
-            single_result = result.single()
-            if single_result is None or single_result[0] is None:
-                return None
-            return single_result[0]

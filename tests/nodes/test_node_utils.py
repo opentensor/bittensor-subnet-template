@@ -2,7 +2,6 @@ import unittest
 from unittest.mock import Mock
 
 from neurons.nodes.factory import NodeFactory
-from neurons.miners.bitcoin.funds_flow.graph_creator import GraphCreator
 from neurons.nodes.bitcoin.node_utils import process_in_memory_txn_for_indexing
 from insights.protocol import NETWORK_BITCOIN, NETWORK_ETHEREUM
 
@@ -10,10 +9,9 @@ class TestNodeUtils(unittest.TestCase):
     def test_process_in_memory_txn_for_indexing(self):
         txn_id = "aabbcc442e2c92661fdaf463e3bc5e0ca37dc6b48c0a459c34ac944ac840433f"
         node = NodeFactory.create_node(NETWORK_BITCOIN)
-        graph_creator = GraphCreator()
         
         txn_data = node.get_txn_data_by_id(txn_id)
-        tx = graph_creator.create_in_memory_txn(txn_data)
+        tx = node.create_in_memory_txn(txn_data)
         result = process_in_memory_txn_for_indexing(tx, node)
 
         # Check the result

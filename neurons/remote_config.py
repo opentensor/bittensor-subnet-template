@@ -3,6 +3,7 @@ import time
 import json
 import requests
 import bittensor as bt
+import numpy as np
 import threading
 
 import insights
@@ -52,8 +53,8 @@ class RemoteConfig:
                 try:
                     response = requests.get(self.config_url, timeout=10)
                     response.raise_for_status()
-                    self.config_cache = response.json()
-
+                    self.config_cache = response.json()                                        
+                                      
                     file_name = os.path.basename(self.config_url)
                     dir_path = os.path.dirname(os.path.abspath(__file__))
                     file_path = os.path.join(dir_path, file_name)
@@ -85,7 +86,7 @@ class RemoteConfig:
     def stop_update_thread(self):
         self.stop_event.set()
         self.thread.join()
-
+    
 
 class MinerConfig(RemoteConfig):
     def __init__(self):
@@ -102,7 +103,8 @@ class MinerConfig(RemoteConfig):
         self.set_weights_frequency = 6011
         self.store_metadata_frequency = 6000
         self.query_restricted_keywords = None
-
+        self.inmemory_hotkeys = []    
+ 
     def load_and_get_config_values(self):
         # Load remote configuration
         self.load_remote_config()
@@ -114,6 +116,7 @@ class MinerConfig(RemoteConfig):
         self.blacklisted_hotkeys = self.get_config_value('blacklisted_hotkeys', ["5GcBK8PDrVifV1xAf4Qkkk6KsbsmhDdX9atvk8vyKU8xdU63", "5CsvRJXuR955WojnGMdok1hbhffZyB4N5ocrv82f3p5A2zVp", "5Fq5v71D4LX8Db1xsmRSy6udQThcZ8sFDqxQFwnUZ1BuqY5A", "5CVS9d1NcQyWKUyadLevwGxg6LgBcF9Lik6NSnbe5q59jwhE", "5HeKSHGdsRCwVgyrHchijnZJnq4wiv6GqoDLNah8R5WMfnLB", "5FFM6Nvvm78GqyMratgXXvjbqZPi7SHgSQ81nyS96jBuUWgt", "5ED6jwDECEmNvSp98R2qyEUPHDv9pi14E6n3TS8CicD6YfhL"])
         self.whitelisted_hotkeys = self.get_config_value('whitelisted_hotkeys', ["5FFApaS75bv5pJHfAp2FVLBj9ZaXuFDjEypsaBNc1wCfe52v", "5HK5tp6t2S59DywmHRWPBVJeJ86T61KjurYqeooqj8sREpeN", "5EhvL1FVkQPpMjZX4MAADcW42i3xPSF1KiCpuaxTYVr28sux", "5CXRfP2ekFhe62r7q3vppRajJmGhTi7vwvb2yr79jveZ282w", "5DvTpiniW9s3APmHRYn8FroUWyfnLtrsid5Mtn5EwMXHN2ed", "5F4tQyWrhfGVcNhoqeiNsR6KjD4wMZ2kfhLj4oHYuyHbZAc3", "5Hddm3iBFD2GLT5ik7LZnT3XJUnRnN8PoeCFgGQgawUVKNm8", "5HEo565WAy4Dbq3Sv271SAi7syBSofyfhhwRNjFNSM2gP9M2", "5FcXnzNo3mrqReTEY4ftkg5iXRBi61iyvM4W1bywZLRqfxAY", "5HNQURvmjjYhTSksi8Wfsw676b4owGwfLR2BFAQzG7H3HhYf", "5FLKnbMjHY8LarHZvk2q2RY9drWFbpxjAcR5x8tjr3GqtU6F", "5Gpt8XWFTXmKrRF1qaxcBQLvnPLpKi6Pt2XC4vVQR7gqNKtU"])
         self.blockchain_sync_delta = self.get_config_value('blockchain_sync_delta', {'bitcoin': 100})
+
         self.is_grace_period = self.get_config_value('is_grace_period', False)
         
         # Set_weights, send metadata
@@ -121,6 +124,8 @@ class MinerConfig(RemoteConfig):
         self.set_weights_frequency = self.get_config_value('set_weights_frequency', 6011)
         self.store_metadata_frequency = self.get_config_value('store_metadata_frequency', 6000)
         self.query_restricted_keywords = self.get_config_value('benchmark_restricted_keywords', ['CREATE', 'SET', 'DELETE', 'DETACH', 'REMOVE', 'MERGE', 'CREATE INDEX', 'DROP INDEX', 'CREATE CONSTRAINT', 'DROP CONSTRAINT'])
+        
+        self.inmemory_hotkeys = self.get_config_value('inmemory_hotkeys', [])
         
         return self
     
@@ -141,6 +146,7 @@ class ValidatorConfig(RemoteConfig):
 
         self.blockchain_importance = None
         self.blockchain_recency_weight = None
+ 
         self.uptime_weight = None
         self.is_grace_period = None
 
@@ -180,6 +186,10 @@ class ValidatorConfig(RemoteConfig):
 
         self.version_update = self.get_config_value('version_update', True)
         self.version = self.get_config_value('version', insights.__version__)
+
+        self.blockchain_importance = self.get_config_value('blockchain_importance', {"bitcoin": 0.9, "doge": 0.1})
+        self.blockchain_recency_weight = self.get_config_value('blockchain_recency_weight',  {"bitcoin": 2, "doge": 2})
+        self.is_grace_period = self.get_config_value('is_grace_period', False)
 
         return self
 

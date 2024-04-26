@@ -28,6 +28,38 @@ def check_uid_availability(
     # Available otherwise.
     return True
 
+def get_top_miner_uids(
+    metagraph: "bt.metagraph.Metagraph", top_rate: float = 1, exclude: List[int] = None, vpermit_tao_limit: int = 4096
+) -> torch.LongTensor:
+    """Returns the available top miner UID from the metagraph.
+    Args:
+        metagraph (bt.metagraph.Metagraph): Metagraph object
+        vpermit_tao_limit (int): Validator permit tao limit
+        exclude (List[int]): List of uids to exclude from the random sampling.
+    Returns:
+        top_miner_uid (torch.LongTensor): The top miner UID.
+    """
+    candidate_uids = []
+    for uid in range(metagraph.n.item()):
+        uid_is_available = check_uid_availability(
+            metagraph, uid, vpermit_tao_limit
+        )
+        uid_is_not_excluded = exclude is None or uid not in exclude
+
+        if uid_is_available:
+            if uid_is_not_excluded:
+                candidate_uids.append(uid)
+    # Consider both of incentive and trust score
+    values = [(uid, metagraph.I[uid] * metagraph.trust[uid]) for uid in candidate_uids]
+    top_rate_num_items = max(1, int(top_rate * len(candidate_uids)))
+    # Consider only incentive
+    # values = [(uid, metagraph.I[uid]) for uid in candidate_uids] 
+    
+    sorted_values = sorted(values,key=lambda x: x[1], reverse=True)
+    top_miner_uids = torch.tensor([uid for uid, _ in sorted_values[:top_rate_num_items]])
+    return top_miner_uids    
+    
+    
 
 def get_random_uids(
     self, k: int, exclude: List[int] = None

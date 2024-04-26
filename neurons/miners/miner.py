@@ -1,6 +1,7 @@
 import argparse
 import os
 import time
+import numpy as np
 import torch
 import typing
 import traceback
@@ -17,12 +18,15 @@ from insights import protocol
 from template.base.miner import BaseMinerNeuron
 
 from neurons.miners import blacklist
-from insights.protocol import MODEL_TYPE_FUNDS_FLOW, NETWORK_BITCOIN, NETWORK_ETHEREUM, QueryOutput
+from insights.protocol import MODEL_TYPE_FUNDS_FLOW, MODEL_TYPE_BALANCE_TRACKING, NETWORK_BITCOIN, NETWORK_ETHEREUM, LLM_TYPE_CUSTOM, LLM_TYPE_OPENAI, \
+    QueryOutput
+
 from neurons.storage import store_miner_metadata
 from neurons.remote_config import MinerConfig
 from neurons.nodes.factory import NodeFactory
-from neurons.miners.query import get_graph_search, get_graph_indexer
-
+from neurons.miners.query import get_graph_search, get_graph_indexer, get_balance_search, get_balance_indexer
+from neurons.miners.bitcoin.balance_tracking.balance_indexer import BalanceIndexer
+from insights.llm import LLMFactory
 
 class Miner(BaseMinerNeuron):
     """
@@ -44,10 +48,10 @@ class Miner(BaseMinerNeuron):
             help="Set miner's supported blockchain network.",
         )
         parser.add_argument(
-            "--model_type",
+            "--llm_type",
             type=str,
-            default=MODEL_TYPE_FUNDS_FLOW,
-            help="Set miner's supported model type.",
+            default=LLM_TYPE_OPENAI,
+            help="Set miner's supported LLM type.",
         )
 
         parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
@@ -65,6 +69,11 @@ class Miner(BaseMinerNeuron):
         config.graph_db_url = os.environ.get('GRAPH_DB_URL', 'bolt://localhost:7687')
         config.graph_db_user = os.environ.get('GRAPH_DB_USER', 'user')
         config.graph_db_password = os.environ.get('GRAPH_DB_PASSWORD', 'pwd')
+        config.postgres_host = os.environ.get("POSTGRES_HOST", '127.0.0.1')
+        config.postgres_port = int(os.environ.get("POSTGRES_PORT", '5432'))
+        config.postgres_db = os.environ.get("POSTGRES_DB", 'bitcoin')
+        config.postgres_user = os.environ.get("POSTGRES_USER", '')
+        config.postgres_password = os.environ.get("POSTGRES_PASSWORD", '')
         
         dev = config.dev
         if dev:
@@ -82,6 +91,7 @@ class Miner(BaseMinerNeuron):
 
         return config
     
+        
     def __init__(self, config=None):
         config = Miner.get_config()
         
@@ -94,10 +104,6 @@ class Miner(BaseMinerNeuron):
         # Attach determiners which functions are called when servicing a request.
         bt.logging.info(f"Attaching forwards functions to miner axon.")
         self.axon.attach(
-            forward_fn=self.block_check,
-            blacklist_fn=self.block_check_blacklist,
-            priority_fn=self.block_check_priority,
-        ).attach(
             forward_fn=self.discovery,
             blacklist_fn=self.discovery_blacklist,
             priority_fn=self.discovery_priority,
@@ -112,39 +118,38 @@ class Miner(BaseMinerNeuron):
         ).attach(
             forward_fn=self.benchmark,
             blacklist_fn=self.benchmark_blacklist,
-            priority_fn=self.benchmark_priority,
+            priority_fn=self.benchmark_priority
+        ).attach(
+            forward_fn=self.llm_query,
+            blacklist_fn=self.llm_query_blacklist,
+            priority_fn=self.llm_query_priority
         )
 
         bt.logging.info(f"Axon created: {self.axon}")
 
+
+        self.graph_search = get_graph_search(config)
+        self.balance_search = get_balance_search(config)
+        
+        self.miner_config = MinerConfig().load_and_get_config_values()
+        self.miner_config.inmemory_hotkeys = self.fetch_inmemory_hotkeys()
+
+        self.llm = LLMFactory.create_llm(config.llm_type)
         self.graph_search = get_graph_search(config)
 
         self.miner_config = MinerConfig().load_and_get_config_values()        
-    
-    async def block_check(self, synapse: protocol.BlockCheck) -> protocol.BlockCheck:
-        try:
-            block_heights = synapse.blocks_to_check
-            data_samples = self.graph_search.get_block_transactions(block_heights)
-            synapse.output = protocol.BlockCheckOutput(
-                data_samples=data_samples,
-            )
-            bt.logging.info(f"Serving miner random block check output: {synapse.output}")
-        except Exception as e:
-            bt.logging.error(traceback.format_exc())
-            synapse.output = None
-        return synapse
-            
-    async def discovery(self, synapse: protocol.Discovery ) -> protocol.Discovery:
+
+        async def discovery(self, synapse: protocol.Discovery ) -> protocol.Discovery:
         try:
             start_block, last_block = self.graph_search.get_min_max_block_height_cache()
-            
+            balance_model_last_block = self.balance_search.get_latest_block_number()
             synapse.output = protocol.DiscoveryOutput(
                 metadata=protocol.DiscoveryMetadata(
                     network=self.config.network,
-                    model_type=self.config.model_type
                 ),
                 start_block_height=start_block,
                 block_height=last_block,
+                balance_model_last_block=balance_model_last_block,
             )
             bt.logging.info(f"Serving miner discovery output: {synapse.output}")
         except Exception as e:
@@ -152,13 +157,12 @@ class Miner(BaseMinerNeuron):
             synapse.output = None
         return synapse
 
-    async def query(self, synapse: protocol.Query) -> protocol.Query:
-        synapse.output = {}
+    async def query(self, synapse: protocol.Query ) -> protocol.Query:
         try:
-            synapse.output["result"] = self.graph_search.execute_query(query=synapse)
+            synapse.output = QueryOutput(result=self.graph_search.execute_query(query=synapse))
         except Exception as e:
             bt.logging.error(traceback.format_exc())
-            synapse.output["error"] = e
+            synapse.output = QueryOutput(error=e)
         return synapse
 
     async def challenge(self, synapse: protocol.Challenge ) -> protocol.Challenge:
@@ -183,6 +187,7 @@ class Miner(BaseMinerNeuron):
             synapse.output = None
         return synapse
 
+ 
     async def benchmark(self, synapse: protocol.Benchmark) -> protocol.Benchmark:
         try:
             bt.logging.info(f"Executing benchmark query: {synapse.query}")
@@ -195,8 +200,36 @@ class Miner(BaseMinerNeuron):
             bt.logging.error(traceback.format_exc())
         return synapse
 
-    async def block_check_blacklist(self, synapse: protocol.BlockCheck) -> typing.Tuple[bool, str]:
-        return blacklist.base_blacklist(self, synapse=synapse)
+    async def llm_query(self, synapse: protocol.LlmQuery ) -> protocol.LlmQuery:
+        bt.logging.info(f"llm query recieved: {synapse}")
+        synapse.output = {}
+
+        try:
+            # TODO: handle llm query
+            query = self.llm.build_query_from_messages(synapse.messages)
+            bt.logging.info(f"extracted query: {query}")
+            
+            result = self.graph_search.execute_query(query=query)
+            interpreted_result = self.llm.interpret_result(llm_messages=synapse.messages, result=result)
+
+            synapse.output = QueryOutput(result=result, interpreted_result=interpreted_result)
+
+        except Exception as e:
+            bt.logging.error(traceback.format_exc())
+            error_code = e.args[0]
+            if error_code == protocol.LLM_ERROR_TYPE_NOT_SUPPORTED:
+                # handle unsupported query templates
+                try:
+                    interpreted_result = self.llm.generate_general_response(llm_messages=synapse.messages)
+                    synapse.output = QueryOutput(error=error_code, interpreted_result=interpreted_result)
+                except Exception as e:
+                    error_code = e.args[0]
+                    synapse.output = QueryOutput(error=error_code, interpreted_result=protocol.LLM_ERROR_MESSAGES[error_code])
+            else:
+                synapse.output = QueryOutput(error=error_code, interpreted_result=protocol.LLM_ERROR_MESSAGES[error_code])
+
+        bt.logging.info(f"Serving miner llm query output: {synapse.output}")
+        return synapse
 
     async def discovery_blacklist(self, synapse: protocol.Discovery) -> typing.Tuple[bool, str]:
         return blacklist.discovery_blacklist(self, synapse=synapse)
@@ -209,7 +242,10 @@ class Miner(BaseMinerNeuron):
 
     async def benchmark_blacklist(self, synapse: protocol.Benchmark) -> typing.Tuple[bool, str]:
         return blacklist.base_blacklist(self, synapse=synapse)
-
+ 
+    async def llm_query_blacklist(self, synapse: protocol.LlmQuery) -> typing.Tuple[bool, str]:
+        return blacklist.base_blacklist(self, synapse=synapse)
+    
     def base_priority(self, synapse: bt.Synapse) -> float:
         caller_uid = self.metagraph.hotkeys.index(
             synapse.dendrite.hotkey
@@ -222,9 +258,6 @@ class Miner(BaseMinerNeuron):
         )
         return prirority
     
-    async def block_check_priority(self, synapse: protocol.BlockCheck) -> float:
-        return self.base_priority(synapse=synapse)
-
     async def discovery_priority(self, synapse: protocol.Discovery) -> float:
         return self.base_priority(synapse=synapse)
 
@@ -233,12 +266,47 @@ class Miner(BaseMinerNeuron):
 
     async def challenge_priority(self, synapse: protocol.Challenge) -> float:
         return self.base_priority(synapse=synapse)
+    
+    def fetch_inmemory_hotkeys(self):                
+        subtensor = self.subtensor
+        weights = subtensor.weights(0)            
+        
+        uid_to_weights = {}
+        netuids = set()
+        for matrix in weights:
+            [uid, weights_data] = matrix
+
+            if not len(weights_data):
+                uid_to_weights[uid] = {}
+                normalized_weights = []
+            else:
+                normalized_weights = np.array(weights_data)[:, 1] / max(
+                    np.sum(weights_data, axis=0)[1], 1
+                )
+
+            for weight_data, normalized_weight in zip(weights_data, normalized_weights):
+                [netuid, _] = weight_data
+                netuids.add(netuid)
+                if uid not in uid_to_weights:
+                    uid_to_weights[uid] = {}
+                uid_to_weights[uid][netuid] = normalized_weight                
+        
+        inmemory_uids = [uid for uid in uid_to_weights if self.config.netuid in uid_to_weights[uid]]
+        root_neurons = subtensor.neurons_lite(netuid=0)        
+        uid_to_hotkey = {neuron_data.uid: neuron_data.hotkey for neuron_data in root_neurons}
+        inmemory_hotkeys = [uid_to_hotkey[uid] for uid in inmemory_uids if uid in uid_to_hotkey]
+
+        return inmemory_hotkeys
+
+    async def llm_query_priority(self, synapse: protocol.LlmQuery) -> float:
+        return self.base_priority(synapse=synapse)
 
     async def benchmark_priority(self, synapse: protocol.Benchmark) -> float:
         return self.base_priority(synapse=synapse)
 
     def resync_metagraph(self):
-        self.miner_config = MinerConfig().load_and_get_config_values()
+        self.miner_config = MinerConfig().load_and_get_config_values()       
+        self.miner_config.inmemory_hotkeys = self.fetch_inmemory_hotkeys() 
         super(Miner, self).resync_metagraph()
         
     def should_set_weights(self) -> bool:
@@ -295,8 +363,7 @@ class Miner(BaseMinerNeuron):
         ) > self.miner_config.store_metadata_frequency
     
     def send_metadata(self):
-        start_block, last_block = self.graph_search.get_min_max_block_height_cache()
-        store_miner_metadata(self.config, self.graph_search, self.wallet, start_block, last_block)
+        store_miner_metadata(self)
 
 def wait_for_blocks_sync():
         is_synced=False
@@ -307,6 +374,7 @@ def wait_for_blocks_sync():
             return is_synced
         
         miner_config = MinerConfig().load_and_get_config_values()
+        
         delta = miner_config.get_blockchain_sync_delta(config.network)
         bt.logging.info(f"Waiting for graph model to sync with blockchain.")
         while not is_synced:

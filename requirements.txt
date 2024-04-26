@@ -16,3 +16,8 @@ web3
 PyYAML
 asyncio
 scikit-learn
+fastapi
+uvicorn
+langchain
+langchain-openai
+psycopg2-binary

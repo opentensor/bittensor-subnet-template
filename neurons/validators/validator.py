@@ -1,7 +1,7 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
 # Copyright © 2023 aph5nt
-import concurrent
+
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
 # the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
@@ -25,6 +25,7 @@ import torch
 import bittensor as bt
 import os
 import yaml
+
 from collections import Counter
 from sklearn.cluster import KMeans
 import numpy as np
@@ -33,11 +34,14 @@ import insights
 from insights import protocol
 from insights.protocol import Discovery, DiscoveryOutput, MAX_MINER_INSTANCE, QUERY_TYPE_SEARCH
 
+import threading
+from insights.protocol import Discovery, DiscoveryOutput, MAX_MINER_INSTANCE, NETWORK_BITCOIN, MODEL_TYPE_BALANCE_TRACKING
 from neurons.remote_config import ValidatorConfig
 from neurons.nodes.factory import NodeFactory
 from neurons.storage import store_validator_metadata
 from neurons.validators.scoring import Scorer
 from neurons.validators.uptime import MinerUptimeManager
+from neurons.validators.challenge_factory.balance_challenge_factory import BalanceChallengeFactory
 from neurons.validators.utils.metadata import Metadata
 from neurons.validators.utils.ping import ping
 from neurons.validators.utils.synapse import is_discovery_response_valid
@@ -45,12 +49,13 @@ from concurrent.futures import ThreadPoolExecutor
 from neurons.validators.utils.uids import get_uids_batch
 from template.base.validator import BaseValidatorNeuron
 
+from insights.api.insight_api import APIServer
 
 class Validator(BaseValidatorNeuron):
 
     @staticmethod
-    def get_config():
-
+    def get_config():       
+        
         parser = argparse.ArgumentParser()
         parser.add_argument(
             "--alpha", default=0.9, type=float, help="The weight moving average scoring.py."
@@ -58,6 +63,16 @@ class Validator(BaseValidatorNeuron):
 
         parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
         parser.add_argument("--dev", action=argparse.BooleanOptionalAction)
+        # For API configuration
+        # Subnet Validator and validator API        
+        # You can invoke the API while instantiating the validator.
+        # To run API, it's needed to set `enable_api`, `api_port`, `top_rate`, `timeout`, `user_query_moving_average_alpha` additionally.
+        
+        parser.add_argument("--enable_api", type=bool, default=False, help="Decide whether to launch api or not.")
+        parser.add_argument("--api_port", type=int, default=8001, help="API endpoint port.")
+        parser.add_argument("--timeout", type=int, default=40, help="Timeout.")
+        parser.add_argument("--top_rate", type=float, default=1, help="Best selection percentage")
+        parser.add_argument("--user_query_moving_average_alpha", type=float, default=0.0001, help="Moving average alpha for scoring user query miners.")
 
         bt.subtensor.add_args(parser)
         bt.logging.add_args(parser)
@@ -88,14 +103,28 @@ class Validator(BaseValidatorNeuron):
         networks = self.validator_config.get_networks()
         self.nodes = {network : NodeFactory.create_node(network) for network in networks}
         self.block_height_cache = {network: self.nodes[network].get_current_block_height() for network in networks}
+        self.challenge_factory = {
+            NETWORK_BITCOIN: {
+                MODEL_TYPE_BALANCE_TRACKING: BalanceChallengeFactory(self.nodes[NETWORK_BITCOIN])
+            }
+        }
         super(Validator, self).__init__(config)
         self.sync_validator()
         self.uid_batch_generator = get_uids_batch(self, self.config.neuron.sample_size)
         self.miner_uptime_manager = MinerUptimeManager(db_url=self.config.db_connection_string)
+        if config.enable_api:
+            self.api_server = APIServer(
+                config=self.config,
+                wallet=self.wallet,
+                subtensor=self.subtensor,
+                metagraph=self.metagraph,
+                scores=self.scores
+            )
 
-        
-    def cross_validate(self, axon, node, start_block_height, last_block_height):
+
+    def cross_validate(self, axon, node, challenge_factory, start_block_height, last_block_height, balance_model_last_block):
         try:
+            # first, validate funds flow model response
             challenge, expected_response = node.create_challenge(start_block_height, last_block_height)
             
             response = self.dendrite.query(
@@ -114,6 +143,27 @@ class Validator(BaseValidatorNeuron):
 
             # if the miner's response is different from the expected response and validation failed
             if not response.output == expected_response and not node.validate_challenge_response_output(challenge, response.output):
+                bt.logging.debug("Cross validation failed")
+                return False, response_time
+            
+            # second, validate balance model response
+            challenge, expected_response = challenge_factory.get_challenge(balance_model_last_block)
+            
+            response = self.dendrite.query(
+                axon,
+                challenge,
+                deserialize=False,
+                timeout = self.validator_config.challenge_timeout,
+            )
+            
+            if response is None or response.output is None:
+                bt.logging.debug("Cross validation failed")
+                return False, 128
+            
+            response_time += response.dendrite.process_time
+            
+            if not str(response.output) == str(expected_response):
+                bt.logging.debug("Cross validation failed")
                 return False, response_time
             
             return True, response_time
@@ -123,8 +173,7 @@ class Validator(BaseValidatorNeuron):
 
     def is_miner_metadata_valid(self, response: Discovery):
         hotkey = response.axon.hotkey
-        ip = response.axon.ip
-        
+        ip = response.axon.ip    
         hotkey_meta = self.metadata.get_metadata_for_hotkey(hotkey)
 
         if not (hotkey_meta and hotkey_meta['network']):
@@ -188,6 +237,7 @@ class Validator(BaseValidatorNeuron):
             network = output.metadata.network
             start_block_height = output.start_block_height
             last_block_height = output.block_height
+            balance_model_last_block = output.balance_model_last_block
             hotkey = response.axon.hotkey
 
             result, average_ping_time = ping(response.axon.ip, response.axon.port, attempts=10)
@@ -196,7 +246,7 @@ class Validator(BaseValidatorNeuron):
             else:
                 bt.logging.info(f"Ping: {hotkey=} average ping time: {average_ping_time} seconds")
 
-            cross_validation_result, _ = self.cross_validate(response.axon, self.nodes[network], start_block_height, last_block_height)
+            cross_validation_result = self.cross_validate(response.axon, self.nodes[network], self.challenge_factory[network], start_block_height, last_block_height, balance_model_last_block)
 
             if cross_validation_result is None:
                 self.miner_uptime_manager.down(uid_value, response.axon.hotkey)
@@ -243,6 +293,10 @@ class Validator(BaseValidatorNeuron):
             return None
 
     async def forward(self):
+        # Update the subtensor, metagraph, scores of api_server as the one of validator is updated.
+        self.api_server.subtensor = self.subtensor
+        self.api_server.metagraph = self.metagraph
+        self.api_server.scores = self.scores
         uids = next(self.uid_batch_generator, None)
         if uids is None:
             self.uid_batch_generator = get_uids_batch(self, self.config.neuron.sample_size)
@@ -271,7 +325,7 @@ class Validator(BaseValidatorNeuron):
 
             rewards = torch.FloatTensor(rewards)
             self.update_scores(rewards, uids)
-        else:
+        else:  
             bt.logging.info('Skipping update_scores() as no responses were valid')
 
     def run_benchmarks(self, filtered_responses):
@@ -399,8 +453,10 @@ class Validator(BaseValidatorNeuron):
         self.sync_validator()
 
     def send_metadata(self):
-        store_validator_metadata(self.config, self.wallet, self.uid)
+        store_validator_metadata(self)
 
+def run_api_server(api_server):
+    api_server.start()
 
 if __name__ == "__main__":
     from dotenv import load_dotenv
@@ -408,6 +464,18 @@ if __name__ == "__main__":
     load_dotenv()
 
     with Validator() as validator:
+        if validator.config.enable_api:
+            if not validator.api_server:
+                validator.api_server = APIServer(
+                    config=validator.config,
+                    wallet=validator.wallet,
+                    subtensor=validator.subtensor,
+                    metagraph=validator.metagraph,
+                    scores=validator.scores
+                )
+            api_server_thread = threading.Thread(target=run_api_server, args=(validator.api_server,))
+            api_server_thread.start()
+
         while True:
             bt.logging.info("Validator running")
             time.sleep(bt.__blocktime__*10)

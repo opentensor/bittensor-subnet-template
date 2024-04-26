@@ -5,6 +5,7 @@ from neurons.miners.query import is_query_only
 
 import typing
 import time
+import random
 
 from collections import deque
 
@@ -27,6 +28,10 @@ def query_blacklist(self, synapse: protocol.Query) -> typing.Tuple[bool, str]:
         - Illegal cypher keywords
         """
         hotkey = synapse.dendrite.hotkey
+        # Check if the dendrite hotkey is not voting the sn or not.
+        if hotkey in self.miner_config.inmemory_hotkeys:
+            return True, "Not support query synapse for this hotkey"
+        
         is_blacklist, message = base_blacklist(self, synapse=synapse)
         if is_blacklist:
             return is_blacklist, message
@@ -36,11 +41,7 @@ def query_blacklist(self, synapse: protocol.Query) -> typing.Tuple[bool, str]:
                 f"Blacklisting hot key {hotkey} because of wrong blockchain"
             )
             return True, "Network not supported."
-        if self.config.model_type != synapse.model_type:
-            bt.logging.trace(
-                f"Blacklisting hot key {hotkey} because of wrong model type"
-            )
-            return True, "Model type not supported."
+
         if not is_query_only(self.miner_config.query_restricted_keywords, synapse.query):
             bt.logging.trace(
                 f"Blacklisting hot key {hotkey} because of illegal cypher keywords"

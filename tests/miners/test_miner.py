@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 from neurons.miners.miner import Miner
 from neurons.miners.miner import wait_for_blocks_sync
+from insights.protocol import MODEL_TYPE_FUNDS_FLOW, MODEL_TYPE_BALANCE_TRACKING
 import sys
 import os
 
@@ -20,37 +21,14 @@ class TestMiner(unittest.TestCase):
         config = Miner.get_config()
 
         self.assertEqual(config.network, "bitcoin")
-        self.assertEqual(config.model_type, "funds_flow")
         self.assertEqual(config.netuid, 15)
-        self.assertEqual(config.mode, "prod")
 
-    def test_get_config_staging(self):
+    def test_get_config_custom_model_types(self):
         # Test with custom arguments
-        custom_args = [
-            "--mode", "staging"
-        ]
-        sys.argv = sys.argv + custom_args
         config = Miner.get_config()
 
         self.assertEqual(config.network, "bitcoin")
-        self.assertEqual(config.model_type, "funds_flow")
-        self.assertEqual(config.netuid, 1)
-        self.assertEqual(config.mode, "staging")
-
-
-    def test_get_config_testnet(self):
-            # Test with custom arguments
-            custom_args = [
-                "--mode", "testnet"
-            ]
-            sys.argv = sys.argv + custom_args
-            config = Miner.get_config()
-
-            self.assertEqual(config.network, "bitcoin")
-            self.assertEqual(config.model_type, "funds_flow")
-            self.assertEqual(config.netuid, 59)
-            self.assertEqual(config.mode, "testnet")
-        
+        self.assertEqual(config.netuid, 15)
 
         
 if __name__ == '__main__':
