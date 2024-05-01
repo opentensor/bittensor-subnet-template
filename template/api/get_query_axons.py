@@ -77,13 +77,9 @@ async def get_query_api_nodes(dendrite, metagraph, n=0.1, timeout=3):
     Returns:
         list: A list of UIDs representing the available API nodes.
     """
-    bt.logging.debug(
-        f"Fetching available API nodes for subnet {metagraph.netuid}"
-    )
+    bt.logging.debug(f"Fetching available API nodes for subnet {metagraph.netuid}")
     vtrust_uids = [
-        uid.item()
-        for uid in metagraph.uids
-        if metagraph.validator_trust[uid] > 0
+        uid.item() for uid in metagraph.uids if metagraph.validator_trust[uid] > 0
     ]
     top_uids = torch.where(metagraph.S > torch.quantile(metagraph.S, 1 - n))
     top_uids = top_uids[0].tolist()
@@ -99,9 +95,7 @@ async def get_query_api_nodes(dendrite, metagraph, n=0.1, timeout=3):
     return query_uids
 
 
-async def get_query_api_axons(
-    wallet, metagraph=None, n=0.1, timeout=3, uids=None
-):
+async def get_query_api_axons(wallet, metagraph=None, n=0.1, timeout=3, uids=None):
     """
     Retrieves the axons of query API nodes based on their availability and stake.
 

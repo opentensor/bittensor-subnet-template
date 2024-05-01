@@ -49,6 +49,6 @@ def get_rewards(
     - torch.FloatTensor: A tensor of rewards for the given query and responses.
     """
     # Get all the reward results by iteratively calling your reward() function.
-    return torch.FloatTensor(
-        [reward(query, response) for response in responses]
-    ).to(self.device)
+    return torch.FloatTensor([reward(query, response) for response in responses]).to(
+        self.device
+    )
