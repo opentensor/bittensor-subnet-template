@@ -247,10 +247,11 @@ class RetrieveUserAPI(SubnetsAPI):
                 bytes(self.wallet.coldkey.private_key.hex(), "utf-8"),
             )
         return data
-
+```
  
 Example usage of the `FileTao` interface, which can serve as an example for other subnets.
 
+```python
 # import the bespoke subnet API
 from storage import StoreUserAPI, RetrieveUserAPI
 
@@ -289,7 +290,7 @@ In order to see real-world examples of subnets in-action, see the `subnet_links.
 import template
 template.SUBNET_LINKS
 [{'name': 'sn0', 'url': ''},
- {'name': 'sn1', 'url': 'https://github.com/opentensor/text-prompting/'},
+ {'name': 'sn1', 'url': 'https://github.com/opentensor/prompting/'},
  {'name': 'sn2', 'url': 'https://github.com/bittranslateio/bittranslate/'},
  {'name': 'sn3', 'url': 'https://github.com/gitphantomman/scraping_subnet/'},
  {'name': 'sn4', 'url': 'https://github.com/manifold-inc/targon/'},
