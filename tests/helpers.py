@@ -124,7 +124,10 @@ def get_mock_neuron(**kwargs) -> NeuronInfo:
 
 def get_mock_neuron_by_uid(uid: int, **kwargs) -> NeuronInfo:
     return get_mock_neuron(
-        uid=uid, hotkey=_get_mock_hotkey(uid), coldkey=_get_mock_coldkey(uid), **kwargs
+        uid=uid,
+        hotkey=_get_mock_hotkey(uid),
+        coldkey=_get_mock_coldkey(uid),
+        **kwargs
     )
 
 
