@@ -167,3 +167,11 @@ class LlmQuery(BaseSynapse):
     output: Optional[QueryOutput] = None
     def deserialize(self) -> str:
         return self.output
+
+class GenericLlmQuery(BaseSynapse):
+    messages: List[LlmMessage] = None
+
+    # output
+    output: Optional[QueryOutput] = None
+    def deserialize(self) -> str:
+        return self.output
