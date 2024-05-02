@@ -241,10 +241,10 @@ class Miner(BaseMinerNeuron):
 
         try:
             # TODO: handle generic llm query
-            query = self.llm.build_query_from_messages(synapse.messages)
-            bt.logging.info(f"extracted query: {query}")
+            cypher_query = self.llm.build_cypher_query_from_messages(synapse.messages)
+            bt.logging.info(f"extracted cypher query: {cypher_query}")
             
-            result = self.graph_search.execute_query(query=query)
+            result = self.graph_search.execute_cypher_query(cypher_query=cypher_query)
             interpreted_result = self.llm.interpret_result(llm_messages=synapse.messages, result=result)
 
             synapse.output = QueryOutput(result=result, interpreted_result=interpreted_result)
