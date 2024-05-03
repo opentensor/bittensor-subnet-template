@@ -1,6 +1,6 @@
 import os
 import json
-from typing import List
+from typing import Any, Dict, List, Optional
 
 import bittensor as bt
 
@@ -99,7 +99,7 @@ class OpenAILLM(BaseLLM):
     def generate_llm_query_from_query(self, query: Query) -> str:
         pass
     
-    def excute_generic_query(self, llm_message: str) -> str:
+    def excute_generic_query(self, llm_message: str) -> Dict[str, Any]:
         # Note: Getting Graph_db url, user, and password
         graph_db_url = (os.environ.get("GRAPH_DB_URL") or "bolt://localhost:7687")
         graph_db_user = os.environ.get("GRAPH_DB_USER") or ""
@@ -113,7 +113,9 @@ class OpenAILLM(BaseLLM):
         # Note: Querying
         try:
             response = chain.run(llm_message)
+            response["is_success"] = True
         except:
-            response = "Not found"
+            response = []
+            response["is_success"] = False
         return response
         
