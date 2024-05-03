@@ -114,6 +114,6 @@ class OpenAILLM(BaseLLM):
         try:
             response = chain.run(llm_message)
         except:
-            response = "Not found"   
+            response = "Not found"
         return response
         
