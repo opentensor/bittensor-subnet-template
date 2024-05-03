@@ -101,7 +101,7 @@ class OpenAILLM(BaseLLM):
     
     def excute_generic_query(self, llm_message: str) -> str:
         # Note: Getting Graph_db url, user, and password
-        graph_db_url = (os.environ.get("GRAPH_DB_URL") or "bolt://localhost:7687")
+        graph_db_url = os.environ.get("GRAPH_DB_URL") or "bolt://localhost:7687"
         graph_db_user = os.environ.get("GRAPH_DB_USER") or ""
         graph_db_password = os.environ.get("GRAPH_DB_PASSWORD") or ""
         
