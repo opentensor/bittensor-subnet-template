@@ -266,7 +266,7 @@ class MemgraphCypherQAChain(GraphCypherQAChain):
         # Check if query is modifying the db
         if 'SET' in generated_cypher or 'DELETE' in generated_cypher or 'CREATE' in generated_cypher:
             return {self.output_key: 'You are trying to change the database and it is forbidden'}
-
+        
         # Retrieve and limit the number of results
         # Generated Cypher be null if query corrector identifies invalid schema
         if generated_cypher:
