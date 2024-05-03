@@ -17,7 +17,7 @@ class BaseLLM(ABC):
         Build query synapse from natural language query
         Used by miner
         """
-
+   
     @abstractmethod
     def interpret_result(self, llm_messages: List[protocol.LlmMessage], result: list) -> str:
         """
@@ -35,4 +35,11 @@ class BaseLLM(ABC):
         """
         Generate natural language query from Query object
         Used by validator
+        """
+
+    @abstractmethod
+    def excute_generic_query(self, llm_message: str) -> str:
+        """
+        Generate natural language response from query using MemgraphCypherQAChain
+        Used by miner
         """
