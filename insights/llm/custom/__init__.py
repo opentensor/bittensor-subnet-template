@@ -2,15 +2,12 @@ from insights.llm.base_llm import BaseLLM
 from insights import protocol
 from insights.protocol import Query, QueryOutput
 
-from typing import List
+from typing import List, Dict, Any
 
 
 class CustomLLM(BaseLLM):
     def __init__(self, model_name: str) -> None:
-        pass
-    
-    def excute_generic_query(self, llm_message: str) -> str:
-        pass
+        pass    
     
     def build_query_from_messages(self, llm_messages: List[protocol.LlmMessage]) -> Query:
         pass
@@ -19,6 +16,9 @@ class CustomLLM(BaseLLM):
         pass
         
     def generate_llm_query_from_query(self, query: Query) -> str:
+        pass
+    
+    def excute_generic_query(self, llm_message: str) -> Dict[str, Any]:
         pass
     
     
