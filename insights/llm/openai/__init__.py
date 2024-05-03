@@ -115,7 +115,7 @@ class OpenAILLM(BaseLLM):
             response = chain.run(llm_message)
             response["is_success"] = True
         except:
-            response = []
+            response = {}
             response["is_success"] = False
         return response
         
