@@ -223,9 +223,13 @@ class Miner(BaseMinerNeuron):
             error_code = e.args[0]
             if error_code == protocol.LLM_ERROR_TYPE_NOT_SUPPORTED:
                 # handle unsupported query templates
-                try:
-                    interpreted_result = self.llm.generate_general_response(llm_messages=synapse.messages)
-                    synapse.output = QueryOutput(error=error_code, interpreted_result=interpreted_result)
+                try:                    
+                    result = self.llm.excute_generic_query(llm_message=synapse.messages[-1])
+                    if result["is_success"] == True:
+                        synapse.output = QueryOutput(error=error_code, result=result["result"], interpreted_result=result["intermediate_steps"]['context'])
+                    else:
+                        interpreted_result = self.llm.generate_general_response(llm_messages=synapse.messages)
+                        synapse.output = QueryOutput(error=error_code, interpreted_result=interpreted_result)
                 except Exception as e:
                     error_code = e.args[0]
                     synapse.output = QueryOutput(error=error_code, interpreted_result=protocol.LLM_ERROR_MESSAGES[error_code])
@@ -235,37 +239,6 @@ class Miner(BaseMinerNeuron):
         bt.logging.info(f"Serving miner llm query output: {synapse.output}")
         return synapse
     
-    async def generic_llm_query(self, synapse: protocol.GenericLlmQuery ) -> protocol.GenericLlmQuery:
-        bt.logging.info(f"generic llm query recieved: {synapse}")
-        synapse.output = {}
-
-        try:
-            # TODO: handle generic llm query
-            cypher_query = self.llm.build_cypher_query_from_messages(synapse.messages)
-            bt.logging.info(f"extracted cypher query: {cypher_query}")
-            
-            result = self.graph_search.execute_cypher_query(cypher_query=cypher_query)
-            interpreted_result = self.llm.interpret_result(llm_messages=synapse.messages, result=result)
-
-            synapse.output = QueryOutput(result=result, interpreted_result=interpreted_result)
-
-        except Exception as e:
-            bt.logging.error(traceback.format_exc())
-            error_code = e.args[0]
-            if error_code == protocol.LLM_ERROR_TYPE_NOT_SUPPORTED:
-                # handle unsupported query templates
-                try:
-                    interpreted_result = self.llm.generate_general_response(llm_messages=synapse.messages)
-                    synapse.output = QueryOutput(error=error_code, interpreted_result=interpreted_result)
-                except Exception as e:
-                    error_code = e.args[0]
-                    synapse.output = QueryOutput(error=error_code, interpreted_result=protocol.LLM_ERROR_MESSAGES[error_code])
-            else:
-                synapse.output = QueryOutput(error=error_code, interpreted_result=protocol.LLM_ERROR_MESSAGES[error_code])
-
-        bt.logging.info(f"Serving miner llm query output: {synapse.output}")
-        return synapse
-
     async def discovery_blacklist(self, synapse: protocol.Discovery) -> typing.Tuple[bool, str]:
         return blacklist.discovery_blacklist(self, synapse=synapse)
 
