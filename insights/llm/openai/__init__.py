@@ -99,7 +99,7 @@ class OpenAILLM(BaseLLM):
     def generate_llm_query_from_query(self, query: Query) -> str:
         pass
     
-    def excute_generic_query(self, llm_message: str) -> Dict[str, Any]:
+    def excute_generic_query(self, llm_message: str) -> str:
         # Note: Getting Graph_db url, user, and password
         graph_db_url = (os.environ.get("GRAPH_DB_URL") or "bolt://localhost:7687")
         graph_db_user = os.environ.get("GRAPH_DB_USER") or ""
@@ -112,10 +112,8 @@ class OpenAILLM(BaseLLM):
         chain = MemgraphCypherQAChain.from_llm(ChatOpenAI(temperature=0.7), graph = graph, return_intermediate_steps=True, verbose=True, model_name='gpt-4')
         # Note: Querying
         try:
-            response = chain.run(llm_message)
-            response["is_success"] = True
-        except:
-            response = {}
-            response["is_success"] = False
+            response = chain.run(llm_message)            
+        except:            
+            response = "Failed"
         return response
         

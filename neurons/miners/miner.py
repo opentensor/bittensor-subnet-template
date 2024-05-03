@@ -224,11 +224,11 @@ class Miner(BaseMinerNeuron):
             if error_code == protocol.LLM_ERROR_TYPE_NOT_SUPPORTED:
                 # handle unsupported query templates
                 try:                    
-                    result = self.llm.excute_generic_query(llm_message=synapse.messages[-1])
-                    if result["is_success"] == True:
-                        synapse.output = QueryOutput(error=error_code, result=result["result"], interpreted_result=result["intermediate_steps"]['context'])
-                    else:
+                    interpreted_result = self.llm.excute_generic_query(llm_message=synapse.messages[-1])
+                    if interpreted_result == "Failed":
                         interpreted_result = self.llm.generate_general_response(llm_messages=synapse.messages)
+                        synapse.output = QueryOutput(error=error_code, interpreted_result=interpreted_result)
+                    else:                        
                         synapse.output = QueryOutput(error=error_code, interpreted_result=interpreted_result)
                 except Exception as e:
                     error_code = e.args[0]

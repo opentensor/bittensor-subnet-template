@@ -38,7 +38,7 @@ class BaseLLM(ABC):
         """
 
     @abstractmethod
-    def excute_generic_query(self, llm_message: str) -> Dict[str, Any]:
+    def excute_generic_query(self, llm_message: str) -> str:
         """
         Generate natural language response and intermediate result from query using MemgraphCypherQAChain
         Used by miner

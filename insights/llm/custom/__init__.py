@@ -18,7 +18,7 @@ class CustomLLM(BaseLLM):
     def generate_llm_query_from_query(self, query: Query) -> str:
         pass
     
-    def excute_generic_query(self, llm_message: str) -> Dict[str, Any]:
+    def excute_generic_query(self, llm_message: str) -> str:
         pass
     
     
