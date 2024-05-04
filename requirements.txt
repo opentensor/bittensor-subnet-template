@@ -21,3 +21,4 @@ uvicorn
 langchain
 langchain-openai
 psycopg2-binary
+loguru

@@ -108,6 +108,15 @@ class Validator(BaseValidatorNeuron):
         self.uid_batch_generator = get_uids_batch(self, self.config.neuron.sample_size)
         self.miner_uptime_manager = MinerUptimeManager(db_url=self.config.db_connection_string)
         self.benchmark_validator = BenchmarkValidator(self.dendrite, self.validator_config)
+        if config.enable_api:
+            self.api_server = APIServer(
+                config=self.config,
+                wallet=self.wallet,
+                subtensor=self.subtensor,
+                metagraph=self.metagraph,
+                scores=self.scores
+            )
+
 
     def cross_validate(self, axon, node, challenge_factory, start_block_height, last_block_height, balance_model_last_block):
         try:
@@ -250,7 +259,7 @@ class Validator(BaseValidatorNeuron):
             else:
                 bt.logging.info(f"({hotkey=}) Ping Test: average ping time: {average_ping_time} seconds")
 
-            cross_validation_result, _ = self.cross_validate(response.axon, self.nodes[network], start_block_height, last_block_height)
+            cross_validation_result = self.cross_validate(response.axon, self.nodes[network], self.challenge_factory[network], start_block_height, last_block_height, balance_model_last_block)
 
             if cross_validation_result is None:
                 self.miner_uptime_manager.down(uid_value, hotkey)
@@ -352,7 +361,7 @@ class Validator(BaseValidatorNeuron):
         self.sync_validator()
 
     def send_metadata(self):
-        store_validator_metadata(self.config, self.wallet, self.uid)
+        store_validator_metadata(self)
 
 def run_api_server(api_server):
     api_server.start()
