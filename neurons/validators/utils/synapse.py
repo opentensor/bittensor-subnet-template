@@ -12,6 +12,8 @@ def is_discovery_response_valid(discovery_output: Discovery) -> bool:
         return False
     if output.start_block_height >= output.block_height:
         return False
+    if output.start_block_height == 0:
+        return False
     
     metadata: DiscoveryMetadata = output.metadata
     

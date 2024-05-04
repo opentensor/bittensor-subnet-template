@@ -32,17 +32,19 @@ class Metadata:
         for neuron in metagraph.neurons:
             miner_metadata = miners_metadata.get(neuron.hotkey)
 
-            network_id, version = None, None
+            network_id, version, end_block_height = None, None, None
             if miner_metadata:
                 network_id = miner_metadata.n
                 version = miner_metadata.cv
+                end_block_height = miner_metadata.lb
 
             data = dict(
                 hotkey = neuron.hotkey,
                 coldkey = neuron.coldkey,
                 ip = neuron.axon_info.ip,
                 network = get_network_by_id(network_id),
-                version = version
+                version = version,
+                end_block_height = end_block_height
             )
             hotkeys_metadata.append(data)
         return hotkeys_metadata        
@@ -72,4 +74,8 @@ class Metadata:
     @property
     def coldkey_distribution(self):
         return self.distributions['coldkey']
-
+    
+    @property
+    def worst_end_block_height(self):
+        hotkey =  min(filter(lambda x: x.get('end_block_height') is not None, self.hotkeys), key=lambda x: x['end_block_height'])
+        return hotkey['end_block_height']

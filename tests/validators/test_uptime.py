@@ -1,13 +1,9 @@
 import unittest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
-from datetime import datetime, timedelta
 from time import sleep
 
-from neurons.validators.uptime import DowntimeLog, Base, MinerUptimeManager, MinerUptime
-
-
-# Assuming the Miner and DowntimeLog classes have been imported from the module where they are defined.
+from neurons.validators.uptime import Downtimes, Base, MinerUptimeManager, Miners
 
 class TestMinerUptimeManager(unittest.TestCase):
     def setUp(self):
@@ -24,58 +20,40 @@ class TestMinerUptimeManager(unittest.TestCase):
         self.Session.remove()
         self.engine.dispose()
 
-    def test_get_miner(self):
-        # Setup test data
-        miner = MinerUptime(uid=123, hotkey='key123')
-        self.session.add(miner)
-        self.session.commit()
+    def test_add_miner_for_first_time_its_up(self):
+        self.uptime_manager.up(123, 'key123')
+        miner = self.uptime_manager.get_miner('key123')
 
-        # Test get_miner
-        result = self.uptime_manager.get_miner(123, 'key123')
-        self.assertIsNotNone(result)
-        self.assertEqual(result.uid, 123)
-        self.assertEqual(result.hotkey, 'key123')
-
-    def test_try_update_miner(self):
-        # Initial insert
-        self.uptime_manager.try_update_miner(123, 'key123')
-        miner = self.session.query(MinerUptime).first()
         self.assertIsNotNone(miner)
         self.assertEqual(miner.uid, 123)
         self.assertEqual(miner.hotkey, 'key123')
 
-        # Update to deregister
-        self.uptime_manager.try_update_miner(123, 'key124')
-        miner = self.session.query(MinerUptime).filter(MinerUptime.uid == 123).first()
-        self.assertTrue(miner.is_deregistered)
-
-    def test_up(self):
-        self.uptime_manager.try_update_miner(123, 'key123')
+    def test_update_miner__when_up_with_different_uid(self):
         self.uptime_manager.up(123, 'key123')
-        miner = self.uptime_manager.get_miner(123, 'key123')
-        self.assertIsNotNone(miner)
-        self.assertTrue(len(miner.downtimes) == 0)
+        self.uptime_manager.up(100, 'key123')
 
-    def test_down(self):
-        self.uptime_manager.try_update_miner(123, 'key123')
-        self.uptime_manager.down(123, 'key123')
-        miner = self.uptime_manager.get_miner(123, 'key123')
+        miner = self.uptime_manager.get_miner('key123')
+        self.assertEqual(miner.uid, 100)
+
+
+    def test_miner_up_and_down(self):
+        self.uptime_manager.up(100, 'key123')
+        self.uptime_manager.down(100, 'key123')
+        self.uptime_manager.up(100, 'key123')
+
+        miner = self.uptime_manager.get_miner('key123')
         self.assertTrue(len(miner.downtimes) == 1)
 
-    def test_up_and_down(self):
-        self.uptime_manager.try_update_miner(123, 'key123')
-        self.uptime_manager.up(123, 'key123')
-        self.uptime_manager.down(123, 'key123')
-        self.uptime_manager.up(123, 'key123')
-        self.uptime_manager.down(123, 'key123')
-        self.uptime_manager.up(123, 'key123')
+        self.uptime_manager.up(200, 'key123')
+        miner = self.uptime_manager.get_miner('key123')
+        self.assertTrue(len(miner.downtimes) == 1)
 
-        miner = self.uptime_manager.get_miner(123, 'key123')
-        self.assertIsNotNone(miner)
-        self.assertTrue(len(miner.downtimes) == 2)
+        uptimes = self.uptime_manager.get_uptime_scores('key123')
+        print(f"{uptimes=}")
+
 
     def test_calculate_uptime(self):
-        self.uptime_manager.try_update_miner(123, 'key123')
+        self.uptime_manager.try_add_miner(123, 'key123')
         sleep(10)
 
         self.uptime_manager.down(123, 'key123')

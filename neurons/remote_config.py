@@ -154,6 +154,8 @@ class ValidatorConfig(RemoteConfig):
         self.benchmark_consensus = 0.51
         self.benchmark_timeout = 600
         self.benchmark_cluster_size = 32
+        self.benchmark_query_chunk_size = 5
+        self.benchmark_query_diff = 10000
 
         self.version = None
         self.version_update = True
@@ -183,6 +185,8 @@ class ValidatorConfig(RemoteConfig):
 
         self.benchmark_timeout = self.get_config_value('benchmark_timeout', 600)
         self.benchmark_cluster_size = self.get_config_value('benchmark_cluster_size', 1)
+        self.benchmark_query_chunk_size = self.get_config_value('benchmark_query_chunk_size', 5)
+        self.benchmark_query_diff = self.get_config_value('benchmark_query_diff', 10000)
 
         self.version_update = self.get_config_value('version_update', True)
         self.version = self.get_config_value('version', insights.__version__)

@@ -5,8 +5,8 @@ class Scorer:
     def __init__(self, config: ValidatorConfig):
         self.config = config
 
-    def calculate_score(self, network,  process_time, indexed_start_block_height, indexed_end_block_height, blockchain_last_block_height, miner_distribution, uptime_avg):
-        log =  (f'🔄 Network: {network} | ' \
+    def calculate_score(self, hotkey, network,  process_time, indexed_start_block_height, indexed_end_block_height, blockchain_last_block_height, miner_distribution, uptime_avg):
+        log =  (f'({hotkey=}) 🔄 Network: {network} | ' \
                 f'Benchmark process time: {process_time:4f} | ' \
                 f'Indexed start block height: {indexed_start_block_height} | ' \
                 f'Indexed end block height: {indexed_end_block_height} | ' \
@@ -23,7 +23,7 @@ class Scorer:
 
         final_score = self.final_score(process_time_score, block_height_score, block_height_recency_score, blockchain_score, uptime_score)
 
-        log =  (f'🔄 Benchmark process time score: {process_time_score:.4f} | ' \
+        log =  (f'({hotkey=}) 🔄 Benchmark process time score: {process_time_score:.4f} | ' \
                 f'Block height score: {block_height_score:.4f} | ' \
                 f'Block height recency score: {block_height_recency_score:.4f} | ' \
                 f'Blockchain score: {blockchain_score:.4f} | ' \
