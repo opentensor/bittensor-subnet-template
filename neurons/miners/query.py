@@ -46,9 +46,7 @@ def get_graph_indexer(config):
 def get_balance_search(config):
     switch = {
         NETWORK_BITCOIN: {
-            MODEL_TYPE_BALANCE_TRACKING: lambda: BitcoinBalanceSearch(
-                config.postgres_host, config.postgres_port, config.postgres_db, config.postgres_user, config.postgres_password,
-            ),
+            MODEL_TYPE_BALANCE_TRACKING: lambda: BitcoinBalanceSearch(config.db_connection_string),
         },
     }
 
@@ -57,9 +55,7 @@ def get_balance_search(config):
 def get_balance_indexer(config):
     switch = {
         NETWORK_BITCOIN: {
-            MODEL_TYPE_BALANCE_TRACKING: lambda: BitcoinBalanceIndexer(
-                config.postgres_host, config.postgres_port, config.postgres_db, config.postgres_user, config.postgres_password,
-            ),
+            MODEL_TYPE_BALANCE_TRACKING: lambda: BitcoinBalanceIndexer(config.db_connection_string),
         },
     }
 
