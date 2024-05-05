@@ -109,6 +109,10 @@ class Miner(BaseMinerNeuron):
             forward_fn=self.llm_query,
             blacklist_fn=self.llm_query_blacklist,
             priority_fn=self.llm_query_priority
+        ).attach(
+            forward_fn=self.generic_llm_query,
+            blacklist_fn=self.generic_llm_query_blacklist,
+            priority_fn=self.generic_llm_query_priority
         )
 
         bt.logging.info(f"Axon created: {self.axon}")
@@ -200,9 +204,13 @@ class Miner(BaseMinerNeuron):
             error_code = e.args[0]
             if error_code == protocol.LLM_ERROR_TYPE_NOT_SUPPORTED:
                 # handle unsupported query templates
-                try:
-                    interpreted_result = self.llm.generate_general_response(llm_messages=synapse.messages)
-                    synapse.output = QueryOutput(error=error_code, interpreted_result=interpreted_result)
+                try:                    
+                    interpreted_result = self.llm.excute_generic_query(llm_message=synapse.messages[-1])
+                    if interpreted_result == "Failed":
+                        interpreted_result = self.llm.generate_general_response(llm_messages=synapse.messages)
+                        synapse.output = QueryOutput(error=error_code, interpreted_result=interpreted_result)
+                    else:                        
+                        synapse.output = QueryOutput(error=error_code, interpreted_result=interpreted_result)
                 except Exception as e:
                     error_code = e.args[0]
                     synapse.output = QueryOutput(error=error_code, interpreted_result=protocol.LLM_ERROR_MESSAGES[error_code])
@@ -211,7 +219,7 @@ class Miner(BaseMinerNeuron):
 
         bt.logging.info(f"Serving miner llm query output: {synapse.output}")
         return synapse
-
+    
     async def discovery_blacklist(self, synapse: protocol.Discovery) -> typing.Tuple[bool, str]:
         return blacklist.discovery_blacklist(self, synapse=synapse)
 
@@ -225,6 +233,9 @@ class Miner(BaseMinerNeuron):
         return blacklist.base_blacklist(self, synapse=synapse)
  
     async def llm_query_blacklist(self, synapse: protocol.LlmQuery) -> typing.Tuple[bool, str]:
+        return blacklist.base_blacklist(self, synapse=synapse)
+    
+    async def generic_llm_query_blacklist(self, synapse: protocol.GenericLlmQuery) -> typing.Tuple[bool, str]:
         return blacklist.base_blacklist(self, synapse=synapse)
     
     def base_priority(self, synapse: bt.Synapse) -> float:
@@ -252,6 +263,9 @@ class Miner(BaseMinerNeuron):
         return self.base_priority(synapse=synapse)
 
     async def benchmark_priority(self, synapse: protocol.Benchmark) -> float:
+        return self.base_priority(synapse=synapse)
+    
+    async def generic_llm_query_priority(self, synapse: protocol.GenericLlmQuery) -> float:
         return self.base_priority(synapse=synapse)
 
     def resync_metagraph(self):

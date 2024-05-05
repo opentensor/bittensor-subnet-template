@@ -106,6 +106,9 @@ class QueryOutput(BaseModel):
     interpreted_result: Optional[str] = None
     error: Optional[ERROR_TYPE] = None
 
+class GenericQueryOutput(BaseModel):
+    result: Optional[List[Dict]] = None    
+    error: Optional[ERROR_TYPE] = None
 
 class Query(BaseSynapse):
     network: str = None
@@ -165,5 +168,14 @@ class LlmQuery(BaseSynapse):
 
     # output
     output: Optional[QueryOutput] = None
+    def deserialize(self) -> str:
+        return self.output
+
+class GenericLlmQuery(BaseSynapse):
+    is_generic_llm: bool = True
+    messages: List[LlmMessage] = None
+
+    # output
+    output: Optional[GenericQueryOutput] = None
     def deserialize(self) -> str:
         return self.output

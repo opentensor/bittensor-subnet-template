@@ -1,6 +1,6 @@
 import os
 import json
-from typing import List
+from typing import Any, Dict, List, Optional
 
 import bittensor as bt
 
@@ -9,6 +9,10 @@ from insights.llm.prompts import query_schema, interpret_prompt, general_prompt
 from insights.protocol import Query, NETWORK_BITCOIN
 from insights import protocol
 
+from gqlalchemy import Memgraph
+from insights.llm.openai.memgraph_chain import MemgraphCypherQAChain
+from langchain.prompts import PromptTemplate
+from langchain_community.graphs import MemgraphGraph
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 
@@ -23,7 +27,7 @@ class OpenAILLM(BaseLLM):
             raise Exception("OpenAI_API_KEY is not set.")
 
         self.chat = ChatOpenAI(api_key=api_key, model="gpt-4", temperature=0)
-        
+    
     def build_query_from_messages(self, llm_messages: List[protocol.LlmMessage]) -> Query:
         messages = [
             SystemMessage(
@@ -39,6 +43,7 @@ class OpenAILLM(BaseLLM):
             ai_message = self.chat.invoke(messages)
             query = json.loads(ai_message.content)
             return Query(
+                
                 network=NETWORK_BITCOIN,
                 type=query["type"] if "type" in query else None,
                 target=query["target"] if "target" in query else None,
@@ -49,7 +54,7 @@ class OpenAILLM(BaseLLM):
         except Exception as e:
             bt.logging.error(f"LlmQuery build error: {e}")
             raise Exception(protocol.LLM_ERROR_QUERY_BUILD_FAILED)
-        
+    
     def interpret_result(self, llm_messages: str, result: list) -> str:
         messages = [
             SystemMessage(
@@ -94,3 +99,21 @@ class OpenAILLM(BaseLLM):
     def generate_llm_query_from_query(self, query: Query) -> str:
         pass
     
+    def excute_generic_query(self, llm_message: str) -> str:
+        # Note: Getting Graph_db url, user, and password
+        graph_db_url = os.environ.get("GRAPH_DB_URL") or "bolt://localhost:7687"
+        graph_db_user = os.environ.get("GRAPH_DB_USER") or ""
+        graph_db_password = os.environ.get("GRAPH_DB_PASSWORD") or ""
+        
+        # Note: Loading the memgraph
+        graph = MemgraphGraph(url=graph_db_url, username=graph_db_user, password=graph_db_password)
+        
+        # Note: Creating the GraphCypherQAChain
+        chain = MemgraphCypherQAChain.from_llm(ChatOpenAI(temperature=0.7), graph = graph, return_intermediate_steps=True, verbose=True, model_name='gpt-4')
+        # Note: Querying
+        try:
+            response = chain.run(llm_message)            
+        except:            
+            response = "Failed"
+        return response
+        

@@ -2,7 +2,7 @@ from insights import protocol
 from insights.protocol import Query, QueryOutput
 
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Dict, Any
 
 class BaseLLM(ABC):
     @abstractmethod
@@ -17,7 +17,7 @@ class BaseLLM(ABC):
         Build query synapse from natural language query
         Used by miner
         """
-
+   
     @abstractmethod
     def interpret_result(self, llm_messages: List[protocol.LlmMessage], result: list) -> str:
         """
@@ -35,4 +35,11 @@ class BaseLLM(ABC):
         """
         Generate natural language query from Query object
         Used by validator
+        """
+
+    @abstractmethod
+    def excute_generic_query(self, llm_message: str) -> str:
+        """
+        Generate natural language response and intermediate result from query using MemgraphCypherQAChain
+        Used by miner
         """
