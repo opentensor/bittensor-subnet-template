@@ -15,8 +15,13 @@ logger = setup_logger("BalanceIndexer")
 
 
 class BalanceIndexer:
-    def __init__(self, db_url):
-        self.engine = create_engine(db_url)
+    def __init__(self, db_url: str = None):
+        if db_url is None:
+            self.db_url = os.environ.get("DB_CONNECTION_STRING", f"postgresql://postgres:changeit456$@localhost:5432/miner")
+        else:
+            self.db_url = db_url
+
+        self.engine = create_engine(self.db_url)
         self.Session = sessionmaker(bind=self.engine)
         
         # check if table exists and create if not
