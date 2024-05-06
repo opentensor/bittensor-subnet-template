@@ -12,6 +12,7 @@ from rich.table import Table
 from rich.console import Console
 import yaml
 
+from fastapi.middleware.cors import CORSMiddleware
 from insights import protocol
 from insights.protocol import QueryOutput
 from insights.api.query import TextQueryAPI
@@ -157,6 +158,14 @@ class APIServer:
         """
         self.app = FastAPI(title="validator-api",
                            description="The goal of validator-api is to set up how to message between Chat API and validators.")
+
+        self.app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+
         self.config = config
         self.device = self.config.neuron.device
         self.wallet = wallet
