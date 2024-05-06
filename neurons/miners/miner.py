@@ -6,6 +6,7 @@ import traceback
 import yaml
 import bittensor as bt
 from insights import protocol
+from insights.llm import LLMFactory
 
 # import base miner class which takes care of most of the boilerplate
 from template.base.miner import BaseMinerNeuron
@@ -115,7 +116,7 @@ class Miner(BaseMinerNeuron):
         self.graph_search = get_graph_search(config)
         self.balance_search = get_balance_search(config)
         self.miner_config = MinerConfig().load_and_get_config_values()
-        #self.llm = LLMFactory.create_llm(config.llm_type)
+        self.llm = LLMFactory.create_llm(config.llm_type)
         self.graph_search = get_graph_search(config)
 
         self.miner_config = MinerConfig().load_and_get_config_values()
