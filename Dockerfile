@@ -1,14 +1,19 @@
-FROM python:3.9-slim
-
+# Use the official Python 3.10 image
+FROM python:3.10
 WORKDIR /blockchain-data-subnet
 COPY requirements.txt requirements.txt
+RUN apt-get update && apt-get install -y \
+    python3-dev \
+    cmake \
+    make \
+    gcc \
+    g++ \
+    libssl-dev \
+
+RUN pip install --upgrade pip
+RUN pip install pymgclient
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 RUN pip install --no-cache-dir .
-RUN chmod +rwx scripts/*
 
-RUN apt-get update && \
-    apt-get install -y iptables && \
-    rm -rf /var/lib/apt/lists/* \
-
-# RUN python -m unittest discover -s neurons -p '*test*.py'
+RUN chmod +x scripts/*
