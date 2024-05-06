@@ -17,7 +17,6 @@ from neurons.storage import store_miner_metadata
 from neurons.remote_config import MinerConfig
 from neurons.nodes.factory import NodeFactory
 from neurons.miners.query import get_graph_search, get_graph_indexer, get_balance_search, get_balance_indexer
-from insights.llm import LLMFactory
 
 
 class Miner(BaseMinerNeuron):
@@ -109,10 +108,6 @@ class Miner(BaseMinerNeuron):
             forward_fn=self.llm_query,
             blacklist_fn=self.llm_query_blacklist,
             priority_fn=self.llm_query_priority
-        ).attach(
-            forward_fn=self.generic_llm_query,
-            blacklist_fn=self.generic_llm_query_blacklist,
-            priority_fn=self.generic_llm_query_priority
         )
 
         bt.logging.info(f"Axon created: {self.axon}")
@@ -120,7 +115,7 @@ class Miner(BaseMinerNeuron):
         self.graph_search = get_graph_search(config)
         self.balance_search = get_balance_search(config)
         self.miner_config = MinerConfig().load_and_get_config_values()
-        self.llm = LLMFactory.create_llm(config.llm_type)
+        #self.llm = LLMFactory.create_llm(config.llm_type)
         self.graph_search = get_graph_search(config)
 
         self.miner_config = MinerConfig().load_and_get_config_values()
