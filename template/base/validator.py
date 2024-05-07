@@ -19,6 +19,8 @@
 
 
 import copy
+import time
+
 import torch
 import asyncio
 import argparse
@@ -145,7 +147,7 @@ class BaseValidatorNeuron(BaseNeuron):
             Exception: For unforeseen errors during the miner's operation, which are logged for diagnosis.
         """
 
-        # Check that validator is registered on the network.
+        # Check that the validator is registered on the network.
         self.sync()
 
         bt.logging.info(f"Validator starting at block: {self.block}")
@@ -155,8 +157,20 @@ class BaseValidatorNeuron(BaseNeuron):
             while True:
                 bt.logging.info(f"step({self.step}) block({self.block})")
 
+                # Record the start time of the forwarding process.
+                start_time = time.time()
+
                 # Run multiple forwards concurrently.
                 self.loop.run_until_complete(self.concurrent_forward())
+
+                # Calculate the elapsed time for the forwarding process.
+                elapsed_time = time.time() - start_time
+
+                # If the elapsed time is less than 5 minutes (300 seconds), sleep for the remaining time.
+                if elapsed_time < 300:
+                    remaining_time = 300 - elapsed_time
+                    bt.logging.info(f"Waiting for {remaining_time} seconds after cycle.")
+                    time.sleep(remaining_time)
 
                 # Check if we should exit.
                 if self.should_exit:
