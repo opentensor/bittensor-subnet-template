@@ -8,6 +8,8 @@ def is_discovery_response_valid(discovery_output: Discovery) -> bool:
     output: DiscoveryOutput = discovery_output.output
     if output is None:
         return False
+    if output.block_height is None or output.start_block_height is None:
+        return False
     if output.start_block_height < 0 or output.block_height < 0:
         return False
     if output.start_block_height >= output.block_height:
