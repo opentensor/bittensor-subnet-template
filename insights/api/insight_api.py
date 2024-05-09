@@ -2,6 +2,8 @@ import argparse
 import os
 import random
 import time
+
+import asyncio
 import numpy as np
 from typing import List, Optional, Union, Any, Dict
 from datetime import datetime
@@ -224,17 +226,18 @@ class APIServer:
                 text=query.prompt,
                 timeout=self.config.timeout
             )
-            
-            if not responses:
-                # TODO: I have received 0 responses due to some issues
-                return "Please try again. Can't receive any responses due to the poor network connection."
-            
+
             blacklist_axons = np.array(top_miner_axons)[blacklist_axon_ids]
             blacklist_uids = np.where(np.isin(np.array(self.metagraph.axons), blacklist_axons))[0]
             # get responded miner uids among top miners
             responded_uids = np.setdiff1d(np.array(top_miner_uids), blacklist_uids)
             self.excluded_uids = np.union1d(np.array(self.excluded_uids), blacklist_uids)
             self.excluded_uids = self.excluded_uids.astype(int).tolist()
+            bt.logging.info(f"Excluded_uids are {self.excluded_uids}")
+
+            if not responses:
+                msg = "Please try again. Can't receive any responses from the miners or due to the poor network connection."
+                return ChatMessageResponse(text=msg, miner_id="")
 
             # Add score to miners respond to user query
             uids = responded_uids.tolist()
@@ -310,7 +313,7 @@ class APIServer:
             miner_axon = await get_query_api_axons(wallet=self.wallet, metagraph=self.metagraph, uids=query.miner_id)
             bt.logging.info(f"Miner axon: {miner_axon}")
             
-            responses, blacklist_axon_ids =  await self.text_query_api(
+            responses, _ = await self.text_query_api(
                 axons=miner_axon,
                 network=query.network,
                 text=query.prompt,
@@ -319,7 +322,7 @@ class APIServer:
             
             if not responses:
                 # TODO: I have received 0 responses due to some issues
-                return "Please try again. Can't receive any responses due to the poor network connection."
+                return "Please try again. Can't receive any responses from the miners or due to the poor network connection."
             
             bt.logging.info(f"Variant: {responses}")
 
@@ -331,5 +334,8 @@ class APIServer:
             return datetime.utcnow()  
         
     def start(self):
-        uvicorn.run(self.app, host="0.0.0.0", port=int(self.config.api_port))
+        # Set the default event loop policy to avoid conflicts with uvloop
+        asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
+        # Start the Uvicorn server with your app
+        uvicorn.run(self.app, host="0.0.0.0", port=int(self.config.api_port), loop="asyncio")
         
