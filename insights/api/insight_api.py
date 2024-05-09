@@ -216,9 +216,9 @@ class APIServer:
             bt.logging.info(f"Top miner UIDs are {top_miner_uids}")
             top_miner_axons = await get_query_api_axons(wallet=self.wallet, metagraph=self.metagraph, uids=top_miner_uids)
             bt.logging.info(f"Top miner axons: {top_miner_axons}")
-            
+
             # get miner response
-            responses, blacklist_axon_ids =  await self.text_query_api(
+            responses, blacklist_axon_ids = await self.text_query_api(
                 axons=top_miner_axons,
                 network=query.network,
                 text=query.prompt,

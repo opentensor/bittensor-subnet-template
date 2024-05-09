@@ -39,6 +39,7 @@ def get_top_miner_uids(
     Returns:
         top_miner_uid (torch.LongTensor): The top miner UID.
     """
+
     candidate_uids = []
     for uid in range(metagraph.n.item()):
         uid_is_available = check_uid_availability(
@@ -51,15 +52,24 @@ def get_top_miner_uids(
                 candidate_uids.append(uid)
     # Consider both of incentive and trust score
     values = [(uid, metagraph.I[uid] * metagraph.trust[uid]) for uid in candidate_uids]
-    top_rate_num_items = max(1, int(top_rate * len(candidate_uids)))
+    sorted_values = sorted(values, key=lambda x: x[1], reverse=True)
+
     # Consider only incentive
-    # values = [(uid, metagraph.I[uid]) for uid in candidate_uids] 
-    
-    sorted_values = sorted(values,key=lambda x: x[1], reverse=True)
+    # values = [(uid, metagraph.I[uid]) for uid in candidate_uids]
+
+    ips = []
+    filtered_uids = []
+    for uid, _ in sorted_values:
+        if metagraph.axons[uid].ip not in ips:
+            ips.append(metagraph.axons[uid].ip)
+            filtered_uids.append(uid)
+
+    values = [(uid, metagraph.I[uid] * metagraph.trust[uid]) for uid in filtered_uids]
+    sorted_values = sorted(values, key=lambda x: x[1], reverse=True)
+    top_rate_num_items = max(1, int(top_rate * len(filtered_uids)))
     top_miner_uids = torch.tensor([uid for uid, _ in sorted_values[:top_rate_num_items]])
-    return top_miner_uids    
-    
-    
+    return top_miner_uids
+
 
 def get_random_uids(
     self, k: int, exclude: List[int] = None
