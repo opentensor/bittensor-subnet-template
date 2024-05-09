@@ -2,6 +2,8 @@ import argparse
 import os
 import random
 import time
+
+import asyncio
 import numpy as np
 from typing import List, Optional, Union, Any, Dict
 from datetime import datetime
@@ -227,7 +229,7 @@ class APIServer:
             
             if not responses:
                 # TODO: I have received 0 responses due to some issues
-                return "Please try again. Can't receive any responses due to the poor network connection."
+                return "Please try again. Can't receive any responses from the miners or due to the poor network connection."
             
             blacklist_axons = np.array(top_miner_axons)[blacklist_axon_ids]
             blacklist_uids = np.where(np.isin(np.array(self.metagraph.axons), blacklist_axons))[0]
@@ -331,5 +333,8 @@ class APIServer:
             return datetime.utcnow()  
         
     def start(self):
-        uvicorn.run(self.app, host="0.0.0.0", port=int(self.config.api_port))
+        # Set the default event loop policy to avoid conflicts with uvloop
+        asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
+        # Start the Uvicorn server with your app
+        uvicorn.run(self.app, host="0.0.0.0", port=int(self.config.api_port), loop="asyncio")
         
