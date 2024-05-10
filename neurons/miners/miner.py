@@ -3,6 +3,7 @@ import os
 import time
 import typing
 import traceback
+
 import yaml
 import bittensor as bt
 from insights import protocol
@@ -81,7 +82,7 @@ class Miner(BaseMinerNeuron):
     
     def __init__(self, config=None):
         config = Miner.get_config()
-        
+
         super(Miner, self).__init__(config=config)
         
         self.request_timestamps: dict = {}
@@ -201,7 +202,7 @@ class Miner(BaseMinerNeuron):
             if error_code == protocol.LLM_ERROR_TYPE_NOT_SUPPORTED:
                 # handle unsupported query templates
                 try:                    
-                    interpreted_result = self.llm.excute_generic_query(llm_message=synapse.messages[-1])
+                    interpreted_result = self.llm.excute_generic_query(llm_message=synapse.messages[-1].content)
                     if interpreted_result == "Failed":
                         interpreted_result = self.llm.generate_general_response(llm_messages=synapse.messages)
                         synapse.output = QueryOutput(error=error_code, interpreted_result=interpreted_result)
