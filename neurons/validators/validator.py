@@ -230,7 +230,7 @@ class Validator(BaseValidatorNeuron):
             uid_value = uid.item() if uid.numel() == 1 else int(uid.numpy())
 
             if not self.is_response_status_code_valid(response):
-                score = self.metagraph.T[uid]/2
+                score = self.metagraph.T[uid]/4
                 self.miner_uptime_manager.down(uid_value, hotkey)
                 bt.logging.debug(f'({hotkey=}) Discovery Response error, setting score to {score}')
                 return score
@@ -273,9 +273,10 @@ class Validator(BaseValidatorNeuron):
 
             benchmark_result = benchmarks_result.get(uid_value)
             if benchmark_result is None:
+                score = self.metagraph.T[uid]/4
                 self.miner_uptime_manager.down(uid_value, hotkey)
                 bt.logging.info(f"({hotkey=}) Benchmark-Validation: Timeout skipping response")
-                return
+                return score
 
             response_time, benchmark_is_valid = benchmark_result
             if not benchmark_is_valid:
