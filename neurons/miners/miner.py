@@ -1,5 +1,6 @@
 import argparse
 import os
+import re
 import time
 import typing
 import traceback
@@ -173,9 +174,15 @@ class Miner(BaseMinerNeuron):
     async def benchmark(self, synapse: protocol.Benchmark) -> protocol.Benchmark:
         try:
             bt.logging.info(f"Executing benchmark query: {synapse.query}")
-
-            result = self.graph_search.execute_benchmark_query(cypher_query=synapse.query)
-            synapse.output = result[0]
+            pattern = self.miner_config.get_benchmark_query_regex(self.config.network)
+            regex = re.compile(pattern)
+            match = regex.fullmatch(synapse.query)
+            if match is None:
+                bt.logging.error(f"Invalid benchmark query: {synapse.query}")
+                synapse.output = None
+            else:
+                result = self.graph_search.execute_benchmark_query(cypher_query=synapse.query)
+                synapse.output = result[0]
 
             bt.logging.info(f"Serving miner benchmark output: {synapse.output}")
         except Exception as e:

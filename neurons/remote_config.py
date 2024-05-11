@@ -132,6 +132,10 @@ class MinerConfig(RemoteConfig):
     def get_blockchain_sync_delta(self, network):
         self.get_config_composite_value('blockchain_sync_delta', {'bitcoin': 100})
 
+    def get_benchmark_query_regex(self, network):
+        value = self.get_config_composite_value(f'benchmark_query_regex.{network}', "UNWIND range\\((\\d+), (\\d+)\\) AS block_height MATCH \\(p:Transaction\\) WHERE p.block_height = block_height RETURN SUM\\(p.(\\w+)\\+(\\d+)\\)$")
+        return value
+
 
 class ValidatorConfig(RemoteConfig):
     def __init__(self):
