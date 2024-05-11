@@ -96,10 +96,6 @@ class Miner(BaseMinerNeuron):
             blacklist_fn=self.discovery_blacklist,
             priority_fn=self.discovery_priority,
         ).attach(
-            forward_fn=self.query,
-            blacklist_fn=self.query_blacklist,
-            priority_fn=self.query_priority,
-        ).attach(
             forward_fn=self.challenge,
             blacklist_fn=self.challenge_blacklist,
             priority_fn=self.challenge_priority,
@@ -139,14 +135,6 @@ class Miner(BaseMinerNeuron):
         except Exception as e:
             bt.logging.error(traceback.format_exc())
             synapse.output = None
-        return synapse
-
-    async def query(self, synapse: protocol.Query ) -> protocol.Query:
-        try:
-            synapse.output = QueryOutput(result=self.graph_search.execute_query(query=synapse))
-        except Exception as e:
-            bt.logging.error(traceback.format_exc())
-            synapse.output = QueryOutput(error=e)
         return synapse
 
     async def challenge(self, synapse: protocol.Challenge ) -> protocol.Challenge:
@@ -227,9 +215,6 @@ class Miner(BaseMinerNeuron):
     async def discovery_blacklist(self, synapse: protocol.Discovery) -> typing.Tuple[bool, str]:
         return blacklist.discovery_blacklist(self, synapse=synapse)
 
-    async def query_blacklist(self, synapse: protocol.Query) -> typing.Tuple[bool, str]:
-        return blacklist.query_blacklist(self, synapse=synapse)
-
     async def challenge_blacklist(self, synapse: protocol.Challenge) -> typing.Tuple[bool, str]:
         return blacklist.base_blacklist(self, synapse=synapse)
 
@@ -255,9 +240,6 @@ class Miner(BaseMinerNeuron):
         return prirority
     
     async def discovery_priority(self, synapse: protocol.Discovery) -> float:
-        return self.base_priority(synapse=synapse)
-
-    async def query_priority(self, synapse: protocol.Query) -> float:
         return self.base_priority(synapse=synapse)
 
     async def challenge_priority(self, synapse: protocol.Challenge) -> float:
