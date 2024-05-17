@@ -268,7 +268,7 @@ class APIServer:
             # return response and the hotkey of randomly selected miner
             return ChatMessageResponse(text=responses[selected_index].interpreted_result, miner_id=self.metagraph.hotkeys[responded_uids[selected_index]])
         
-        @self.app.post("api/text_query/variant", summary="POST /variation request for natual language query", tags=["validator api"])
+        @self.app.post("/api/text_query/variant", summary="POST /variation request for natual language query", tags=["validator api"])
         async def get_response_variant(query: ChatMessageVariantRequest = Body(...)):
             """            
             A validator would be able to receive a user request to generate a variation on a previously generated message. It will return the new message and store the fact that a specific miner's message had a variation request.
