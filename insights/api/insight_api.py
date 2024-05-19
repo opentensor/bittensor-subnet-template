@@ -19,7 +19,7 @@ from insights import protocol
 from insights.protocol import QueryOutput
 from insights.api.query import TextQueryAPI
 from insights.api.get_query_axons import get_query_api_axons
-from insights.api.schema.chat import ChatMessageRequest, ChatMessageResponse, ChatMessageVariantRequest
+from insights.api.schema.chat import ChatMessageRequest, ChatMessageResponse, ChatMessageVariantRequest, TextContent, GraphContent, GraphNodeContent, ContentType, GraphEdgeContent, TableContent, TableRow, TableColumn
 from neurons.validators.utils.uids import get_top_miner_uids
 from fastapi import FastAPI, Body
 import uvicorn
@@ -264,6 +264,53 @@ class APIServer:
             bt.logging.info(f"Responses are {responses}")
             
             selected_index = responses.index(random.choice(responses))
+
+            # Example records for graph and table representations
+            graph_example = GraphContent(
+                type=ContentType.graph,
+                content=[
+                    GraphNodeContent(
+                        id="bc9zc38fha93idi823rf0wa94fj",
+                        type="node",
+                        label="address",
+                        content={"address": "bc9zc38fha93idi823rf0wa94fj"}
+                    ),
+                    GraphNodeContent(
+                        id="bc9zc38fha93idi823rf0wa943223",
+                        type="node",
+                        label="transaction",
+                        content={"address": "bc9zc38fha93idi823rf0wa943223"}
+                    ),
+                    GraphEdgeContent(
+                        type="edge",
+                        from_id="bc9zc38fha93idi823rf0wa94fj",
+                        to_id="bc9zc38fha93idi823rf0wa943223",
+                        content={}
+                    )
+                ]
+            )
+
+            table_example = TableContent(
+                type=ContentType.table,
+                columns=[
+                    TableColumn(name="tx_id", label="Transaction Id"),
+                    TableColumn(name="amount", label="Amount"),
+                    TableColumn(name="timestamp", label="Timestamp")
+                ],
+                content=[
+                    TableRow(id="0x123", tx_id="0x123", amount=300, timestamp=102932123123),
+                    TableRow(id="0x456", tx_id="0x456", amount=450, timestamp=103924927430)
+                ]
+            )
+
+            response_object = ChatMessageResponse(
+                miner_id=self.metagraph.hotkeys[responded_uids[selected_index]],
+                response=[
+                    TextContent(type=ContentType.text, content=responses[selected_index].interpreted_result),
+                    graph_example,
+                    table_example
+                ]
+            )
 
             # return response and the hotkey of randomly selected miner
             return ChatMessageResponse(text=responses[selected_index].interpreted_result, miner_id=self.metagraph.hotkeys[responded_uids[selected_index]])
