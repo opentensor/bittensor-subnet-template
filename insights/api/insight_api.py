@@ -192,8 +192,11 @@ class APIServer:
 
             **Returns:**
             `ChatMessageResponse`: response in natural language.
-                - `text` (str): miner response.                
                 - `miner_id` (str): responded miner uid
+                - `response` (json): miner response containing the following types of information:
+                1. Text information in natural language
+                2. Graph information for funds flow model-based response
+                3. Tabular information for transaction and account balance model-based response
             
             **Example Request:**
             ```json
@@ -208,9 +211,73 @@ class APIServer:
             **Example Response:**
             ```json
             {
-                "text": "15 transactions you sent are as follows. ...",
-                "miner_id": "230",                
+                "miner_id": "5CUUjNeTr5WAB7q4VqBkGrCyJ9XRZ4wqQMRZBw2XTmrR3xQA",
+                "response": [
+                {
+                    "type": "text",
+                    "content": "Hello, this is the answer from you"
+                },
+                {
+                    "type": "graph",
+                    "content": [
+                    {
+                        "id": "bc9zc38fha93idi823rf0wa94fj",
+                        "type": "node",
+                        "label": "address",
+                        "content": {
+                            "address": "bc9zc38fha93idi823rf0wa94fj"
+                        }
+                    },
+                    {
+                        "id": "bc9zc38fha93idi823rf0wa943223",
+                        "type": "node",
+                        "label": "transaction",
+                        "content": {
+                            "address": "bc9zc38fha93idi823rf0wa943223"
+                        }
+                    },
+                    {
+                        "type": "edge",
+                        "from_id": "bc9zc38fha93idi823rf0wa94fj",
+                        "to_id": "bc9zc38fha93idi823rf0wa943223",
+                        "content": {}
+                    }
+                    ]
+                },
+                {
+                    "type": "table",
+                    "columns": [
+                    {
+                        "name": "tx_id",
+                        "label": "Transaction Id"
+                    },
+                    {
+                        "name": "amount",
+                        "label": "Amount"
+                    },
+                    {
+                        "name": "timestamp",
+                        "label": "Timestamp"
+                    }
+                    ],
+                    "content": [
+                    {
+                        "id": "0x123",
+                        "tx_id": "0x123",
+                        "amount": 300,
+                        "timestamp": 102932123123
+                    },
+                    {
+                        "id": "0x456",
+                        "tx_id": "0x456",
+                        "amount": 450,
+                        "timestamp": 103924927430
+                    }
+                    ]
+                }
+                ]
             }
+
             ```
             """
             # select top miner            
@@ -324,16 +391,18 @@ class APIServer:
 
             
             **Parameters:**
-            `query` (ChatMessageVariantRequest): natural language query from users, network(Bitcoin, Ethereum, ...), User ID, Miner UID, temperature.
-                network: str
+            `query` (ChatMessageVariantRequest): natural language query from users, network(Bitcoin, Ethereum, ...), User ID, Miner UID, temperature.\
                 user_id: UUID
                 prompt: str
                 temperature: float
                 miner_id: str
             **Returns:**
-            - `ChatMessageResponse`: response in natural language.
-                - `text` (str): miner response.                
+            `ChatMessageResponse`: response in natural language.
                 - `miner_id` (str): responded miner uid
+                - `response` (json): miner response containing the following types of information:
+                1. Text information in natural language
+                2. Graph information for funds flow model-based response
+                3. Tabular information for transaction and account balance model-based response
             
             **Example Request:**
             ```json
@@ -350,9 +419,73 @@ class APIServer:
             **Example Response:**
             ```json
             {
-                "text": "15 transactions you sent are as follows. ...",
-                "miner_id": "230",                
+                "miner_id": "5CUUjNeTr5WAB7q4VqBkGrCyJ9XRZ4wqQMRZBw2XTmrR3xQA",
+                "response": [
+                {
+                    "type": "text",
+                    "content": "Hello, this is the answer from you"
+                },
+                {
+                    "type": "graph",
+                    "content": [
+                    {
+                        "id": "bc9zc38fha93idi823rf0wa94fj",
+                        "type": "node",
+                        "label": "address",
+                        "content": {
+                            "address": "bc9zc38fha93idi823rf0wa94fj"
+                        }
+                    },
+                    {
+                        "id": "bc9zc38fha93idi823rf0wa943223",
+                        "type": "node",
+                        "label": "transaction",
+                        "content": {
+                            "address": "bc9zc38fha93idi823rf0wa943223"
+                        }
+                    },
+                    {
+                        "type": "edge",
+                        "from_id": "bc9zc38fha93idi823rf0wa94fj",
+                        "to_id": "bc9zc38fha93idi823rf0wa943223",
+                        "content": {}
+                    }
+                    ]
+                },
+                {
+                    "type": "table",
+                    "columns": [
+                    {
+                        "name": "tx_id",
+                        "label": "Transaction Id"
+                    },
+                    {
+                        "name": "amount",
+                        "label": "Amount"
+                    },
+                    {
+                        "name": "timestamp",
+                        "label": "Timestamp"
+                    }
+                    ],
+                    "content": [
+                    {
+                        "id": "0x123",
+                        "tx_id": "0x123",
+                        "amount": 300,
+                        "timestamp": 102932123123
+                    },
+                    {
+                        "id": "0x456",
+                        "tx_id": "0x456",
+                        "amount": 450,
+                        "timestamp": 103924927430
+                    }
+                    ]
+                }
+                ]
             }
+
             ```
             """
             bt.logging.info(f"Miner {query.miner_id} received a variant request.")
