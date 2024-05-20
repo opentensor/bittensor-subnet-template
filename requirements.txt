@@ -1,4 +1,4 @@
-bittensor==6.12.0
+bittensor==6.9.3
 torch
 python-bitcoinrpc
 bitcoin
