@@ -6,7 +6,8 @@ from sqlalchemy.orm import sessionmaker
 
 from .balance_model import Base, BalanceChange
 
-logger = setup_logger("BalanceSearch")
+indexlogger = setup_logger("BalanceSearch")
+from neurons import logger
 
 
 class BalanceSearch:

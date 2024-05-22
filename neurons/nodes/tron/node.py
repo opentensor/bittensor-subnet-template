@@ -10,8 +10,9 @@ from neurons.nodes.abstract_node import Node
 from neurons.setup_logger import setup_logger
 
 parser = argparse.ArgumentParser()
+from neurons import logger
 bt.logging.add_args(parser)
-logger = setup_logger("TronNode")
+indexlogger = setup_logger("TronNode")
  
 class TronNode(Node):
     def __init__(self, node_rpc_url: str = None):
@@ -33,45 +34,45 @@ class TronNode(Node):
                 block_header = self.tron.trx.get_current_block()
                 return block_header['block_header']['raw_data']['number']
             else:
-                logger.info("RPC Provider disconnected.")
+                indexlogger.info("RPC Provider disconnected.")
         except Exception as e:
-            logger.error(f"RPC Provider with Error: {e}")
+            indexlogger.error(f"RPC Provider with Error: {e}")
     
     def get_block_by_height(self, block_height):
         try:
             if self.tron.is_connected:
                 return self.tron.trx.get_block(block_height)
             else:
-                logger.info("RPC Provider disconnected.")
+                indexlogger.info("RPC Provider disconnected.")
         except Exception as e:
-            logger.error(f"RPC Provider with Error: {e}")
+            indexlogger.error(f"RPC Provider with Error: {e}")
 
     def get_transaction_by_hash(self, tx_hash): # get the transaction details from tx hash
         try:
             if self.tron.is_connected:
                 return self.tron.trx.get_transaction(tx_hash)
             else:
-                logger.info(f("RPC Provider disconnected."))
+                indexlogger.info(f("RPC Provider disconnected."))
         except Exception as e:
-            logger.error(f"RPC Provider with Error: {e}")
+            indexlogger.error(f"RPC Provider with Error: {e}")
     
     def get_transaction_info(self, tx_hash): # get the transaction details from tx hash
         try:
             if self.tron.is_connected:
                 return self.tron.trx.get_transaction_info(tx_hash)
             else:
-                logger.info(f("RPC Provider disconnected."))
+                indexlogger.info(f("RPC Provider disconnected."))
         except Exception as e:
-            logger.error(f"RPC Provider with Error: {e}")
+            indexlogger.error(f"RPC Provider with Error: {e}")
 
     def get_account_balance(self, address): # get account balance in sun
         try:
             if self.tron.is_connected:
                 return self.tron.trx.get_balance(address)
             else:
-                logger.info(f("RPC Provider disconnected."))
+                indexlogger.info(f("RPC Provider disconnected."))
         except Exception as e:
-            logger.error(f"RPC Provider with Error: {e}")
+            indexlogger.error(f"RPC Provider with Error: {e}")
 
     # get the balance from addresses - batch request
     def get_balance_by_addresses(self, addresses):
@@ -82,7 +83,7 @@ class TronNode(Node):
 
             return responses
         except Exception as e:
-            logger.error(f"RPC Provider with Error: {e}")
+            indexlogger.error(f"RPC Provider with Error: {e}")
 
     # get tx details from tx hash - batch request
     def get_transaction(self, transactions):
@@ -93,7 +94,7 @@ class TronNode(Node):
 
             return responses
         except Exception as e:
-            logger.error(f"RPC Provider with Error: {e}")
+            indexlogger.error(f"RPC Provider with Error: {e}")
 
     # get txReceipt details from tx hash - batch request
     def get_transactionReceipt(self, transactions):
@@ -104,7 +105,7 @@ class TronNode(Node):
 
             return responses
         except Exception as e:
-            logger.error(f"RPC Provider with Error: {e}")
+            indexlogger.error(f"RPC Provider with Error: {e}")
 
     def create_challenge(self, start_block_height, last_block_height):
         block_to_check = random.randint(start_block_height, last_block_height)

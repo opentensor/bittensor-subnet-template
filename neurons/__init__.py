@@ -1,6 +1,6 @@
 import json
-
-import bittensor as bt
+import sys
+from loguru import logger
 
 mandatory_config = {}
 
@@ -24,17 +24,6 @@ def custom_log_formatter(record):
     """Custom log formatter"""
     return "{message}\n"
 
-
-bt.btlogging.logging.log_formatter = custom_log_formatter
-bt.btlogging.logger = bt.btlogging.logger.patch(patching)
-bt.btlogging.logging.debug = bt.btlogging.logger.debug
-bt.btlogging.logging.info = bt.btlogging.logger.info
-bt.btlogging.logging.warning = bt.btlogging.logger.warning
-bt.btlogging.logging.error = bt.btlogging.logger.error
-bt.btlogging.logging.success = bt.btlogging.logger.success
-bt.btlogging.logging.trace = bt.btlogging.logger.trace
-
-
-
-
-
+logger = logger.patch(patching)
+logger.remove(0)
+logger.add(sys.stdout, format=custom_log_formatter)

@@ -1,5 +1,6 @@
 import bittensor as bt
 from neurons.remote_config import ValidatorConfig
+from neurons import logger
 
 class Scorer:
     def __init__(self, config: ValidatorConfig):
@@ -13,7 +14,7 @@ class Scorer:
         uptime_score = self.calculate_uptime_score(uptime_avg)
         final_score = self.final_score(process_time_score, block_height_score, block_height_recency_score, blockchain_score, uptime_score)
 
-        bt.logging.info("Score calculated",
+        logger.info("Score calculated",
                         hotkey=hotkey,
                         benchmark_process_time=process_time,
                         indexed_start_block_height=indexed_start_block_height,

@@ -7,6 +7,7 @@ import typing
 import time
 
 from collections import deque
+from neurons import logger
 
 def query_blacklist(self, synapse: protocol.Query) -> typing.Tuple[bool, str]:
         """
@@ -34,11 +35,11 @@ def query_blacklist(self, synapse: protocol.Query) -> typing.Tuple[bool, str]:
             return is_blacklist, message
         
         if  self.config.network != synapse.network:
-            bt.logging.trace("Blacklisting hot key because of wrong blockchain", miner_hotkey = hotkey)
+            logger.trace("Blacklisting hot key because of wrong blockchain", miner_hotkey = hotkey)
             return True, "Network not supported."
 
         if not is_query_only(self.miner_config.query_restricted_keywords, synapse.query):
-            bt.logging.trace("Blacklisting hot key because of illegal cypher keywords", miner_hotkey = hotkey)
+            logger.trace("Blacklisting hot key because of illegal cypher keywords", miner_hotkey = hotkey)
             return True, "Illegal cypher keywords."
         return False, "Hotkey recognized!"
     
@@ -75,7 +76,7 @@ def discovery_blacklist(self, synapse: protocol.Discovery) -> typing.Tuple[bool,
         return True, f"Blacklisted a non registered hotkey's request from {hotkey}"
     
     stake = self.metagraph.neurons[uid].stake.tao
-    bt.logging.debug("Stake of hotkey", miner_hotkey = hotkey, stake = stake)
+    logger.debug("Stake of hotkey", miner_hotkey = hotkey, stake = stake)
 
     if stake < self.miner_config.stake_threshold and self.config.mode == 'prod':
         return True, f"Denied due to low stake: {stake}<{self.miner_config.stake_threshold}"
@@ -119,7 +120,7 @@ def base_blacklist(self, synapse: bt.Synapse) -> typing.Tuple[bool, str]:
 
     hotkey = synapse.dendrite.hotkey
     if hotkey not in self.metagraph.hotkeys:
-        bt.logging.trace(f"Blacklisting unrecognized hotkey", miner_hotkey = hotkey)
+        logger.trace(f"Blacklisting unrecognized hotkey", miner_hotkey = hotkey)
         return True, "Unrecognized hotkey"
     if not self.miner_config.is_grace_period and synapse.version != protocol.VERSION:
         return True, f"Blacklisted: Protocol Version differs miner_version={protocol.VERSION} validator_version={synapse.version} for hotkey: {hotkey}"

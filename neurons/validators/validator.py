@@ -43,6 +43,7 @@ from neurons.validators.utils.ping import ping
 from neurons.validators.utils.synapse import is_discovery_response_valid
 from neurons.validators.utils.uids import get_uids_batch
 from template.base.validator import BaseValidatorNeuron
+from neurons import logger
 
 
 class Validator(BaseValidatorNeuron):
@@ -130,22 +131,22 @@ class Validator(BaseValidatorNeuron):
             response_time = response.dendrite.process_time
 
             if response is not None and response.output is None:
-                bt.logging.info("Cross validation failed", miner_hotkey=hotkey, reason="output")
+                logger.info("Cross validation failed", miner_hotkey=hotkey, reason="output")
                 return False, 128
 
             if response is None or response.output is None:
-                bt.logging.info("Cross validation failed", miner_hotkey=hotkey, reason="empty")
+                logger.info("Cross validation failed", miner_hotkey=hotkey, reason="empty")
                 return False, 128
 
             if not response.output == expected_response and not node.validate_challenge_response_output(challenge, response.output):
-                bt.logging.info("Cross validation failed",  miner_hotkey=hotkey, reason="expected_response", response_output=response.output, expected_output=expected_response)
+                logger.info("Cross validation failed",  miner_hotkey=hotkey, reason="expected_response", response_output=response.output, expected_output=expected_response)
                 return False, response_time
 
-            bt.logging.info("Cross validation passed", miner_hotkey=hotkey)
+            logger.info("Cross validation passed", miner_hotkey=hotkey)
 
             return True, response_time
         except Exception as e:
-            bt.logging.error(f"Cross validation error occurred", error=traceback.format_exc())
+            logger.error(f"Cross validation error occurred", error=traceback.format_exc())
             return None, None
 
     def is_miner_metadata_valid(self, response: Discovery):
@@ -154,16 +155,16 @@ class Validator(BaseValidatorNeuron):
 
         hotkey_meta = self.metadata.get_metadata_for_hotkey(hotkey)
         if not (hotkey_meta and hotkey_meta['network']):
-            bt.logging.info("Validation failed", miner_hotkey=hotkey, reason="metadata_retrival")
+            logger.info("Validation failed", miner_hotkey=hotkey, reason="metadata_retrival")
             return False
 
         ip_count = self.metadata.ip_distribution.get(ip, 0)
         coldkey_count = self.metadata.coldkey_distribution.get(hotkey, 0)
         if ip_count > MAX_MINER_INSTANCE:
-            bt.logging.info("Validation failed", miner_hotkey=hotkey, reason="ip_count", ip_count=ip_count)
+            logger.info("Validation failed", miner_hotkey=hotkey, reason="ip_count", ip_count=ip_count)
             return False
         if coldkey_count > MAX_MINER_INSTANCE:
-            bt.logging.info("Validation failed", miner_hotkey=hotkey, reason="coldkey_count", coldkey_count=coldkey_count)
+            logger.info("Validation failed", miner_hotkey=hotkey, reason="coldkey_count", coldkey_count=coldkey_count)
             return False
 
         return True
@@ -173,11 +174,11 @@ class Validator(BaseValidatorNeuron):
         status_code = response.axon.status_code
         status_message = response.axon.status_message
         if response.is_failure:
-            bt.logging.info("Discovery response failure", miner_hotkey=hotkey, reason="failure",  status_message=f"{status_message}")
+            logger.info("Discovery response failure", miner_hotkey=hotkey, reason="failure",  status_message=f"{status_message}")
         elif response.is_blacklist:
-            bt.logging.info("Discovery response failure", miner_hotkey=hotkey, reason="blacklist", status_message=f"{status_message}")
+            logger.info("Discovery response failure", miner_hotkey=hotkey, reason="blacklist", status_message=f"{status_message}")
         elif response.is_timeout:
-            bt.logging.info("Discovery response failure", miner_hotkey=hotkey, reason="timeout")
+            logger.info("Discovery response failure", miner_hotkey=hotkey, reason="timeout")
         return status_code == 200
 
     def is_response_valid(self, response: Discovery):
@@ -197,15 +198,15 @@ class Validator(BaseValidatorNeuron):
             if not self.is_response_status_code_valid(response):
                 score = self.metagraph.T[uid]/4
                 self.miner_uptime_manager.down(uid_value, hotkey)
-                bt.logging.info("Reward failed", miner_hotkey=hotkey, reason="status_code_invalid", score=float(score))
+                logger.info("Reward failed", miner_hotkey=hotkey, reason="status_code_invalid", score=float(score))
                 return score
             if not is_discovery_response_valid(response):
                 self.miner_uptime_manager.down(uid_value, hotkey)
-                bt.logging.info("Reward failed", miner_hotkey=hotkey, reason="invalid_response", score=0)
+                logger.info("Reward failed", miner_hotkey=hotkey, reason="invalid_response", score=0)
                 return 0
             if not self.is_miner_metadata_valid(response):
                 self.miner_uptime_manager.down(uid_value, hotkey)
-                bt.logging.info("Reward failed", miner_hotkey=hotkey, reason="metadata_invalid", score=0)
+                logger.info("Reward failed", miner_hotkey=hotkey, reason="metadata_invalid", score=0)
                 return 0
 
             output: DiscoveryOutput = response.output
@@ -216,32 +217,32 @@ class Validator(BaseValidatorNeuron):
             hotkey = response.axon.hotkey
 
             if self.block_height_cache[network] - last_block_height < 6:
-                bt.logging.info("Reward failed", miner_hotkey=hotkey, reason="block_height_invalid", score=0)
+                logger.info("Reward failed", miner_hotkey=hotkey, reason="block_height_invalid", score=0)
                 return 0
 
             result, average_ping_time = ping(response.axon.ip, response.axon.port, attempts=10)
             if not result:
-                bt.logging.info("Ping Test failed", miner_hotkey=hotkey, reason="ping_test_failed")
+                logger.info("Ping Test failed", miner_hotkey=hotkey, reason="ping_test_failed")
             else:
-                bt.logging.info("Ping Test passed", miner_hotkey=hotkey, average_ping_time=average_ping_time)
+                logger.info("Ping Test passed", miner_hotkey=hotkey, average_ping_time=average_ping_time)
 
             cross_validation_result, _ = self.cross_validate(response.axon, self.nodes[network], start_block_height, last_block_height)
             if cross_validation_result is None or not cross_validation_result:
                 self.miner_uptime_manager.down(uid_value, hotkey)
-                bt.logging.info("Reward failed", miner_hotkey=hotkey, reason="cross_validation_failed", score=0)
+                logger.info("Reward failed", miner_hotkey=hotkey, reason="cross_validation_failed", score=0)
                 return 0
 
             benchmark_result = benchmarks_result.get(uid_value)
             if benchmark_result is None:
                 score = self.metagraph.T[uid]/4
                 self.miner_uptime_manager.down(uid_value, hotkey)
-                bt.logging.info("Reward failed", miner_hotkey=hotkey, reason="benchmark_timeout", score=float(score))
+                logger.info("Reward failed", miner_hotkey=hotkey, reason="benchmark_timeout", score=float(score))
                 return score
 
             response_time, benchmark_is_valid = benchmark_result
             if not benchmark_is_valid:
                 self.miner_uptime_manager.down(uid_value, hotkey)
-                bt.logging.info("Reward failed", miner_hotkey=hotkey, reason="benchmark_failed", score=0)
+                logger.info("Reward failed", miner_hotkey=hotkey, reason="benchmark_failed", score=0)
                 return 0
 
             response_time = response_time - average_ping_time
@@ -262,7 +263,7 @@ class Validator(BaseValidatorNeuron):
 
             return score
         except Exception as e:
-            bt.logging.error("Reward failed", miner_hotkey=hotkey, reason="exception", error=traceback.format_exc())
+            logger.error("Reward failed", miner_hotkey=hotkey, reason="exception", error=traceback.format_exc())
             return None
 
     async def forward(self):
@@ -304,9 +305,9 @@ class Validator(BaseValidatorNeuron):
                 rewards = torch.FloatTensor(rewards)
                 self.update_scores(rewards, uids)
             else:
-                bt.logging.info("Forward failed", reason="no_valid_responses")
+                logger.info("Forward failed", reason="no_valid_responses")
         except Exception as e:
-            bt.logging.error("Forward failed", reason="exception", error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args})
+            logger.error("Forward failed", reason="exception", error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args})
         finally: pass
 
     def sync_validator(self):
@@ -347,7 +348,7 @@ if __name__ == "__main__":
             api_server_thread.start()
 
         while True:
-            bt.logging.info("Validator running")
+            logger.info("Validator running")
             time.sleep(bt.__blocktime__*10)
 
 

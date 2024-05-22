@@ -23,6 +23,7 @@ import bittensor as bt
 from abc import ABC, abstractmethod
 from typing import Any, List, Union
 from bittensor.subnets import SubnetsAPI
+from neurons import logger
 
 try:
     from storage.validator.cid import generate_cid_string
@@ -32,7 +33,7 @@ try:
     )
 except:
     storage_url = "https://github.com/ifrit98/storage-subnet"
-    bt.logging.error(
+    logger.error(
         f"Storage Subnet 21 not installed. Please visit: {storage_url} and install the package to use this example."
     )
 
@@ -82,16 +83,16 @@ class StoreUserAPI(SubnetsAPI):
                 if isinstance(response.data_hash, bytes)
                 else response.data_hash
             )
-            bt.logging.debug("received data CID: {}".format(stored_cid))
+            logger.debug("received data CID: {}".format(stored_cid))
             success = True
             break
 
         if success:
-            bt.logging.info(
+            logger.info(
                 f"Stored data on the Bittensor network with CID {stored_cid}"
             )
         else:
-            bt.logging.error(
+            logger.error(
                 f"Failed to store data. Response failure codes & messages {failure_modes}"
             )
             stored_cid = ""
@@ -114,7 +115,7 @@ class RetrieveUserAPI(SubnetsAPI):
         success = False
         decrypted_data = b""
         for response in responses:
-            bt.logging.trace(f"response: {response.dendrite.dict()}")
+            logger.trace(f"response: {response.dendrite.dict()}")
             if (
                 response.dendrite.status_code != 200
                 or response.encrypted_data is None
@@ -122,11 +123,11 @@ class RetrieveUserAPI(SubnetsAPI):
                 continue
 
             # Decrypt the response
-            bt.logging.trace(
+            logger.trace(
                 f"encrypted_data: {response.encrypted_data[:100]}"
             )
             encrypted_data = base64.b64decode(response.encrypted_data)
-            bt.logging.debug(
+            logger.debug(
                 f"encryption_payload: {response.encryption_payload}"
             )
             if (
@@ -134,7 +135,7 @@ class RetrieveUserAPI(SubnetsAPI):
                 or response.encryption_payload == ""
                 or response.encryption_payload == "{}"
             ):
-                bt.logging.warning(
+                logger.warning(
                     "No encryption payload found. Unencrypted data."
                 )
                 decrypted_data = encrypted_data
@@ -144,16 +145,16 @@ class RetrieveUserAPI(SubnetsAPI):
                     response.encryption_payload,
                     bytes(self.wallet.coldkey.private_key.hex(), "utf-8"),
                 )
-            bt.logging.trace(f"decrypted_data: {decrypted_data[:100]}")
+            logger.trace(f"decrypted_data: {decrypted_data[:100]}")
             success = True
             break
 
         if success:
-            bt.logging.info(
+            logger.info(
                 f"Returning retrieved data: {decrypted_data[:100]}"
             )
         else:
-            bt.logging.error("Failed to retrieve data.")
+            logger.error("Failed to retrieve data.")
 
         return decrypted_data
 

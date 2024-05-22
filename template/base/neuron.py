@@ -31,6 +31,7 @@ from template import __spec_version__ as spec_version
 from template.mock import MockSubtensor, MockMetagraph
 
 from neurons import mandatory_config
+from neurons import logger
 
 class BaseNeuron(ABC):
     """
@@ -76,7 +77,7 @@ class BaseNeuron(ABC):
 
         # Build Bittensor objects
         # These are core Bittensor classes to interact with the network.
-        bt.logging.info("Setting up bittensor objects.")
+        logger.info("Setting up bittensor objects.")
 
         # The wallet holds the cryptographic key pairs for the miner.
         if self.config.mock:
@@ -92,9 +93,9 @@ class BaseNeuron(ABC):
             self.subtensor = bt.subtensor(config=self.config)
             self.metagraph = self.subtensor.metagraph(self.config.netuid)
 
-        bt.logging.info('wallet', wallet = f"{self.wallet}")
-        bt.logging.info('subtensor', subtensor = f"{self.subtensor}")
-        bt.logging.info('metagraph', metagraph = f"{self.metagraph}")
+        logger.info('wallet', wallet = f"{self.wallet}")
+        logger.info('subtensor', subtensor = f"{self.subtensor}")
+        logger.info('metagraph', metagraph = f"{self.metagraph}")
         
         # Check if the miner is registered on the Bittensor network before proceeding further.
         self.check_registered()
@@ -108,7 +109,7 @@ class BaseNeuron(ABC):
         mandatory_config['ip'] = re.search(r"/ipv4/([^:]*)", self.metagraph.addresses[self.uid]).group(1)
         mandatory_config['hotkey'] = self.wallet.hotkey.ss58_address
 
-        bt.logging.info(f"Running neuron on subnet", netuid = self.config.netuid, uid = self.uid, network = self.subtensor.chain_endpoint)
+        logger.info(f"Running neuron on subnet", netuid = self.config.netuid, uid = self.uid, network = self.subtensor.chain_endpoint)
         self.step = 0
         self.last_message_send = 0
         self.last_weights_set_block = 0
@@ -145,8 +146,8 @@ class BaseNeuron(ABC):
             netuid=self.config.netuid,
             hotkey_ss58=self.wallet.hotkey.ss58_address,
         ):
-            bt.logging.error(f"Wallet is not registered on subnet.", wallet = self.wallet, netuid = self.config.netuid)
-            bt.logging.error(f" Please register the hotkey using `btcli subnets register` before trying again")
+            logger.error(f"Wallet is not registered on subnet.", wallet = self.wallet, netuid = self.config.netuid)
+            logger.error(f" Please register the hotkey using `btcli subnets register` before trying again")
             exit()
 
     def should_sync_metagraph(self):
@@ -182,6 +183,6 @@ class BaseNeuron(ABC):
         pass
 
     def load_state(self):
-        bt.logging.warning(
+        logger.warning(
             "load_state() not implemented for this neuron. You can implement this function to load model checkpoints or other useful data."
         )

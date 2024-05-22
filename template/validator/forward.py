@@ -22,6 +22,7 @@ import bittensor as bt
 from template.protocol import Dummy
 from template.validator.reward import get_rewards
 from template.utils.uids import get_random_uids
+from neurons import logger
 
 
 async def forward(self):
@@ -50,12 +51,12 @@ async def forward(self):
     )
 
     # Log the results for monitoring purposes.
-    bt.logging.info(f"Received responses", responses = responses)
+    logger.info(f"Received responses", responses = responses)
 
     # TODO(developer): Define how the validator scores responses.
     # Adjust the scores based on responses from miners.
     rewards = get_rewards(self, query=self.step, responses=responses)
 
-    bt.logging.info(f"Scored responses", rewards = rewards)
+    logger.info(f"Scored responses", rewards = rewards)
     # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
     self.update_scores(rewards, miner_uids)

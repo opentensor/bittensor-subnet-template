@@ -21,6 +21,7 @@
 import bittensor as bt
 from abc import ABC, abstractmethod
 from typing import Any, List, Union, Optional
+from neurons import logger
 
 
 class SubnetsAPI(ABC):
@@ -69,7 +70,7 @@ class SubnetsAPI(ABC):
             Any: The result of the process_responses_fn.
         """
         synapse = self.prepare_synapse(**kwargs)
-        bt.logging.debug(f"Quering valdidator axons with synapse {synapse.name}...")
+        logger.debug(f"Quering valdidator axons with synapse {synapse.name}...")
         responses = await self.dendrite(
             axons=axons,
             synapse=synapse,
