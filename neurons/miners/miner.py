@@ -51,6 +51,7 @@ class Miner(BaseMinerNeuron):
         parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
         parser.add_argument("--dev", action=argparse.BooleanOptionalAction)
 
+
         bt.subtensor.add_args(parser)
         bt.logging.add_args(parser)
         bt.wallet.add_args(parser)
@@ -131,15 +132,25 @@ class Miner(BaseMinerNeuron):
                 block_height=last_block,
                 balance_model_last_block=balance_model_last_block,
             )
-            bt.logging.info(f"Serving miner discovery output: {synapse.output}")
+            bt.logging.info("Serving miner discovery output",
+                            output = {
+                                'metadata' : {
+                                    'network' : synapse.output.metadata.network,
+                                    'model_type' : synapse.output.metadata.model_type,
+                                    'graph_schema' : synapse.output.metadata.graph_schema
+                                },
+                                'block_height' : synapse.output.block_height,
+                                'start_block_height' : synapse.output.start_block_height,
+                                'run_id' : synapse.output.run_id,
+                                'version' : synapse.output.version})
         except Exception as e:
-            bt.logging.error(traceback.format_exc())
+            bt.logging.error('error', error = traceback.format_exc())
             synapse.output = None
         return synapse
 
     async def challenge(self, synapse: protocol.Challenge ) -> protocol.Challenge:
         try:
-            bt.logging.info(f"challenge received: {synapse}")
+            bt.logging.info("challenge recieved", synapse = {'version' : synapse.version, 'in_total_amount' : synapse.in_total_amount, 'out_total_amount' : synapse.out_total_amount, 'tx_id_last_4_chars' : synapse.tx_id_last_4_chars, 'checksum' : synapse.checksum, 'output' : synapse.output})
 
             if self.config.network == NETWORK_BITCOIN:
                 synapse.output = self.graph_search.solve_challenge(
@@ -152,29 +163,29 @@ class Miner(BaseMinerNeuron):
                     checksum=synapse.checksum,
                 )
 
-            bt.logging.info(f"Serving miner challenge output: {synapse.output}")
+            bt.logging.info(f"Serving miner challenge", output = f"{synapse.output}")
 
         except Exception as e:
-            bt.logging.error(traceback.format_exc())
+            bt.logging.error('error', error = traceback.format_exc())
             synapse.output = None
         return synapse
 
     async def benchmark(self, synapse: protocol.Benchmark) -> protocol.Benchmark:
         try:
-            bt.logging.info(f"Executing benchmark query: {synapse.query}")
+            bt.logging.info(f"Executing benchmark query", query = synapse.query)
             pattern = self.miner_config.get_benchmark_query_regex(self.config.network)
             regex = re.compile(pattern)
             match = regex.fullmatch(synapse.query)
             if match is None:
-                bt.logging.error(f"Invalid benchmark query: {synapse.query}")
+                bt.logging.error("Invalid benchmark query", query = synapse.query)
                 synapse.output = None
             else:
                 result = self.graph_search.execute_benchmark_query(cypher_query=synapse.query)
                 synapse.output = result[0]
 
-            bt.logging.info(f"Serving miner benchmark output: {synapse.output}")
+            bt.logging.info(f"Serving miner benchmark output", output = f"{synapse.output}")
         except Exception as e:
-            bt.logging.error(traceback.format_exc())
+            bt.logging.error('error', error = traceback.format_exc())
         return synapse
 
     async def llm_query(self, synapse: protocol.LlmQuery ) -> protocol.LlmQuery:
@@ -234,9 +245,7 @@ class Miner(BaseMinerNeuron):
         prirority = float(
             self.metagraph.S[caller_uid]
         )
-        bt.logging.trace(
-            f"Prioritizing {synapse.dendrite.hotkey} with value: ", prirority
-        )
+        bt.logging.trace("Prioritizing hotkey", hotkey = synapse.dendrite.hotkey, priority = prirority)
         return prirority
     
     async def discovery_priority(self, synapse: protocol.Discovery) -> float:
@@ -264,8 +273,8 @@ class Miner(BaseMinerNeuron):
         ) > self.miner_config.store_metadata_frequency
     
     def send_metadata(self):
-        store_miner_metadata(self)
-
+        start_block, last_block = self.graph_search.get_min_max_block_height_cache()
+        store_miner_metadata(self.config, self.graph_search, self.wallet, start_block, last_block)
 
 def wait_for_blocks_sync():
         is_synced=False
@@ -291,10 +300,10 @@ def wait_for_blocks_sync():
                     is_synced = True
                     bt.logging.success(f"Graph model is synced with blockchain.")
                 else:
-                    bt.logging.info(f"Graph Sync: {current_block_height}/{latest_block_height}")
+                    bt.logging.info(f"Graph Sync", current_block_height = current_block_height, latest_block_height = latest_block_height)
                     time.sleep(bt.__blocktime__ * 12)
             except Exception as e:
-                bt.logging.error(traceback.format_exc())
+                bt.logging.error('error', error = traceback.format_exc())
                 time.sleep(bt.__blocktime__ * 12)
                 bt.logging.info(f"Failed to connect with graph database. Retrying...")
                 continue

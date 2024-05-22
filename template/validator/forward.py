@@ -50,12 +50,12 @@ async def forward(self):
     )
 
     # Log the results for monitoring purposes.
-    bt.logging.info(f"Received responses: {responses}")
+    bt.logging.info(f"Received responses", responses = responses)
 
     # TODO(developer): Define how the validator scores responses.
     # Adjust the scores based on responses from miners.
     rewards = get_rewards(self, query=self.step, responses=responses)
 
-    bt.logging.info(f"Scored responses: {rewards}")
+    bt.logging.info(f"Scored responses", rewards = rewards)
     # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
     self.update_scores(rewards, miner_uids)

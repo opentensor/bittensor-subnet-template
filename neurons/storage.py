@@ -71,9 +71,9 @@ def store_miner_metadata(self):
         bt.logging.success(f"Stored miner metadata: {metadata}")
         
     except bt.errors.MetadataError as e:
-        bt.logging.warning(f"Skipping storing miner metadata, error: {e}")
+        bt.logging.warning("Skipping storing miner metadata", error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args})
     except Exception as e:
-        bt.logging.warning(f"Skipping storing miner metadata, error: {e}")
+        bt.logging.warning(f"Skipping storing miner metadata", error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args})
 
 def store_validator_metadata(self):
     def get_commitment(netuid: int, uid: int, block: Optional[int] = None) -> str:
@@ -101,13 +101,13 @@ def store_validator_metadata(self):
         if existing_commitment is not None:
             dual_miner = MinerMetadata.from_compact(existing_commitment)
             if dual_miner.sb is not None:
-                bt.logging.info(f"Skipping storing validator metadata, as this is a dual hotkey for miner and validator: {metadata}")
+                bt.logging.info("Skipping storing validator metadata, as this is a dual hotkey for miner and validator", metadata = metadata.to_compact())
                 return
 
         subtensor.commit(self.wallet, self.config.netuid, metadata.to_compact())
-        bt.logging.success(f"Stored validator metadata: {metadata}")
+        bt.logging.success("Stored validator metadata", metadata = metadata.to_compact())
     except bt.errors.MetadataError as e:
-        bt.logging.warning(f"Skipping storing validator metadata, error: {e}")
+        bt.logging.warning("Skipping storing validator metadata", error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args})
     except Exception as e:
         bt.logging.warning(f"Skipping storing validator metadata, error: {e}")
 
@@ -124,7 +124,7 @@ def get_miners_metadata(config, metagraph):
     subtensor.get_commitment = get_commitment
     miners_metadata = {}
     
-    bt.logging.info(f"Getting miners metadata")
+    bt.logging.info("Getting miners metadata")
     for axon in metagraph.axons:
         if axon.is_serving:
             hotkey = axon.hotkey
@@ -135,7 +135,7 @@ def get_miners_metadata(config, metagraph):
                 metadata = MinerMetadata.from_compact(metadata_str)
                 miners_metadata[hotkey] = metadata
             except:
-                bt.logging.warning(f"Error while getting miner metadata for {hotkey}, Skipping...")
+                bt.logging.warning("Error while getting miner metadata, Skipping...", miner_hotkey = hotkey)
                 continue
 
     return miners_metadata
