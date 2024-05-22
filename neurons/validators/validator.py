@@ -83,12 +83,9 @@ class Validator(BaseValidatorNeuron):
                 with open(dev_config_path, 'r') as f:
                     dev_config = yaml.safe_load(f.read())
                 config.update(dev_config)
-                bt.logging.info(f"config updated with {dev_config_path}")
-
             else:
                 with open(dev_config_path, 'w') as f:
                     yaml.safe_dump(config, f)
-                bt.logging.info(f"config stored in {dev_config_path}")
 
         return config
 

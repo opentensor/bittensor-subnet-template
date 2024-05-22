@@ -273,8 +273,7 @@ class Miner(BaseMinerNeuron):
         ) > self.miner_config.store_metadata_frequency
     
     def send_metadata(self):
-        start_block, last_block = self.graph_search.get_min_max_block_height_cache()
-        store_miner_metadata(self.config, self.graph_search, self.wallet, start_block, last_block)
+        store_miner_metadata(self)
 
 def wait_for_blocks_sync():
         is_synced=False
