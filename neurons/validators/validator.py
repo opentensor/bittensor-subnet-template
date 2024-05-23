@@ -264,6 +264,16 @@ class Validator(BaseValidatorNeuron):
             bt.logging.error("Reward failed", miner_hotkey=hotkey, reason="exception", error=traceback.format_exc())
             return None
 
+    def calculate_min_max_time(self, benchmarks_result, responses):
+        max_time_response = 0
+        min_time_response = self.validator_config.benchmark_timeout
+        for item, response in zip(benchmarks_result.values(), responses):
+            average_ping_time = ping(response.axon.ip, response.axon.port, attempts=10)[1]
+            max_time_response = max(max_time_response, item[0] - average_ping_time)
+            min_time_response = min(min_time_response, item[0] - average_ping_time)
+        if(max_time_response == min_time_response): max_time_response += 0.1
+        return min_time_response, max_time_response
+    
     async def forward(self):
         try:
             self.block_height_cache = {network: self.nodes[network].get_current_block_height() for network in self.networks}
@@ -289,6 +299,10 @@ class Validator(BaseValidatorNeuron):
             responses_to_benchmark = [(response, uid) for response, uid in zip(responses, uids) if self.is_response_valid(response)]
             benchmarks_result = self.benchmark_validator.run_benchmarks(responses_to_benchmark)
 
+            min_time, max_time = self.calculate_min_max_time(benchmarks_result, responses)
+            self.scorer.config.min_time = min_time
+            self.scorer.config.max_time = max_time
+   
             self.block_height_cache = {network: self.nodes[network].get_current_block_height() for network in self.networks}
 
             rewards = [

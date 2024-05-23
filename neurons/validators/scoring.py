@@ -56,10 +56,23 @@ class Scorer:
         return normalized_score
 
 
+    def get_performance_score(self, process_time, best_time, worst_time, timeout):
+        if process_time >= timeout:
+            return 0  # Timeout case
+        if process_time <= best_time:
+            return 1  # Best performance case
+
+        # Calculate the normalized score between best_time and worst_time
+        normalized_score = 0.1 + 0.9 * (worst_time - process_time) / (worst_time - best_time)
+        return max(0.1, min(normalized_score, 1))  # Ensure the score is between 0.1 and 1
+
     def calculate_process_time_score(self, process_time, discovery_timeout):
-        process_time = min(process_time, discovery_timeout)
-        factor = (process_time / discovery_timeout) ** (1/3)
-        process_time_score = max(0, 1 - factor)
+        # Define the best and worst process times
+        best_time = self.config.min_time 
+        worst_time = self.config.max_time
+        
+        # Use the new performance scoring method
+        process_time_score = self.get_performance_score(process_time, best_time, worst_time, discovery_timeout)
         return process_time_score
 
 
