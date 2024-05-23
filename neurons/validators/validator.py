@@ -116,7 +116,7 @@ class Validator(BaseValidatorNeuron):
             )
 
 
-    def cross_validate(self, axon, node, challenge_factory, start_block_height, last_block_height, balance_model_last_block):
+    def cross_validate(self, axon, node, start_block_height, last_block_height):
         try:
             # first, validate funds flow model response
             challenge, expected_response = node.create_challenge(start_block_height, last_block_height)

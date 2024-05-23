@@ -137,8 +137,6 @@ class Miner(BaseMinerNeuron):
                             output = {
                                 'metadata' : {
                                     'network' : synapse.output.metadata.network,
-                                    'model_type' : synapse.output.metadata.model_type,
-                                    'graph_schema' : synapse.output.metadata.graph_schema
                                 },
                                 'block_height' : synapse.output.block_height,
                                 'start_block_height' : synapse.output.start_block_height,
