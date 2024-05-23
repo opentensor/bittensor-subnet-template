@@ -123,7 +123,7 @@ class Miner(BaseMinerNeuron):
             stake = self.metagraph.S[requesting_uid].item()
 
             # ignore minimal weight validators that should not be directly contacting a miner's synpase due to the lack of weight setting capability.
-            if stake < 1024:
+            if stake < self.config.blacklist.minimum_stake:
                 return True, "Minimal stake validator"
     
             bt.logging.trace(
