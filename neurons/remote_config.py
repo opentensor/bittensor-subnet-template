@@ -66,7 +66,7 @@ class RemoteConfig:
                     break  # Break the loop if successful
                 except requests.exceptions.RequestException as e:
                     retries += 1
-                    bt.logging.error("Attempt failed to update config from", retries = retries, config_url = self.config_url, error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args})
+                    bt.logging.error("Attempt failed to update config from", retries=str(retries), config_url = self.config_url, error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args})
                     if retries < MAX_RETRIES:
                         time.sleep(RETRY_INTERVAL)
                 except Exception as e:
