@@ -26,8 +26,6 @@ import uvicorn
 
 from neurons import logger
 
-bt.debug()
-
 class APIServer:
     def set_weights(self):
         """

@@ -2,6 +2,9 @@ import json
 import sys
 from loguru import logger
 
+import bittensor as bt
+import logging
+
 mandatory_config = {}
 
 def serialize(record):
@@ -27,3 +30,5 @@ def custom_log_formatter(record):
 logger = logger.patch(patching)
 logger.remove(0)
 logger.add(sys.stdout, format=custom_log_formatter)
+
+bt.logging._logger.setLevel(logging.CRITICAL)  # disable btlogging
