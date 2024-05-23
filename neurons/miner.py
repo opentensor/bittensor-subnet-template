@@ -125,7 +125,7 @@ class Miner(BaseMinerNeuron):
             return False, "Hotkey recognized!"
         except Exception as e:
             bt.logging.error(f"Exception in blacklist_fn: {str(e)}")
-            return True
+            return True, "Blacklist error"
 
     async def priority(self, synapse: template.protocol.Dummy) -> float:
         """
