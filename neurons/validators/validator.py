@@ -117,7 +117,6 @@ class Validator(BaseValidatorNeuron):
 
     def cross_validate(self, axon, node, challenge_factory, start_block_height, last_block_height, balance_model_last_block):
         try:
-            # first, validate funds flow model response
             challenge, expected_response = node.create_challenge(start_block_height, last_block_height)
             
             response = self.dendrite.query(
@@ -225,7 +224,7 @@ class Validator(BaseValidatorNeuron):
             else:
                 bt.logging.info("Ping Test passed", miner_hotkey=hotkey, average_ping_time=average_ping_time)
 
-            cross_validation_result, _ = self.cross_validate(response.axon, self.nodes[network], start_block_height, last_block_height)
+            cross_validation_result, _ = self.cross_validate(response.axon, self.nodes[network], self.challenge_factory[network], start_block_height, last_block_height, balance_model_last_block)
             if cross_validation_result is None or not cross_validation_result:
                 self.miner_uptime_manager.down(uid_value, hotkey)
                 bt.logging.info("Reward failed", miner_hotkey=hotkey, reason="cross_validation_failed", score=0)

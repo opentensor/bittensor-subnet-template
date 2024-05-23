@@ -135,16 +135,14 @@ class Miner(BaseMinerNeuron):
             bt.logging.info("Serving miner discovery output",
                             output = {
                                 'metadata' : {
-                                    'network' : synapse.output.metadata.network,
-                                    'model_type' : synapse.output.metadata.model_type,
-                                    'graph_schema' : synapse.output.metadata.graph_schema
+                                    'network': synapse.output.metadata.network,
                                 },
-                                'block_height' : synapse.output.block_height,
-                                'start_block_height' : synapse.output.start_block_height,
-                                'run_id' : synapse.output.run_id,
-                                'version' : synapse.output.version})
+                                'start_block_height': synapse.output.start_block_height,
+                                'block_height': synapse.output.block_height,
+                                'balance_model_last_block': synapse.output.balance_model_last_block,
+                                'version': synapse.output.version})
         except Exception as e:
-            bt.logging.error('error', error = traceback.format_exc())
+            bt.logging.error('error', error=traceback.format_exc())
             synapse.output = None
         return synapse
 

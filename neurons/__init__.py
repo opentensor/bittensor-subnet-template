@@ -1,4 +1,5 @@
 import json
+import os
 
 import bittensor as bt
 
@@ -22,8 +23,7 @@ def patching(record):
 
 def custom_log_formatter(record):
     """Custom log formatter"""
-    return "{message}\n"
-
+    return "<level>{message}</level>\n"
 
 bt.btlogging.logging.log_formatter = custom_log_formatter
 bt.btlogging.logger = bt.btlogging.logger.patch(patching)
