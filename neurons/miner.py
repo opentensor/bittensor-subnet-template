@@ -94,6 +94,7 @@ class Miner(BaseMinerNeuron):
 
         Otherwise, allow the request to be processed further.
         """
+        # TODO (developer): Define how miners should blacklist requests.
         try:
             # check for missing hotkey malformed request to avoid throwing ValueError on metagraph.hotkeys.index (unhandled exception)
             if not synapse.dendrite.hotkey:
