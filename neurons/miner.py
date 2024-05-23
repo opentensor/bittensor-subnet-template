@@ -109,7 +109,6 @@ class Miner(BaseMinerNeuron):
                 )
                 return True, "Unrecognized hotkey"
 
-            # synapse.dendrite.hotkey can cause a ValueError if not check for not None
             uid = self.metagraph.hotkeys.index(synapse.dendrite.hotkey)
             
             if self.config.blacklist.force_validator_permit:
