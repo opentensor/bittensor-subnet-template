@@ -88,27 +88,28 @@ class Miner(BaseMinerNeuron):
         - Reject if the hotkey is not a registered entity within the metagraph.
         - Consider blacklisting entities that are not validators or have insufficient stake.
 
-        In practice it would be wise to blacklist requests from entities that are not validators, or do not have
+        In practice you MUST blacklist requests from entities that are not validators, or do not have
         enough stake. This can be checked via metagraph.S and metagraph.validator_permit. You can always attain
-        the uid of the sender via a metagraph.hotkeys.index( synapse.dendrite.hotkey ) call.
+        the uid of the sender via a metagraph.hotkeys.index( synapse.dendrite.hotkey ) call after checking that the type of dendrite.hotkey is not None.
 
         Otherwise, allow the request to be processed further.
         """
-        try: 
-            # TODO(developer): Define how miners should blacklist requests.
+        try:
+            # check for missing hotkey malformed request to avoid throwing ValueError on metagraph.hotkeys.index (unhandled exception)
             if not synapse.dendrite.hotkey:
                 return True, "Missing hotkey/Malformed request"
-                
+
+            # Ignore requests from un-registered entities unless permitted.
             if (
                 not self.config.blacklist.allow_non_registered
                 and synapse.dendrite.hotkey not in self.metagraph.hotkeys
             ):
-                # Ignore requests from un-registered entities.
                 bt.logging.trace(
                     f"Blacklisting un-registered hotkey {synapse.dendrite.hotkey}"
                 )
                 return True, "Unrecognized hotkey"
-                
+
+            # synapse.dendrite.hotkey can cause a ValueError if not check for not None
             uid = self.metagraph.hotkeys.index(synapse.dendrite.hotkey)
             
             if self.config.blacklist.force_validator_permit:
@@ -118,6 +119,12 @@ class Miner(BaseMinerNeuron):
                         f"Blacklisting a request from non-validator hotkey {synapse.dendrite.hotkey}"
                     )
                     return True, "Non-validator hotkey"
+
+            stake = self.metagraph.S[requesting_uid].item()
+
+            # ignore minimal weight validators that should not be directly contacting a miner's synpase due to the lack of weight setting capability.
+            if stake < 1024:
+                return True, "Minimal stake validator"
     
             bt.logging.trace(
                 f"Not Blacklisting recognized hotkey {synapse.dendrite.hotkey}"
