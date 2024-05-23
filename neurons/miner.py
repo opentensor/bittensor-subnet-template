@@ -119,7 +119,7 @@ class Miner(BaseMinerNeuron):
                     )
                     return True, "Non-validator hotkey"
 
-            stake = self.metagraph.S[requesting_uid].item()
+            stake = self.metagraph.S[uid].item()
 
             # ignore minimal weight validators that should not be directly contacting a miner's synpase due to the lack of weight setting capability.
             if stake < self.config.blacklist.minimum_stake:
