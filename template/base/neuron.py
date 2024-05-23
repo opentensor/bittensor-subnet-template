@@ -17,6 +17,8 @@
 
 import copy
 import typing
+import re
+import json
 
 import bittensor as bt
 
@@ -28,6 +30,7 @@ from template.utils.misc import ttl_get_block
 from template import __spec_version__ as spec_version
 from template.mock import MockSubtensor, MockMetagraph
 
+from neurons import mandatory_config
 
 class BaseNeuron(ABC):
     """
@@ -71,9 +74,6 @@ class BaseNeuron(ABC):
         # If a gpu is required, set the device to cuda:N (e.g. cuda:0)
         self.device = self.config.neuron.device
 
-        # Log the configuration for reference.
-        bt.logging.info(self.config)
-
         # Build Bittensor objects
         # These are core Bittensor classes to interact with the network.
         bt.logging.info("Setting up bittensor objects.")
@@ -92,9 +92,9 @@ class BaseNeuron(ABC):
             self.subtensor = bt.subtensor(config=self.config)
             self.metagraph = self.subtensor.metagraph(self.config.netuid)
 
-        bt.logging.info(f"Wallet: {self.wallet}")
-        bt.logging.info(f"Subtensor: {self.subtensor}")
-        bt.logging.info(f"Metagraph: {self.metagraph}")
+        bt.logging.info('wallet', wallet = f"{self.wallet}")
+        bt.logging.info('subtensor', subtensor = f"{self.subtensor}")
+        bt.logging.info('metagraph', metagraph = f"{self.metagraph}")
         
         # Check if the miner is registered on the Bittensor network before proceeding further.
         self.check_registered()
@@ -103,9 +103,12 @@ class BaseNeuron(ABC):
         self.uid = self.metagraph.hotkeys.index(
             self.wallet.hotkey.ss58_address
         )
-        bt.logging.info(
-            f"Running neuron on subnet: {self.config.netuid} with uid {self.uid} using network: {self.subtensor.chain_endpoint}"
-        )
+
+        mandatory_config['uid'] = self.uid
+        mandatory_config['ip'] = re.search(r"/ipv4/([^:]*)", self.metagraph.addresses[self.uid]).group(1)
+        mandatory_config['hotkey'] = self.wallet.hotkey.ss58_address
+
+        bt.logging.info(f"Running neuron on subnet", netuid = self.config.netuid, uid = self.uid, network = self.subtensor.chain_endpoint)
         self.step = 0
         self.last_message_send = 0
         self.last_weights_set_block = 0
@@ -142,10 +145,8 @@ class BaseNeuron(ABC):
             netuid=self.config.netuid,
             hotkey_ss58=self.wallet.hotkey.ss58_address,
         ):
-            bt.logging.error(
-                f"Wallet: {self.wallet} is not registered on netuid {self.config.netuid}."
-                f" Please register the hotkey using `btcli subnets register` before trying again"
-            )
+            bt.logging.error(f"Wallet is not registered on subnet.", wallet = self.wallet, netuid = self.config.netuid)
+            bt.logging.error(f" Please register the hotkey using `btcli subnets register` before trying again")
             exit()
 
     def should_sync_metagraph(self):

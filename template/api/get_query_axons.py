@@ -56,11 +56,10 @@ async def ping_uids(dendrite, metagraph, uids, timeout=3):
             if response.dendrite.status_code != 200
         ]
     except Exception as e:
-        bt.logging.error(f"Dendrite ping failed: {e}")
+        bt.logging.error(f"Dendrite ping failed", error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args})
         successful_uids = []
         failed_uids = uids
-    bt.logging.debug("ping() successful uids:", successful_uids)
-    bt.logging.debug("ping() failed uids    :", failed_uids)
+    bt.logging.debug("ping() results", successful_uids = successful_uids, failed_uids = failed_uids)
     return successful_uids, failed_uids
 
 
@@ -77,9 +76,7 @@ async def get_query_api_nodes(dendrite, metagraph, n=0.1, timeout=3):
     Returns:
         list: A list of UIDs representing the available API nodes.
     """
-    bt.logging.debug(
-        f"Fetching available API nodes for subnet {metagraph.netuid}"
-    )
+    bt.logging.debug("Fetching available API nodes for subnet", subnet_uid = metagraph.netuid)
     vtrust_uids = [
         uid.item()
         for uid in metagraph.uids
@@ -91,9 +88,7 @@ async def get_query_api_nodes(dendrite, metagraph, n=0.1, timeout=3):
     query_uids, _ = await ping_uids(
         dendrite, metagraph, init_query_uids, timeout=timeout
     )
-    bt.logging.debug(
-        f"Available API node UIDs for subnet {metagraph.netuid}: {query_uids}"
-    )
+    bt.logging.debug("Available API node UIDs for subnet", subnet_uid = metagraph.netuid, query_uids = query_uids)
     if len(query_uids) > 3:
         query_uids = random.sample(query_uids, 3)
     return query_uids

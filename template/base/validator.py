@@ -19,14 +19,11 @@
 
 
 import copy
-import time
-
 import torch
 import asyncio
 import argparse
 import threading
 import bittensor as bt
-import multiprocessing 
 
 from typing import List
 from traceback import print_exception
@@ -35,8 +32,6 @@ from template.base.neuron import BaseNeuron
 from template.mock import MockDendrite
 from template.utils.config import add_validator_args
 
-from rich.table import Table
-from rich.console import Console
 
 class BaseValidatorNeuron(BaseNeuron):
     """
@@ -68,7 +63,7 @@ class BaseValidatorNeuron(BaseNeuron):
             self.dendrite = MockDendrite(wallet=self.wallet)
         else:
             self.dendrite = bt.dendrite(wallet=self.wallet)
-        bt.logging.info(f"Dendrite: {self.dendrite}")
+        bt.logging.info('dendrite', dendrite = f"{self.dendrite}")
 
         # Set up initial scoring weights for validation
         bt.logging.info("Building validation weights.")
@@ -107,17 +102,13 @@ class BaseValidatorNeuron(BaseNeuron):
                     netuid=self.config.netuid,
                     axon=self.axon,
                 )
-                bt.logging.info(
-                    f"Running validator {self.axon} on network: {self.config.subtensor.chain_endpoint} with netuid: {self.config.netuid}"
-                )
+                bt.logging.info(f"Running validator", axon = f"{self.axon}", network = self.config.subtensor.chain_endpoint, netuid = self.config.netuid)
             except Exception as e:
-                bt.logging.error(f"Failed to serve Axon with exception: {e}")
+                bt.logging.error(f"Failed to serve Axon", error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args})
                 pass
 
         except Exception as e:
-            bt.logging.error(
-                f"Failed to create Axon initialize with exception: {e}"
-            )
+            bt.logging.error(f"Failed to create Axon initialize", error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args})
             pass
 
     async def concurrent_forward(self):
@@ -147,30 +138,18 @@ class BaseValidatorNeuron(BaseNeuron):
             Exception: For unforeseen errors during the miner's operation, which are logged for diagnosis.
         """
 
-        # Check that the validator is registered on the network.
+        # Check that validator is registered on the network.
         self.sync()
 
-        bt.logging.info(f"Validator starting at block: {self.block}")
+        bt.logging.info(f"Validator starting", block = self.block)
 
         # This loop maintains the validator's operations until intentionally stopped.
         try:
             while True:
-                bt.logging.info(f"step({self.step}) block({self.block})")
-
-                # Record the start time of the forwarding process.
-                start_time = time.time()
+                bt.logging.info('step', step = self.step, block = self.block)
 
                 # Run multiple forwards concurrently.
                 self.loop.run_until_complete(self.concurrent_forward())
-
-                # Calculate the elapsed time for the forwarding process.
-                elapsed_time = time.time() - start_time
-
-                # If the elapsed time is less than 5 minutes (300 seconds), sleep for the remaining time.
-                if elapsed_time < 300:
-                    remaining_time = 300 - elapsed_time
-                    bt.logging.info(f"Waiting for {remaining_time} seconds after cycle.")
-                    time.sleep(remaining_time)
 
                 # Check if we should exit.
                 if self.should_exit:
@@ -189,10 +168,8 @@ class BaseValidatorNeuron(BaseNeuron):
 
         # In case of unforeseen errors, the validator will log the error and continue operations.
         except Exception as err:
-            bt.logging.error("Error during validation", str(err))
-            bt.logging.debug(
-                print_exception(type(err), err, err.__traceback__)
-            )
+            bt.logging.error("Error during validation",error = str(err))
+            bt.logging.debug('error', error = print_exception(type(err), err, err.__traceback__))
 
     def run_in_background_thread(self):
         """
@@ -276,10 +253,7 @@ class BaseValidatorNeuron(BaseNeuron):
             ) = bt.utils.weight_utils.convert_weights_and_uids_for_emit(
                 uids=processed_weight_uids, weights=processed_weights
             )
-            table = Table(title="All Weights")
-            table.add_column("uid", justify="right", style="cyan", no_wrap=True)
-            table.add_column("weight", style="magenta")
-            table.add_column("score", style="magenta")
+
             uids_and_weights = list(
                 zip(uint_uids, uint_weights)
                 )
@@ -287,14 +261,15 @@ class BaseValidatorNeuron(BaseNeuron):
             sorted_uids_and_weights = sorted(
                 uids_and_weights, key=lambda x: x[1], reverse=True
             )
+
+            weight_log = {}
             for uid, weight in sorted_uids_and_weights:
-                table.add_row(
-                    str(uid),
+                weight_log[str(uid)] = (
                     str(round(weight, 4)),
                     str(int(self.scores[uid].item())),
                 )
-            console = Console()
-            console.print(table)
+
+            bt.logging.info("Setting weights: ", weights=weight_log)
 
             # Set the weights on chain via our subtensor connection.
             self.subtensor.set_weights(
@@ -312,9 +287,7 @@ class BaseValidatorNeuron(BaseNeuron):
 
             bt.logging.success("Finished setting weights.")
         except Exception as e:
-            bt.logging.error(
-                f"Failed to set weights on chain with exception: { e }"
-            )
+            bt.logging.error(f"Failed to set weights on chain", error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args})
         
     def resync_metagraph(self):
         """Resyncs the metagraph and updates the hotkeys and moving averages based on the new metagraph."""
@@ -357,7 +330,7 @@ class BaseValidatorNeuron(BaseNeuron):
 
         # Check if rewards contains NaN values.
         if torch.isnan(rewards).any():
-            bt.logging.warning(f"NaN values detected in rewards: {rewards}")
+            bt.logging.warning(f"NaN values detected in rewards", rewards = rewards.tolist())
             # Replace any NaN values in rewards with 0.
             rewards = torch.nan_to_num(rewards, 0)
 
@@ -372,7 +345,7 @@ class BaseValidatorNeuron(BaseNeuron):
         scattered_rewards: torch.FloatTensor = self.scores.scatter(
             0, uids_tensor, rewards
         ).to(self.device)
-        bt.logging.debug(f"Scattered rewards: {rewards}")
+        bt.logging.debug('scattered rewards', scattered_rewards = rewards.tolist())
 
         # Update scores with rewards produced by this step.
         # shape: [ metagraph.n ]
@@ -380,7 +353,7 @@ class BaseValidatorNeuron(BaseNeuron):
         self.scores: torch.FloatTensor = alpha * scattered_rewards + (
             1 - alpha
         ) * self.scores.to(self.device)
-        bt.logging.debug(f"Updated moving avg scores: {self.scores}")
+        bt.logging.debug(f"Updated moving avg scores", scores = self.scores.tolist())
 
     def save_state(self):
         """Saves the state of the validator to a file."""
