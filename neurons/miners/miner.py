@@ -43,16 +43,14 @@ class Miner(BaseMinerNeuron):
             default=NETWORK_BITCOIN,
             help="Set miner's supported blockchain network.",
         )
-        parser.add_argument(
-            "--llm_type",
-            type=str,
-            default=LLM_TYPE_OPENAI,
-            help="Set miner's supported LLM type.",
-        )
-
         parser.add_argument("--netuid", type=int, default=15, help="The chain subnet uid.")
         parser.add_argument("--dev", action=argparse.BooleanOptionalAction)
-
+        parser.add_argument(
+            "--llm_engine_url",
+            type=str,
+            default="http://localhost:8912",
+            help="LLM engine host",
+        )
 
         bt.subtensor.add_args(parser)
         bt.logging.add_args(parser)
@@ -60,13 +58,15 @@ class Miner(BaseMinerNeuron):
         bt.axon.add_args(parser)
 
         config = bt.config(parser)
-        config.blacklist  = dict(force_validator_permit=True, allow_non_registered=False)
+        config.blacklist = dict(force_validator_permit=True, allow_non_registered=False)
         config.wait_for_sync = os.environ.get('WAIT_FOR_SYNC', 'False')=='True'
         config.graph_db_url = os.environ.get('GRAPH_DB_URL', 'bolt://localhost:7687')
         config.graph_db_user = os.environ.get('GRAPH_DB_USER', 'user')
         config.graph_db_password = os.environ.get('GRAPH_DB_PASSWORD', 'pwd')
 
         config.db_connection_string = os.environ.get('DB_CONNECTION_STRING', '')
+
+        bt.logging.info(config)
         
         dev = config.dev
         if dev:
@@ -97,7 +97,7 @@ class Miner(BaseMinerNeuron):
                 _copy(newconfig, config, item)
             return newconfig
 
-        whitelist_config_keys = {('axon', 'port'), 'graph_db_url', 'graph_db_user', 'llm_type', ('logging', 'logging_dir'), ('logging', 'record_log'), 'model_type', 'netuid', 
+        whitelist_config_keys = {('axon', 'port'), 'graph_db_url', 'graph_db_user', 'llm_engine_url', ('logging', 'logging_dir'), ('logging', 'record_log'), 'netuid',
                                 'network', ('subtensor', 'chain_endpoint'), ('subtensor', 'network'), 'wallet'}
 
         json_config = json.loads(json.dumps(config, indent = 2))
