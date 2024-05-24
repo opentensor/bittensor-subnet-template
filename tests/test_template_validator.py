@@ -22,7 +22,7 @@ import unittest
 import bittensor as bt
 
 from neurons.validator import Neuron as Validator
-from neurons.miner import Neuron as Miner
+from neurons.bad_miner import Neuron as Miner
 
 from template.protocol import Dummy
 from template.validator.forward import forward

@@ -30,11 +30,14 @@ from template.base.miner import BaseMinerNeuron
 
 class Miner(BaseMinerNeuron):
     """
-    Your miner neuron class. You should use this class to define your miner's behavior. In particular, you should replace the forward function with your own logic. You may also want to override the blacklist and priority functions according to your needs.
+    Your miner neuron class. You should use this class to define your miner's behavior. In particular, you should replace the forward function with your own logic.
+    You may also want to override the blacklist and priority functions according to your needs.
 
-    This class inherits from the BaseMinerNeuron class, which in turn inherits from BaseNeuron. The BaseNeuron class takes care of routine tasks such as setting up wallet, subtensor, metagraph, logging directory, parsing config, etc. You can override any of the methods in BaseNeuron if you need to customize the behavior.
+    This class inherits from the BaseMinerNeuron class, which in turn inherits from BaseNeuron. The BaseNeuron class takes care of routine tasks such as setting up wallet,
+    subtensor, metagraph, logging directory, parsing config, etc. You can override any of the methods in BaseNeuron if you need to customize the behavior.
 
-    This class provides reasonable default behavior for a miner such as blacklisting unrecognized hotkeys, prioritizing requests based on stake, and forwarding requests to the forward function. If you need to define custom
+    This class provides reasonable default behavior for a miner such as blacklisting unrecognized hotkeys, prioritizing requests based on stake, and forwarding
+    requests to the forward function. If you need to define custom
     """
 
     def __init__(self, config=None):
@@ -58,8 +61,9 @@ class Miner(BaseMinerNeuron):
         The 'forward' function is a placeholder and should be overridden with logic that is appropriate for
         the miner's intended operation. This method demonstrates a basic transformation of input data.
         """
+        
         # TODO(developer): Replace with actual implementation logic.
-        synapse.dummy_output = synapse.dummy_input * 2
+        synapse.dummy_output = 0
         return synapse
 
     async def blacklist(
@@ -151,6 +155,8 @@ class Miner(BaseMinerNeuron):
         )
         return prirority
 
+    def save_state(self):
+        pass
 
 # This is the main function, which runs the miner.
 if __name__ == "__main__":
