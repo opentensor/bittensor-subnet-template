@@ -1,27 +1,24 @@
 import argparse
+import json
 import os
 import re
 import time
-import typing
 import traceback
-import json
+import typing
 
-import yaml
 import bittensor as bt
-from insights import protocol
-from insights.llm import LLMFactory
+import yaml
 
+from insights import protocol
+from insights.protocol import NETWORK_BITCOIN, NETWORK_ETHEREUM, QueryOutput
+from neurons import logger
+from neurons.miners import blacklist
+from neurons.miners.query import get_graph_search, get_graph_indexer, get_balance_search
+from neurons.nodes.factory import NodeFactory
+from neurons.remote_config import MinerConfig
+from neurons.storage import store_miner_metadata
 # import base miner class which takes care of most of the boilerplate
 from template.base.miner import BaseMinerNeuron
-from neurons.miners import blacklist
-from insights.protocol import MODEL_TYPE_FUNDS_FLOW, MODEL_TYPE_BALANCE_TRACKING, NETWORK_BITCOIN, NETWORK_ETHEREUM, LLM_TYPE_CUSTOM, LLM_TYPE_OPENAI, \
-    QueryOutput
-
-from neurons.storage import store_miner_metadata
-from neurons.remote_config import MinerConfig
-from neurons.nodes.factory import NodeFactory
-from neurons.miners.query import get_graph_search, get_graph_indexer, get_balance_search, get_balance_indexer
-from neurons import logger
 
 
 class Miner(BaseMinerNeuron):
@@ -139,7 +136,7 @@ class Miner(BaseMinerNeuron):
         self.graph_search = get_graph_search(config)
         self.balance_search = get_balance_search(config)
         self.miner_config = MinerConfig().load_and_get_config_values()
-        self.llm = LLMFactory.create_llm(config.llm_type)
+        self.llm = None # (replace this with external llm engine)
         self.graph_search = get_graph_search(config)
 
         self.miner_config = MinerConfig().load_and_get_config_values()
