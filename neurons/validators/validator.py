@@ -25,6 +25,7 @@ import torch
 import bittensor as bt
 import os
 import yaml
+import json
 
 import insights
 from insights.api.insight_api import APIServer
@@ -87,6 +88,28 @@ class Validator(BaseValidatorNeuron):
             else:
                 with open(dev_config_path, 'w') as f:
                     yaml.safe_dump(config, f)
+
+        def _copy(newconfig, config, allow):
+            if(isinstance(allow, str)):
+                newconfig[allow] = config[allow]
+            elif(isinstance(allow, tuple)):
+                if(len(allow) == 1):
+                    newconfig[allow[0]] = config[allow[0]]
+                else:
+                    if(newconfig.get(allow[0]) == None): newconfig[allow[0]] = {}
+                    _copy(newconfig[allow[0]], config[allow[0]], allow[1:])
+        def filter(config, allowlist):
+            newconfig = {}
+            for item in allowlist:
+                _copy(newconfig, config, item)
+            return newconfig
+
+        whitelist_config_keys = {'alpha', 'api_port', ('logging', 'logging_dir'), ('logging', 'record_log'), 'netuid', 
+                                ('subtensor', 'chain_endpoint'), ('subtensor', 'network'), 'timeout', 'api_timeout', 'top_rate', 'wallet'}
+
+        json_config = json.loads(json.dumps(config, indent = 2))
+        config_out = filter(json_config, whitelist_config_keys)
+        logger.info('config', config = config_out)
 
         return config
 
