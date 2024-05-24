@@ -95,44 +95,41 @@ class Miner(BaseMinerNeuron):
         Otherwise, allow the request to be processed further.
         """
         # TODO (developer): Define how miners should blacklist requests.
-        try:
-            # check for missing hotkey malformed request to avoid throwing ValueError on metagraph.hotkeys.index (unhandled exception)
-            if not synapse.dendrite.hotkey:
-                return True, "Missing hotkey/Malformed request"
+        # check for missing hotkey malformed request to avoid throwing ValueError on metagraph.hotkeys.index (unhandled exception)
+        if not synapse.dendrite.hotkey:
+            return True, "Missing hotkey/Malformed request"
 
-            # Ignore requests from un-registered entities unless permitted.
-            if (
-                not self.config.blacklist.allow_non_registered
-                and synapse.dendrite.hotkey not in self.metagraph.hotkeys
-            ):
-                bt.logging.trace(
-                    f"Blacklisting un-registered hotkey {synapse.dendrite.hotkey}"
-                )
-                return True, "Unrecognized hotkey"
-
-            uid = self.metagraph.hotkeys.index(synapse.dendrite.hotkey)
-            
-            if self.config.blacklist.force_validator_permit:
-                # If the config is set to force validator permit, then we should only allow requests from validators.
-                if not self.metagraph.validator_permit[uid]:
-                    bt.logging.warning(
-                        f"Blacklisting a request from non-validator hotkey {synapse.dendrite.hotkey}"
-                    )
-                    return True, "Non-validator hotkey"
-
-            stake = self.metagraph.S[uid].item()
-
-            # ignore minimal weight validators that should not be directly contacting a miner's synpase due to the lack of weight setting capability.
-            if stake < self.config.blacklist.minimum_stake:
-                return True, "Minimal stake validator"
-    
+        # Ignore requests from un-registered entities unless permitted.
+        if (
+            not self.config.blacklist.allow_non_registered
+            and synapse.dendrite.hotkey not in self.metagraph.hotkeys
+        ):
             bt.logging.trace(
-                f"Not Blacklisting recognized hotkey {synapse.dendrite.hotkey}"
+                f"Blacklisting un-registered hotkey {synapse.dendrite.hotkey}"
             )
-            return False, "Hotkey recognized!"
-        except Exception as e:
-            bt.logging.error(f"Exception in blacklist_fn: {str(e)}")
-            return True, "Blacklist error"
+            return True, "Unrecognized hotkey"
+
+        uid = self.metagraph.hotkeys.index(synapse.dendrite.hotkey)
+        
+        if self.config.blacklist.force_validator_permit:
+            # If the config is set to force validator permit, then we should only allow requests from validators.
+            if not self.metagraph.validator_permit[uid]:
+                bt.logging.warning(
+                    f"Blacklisting a request from non-validator hotkey {synapse.dendrite.hotkey}"
+                )
+                return True, "Non-validator hotkey"
+
+        stake = self.metagraph.S[uid].item()
+
+        # ignore minimal weight validators that should not be directly contacting a miner's synpase due to the lack of weight setting capability.
+        if stake < self.config.blacklist.minimum_stake:
+            return True, "Minimal stake validator"
+
+        bt.logging.trace(
+            f"Not Blacklisting recognized hotkey {synapse.dendrite.hotkey}"
+        )
+        return False, "Hotkey recognized!"
+
 
     async def priority(self, synapse: template.protocol.Dummy) -> float:
         """
