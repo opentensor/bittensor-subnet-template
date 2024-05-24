@@ -13,6 +13,7 @@ from insights import protocol
 from insights.protocol import NETWORK_BITCOIN, NETWORK_ETHEREUM, QueryOutput
 from neurons import logger
 from neurons.miners import blacklist
+from neurons.miners.llm_client import LLMClient
 from neurons.miners.query import get_graph_search, get_graph_indexer, get_balance_search
 from neurons.nodes.factory import NodeFactory
 from neurons.remote_config import MinerConfig
@@ -136,7 +137,7 @@ class Miner(BaseMinerNeuron):
         self.graph_search = get_graph_search(config)
         self.balance_search = get_balance_search(config)
         self.miner_config = MinerConfig().load_and_get_config_values()
-        self.llm = None # (replace this with external llm engine)
+        self.llm = LLMClient(config.llm_engine_url)
         self.graph_search = get_graph_search(config)
 
         self.miner_config = MinerConfig().load_and_get_config_values()
@@ -212,32 +213,13 @@ class Miner(BaseMinerNeuron):
         synapse.output = {}
 
         try:
-            # TODO: handle llm query
-            query = self.llm.build_query_from_messages(synapse.messages)
-            logger.info(f"extracted query: {query}")
-            
-            result = self.graph_search.execute_query(query=query)
-            interpreted_result = self.llm.interpret_result(llm_messages=synapse.messages, result=result)
+            query = self.llm.query(synapse.messages)
 
-            synapse.output = QueryOutput(result=result, interpreted_result=interpreted_result)
-
+            synapse.output = QueryOutput(result=query.result, interpreted_result=query.interpreted_result)
         except Exception as e:
             logger.error(traceback.format_exc())
             error_code = e.args[0]
-            if error_code == protocol.LLM_ERROR_TYPE_NOT_SUPPORTED:
-                # handle unsupported query templates
-                try:                    
-                    interpreted_result = self.llm.excute_generic_query(llm_message=synapse.messages[-1].content)
-                    if interpreted_result == "Failed":
-                        interpreted_result = self.llm.generate_general_response(llm_messages=synapse.messages)
-                        synapse.output = QueryOutput(error=error_code, interpreted_result=interpreted_result)
-                    else:                        
-                        synapse.output = QueryOutput(error=error_code, interpreted_result=interpreted_result)
-                except Exception as e:
-                    error_code = e.args[0]
-                    synapse.output = QueryOutput(error=error_code, interpreted_result=protocol.LLM_ERROR_MESSAGES[error_code])
-            else:
-                synapse.output = QueryOutput(error=error_code, interpreted_result=protocol.LLM_ERROR_MESSAGES[error_code])
+            synapse.output = QueryOutput(error=error_code, interpreted_result=protocol.LLM_ERROR_MESSAGES[error_code])
 
         logger.info(f"Serving miner llm query output: {synapse.output}")
         return synapse
