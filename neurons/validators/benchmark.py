@@ -4,6 +4,7 @@ from random import randint
 import bittensor as bt
 from insights import protocol
 
+from neurons import logger
 
 class BenchmarkValidator:
     def __init__(self, dendrite, validator_config):
@@ -14,7 +15,7 @@ class BenchmarkValidator:
         try:
             response_processor = ResponseProcessor(self.validator_config)
             grouped_responses = response_processor.group_responses(filtered_responses)
-            bt.logging.info("Run benchmark", groups=len(grouped_responses))
+            logger.info("Run benchmarks", groups=len(grouped_responses))
             results = {}
 
             for network, main_group in grouped_responses.items():
@@ -38,11 +39,11 @@ class BenchmarkValidator:
                             for uid_value, response_time, result in benchmark_results:
                                 results[uid_value] = (response_time, result == most_common_result)
                         except Exception as e:
-                            bt.logging.error("Run benchmark failed", error=traceback.format_exc())
+                            logger.error("Run benchmark failed", error=traceback.format_exc())
 
             return results
         except Exception as e:
-            bt.logging.error("Run benchmark failed", error=traceback.format_exc())
+            logger.error("Run benchmark failed", error=traceback.format_exc())
             return {}
 
     def execute_benchmarks(self, responses, benchmark_query):
@@ -52,7 +53,7 @@ class BenchmarkValidator:
             results.append(result)
 
         filtered_run_results = [result for result in results if result[2] is not None]
-        bt.logging.info("Executing benchmark", responses=len(responses), results=len(filtered_run_results), benchmark_query=benchmark_query)
+        logger.info("Executing benchmark", responses=len(responses), results=len(filtered_run_results), benchmark_query=benchmark_query)
         return filtered_run_results
 
     def run_benchmark(self, response, uid, benchmark_query="RETURN 1"):
@@ -67,14 +68,14 @@ class BenchmarkValidator:
             )
 
             if benchmark_response is None or benchmark_response.output is None:
-                bt.logging.info("Run benchmark failed", hotkey=response.axon.hotkey)
+                logger.info("Run benchmark failed", hotkey=response.axon.hotkey)
                 return None, None, None
 
             response_time = benchmark_response.dendrite.process_time
-            bt.logging.info("Run benchmark", hotkey=response.axon.hotkey, response_time=response_time, output=benchmark_response.output, uid=uid_value)
+            logger.info("Run benchmark", hotkey=response.axon.hotkey, response_time=response_time, output=benchmark_response.output, uid=uid_value)
             return uid_value, response_time, benchmark_response.output
         except Exception as e:
-            bt.logging.error("Run benchmark failed", error=traceback.format_exc())
+            logger.error("Run benchmark failed", error=traceback.format_exc())
             return None, None, None
 
 class ResponseProcessor:
@@ -111,6 +112,6 @@ class ResponseProcessor:
                     'responses': [resp for resp in items[i]]
                 }
 
-                bt.logging.info("Benchmark group", network=network, chunk=i, start=min_start, end=min_end, groups=f"{[(resp.axon.ip, resp.axon.hotkey) for resp, _ in items[i]]}")
+                logger.info("Benchmark group", network=network, chunk=i, start=min_start, end=min_end, groups=f"{[(resp.axon.ip, resp.axon.hotkey) for resp, _ in items[i]]}")
 
         return new_groups

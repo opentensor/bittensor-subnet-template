@@ -18,7 +18,8 @@ from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 
 from neurons.setup_logger import setup_logger
 
-logger = setup_logger("OpenAI LLM")
+from neurons import logger
+indexlogger = setup_logger("OpenAI LLM")
 
 class OpenAILLM(BaseLLM):
     def __init__(self) -> None:
@@ -52,7 +53,7 @@ class OpenAILLM(BaseLLM):
                 skip=query["skip"] if "skip" in query else None,
             )
         except Exception as e:
-            bt.logging.error(f"LlmQuery build error: {e}")
+            logger.error(f"LlmQuery build error: {e}")
             raise Exception(protocol.LLM_ERROR_QUERY_BUILD_FAILED)
     
     def interpret_result(self, llm_messages: str, result: list) -> str:
@@ -71,7 +72,7 @@ class OpenAILLM(BaseLLM):
             ai_message = self.chat.invoke(messages)
             return ai_message.content
         except Exception as e:
-            bt.logging.error(f"LlmQuery interpret result error: {e}")
+            logger.error(f"LlmQuery interpret result error: {e}")
             raise Exception(protocol.LLM_ERROR_INTERPRETION_FAILED)
         
     def generate_general_response(self, llm_messages: List[protocol.LlmMessage]) -> str:
@@ -93,7 +94,7 @@ class OpenAILLM(BaseLLM):
             else:
                 return ai_message.content
         except Exception as e:
-            bt.logging.error(f"LlmQuery general response error: {e}")
+            logger.error(f"LlmQuery general response error: {e}")
             raise Exception(protocol.LLM_ERROR_GENERAL_RESPONSE_FAILED)
         
     def generate_llm_query_from_query(self, query: Query) -> str:

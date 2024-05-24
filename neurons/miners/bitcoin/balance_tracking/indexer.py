@@ -11,11 +11,12 @@ from insights.protocol import NETWORK_BITCOIN
 
 # Global flag to signal shutdown
 shutdown_flag = False
-logger = setup_logger("Indexer")
+indexlogger = setup_logger("Indexer")
+from neurons import logger
 
 def shutdown_handler(signum, frame):
     global shutdown_flag
-    logger.info(
+    indexlogger.info(
         "Shutdown signal received. Waiting for current indexing to complete before shutting down."
     )
     shutdown_flag = True
@@ -35,7 +36,7 @@ def index_block(_bitcoin_node, _balance_indexer, block_height):
     )
 
     if time_taken > 0:
-        logger.info(
+        indexlogger.info(
             "Block {:>6}: Processed {} transactions in {} seconds {} TPS".format(
                 block_height,
                 formatted_num_transactions,
@@ -44,7 +45,7 @@ def index_block(_bitcoin_node, _balance_indexer, block_height):
             )
         )
     else:
-        logger.info(
+        indexlogger.info(
             "Block {:>6}: Processed {} transactions in 0.00 seconds (  Inf TPS).".format(
                 block_height, formatted_num_transactions
             )
@@ -62,7 +63,7 @@ def move_forward(_bitcoin_node, _balance_indexer, start_block_height = 1):
     while not shutdown_flag:
         current_block_height = _bitcoin_node.get_current_block_height() - skip_blocks
         if block_height > current_block_height:
-            logger.info(
+            indexlogger.info(
                 f"Waiting for new blocks. Current height is {current_block_height}."
             )
             time.sleep(10)
@@ -73,7 +74,7 @@ def move_forward(_bitcoin_node, _balance_indexer, start_block_height = 1):
         if success:
             block_height += 1
         else:
-            logger.error(f"Failed to index block {block_height}.")
+            indexlogger.error(f"Failed to index block {block_height}.")
             time.sleep(30)
 
 # Register the shutdown handler for SIGINT and SIGTERM
@@ -87,13 +88,13 @@ if __name__ == "__main__":
     bitcoin_node = NodeFactory.create_node(NETWORK_BITCOIN)
     balance_indexer = BalanceIndexer()
     
-    logger.info("Starting indexer")
+    indexlogger.info("Starting indexer")
 
-    logger.info("Getting latest block number...")
+    indexlogger.info("Getting latest block number...")
     latest_block_height = balance_indexer.get_latest_block_number()
-    logger.info(f"Latest block number is {latest_block_height}")
+    indexlogger.info(f"Latest block number is {latest_block_height}")
     
     move_forward(bitcoin_node, balance_indexer, latest_block_height + 1)
 
     balance_indexer.close()
-    logger.info("Indexer stopped")
+    indexlogger.info("Indexer stopped")

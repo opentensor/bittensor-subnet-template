@@ -8,6 +8,7 @@ import threading
 
 import insights
 
+from neurons import logger
 # Constants for configuration URLs
 
 UPDATE_INTERVAL = 3600  # Time interval for updating configuration in seconds
@@ -62,15 +63,15 @@ class RemoteConfig:
                         json.dump(self.config_cache, file)
 
                     self.last_update_time = current_time
-                    bt.logging.success("Updated config", config_url = self.config_url)
+                    logger.success("Updated config", config_url = self.config_url)
                     break  # Break the loop if successful
                 except requests.exceptions.RequestException as e:
                     retries += 1
-                    bt.logging.error("Attempt failed to update config from", retries=str(retries), config_url = self.config_url, error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args})
+                    logger.error("Attempt failed to update config", retries = retries, config_url = self.config_url, error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args})
                     if retries < MAX_RETRIES:
                         time.sleep(RETRY_INTERVAL)
                 except Exception as e:
-                    bt.logging.error("Non-retryable error occurred", error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args})
+                    logger.error("Non-retryable error occurred", error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args})
                     break
 
     def get_config_composite_value(self, key, default=None):

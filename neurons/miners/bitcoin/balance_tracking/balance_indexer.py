@@ -11,7 +11,8 @@ from sqlalchemy.sql import select
 
 from .balance_model import Base, BalanceChange, CurrentBalance, Block
 
-logger = setup_logger("BalanceIndexer")
+indexlogger = setup_logger("BalanceIndexer")
+from neurons import logger
 
 
 class BalanceIndexer:
@@ -34,7 +35,7 @@ class BalanceIndexer:
         if (not inspector.has_table('balance_changes')) or (not inspector.has_table('current_balances')) or (not inspector.has_table('blocks')):
             # Create the table in the database
             Base.metadata.create_all(self.engine)
-            logger.info("Created 3 tables: `balance_changes`, `current_balances`, `blocks`")
+            indexlogger.info("Created 3 tables: `balance_changes`, `current_balances`, `blocks`")
             
         # Close the connection
         connection.close()
@@ -79,7 +80,7 @@ class BalanceIndexer:
                     changed_addresses.append(address)
                 balance_changes_by_address[address] += out_amount_by_address[address]
 
-        logger.info(f"Adding {len(changed_addresses)} row(s)...")
+        indexlogger.info(f"Adding {len(changed_addresses)} row(s)...")
         
         new_rows = [BalanceChange(address=address, d_balance=balance_changes_by_address[address], block=block_height) for address in changed_addresses]
 
@@ -117,6 +118,6 @@ class BalanceIndexer:
             except SQLAlchemyError as e:
                 # Rollback the session in case of an error
                 session.rollback()
-                logger.error(f"An exception occurred: {e}")
+                indexlogger.error(f"An exception occurred: {e}")
                 
                 return False
