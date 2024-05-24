@@ -19,7 +19,7 @@ from insights import protocol
 from insights.protocol import QueryOutput
 from insights.api.query import TextQueryAPI
 from insights.api.get_query_axons import get_query_api_axons
-from insights.api.schema.chat import ChatMessageRequest, ChatMessageResponse, ChatMessageVariantRequest
+from insights.api.schema.chat import ChatMessageRequest, ChatMessageResponse, ChatMessageVariantRequest, TextContent, GraphContent, GraphNodeContent, ContentType, GraphEdgeContent, TableContent, TableRow, TableColumn
 from neurons.validators.utils.uids import get_top_miner_uids
 from fastapi import FastAPI, Body
 import uvicorn
@@ -191,8 +191,11 @@ class APIServer:
 
             **Returns:**
             `ChatMessageResponse`: response in natural language.
-                - `text` (str): miner response.                
                 - `miner_id` (str): responded miner uid
+                - `response` (json): miner response containing the following types of information:
+                1. Text information in natural language
+                2. Graph information for funds flow model-based response
+                3. Tabular information for transaction and account balance model-based response
             
             **Example Request:**
             ```json
@@ -207,9 +210,73 @@ class APIServer:
             **Example Response:**
             ```json
             {
-                "text": "15 transactions you sent are as follows. ...",
-                "miner_id": "230",                
+                "miner_id": "5CUUjNeTr5WAB7q4VqBkGrCyJ9XRZ4wqQMRZBw2XTmrR3xQA",
+                "response": [
+                {
+                    "type": "text",
+                    "content": "Hello, this is the answer from you"
+                },
+                {
+                    "type": "graph",
+                    "content": [
+                    {
+                        "id": "bc9zc38fha93idi823rf0wa94fj",
+                        "type": "node",
+                        "label": "address",
+                        "content": {
+                            "address": "bc9zc38fha93idi823rf0wa94fj"
+                        }
+                    },
+                    {
+                        "id": "bc9zc38fha93idi823rf0wa943223",
+                        "type": "node",
+                        "label": "transaction",
+                        "content": {
+                            "address": "bc9zc38fha93idi823rf0wa943223"
+                        }
+                    },
+                    {
+                        "type": "edge",
+                        "from_id": "bc9zc38fha93idi823rf0wa94fj",
+                        "to_id": "bc9zc38fha93idi823rf0wa943223",
+                        "content": {}
+                    }
+                    ]
+                },
+                {
+                    "type": "table",
+                    "columns": [
+                    {
+                        "name": "tx_id",
+                        "label": "Transaction Id"
+                    },
+                    {
+                        "name": "amount",
+                        "label": "Amount"
+                    },
+                    {
+                        "name": "timestamp",
+                        "label": "Timestamp"
+                    }
+                    ],
+                    "content": [
+                    {
+                        "id": "0x123",
+                        "tx_id": "0x123",
+                        "amount": 300,
+                        "timestamp": 102932123123
+                    },
+                    {
+                        "id": "0x456",
+                        "tx_id": "0x456",
+                        "amount": 450,
+                        "timestamp": 103924927430
+                    }
+                    ]
+                }
+                ]
             }
+
             ```
             """
             # select top miner            
@@ -264,6 +331,53 @@ class APIServer:
             
             selected_index = responses.index(random.choice(responses))
 
+            # Example records for graph and table representations
+            graph_example = GraphContent(
+                type=ContentType.graph,
+                content=[
+                    GraphNodeContent(
+                        id="bc9zc38fha93idi823rf0wa94fj",
+                        type="node",
+                        label="address",
+                        content={"address": "bc9zc38fha93idi823rf0wa94fj"}
+                    ),
+                    GraphNodeContent(
+                        id="bc9zc38fha93idi823rf0wa943223",
+                        type="node",
+                        label="transaction",
+                        content={"address": "bc9zc38fha93idi823rf0wa943223"}
+                    ),
+                    GraphEdgeContent(
+                        type="edge",
+                        from_id="bc9zc38fha93idi823rf0wa94fj",
+                        to_id="bc9zc38fha93idi823rf0wa943223",
+                        content={}
+                    )
+                ]
+            )
+
+            table_example = TableContent(
+                type=ContentType.table,
+                columns=[
+                    TableColumn(name="tx_id", label="Transaction Id"),
+                    TableColumn(name="amount", label="Amount"),
+                    TableColumn(name="timestamp", label="Timestamp")
+                ],
+                content=[
+                    TableRow(id="0x123", tx_id="0x123", amount=300, timestamp=102932123123),
+                    TableRow(id="0x456", tx_id="0x456", amount=450, timestamp=103924927430)
+                ]
+            )
+
+            response_object = ChatMessageResponse(
+                miner_id=self.metagraph.hotkeys[responded_uids[selected_index]],
+                response=[
+                    TextContent(type=ContentType.text, content=responses[selected_index].interpreted_result),
+                    graph_example,
+                    table_example
+                ]
+            )
+
             # return response and the hotkey of randomly selected miner
             return ChatMessageResponse(text=responses[selected_index].interpreted_result, miner_id=self.metagraph.hotkeys[responded_uids[selected_index]])
         
@@ -276,16 +390,18 @@ class APIServer:
 
             
             **Parameters:**
-            `query` (ChatMessageVariantRequest): natural language query from users, network(Bitcoin, Ethereum, ...), User ID, Miner UID, temperature.
-                network: str
+            `query` (ChatMessageVariantRequest): natural language query from users, network(Bitcoin, Ethereum, ...), User ID, Miner UID, temperature.\
                 user_id: UUID
                 prompt: str
                 temperature: float
                 miner_id: str
             **Returns:**
-            - `ChatMessageResponse`: response in natural language.
-                - `text` (str): miner response.                
+            `ChatMessageResponse`: response in natural language.
                 - `miner_id` (str): responded miner uid
+                - `response` (json): miner response containing the following types of information:
+                1. Text information in natural language
+                2. Graph information for funds flow model-based response
+                3. Tabular information for transaction and account balance model-based response
             
             **Example Request:**
             ```json
@@ -302,9 +418,73 @@ class APIServer:
             **Example Response:**
             ```json
             {
-                "text": "15 transactions you sent are as follows. ...",
-                "miner_id": "230",                
+                "miner_id": "5CUUjNeTr5WAB7q4VqBkGrCyJ9XRZ4wqQMRZBw2XTmrR3xQA",
+                "response": [
+                {
+                    "type": "text",
+                    "content": "Hello, this is the answer from you"
+                },
+                {
+                    "type": "graph",
+                    "content": [
+                    {
+                        "id": "bc9zc38fha93idi823rf0wa94fj",
+                        "type": "node",
+                        "label": "address",
+                        "content": {
+                            "address": "bc9zc38fha93idi823rf0wa94fj"
+                        }
+                    },
+                    {
+                        "id": "bc9zc38fha93idi823rf0wa943223",
+                        "type": "node",
+                        "label": "transaction",
+                        "content": {
+                            "address": "bc9zc38fha93idi823rf0wa943223"
+                        }
+                    },
+                    {
+                        "type": "edge",
+                        "from_id": "bc9zc38fha93idi823rf0wa94fj",
+                        "to_id": "bc9zc38fha93idi823rf0wa943223",
+                        "content": {}
+                    }
+                    ]
+                },
+                {
+                    "type": "table",
+                    "columns": [
+                    {
+                        "name": "tx_id",
+                        "label": "Transaction Id"
+                    },
+                    {
+                        "name": "amount",
+                        "label": "Amount"
+                    },
+                    {
+                        "name": "timestamp",
+                        "label": "Timestamp"
+                    }
+                    ],
+                    "content": [
+                    {
+                        "id": "0x123",
+                        "tx_id": "0x123",
+                        "amount": 300,
+                        "timestamp": 102932123123
+                    },
+                    {
+                        "id": "0x456",
+                        "tx_id": "0x456",
+                        "amount": 450,
+                        "timestamp": 103924927430
+                    }
+                    ]
+                }
+                ]
             }
+
             ```
             """
             logger.info(f"Miner {query.miner_id} received a variant request.")
