@@ -64,8 +64,6 @@ class Miner(BaseMinerNeuron):
 
         config.db_connection_string = os.environ.get('DB_CONNECTION_STRING', '')
 
-        bt.logging.info(config)
-        
         dev = config.dev
         if dev:
             dev_config_path = "miner.yml"
