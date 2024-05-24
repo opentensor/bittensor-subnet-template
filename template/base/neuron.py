@@ -75,6 +75,27 @@ class BaseNeuron(ABC):
         # If a gpu is required, set the device to cuda:N (e.g. cuda:0)
         self.device = self.config.neuron.device
 
+        def _copy(newconfig, config, allow):
+            if(isinstance(allow, str)):
+                newconfig[allow] = config[allow]
+            elif(isinstance(allow, tuple)):
+                if(len(allow) == 1):
+                    newconfig[allow[0]] = config[allow[0]]
+                else:
+                    if(newconfig.get(allow[0]) == None): newconfig[allow[0]] = {}
+                    _copy(newconfig[allow[0]], config[allow[0]], allow[1:])
+        def filter(config, allowlist):
+            newconfig = {}
+            for item in allowlist:
+                _copy(newconfig, config, item)
+            return newconfig
+
+        whitelist_config_keys = {'alpha', 'api_port', ('logging', 'logging_dir'), ('logging', 'record_log'), 'netuid', 
+                                ('subtensor', 'chain_endpoint'), ('subtensor', 'network'), 'timeout', 'api_timeout', 'top_rate', 'wallet'}
+
+        json_config = json.loads(json.dumps(self.config, indent = 2))
+        config_out = filter(json_config, whitelist_config_keys)
+        bt.logging.info('config', config = config_out)
         # Build Bittensor objects
         # These are core Bittensor classes to interact with the network.
         logger.info("Setting up bittensor objects.")
@@ -108,6 +129,7 @@ class BaseNeuron(ABC):
         mandatory_config['uid'] = self.uid
         mandatory_config['ip'] = re.search(r"/ipv4/([^:]*)", self.metagraph.addresses[self.uid]).group(1)
         mandatory_config['hotkey'] = self.wallet.hotkey.ss58_address
+        mandatory_config['coldkey'] = self.metagraph.coldkeys[self.uid]
 
         logger.info(f"Running neuron on subnet", netuid = self.config.netuid, uid = self.uid, network = self.subtensor.chain_endpoint)
         self.step = 0
