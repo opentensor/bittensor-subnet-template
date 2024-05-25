@@ -188,7 +188,7 @@ class Miner(BaseMinerNeuron):
             logger.info(f"Serving miner challenge", output = f"{synapse.output}")
 
         except Exception as e:
-            logger.error('error', error = traceback.format_exc())
+            logger.error('error', error=traceback.format_exc())
             synapse.output = None
         return synapse
 
