@@ -190,7 +190,7 @@ if __name__ == "__main__":
     end_height_str = os.getenv('BITCOIN_INDEXER_END_BLOCK_HEIGHT', '-1') or '-1'
     in_reverse_order_str = os.getenv('BITCOIN_INDEXER_IN_REVERSE_ORDER', '0') or '0'
     
-    indexlogger.info(in_reverse_order = in_reverse_order_str)
+    indexlogger.info("BITCOIN_INDEXER_IN_REVERSE_ORDER", in_reverse_order = in_reverse_order_str)
     
     if start_height_str is None:
         indexlogger.info("Please specify BITCOIN_INDEXER_START_BLOCK_HEIGHT")
