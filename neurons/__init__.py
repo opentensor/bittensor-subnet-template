@@ -24,7 +24,7 @@ def patching(record):
 
 def custom_log_formatter(record):
     """Custom log formatter"""
-    return "{message}\n"
+    return "<level>{message}</level>\n"
 
 logger = logger.patch(patching)
 logger.remove(0)
