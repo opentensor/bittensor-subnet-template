@@ -1,8 +1,6 @@
 import json
 import sys
 from loguru import logger
-import os
-
 import bittensor as bt
 import logging
 
