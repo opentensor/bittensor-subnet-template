@@ -10,7 +10,8 @@ import bittensor as bt
 import yaml
 
 from insights import protocol
-from insights.protocol import NETWORK_BITCOIN, NETWORK_ETHEREUM, QueryOutput
+from insights.protocol import NETWORK_BITCOIN, NETWORK_ETHEREUM, QueryOutput, LLM_ERROR_GENERAL_RESPONSE_FAILED, \
+    LLM_CLIENT_ERROR
 from neurons import logger
 from neurons.miners import blacklist
 from neurons.miners.llm_client import LLMClient
@@ -210,14 +211,16 @@ class Miner(BaseMinerNeuron):
         logger.info(f"llm query received: {synapse}")
         synapse.output = {}
 
-        try:
-            query = self.llm.query(synapse.messages)
+        query = self.llm.query(synapse.messages)
 
-            synapse.output = QueryOutput(result=query.result, interpreted_result=query.interpreted_result)
-        except Exception as e:
-            logger.error(traceback.format_exc())
-            error_code = e.args[0]
-            synapse.output = QueryOutput(error=error_code, interpreted_result=protocol.LLM_ERROR_MESSAGES[error_code])
+        if query is None:
+            synapse.output = QueryOutput(error=LLM_ERROR_GENERAL_RESPONSE_FAILED, interpreted_result=protocol.LLM_ERROR_MESSAGES[LLM_CLIENT_ERROR])
+        elif query.error:
+            synapse.output = QueryOutput(error=query.error, interpreted_result=query.interpreted_result)
+        else:
+            synapse.output = QueryOutput(result=query.result,
+                                     error=query.error,
+                                     interpreted_result=query.interpreted_result)
 
         logger.info(f"Serving miner llm query output: {synapse.output}")
         return synapse

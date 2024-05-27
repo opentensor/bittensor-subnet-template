@@ -30,7 +30,7 @@ def custom_log_formatter(record):
     return "<level>{message}</level>\n"
 
 logger = logger.patch(patching)
-# logger.remove(0)
+logger.remove(0)
 logger.add(sys.stdout, format=custom_log_formatter)
 
-#bt.logging._logger.setLevel(logging.CRITICAL)  # disable btlogging
+bt.logging._logger.setLevel(logging.CRITICAL)  # disable btlogging
