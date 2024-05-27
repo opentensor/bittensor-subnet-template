@@ -2,6 +2,7 @@ import os
 import time
 import signal
 from neurons.setup_logger import setup_logger
+from neurons.setup_logger import logger_extra_data
 from neurons.nodes.factory import NodeFactory
 from neurons.nodes.bitcoin.node_utils import parse_block_data
 from neurons.miners.bitcoin.balance_tracking.balance_indexer import BalanceIndexer
@@ -37,17 +38,20 @@ def index_block(_bitcoin_node, _balance_indexer, block_height):
 
     if time_taken > 0:
         indexlogger.info(
-            "Block {:>6}: Processed {} transactions in {} seconds {} TPS".format(
-                block_height,
-                formatted_num_transactions,
-                formatted_time_taken,
-                formatted_tps,
+            "Block Processed transactions",
+            extra = logger_extra_data(
+                block_height = f"{block_height:>6}",
+                num_transactions = formatted_num_transactions,
+                time_taken = formatted_time_taken,
+                tps = formatted_tps,
             )
         )
     else:
         indexlogger.info(
-            "Block {:>6}: Processed {} transactions in 0.00 seconds (  Inf TPS).".format(
-                block_height, formatted_num_transactions
+            "Block Processed transactions in 0.00 seconds (  Inf TPS).",
+            extra = logger_extra_data(
+                block_height = f"{block_height:>6}",
+                num_transactions = formatted_num_transactions
             )
         )
         
@@ -63,9 +67,7 @@ def move_forward(_bitcoin_node, _balance_indexer, start_block_height = 1):
     while not shutdown_flag:
         current_block_height = _bitcoin_node.get_current_block_height() - skip_blocks
         if block_height > current_block_height:
-            indexlogger.info(
-                f"Waiting for new blocks. Current height is {current_block_height}."
-            )
+            indexlogger.info(f"Waiting for new blocks.", extra = logger_extra_data(current_block_height = current_block_height))
             time.sleep(10)
             continue
         
@@ -74,7 +76,7 @@ def move_forward(_bitcoin_node, _balance_indexer, start_block_height = 1):
         if success:
             block_height += 1
         else:
-            indexlogger.error(f"Failed to index block {block_height}.")
+            indexlogger.error(f"Failed to index block.", extra = logger_extra_data(block_height = block_height))
             time.sleep(30)
 
 # Register the shutdown handler for SIGINT and SIGTERM
@@ -92,7 +94,7 @@ if __name__ == "__main__":
 
     indexlogger.info("Getting latest block number...")
     latest_block_height = balance_indexer.get_latest_block_number()
-    indexlogger.info(f"Latest block number is {latest_block_height}")
+    indexlogger.info(f"Latest block number", extra = logger_extra_data(latest_block_height = latest_block_height))
     
     move_forward(bitcoin_node, balance_indexer, latest_block_height + 1)
 

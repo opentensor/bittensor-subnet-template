@@ -4,6 +4,7 @@ import time
 from threading import Thread
 from math import floor
 from neurons.setup_logger import setup_logger
+from neurons.setup_logger import logger_extra_data
 from neurons.nodes.evm.ethereum.node import EthereumNode
 from neurons.miners.ethereum.funds_flow.graph_creator import GraphCreator
 from neurons.miners.ethereum.funds_flow.graph_indexer import GraphIndexer
@@ -93,7 +94,7 @@ def single_index(_graph_creator, _graph_indexer, _graph_search, start_height: in
                 if success:
                     time_taken = time.time() - buf_time
                     formatted_tps = tx['cacheCnt'] / time_taken if time_taken > 0 else float("inf")
-                    indexlogger.info(f"[Main Thread]", finished_block = start, tps = formatted_tps, spent_time = time.time() - start_time)
+                    indexlogger.info(f"[Main Thread]", extra = logger_extra_data(finished_block = start, tps = formatted_tps, spent_time = time.time() - start_time))
                     
                 else:
                     # sometimes we may have memgraph server connect issue catch all failed block so we can retry
@@ -107,14 +108,14 @@ def single_index(_graph_creator, _graph_indexer, _graph_search, start_height: in
             start += direction
 
             if shutdown_flag:
-                indexlogger.info(f"Finished indexing block before shutdown.", block = start)
+                indexlogger.info(f"Finished indexing block before shutdown.", extra = logger_extra_data(block = start))
                 break
         except Exception as e:
             # sometimes we may have rpc server connect issue catch all failed block so we can retry
             log_blockHeight_crashed_by_rpc(start)
             start += direction
     
-    indexlogger.info(f"Finished Single Main Indexing", start_block = start_height, end_block = end_height)
+    indexlogger.info(f"Finished Single Main Indexing", extra = logger_extra_data(start_block = start_height, end_block = end_height))
     log_finished_thread_info(0, start_height, end_height, time.time() - start_time)
 
 def index_blocks(_graph_creator, _graph_indexer, _graph_search, start_height):
@@ -130,7 +131,7 @@ def index_blocks(_graph_creator, _graph_indexer, _graph_search, start_height):
         buf_time = time.time()
 
         if current_block_height - skip_blocks < 0:
-            indexlogger.info(f"Waiting for blocks to be mined.", skip_blocks = skip_blocks)
+            indexlogger.info(f"Waiting for blocks to be mined.", extra = logger_extra_data(skip_blocks = skip_blocks))
             time.sleep(3)
             continue
 
@@ -142,7 +143,7 @@ def index_blocks(_graph_creator, _graph_indexer, _graph_search, start_height):
                 if success:
                     time_taken = time.time() - buf_time
                     formatted_tps = tx['cacheCnt'] / time_taken if time_taken > 0 else float("inf")
-                    indexlogger.info(f"[Main Thread]", tps = formatted_tps, spent_time = time.time() - start_time)
+                    indexlogger.info(f"[Main Thread]", extra = logger_extra_data(tps = formatted_tps, spent_time = time.time() - start_time))
                 else:
                     # sometimes we may have memgraph server connect issue catch all failed block so we can retry
                     log_txHash_crashed_by_memgraph(tx['cacheTx'])
@@ -182,7 +183,7 @@ def index_blocks(_graph_creator, _graph_indexer, _graph_search, start_height):
                     if success:
                         time_taken = time.time() - buf_time
                         formatted_tps = tx['cacheCnt'] / time_taken if time_taken > 0 else float("inf")
-                        indexlogger.info(f"[Main Thread]", finished_block = start, tps = formatted_tps, spent_time = time.time() - start_time)
+                        indexlogger.info(f"[Main Thread]", extra = logger_extra_data(finished_block = start, tps = formatted_tps, spent_time = time.time() - start_time))
                         
                     else:
                         # sometimes we may have memgraph server connect issue catch all failed block so we can retry
@@ -196,7 +197,7 @@ def index_blocks(_graph_creator, _graph_indexer, _graph_search, start_height):
                 block_height += 1
 
                 if shutdown_flag:
-                    indexlogger.info(f"Finished indexing block before shutdown.", block_height = block_height)
+                    indexlogger.info(f"Finished indexing block before shutdown.", extra = logger_extra_data(block_height = block_height))
                     break
             except Exception as e:
                 # sometimes we may have rpc server connect issue catch all failed block so we can retry
@@ -220,7 +221,7 @@ def index_blocks_by_last_height(thread_index, _graph_creator, start, last):
             if inprogress_flag:
                 if not log_display:
                     formatted_percent = "{:6.4f}".format(100 * (block_height - start)/(last - start))
-                    indexlogger.info(f"[Sub Thread]", thread_index = index, start_block = start, last_block = last, completed_percent = formatted_percent)
+                    indexlogger.info(f"[Sub Thread]", extra = logger_extra_data(thread_index = index, start_block = start, last_block = last, completed_percent = formatted_percent))
                     log_display = True
                 time.sleep(0.01)
                 continue
@@ -244,7 +245,7 @@ def index_blocks_by_last_height(thread_index, _graph_creator, start, last):
                 block_height += 1
 
             if shutdown_flag:
-                indexlogger.info(f"Finished indexing block before shutdown.", block = block_height)
+                indexlogger.info(f"Finished indexing block before shutdown.", extra = logger_extra_data(block = block_height))
                 break
         except Exception as e:
             # sometimes we may have rpc server connect issue catch all failed block so we can retry
@@ -337,14 +338,14 @@ if __name__ == "__main__":
         # Only Main Indexer running
         else:
             if main_start_height > 0 and main_last_height > 0:
-                indexlogger.info(f'-- Main thread is running for indexing based on range of block numbers --', min_block = main_start_height, max_block = main_last_height)
+                indexlogger.info(f'-- Main thread is running for indexing based on range of block numbers --', extra = logger_extra_data(min_block = main_start_height, max_block = main_last_height))
                 single_index(graph_creator, graph_indexer, graph_search, main_start_height, main_last_height, is_reverse_order)
             else:
                 indexlogger.error('ETHEREUM_MAIN_START_BLOCK_HEIGHT & ETHEREUM_MAIN_END_BLOCK_HEIGHT should be given by ENV')
 
     except Exception as e:
-        indexlogger.error(f"Retry failed with error", error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args})
-        indexlogger.info(f"Retrying in seconds...", retry_delay = retry_delay)
+        indexlogger.error(f"Retry failed with error", extra = logger_extra_data(error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args}))
+        indexlogger.info(f"Retrying in seconds...", extra = logger_extra_data(retry_delay = retry_delay))
         time.sleep(retry_delay)
     finally:
         graph_indexer.close()

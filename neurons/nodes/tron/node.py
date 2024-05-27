@@ -8,6 +8,7 @@ import bittensor as bt
 from tronapi import Tron
 from neurons.nodes.abstract_node import Node
 from neurons.setup_logger import setup_logger
+from neurons.setup_logger import logger_extra_data
 
 parser = argparse.ArgumentParser()
 from neurons import logger
@@ -36,7 +37,7 @@ class TronNode(Node):
             else:
                 indexlogger.info("RPC Provider disconnected.")
         except Exception as e:
-            indexlogger.error(f"RPC Provider with Error: {e}")
+            indexlogger.error(f"RPC Provider with Error", extra = logger_extra_data(error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args}))
     
     def get_block_by_height(self, block_height):
         try:
@@ -45,7 +46,7 @@ class TronNode(Node):
             else:
                 indexlogger.info("RPC Provider disconnected.")
         except Exception as e:
-            indexlogger.error(f"RPC Provider with Error: {e}")
+            indexlogger.error(f"RPC Provider with Error", extra = logger_extra_data(error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args}))
 
     def get_transaction_by_hash(self, tx_hash): # get the transaction details from tx hash
         try:
@@ -54,7 +55,7 @@ class TronNode(Node):
             else:
                 indexlogger.info(f("RPC Provider disconnected."))
         except Exception as e:
-            indexlogger.error(f"RPC Provider with Error: {e}")
+            indexlogger.error(f"RPC Provider with Error", extra = logger_extra_data(error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args}))
     
     def get_transaction_info(self, tx_hash): # get the transaction details from tx hash
         try:
@@ -63,7 +64,7 @@ class TronNode(Node):
             else:
                 indexlogger.info(f("RPC Provider disconnected."))
         except Exception as e:
-            indexlogger.error(f"RPC Provider with Error: {e}")
+            indexlogger.error(f"RPC Provider with Error", extra = logger_extra_data(error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args}))
 
     def get_account_balance(self, address): # get account balance in sun
         try:
@@ -72,7 +73,7 @@ class TronNode(Node):
             else:
                 indexlogger.info(f("RPC Provider disconnected."))
         except Exception as e:
-            indexlogger.error(f"RPC Provider with Error: {e}")
+            indexlogger.error(f"RPC Provider with Error", extra = logger_extra_data(error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args}))
 
     # get the balance from addresses - batch request
     def get_balance_by_addresses(self, addresses):
@@ -83,7 +84,7 @@ class TronNode(Node):
 
             return responses
         except Exception as e:
-            indexlogger.error(f"RPC Provider with Error: {e}")
+            indexlogger.error(f"RPC Provider with Error", extra = logger_extra_data(error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args}))
 
     # get tx details from tx hash - batch request
     def get_transaction(self, transactions):
@@ -94,7 +95,7 @@ class TronNode(Node):
 
             return responses
         except Exception as e:
-            indexlogger.error(f"RPC Provider with Error: {e}")
+            indexlogger.error(f"RPC Provider with Error", extra = logger_extra_data(error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args}))
 
     # get txReceipt details from tx hash - batch request
     def get_transactionReceipt(self, transactions):
@@ -105,7 +106,7 @@ class TronNode(Node):
 
             return responses
         except Exception as e:
-            indexlogger.error(f"RPC Provider with Error: {e}")
+            indexlogger.error(f"RPC Provider with Error", extra = logger_extra_data(error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args}))
 
     def create_challenge(self, start_block_height, last_block_height):
         block_to_check = random.randint(start_block_height, last_block_height)
