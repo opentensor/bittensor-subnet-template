@@ -27,6 +27,9 @@ import uvicorn
 from neurons import logger
 
 class APIServer:
+
+    failed_prompt_msg = "Please try again. Can't receive any responses from the miners or due to the poor network connection."
+
     def set_weights(self):
         """
         Sets the validator weights to the metagraph hotkeys based on the scores it has received from the miners. The weights determine the trust and incentive level the validator assigns to miner nodes on the network.
@@ -302,8 +305,7 @@ class APIServer:
             logger.info(f"Excluded_uids are {self.excluded_uids}")
 
             if not responses:
-                msg = "Please try again. Can't receive any responses from the miners or due to the poor network connection."
-                return ChatMessageResponse(text=msg, miner_id="")
+                return ChatMessageResponse(response=[TextContent(content=self.failed_prompt_msg)])
 
             # Add score to miners respond to user query
             uids = responded_uids.tolist()
@@ -333,7 +335,6 @@ class APIServer:
 
             # Example records for graph and table representations
             graph_example = GraphContent(
-                type=ContentType.graph,
                 content=[
                     GraphNodeContent(
                         id="bc9zc38fha93idi823rf0wa94fj",
@@ -357,7 +358,6 @@ class APIServer:
             )
 
             table_example = TableContent(
-                type=ContentType.table,
                 columns=[
                     TableColumn(name="tx_id", label="Transaction Id"),
                     TableColumn(name="amount", label="Amount"),
@@ -372,15 +372,15 @@ class APIServer:
             response_object = ChatMessageResponse(
                 miner_id=self.metagraph.hotkeys[responded_uids[selected_index]],
                 response=[
-                    TextContent(type=ContentType.text, content=responses[selected_index].interpreted_result),
+                    TextContent(content=responses[selected_index].interpreted_result),
                     graph_example,
                     table_example
                 ]
             )
 
             # return response and the hotkey of randomly selected miner
-            return ChatMessageResponse(text=responses[selected_index].interpreted_result, miner_id=self.metagraph.hotkeys[responded_uids[selected_index]])
-        
+            return response_object
+
         @self.app.post("/api/text_query/variant", summary="POST /variation request for natual language query", tags=["validator api"])
         async def get_response_variant(query: ChatMessageVariantRequest = Body(...)):
             """            
@@ -500,14 +500,57 @@ class APIServer:
             )
             
             if not responses:
-                # TODO: I have received 0 responses due to some issues
-                return "Please try again. Can't receive any responses from the miners or due to the poor network connection."
+                return ChatMessageResponse(response=[TextContent(content=self.failed_prompt_msg)])
             
             logger.info(f"Variant: {responses}")
 
-            # return response and the hotkey of randomly selected miner
-            return ChatMessageResponse(text=responses[0], miner_id=query.miner_id)
-                
+            # Example records for graph and table representations
+            graph_example = GraphContent(
+                content=[
+                    GraphNodeContent(
+                        id="bc9zc38fha93idi823rf0wa94fj",
+                        type="node",
+                        label="address",
+                        content={"address": "bc9zc38fha93idi823rf0wa94fj"}
+                    ),
+                    GraphNodeContent(
+                        id="bc9zc38fha93idi823rf0wa943223",
+                        type="node",
+                        label="transaction",
+                        content={"address": "bc9zc38fha93idi823rf0wa943223"}
+                    ),
+                    GraphEdgeContent(
+                        type="edge",
+                        from_id="bc9zc38fha93idi823rf0wa94fj",
+                        to_id="bc9zc38fha93idi823rf0wa943223",
+                        content={}
+                    )
+                ]
+            )
+
+            table_example = TableContent(
+                columns=[
+                    TableColumn(name="tx_id", label="Transaction Id"),
+                    TableColumn(name="amount", label="Amount"),
+                    TableColumn(name="timestamp", label="Timestamp")
+                ],
+                content=[
+                    TableRow(id="0x123", tx_id="0x123", amount=300, timestamp=102932123123),
+                    TableRow(id="0x456", tx_id="0x456", amount=450, timestamp=103924927430)
+                ]
+            )
+
+            response_object = ChatMessageResponse(
+                miner_id=query.miner_id,
+                response=[
+                    TextContent(content=responses[0].interpreted_result),
+                    graph_example,
+                    table_example
+                ]
+            )
+
+            return response_object
+
         @self.app.get("/", tags=["default"])
         def healthcheck():
             return datetime.utcnow()  

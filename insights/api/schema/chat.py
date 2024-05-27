@@ -26,7 +26,7 @@ class ContentType(str, Enum):
     table = "table"
 
 class TextContent(BaseModel):
-    type: ContentType
+    type: ContentType = ContentType.text
     content: str
 
 class GraphNodeContent(BaseModel):
@@ -42,7 +42,7 @@ class GraphEdgeContent(BaseModel):
     content: dict
 
 class GraphContent(BaseModel):
-    type: ContentType
+    type: ContentType = ContentType.graph
     content: List[Union[GraphNodeContent, GraphEdgeContent]]
 
 class TableColumn(BaseModel):
@@ -55,11 +55,12 @@ class TableRow(BaseModel):
     amount: int
     timestamp: int
 
+
 class TableContent(BaseModel):
-    type: ContentType
+    type: ContentType = ContentType.table
     columns: List[TableColumn]
     content: List[TableRow]
 
 class ChatMessageResponse(BaseModel):
-    miner_id: str
+    miner_id: str = ""
     response: List[Union[TextContent, GraphContent, TableContent]]

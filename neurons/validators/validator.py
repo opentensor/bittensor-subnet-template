@@ -98,6 +98,7 @@ class Validator(BaseValidatorNeuron):
                 else:
                     if(newconfig.get(allow[0]) == None): newconfig[allow[0]] = {}
                     _copy(newconfig[allow[0]], config[allow[0]], allow[1:])
+
         def filter(config, allowlist):
             newconfig = {}
             for item in allowlist:
