@@ -215,12 +215,12 @@ class Miner(BaseMinerNeuron):
 
         if query is None:
             synapse.output = QueryOutput(error=LLM_ERROR_GENERAL_RESPONSE_FAILED, interpreted_result=protocol.LLM_ERROR_MESSAGES[LLM_CLIENT_ERROR])
-        elif query.error:
-            synapse.output = QueryOutput(error=query.error, interpreted_result=query.interpreted_result)
+        elif query['error'] is not None:
+            synapse.output = QueryOutput(error=query['error'], interpreted_result=query['interpreted_result'])
         else:
-            synapse.output = QueryOutput(result=query.result,
-                                     error=query.error,
-                                     interpreted_result=query.interpreted_result)
+            synapse.output = QueryOutput(result=query['result'],
+                                     error=query['error'],
+                                     interpreted_result=query['interpreted_result'])
 
         logger.info(f"Serving miner llm query output: {synapse.output}")
         return synapse

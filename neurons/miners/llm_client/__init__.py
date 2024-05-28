@@ -29,9 +29,19 @@ class LLMClient:
                 "network": network,
                 "messages": [message.dict() for message in messages]
             }
-            response = requests.post(url, json=payload)
+            #TODO: add basic auth based on auth key
+            
+            logger.debug(f"Request URL: {url}")
+            logger.debug(f"Request Payload: {payload}")
+            response = requests.post(url, json=payload, timeout=180)
             response.raise_for_status()
             return response.json()
+        except requests.ConnectionError as e:
+            logger.error(f"Connection error: {e}")
+        except requests.Timeout as e:
+            logger.error(f"Request timeout: {e}")
         except requests.RequestException as e:
             logger.error(f"Failed to query LLM: {e}")
-            return None
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+        return None
