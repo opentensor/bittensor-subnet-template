@@ -134,5 +134,6 @@ class MinerUptimeManager:
         month = 2629746
         result = self.calculate_uptimes(hotkey, [day, week, month])
         average = (result[day] + result[week] + result[month]) / 3
+        logger.debug('Uptime Scores', result = result)
         return {'daily': result[day], 'weekly': result[week], 'monthly': result[month], 'average': average}
 
