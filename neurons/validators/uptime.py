@@ -108,7 +108,7 @@ class MinerUptimeManager:
                 for period_second in period_seconds:
                     adjusted_start = max(active_period_start, datetime.utcnow() - timedelta(seconds=period_second))
                     if adjusted_start > active_period_end:
-                        result[period_second] = 0
+                        result[period_second] = 1
                         continue
 
                     active_seconds = (active_period_end - adjusted_start).total_seconds()
