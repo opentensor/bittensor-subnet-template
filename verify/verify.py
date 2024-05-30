@@ -9,21 +9,21 @@ def main(args):
     address_line = file_split[1]
     address_prefix = "Signed by: "
     if address_line.startswith(address_prefix):
-        address = address_line[len(address_prefix):]
+        address = address_line[len(address_prefix) :]
     else:
         address = address_line
-    
+
     keypair = Keypair(ss58_address=address, ss58_format=42)
 
     message = file_split[0]
-    
+
     signature_line = file_split[2]
     signature_prefix = "Signature: "
     if signature_line.startswith(signature_prefix):
-        signature = signature_line[len(signature_prefix):]
+        signature = signature_line[len(signature_prefix) :]
     else:
         signature = signature_line
-    
+
     real_signature = unhexlify(signature.encode())
 
     if not keypair.verify(data=message, signature=real_signature):

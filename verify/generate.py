@@ -6,11 +6,10 @@ import bittensor
 # Hardcode or set the environment variable WALLET_PASS to the password for the wallet
 # environ["WALLET_PASS"] = ""
 
+
 def main(args):
-
-
     wallet = bittensor.wallet(name=args.name)
-    keypair=wallet.coldkey
+    keypair = wallet.coldkey
 
     timestamp = datetime.now()
     timezone = timestamp.astimezone().tzname()
@@ -23,6 +22,7 @@ def main(args):
     open("message_and_signature.txt", "w").write(file_contents)
 
     print(f"Signature generated and saved to message_and_signature.txt")
+
 
 if __name__ == "__main__":
     import argparse
