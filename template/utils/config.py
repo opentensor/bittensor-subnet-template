@@ -145,6 +145,13 @@ def add_miner_args(cls, parser):
     )
 
     parser.add_argument(
+        "--blacklist.minimum_stake",
+        type=int,
+        help="If set, we will force incoming requests to have a weight settable stake.",
+        default=1024,
+    )
+
+    parser.add_argument(
         "--wandb.project_name",
         type=str,
         default="template-miners",
