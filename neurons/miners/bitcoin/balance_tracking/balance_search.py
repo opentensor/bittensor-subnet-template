@@ -1,5 +1,6 @@
 import os
 from neurons.setup_logger import setup_logger
+from neurons.setup_logger import logger_extra_data
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker

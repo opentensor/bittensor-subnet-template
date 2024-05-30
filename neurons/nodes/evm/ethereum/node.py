@@ -11,6 +11,7 @@ from web3 import Web3
 from web3.providers.base import JSONBaseProvider
 from neurons.nodes.abstract_node import Node
 from neurons.setup_logger import setup_logger
+from neurons.setup_logger import logger_extra_data
 
 parser = argparse.ArgumentParser()
 from neurons import logger
@@ -39,7 +40,7 @@ class EthereumNode(Node):
             else:
                 indexlogger.info("RPC Provider disconnected.")
         except Exception as e:
-            indexlogger.error(f"RPC Provider with Error", error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args})
+            indexlogger.error(f"RPC Provider with Error", extra = logger_extra_data(error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args}))
     
     def get_block_by_height(self, block_height):
         try:
@@ -48,7 +49,7 @@ class EthereumNode(Node):
             else:
                 indexlogger.info("RPC Provider disconnected.")
         except Exception as e:
-            indexlogger.error(f"RPC Provider with Error", error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args})
+            indexlogger.error(f"RPC Provider with Error", extra = logger_extra_data(error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args}))
 
     def get_transaction_by_hash(self, tx_hash): # get the transaction details from tx hash
         try:
@@ -57,7 +58,7 @@ class EthereumNode(Node):
             else:
                 indexlogger.info(f("RPC Provider disconnected."))
         except Exception as e:
-            indexlogger.error(f"RPC Provider with Error", error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args})
+            indexlogger.error(f"RPC Provider with Error", extra = logger_extra_data(error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args}))
     
     def get_symbol_name(self, contractAddress):
         jsonAbi = [{"constant":True,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"payable":False,"stateMutability":"view","type":"function"}]
@@ -85,7 +86,7 @@ class EthereumNode(Node):
 
             return responses
         except Exception as e:
-            indexlogger.error(f"RPC Provider with Error", error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args})
+            indexlogger.error(f"RPC Provider with Error", extra = logger_extra_data(error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args}))
 
     # get tx details from tx hash
     def get_transaction(self, transactions):
@@ -102,7 +103,7 @@ class EthereumNode(Node):
 
             return responses
         except Exception as e:
-            indexlogger.error(f"RPC Provider with Error", error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args})
+            indexlogger.error(f"RPC Provider with Error", extra = logger_extra_data(error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args}))
 
     # get txReceipt details from tx hash
     def get_transactionReceipt(self, transactions):
@@ -119,7 +120,7 @@ class EthereumNode(Node):
 
             return responses
         except Exception as e:
-            indexlogger.error(f"RPC Provider with Error", error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args})
+            indexlogger.error(f"RPC Provider with Error", extra = logger_extra_data(error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args}))
 
     def create_challenge(self, start_block_height, last_block_height):
         block_to_check = random.randint(start_block_height, last_block_height)

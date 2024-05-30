@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 
 from neurons.setup_logger import setup_logger
+from neurons.setup_logger import logger_extra_data
 
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.dialects.postgresql import insert
@@ -80,7 +81,7 @@ class BalanceIndexer:
                     changed_addresses.append(address)
                 balance_changes_by_address[address] += out_amount_by_address[address]
 
-        indexlogger.info(f"Adding {len(changed_addresses)} row(s)...")
+        indexlogger.info(f"Adding row(s)...", extra = logger_extra_data(add_rows = len(changed_addresses)))
         
         new_rows = [BalanceChange(address=address, d_balance=balance_changes_by_address[address], block=block_height) for address in changed_addresses]
 
@@ -118,6 +119,6 @@ class BalanceIndexer:
             except SQLAlchemyError as e:
                 # Rollback the session in case of an error
                 session.rollback()
-                indexlogger.error(f"An exception occurred: {e}")
+                indexlogger.error(f"An exception occurred", extra = logger_extra_data(error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args}))
                 
                 return False

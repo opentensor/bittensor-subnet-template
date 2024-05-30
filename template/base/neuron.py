@@ -33,6 +33,14 @@ from template.mock import MockSubtensor, MockMetagraph
 from neurons import mandatory_config
 from neurons import logger
 
+import socket
+def get_ip_address():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    ip_address = s.getsockname()[0]
+    s.close()
+    return ip_address
+
 class BaseNeuron(ABC):
     """
     Base class for Bittensor miners. This class is abstract and should be inherited by a subclass. It contains the core logic for all neurons; validators and miners.
@@ -106,7 +114,7 @@ class BaseNeuron(ABC):
         )
 
         mandatory_config['uid'] = self.uid
-        mandatory_config['ip'] = re.search(r"/ipv4/([^:]*)", self.metagraph.addresses[self.uid]).group(1)
+        mandatory_config['ip'] = get_ip_address()
         mandatory_config['hotkey'] = self.wallet.hotkey.ss58_address
         mandatory_config['coldkey'] = self.metagraph.coldkeys[self.uid]
 
