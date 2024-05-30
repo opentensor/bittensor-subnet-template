@@ -1,6 +1,6 @@
 SUBNET_LINKS = [
     {"name": "sn0", "url": ""},
-    {"name": "sn1", "url": "https://github.com/opentensor/text-prompting/"},
+    {"name": "sn1", "url": "https://github.com/opentensor/prompting/"},
     {"name": "sn2", "url": "https://github.com/bittranslateio/bittranslate/"},
     {
         "name": "sn3",

@@ -224,71 +224,70 @@ class BaseValidatorNeuron(BaseNeuron):
         """
         Sets the validator weights to the metagraph hotkeys based on the scores it has received from the miners. The weights determine the trust and incentive level the validator assigns to miner nodes on the network.
         """
-        try:
-            # Check if self.scores contains any NaN values and log a warning if it does.
-            if torch.isnan(self.scores).any():
-                logger.warning(
-                    f"Scores contain NaN values. This may be due to a lack of responses from miners, or a bug in your reward functions."
-                )
-
-            # Calculate the average reward for each uid across non-zero values.
-            # Replace any NaN values with 0.
-            raw_weights = torch.nn.functional.normalize(self.scores, p=1, dim=0)
-
-            # Process the raw weights to final_weights via subtensor limitations.
-            (
-                processed_weight_uids,
-                processed_weights,
-            ) = bt.utils.weight_utils.process_weights_for_netuid(
-                uids=self.metagraph.uids.to("cpu"),
-                weights=raw_weights.to("cpu"),
-                netuid=self.config.netuid,
-                subtensor=self.subtensor,
-                metagraph=self.metagraph,
+        # Check if self.scores contains any NaN values and log a warning if it does.
+        if torch.isnan(self.scores).any():
+            logger.warning(
+                f"Scores contain NaN values. This may be due to a lack of responses from miners, or a bug in your reward functions."
             )
 
-            # Convert to uint16 weights and uids.
-            (
-                uint_uids,
-                uint_weights,
-            ) = bt.utils.weight_utils.convert_weights_and_uids_for_emit(
-                uids=processed_weight_uids, weights=processed_weights
+        # Calculate the average reward for each uid across non-zero values.
+        # Replace any NaN values with 0.
+        raw_weights = torch.nn.functional.normalize(self.scores, p=1, dim=0)
+
+        # Process the raw weights to final_weights via subtensor limitations.
+        (
+            processed_weight_uids,
+            processed_weights,
+        ) = bt.utils.weight_utils.process_weights_for_netuid(
+            uids=self.metagraph.uids.to("cpu"),
+            weights=raw_weights.to("cpu"),
+            netuid=self.config.netuid,
+            subtensor=self.subtensor,
+            metagraph=self.metagraph,
+        )
+
+        # Convert to uint16 weights and uids.
+        (
+            uint_uids,
+            uint_weights,
+        ) = bt.utils.weight_utils.convert_weights_and_uids_for_emit(
+            uids=processed_weight_uids, weights=processed_weights
+        )
+
+        uids_and_weights = list(
+            zip(uint_uids, uint_weights)
+            )
+        # Sort by weights descending.
+        sorted_uids_and_weights = sorted(
+            uids_and_weights, key=lambda x: x[1], reverse=True
+        )
+
+        weight_log = {}
+        for uid, weight in sorted_uids_and_weights:
+            weight_log[str(uid)] = (
+                str(round(weight, 4)),
+                str(int(self.scores[uid].item())),
             )
 
-            uids_and_weights = list(
-                zip(uint_uids, uint_weights)
-                )
-            # Sort by weights descending.
-            sorted_uids_and_weights = sorted(
-                uids_and_weights, key=lambda x: x[1], reverse=True
-            )
+        logger.info("Setting weights: ", weights=weight_log)
 
-            weight_log = {}
-            for uid, weight in sorted_uids_and_weights:
-                weight_log[str(uid)] = (
-                    str(round(weight, 4)),
-                    str(int(self.scores[uid].item())),
-                )
+        # Set the weights on chain via our subtensor connection.
+        result, msg = self.subtensor.set_weights(
+            wallet=self.wallet,
+            netuid=self.config.netuid,
+            uids=processed_weight_uids,
+            weights=processed_weights,
+            wait_for_finalization=False,
+            wait_for_inclusion=False,
+            version_key=self.spec_version
+        )
 
-            logger.info("Setting weights: ", weights=weight_log)
-
-            # Set the weights on chain via our subtensor connection.
-            self.subtensor.set_weights(
-                wallet=self.wallet,
-                netuid=self.config.netuid,
-                uids=processed_weight_uids,
-                weights=processed_weights,
-                wait_for_finalization=False,
-                wait_for_inclusion=False,
-                version_key=self.spec_version
-            )
-
-            with self.lock:
-                self.last_weights_set_block = self.block
-
-            logger.success("Finished setting weights.")
-        except Exception as e:
-            logger.error(f"Failed to set weights on chain", error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args})
+        with self.lock:
+            self.last_weights_set_block = self.block
+        if result is True:
+            logger.info("set_weights on chain successfully!")
+        else:
+            logger.error("set_weights failed", return_msg = msg)
         
     def resync_metagraph(self):
         """Resyncs the metagraph and updates the hotkeys and moving averages based on the new metagraph."""
