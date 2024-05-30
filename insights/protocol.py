@@ -104,6 +104,7 @@ class Discovery(BaseSynapse):
         return self
 
 class QueryOutput(BaseModel):
+    type: str = "graph"
     result: Optional[List[Dict]] = None
     interpreted_result: Optional[str] = None
     error: Optional[ERROR_TYPE] = None
@@ -169,7 +170,7 @@ class LlmQuery(BaseSynapse):
     messages: List[LlmMessage] = None
 
     # output
-    output: Optional[QueryOutput] = None
+    output: Optional[List[QueryOutput]] = None
     def deserialize(self) -> str:
         return self.output
 
