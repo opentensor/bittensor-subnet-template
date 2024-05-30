@@ -32,6 +32,7 @@ class MinerUptimeManager:
         Base.metadata.create_all(self.engine)
         self.session_factory = sessionmaker(bind=self.engine)
         self.Session = scoped_session(self.session_factory)
+        self.immunity_period = 0
 
 
     @contextmanager
@@ -100,25 +101,26 @@ class MinerUptimeManager:
                     return 0  # No miner found for the UID and hotkey provided
 
                 active_period_end = datetime.utcnow()
-                active_period_start = miner.uptime_start
+                active_period_start = miner.uptime_start + timedelta(seconds = self.immunity_period)
 
                 result = {}
 
                 for period_second in period_seconds:
                     adjusted_start = max(active_period_start, datetime.utcnow() - timedelta(seconds=period_second))
                     if adjusted_start > active_period_end:
-                        result[period_second] = 0
+                        result[period_second] = 1
                         continue
 
-                    active_seconds = (active_period_end - active_period_start).total_seconds()
+                    active_seconds = (active_period_end - adjusted_start).total_seconds()
                     total_downtime = sum(
                         (log.end_time - log.start_time).total_seconds()
                         for log in miner.downtimes
-                        if log.start_time >= active_period_start and log.end_time and log.end_time <= active_period_end
+                        if log.start_time >= adjusted_start and log.end_time and log.end_time <= active_period_end
                     )
+                    actual_uptime_seconds = max(0, active_seconds - total_downtime)
+                    actual_period_second = min(period_second, active_seconds)
 
-                    actual_uptime_seconds = max(0, period_second - total_downtime)
-                    result[period_second] = actual_uptime_seconds / period_second if active_seconds > 0 else 0
+                    result[period_second] = actual_uptime_seconds / actual_period_second if active_seconds > 0 else 0
 
                 return result
 
@@ -132,5 +134,6 @@ class MinerUptimeManager:
         month = 2629746
         result = self.calculate_uptimes(hotkey, [day, week, month])
         average = (result[day] + result[week] + result[month]) / 3
+        logger.debug('Uptime Scores', result = result)
         return {'daily': result[day], 'weekly': result[week], 'monthly': result[month], 'average': average}
 
