@@ -21,7 +21,7 @@ import time
 import argparse
 import traceback
 
-import torch
+import numpy as np
 import bittensor as bt
 import os
 import yaml
@@ -220,7 +220,7 @@ class Validator(BaseValidatorNeuron):
     def get_reward(self, response: Discovery, uid: int, benchmarks_result):
         try:
             hotkey = response.axon.hotkey
-            uid_value = uid.item() if uid.numel() == 1 else int(uid.numpy())
+            uid_value = int(uid) if isinstance(uid, np.ndarray) and uid.size == 1 else int(uid)
 
             if not self.is_response_status_code_valid(response):
                 score = self.metagraph.T[uid]/4
@@ -338,7 +338,7 @@ class Validator(BaseValidatorNeuron):
             if filtered_data:
                 rewards, uids = zip(*filtered_data)
 
-                rewards = torch.FloatTensor(rewards)
+                rewards = np.float32(rewards)
                 self.update_scores(rewards, uids)
             else:
                 logger.info("Forward failed", reason="no_valid_responses")

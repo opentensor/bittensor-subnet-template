@@ -8,7 +8,6 @@ import numpy as np
 from typing import List, Optional, Union, Any, Dict
 from datetime import datetime
 import traceback
-import torch
 import bittensor as bt
 from rich.table import Table
 from rich.console import Console
@@ -36,22 +35,22 @@ class APIServer:
         """
         try:
             # Check if self.scores contains any NaN values and log a warning if it does.
-            if torch.isnan(self.scores).any():
+            if np.isnan(self.scores).any():
                 logger.warning(
                     f"Scores contain NaN values. This may be due to a lack of responses from miners, or a bug in your reward functions."
                 )
 
             # Calculate the average reward for each uid across non-zero values.
             # Replace any NaN values with 0.
-            raw_weights = torch.nn.functional.normalize(self.scores, p=1, dim=0)
+            raw_weights = np.linalg.norm(self.scores, p=1, dim=0)
 
             # Process the raw weights to final_weights via subtensor limitations.
             (
                 processed_weight_uids,
                 processed_weights,
             ) = bt.utils.weight_utils.process_weights_for_netuid(
-                uids=self.metagraph.uids.to("cpu"),
-                weights=raw_weights.to("cpu"),
+                uids=self.metagraph.uids,
+                weights=raw_weights,
                 netuid=self.config.netuid,
                 subtensor=self.subtensor,
                 metagraph=self.metagraph,
@@ -117,34 +116,34 @@ class APIServer:
     def get_reward(self, response: Union["bt.Synapse", Any], uid: int):
         return 0.5
         
-    def update_scores(self, rewards: torch.FloatTensor, uids: List[int]):
+    def update_scores(self, rewards: np.float32, uids: List[int]):
         """Performs exponential moving average on the scores based on the rewards received from the miners."""
 
         # Check if rewards contains NaN values.
-        if torch.isnan(rewards).any():
+        if np.isnan(rewards).any():
             logger.warning(f"NaN values detected in rewards: {rewards}")
             # Replace any NaN values in rewards with 0.
-            rewards = torch.nan_to_num(rewards, 0)
+            rewards = np.nan_to_num(rewards, 0)
 
         # Check if `uids` is already a tensor and clone it to avoid the warning.
-        if isinstance(uids, torch.Tensor):
+        if isinstance(uids, np.array):
             uids_tensor = uids.clone().detach()
         else:
-            uids_tensor = torch.tensor(uids).to(self.device)
+            uids_tensor = np.array(uids)
 
         # Compute forward pass rewards, assumes uids are mutually exclusive.
         # shape: [ metagraph.n ]
-        scattered_rewards: torch.FloatTensor = self.scores.scatter(
+        scattered_rewards: np.float32 = self.scores.scatter(
             0, uids_tensor, rewards
-        ).to(self.device)
+        )
         logger.debug(f"Scattered rewards: {rewards}")
 
         # Update scores with rewards produced by this step.
         # shape: [ metagraph.n ]
         alpha: float = self.config.user_query_moving_average_alpha
-        self.scores: torch.FloatTensor = alpha * scattered_rewards + (
+        self.scores: np.float32 = alpha * scattered_rewards + (
             1 - alpha
-        ) * self.scores.to(self.device)
+        ) * self.scores
         logger.debug(f"Updated moving avg scores: {self.scores}")
         
     def __init__(
@@ -318,7 +317,7 @@ class APIServer:
             if filtered_data:
                 rewards, uids = zip(*filtered_data)
 
-                rewards = torch.FloatTensor(rewards)
+                rewards = np.float32(rewards)
                 self.update_scores(rewards, uids)
             else:  
                 logger.info('Skipping update_scores() as no responses were valid')

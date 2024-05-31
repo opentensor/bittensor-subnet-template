@@ -58,7 +58,7 @@ class BenchmarkValidator:
 
     def run_benchmark(self, response, uid, benchmark_query="RETURN 1"):
         try:
-            uid_value = uid.item() if uid.numel() == 1 else int(uid.numpy())
+            uid_value = int(uid) if isinstance(uid, np.ndarray) and uid.size == 1 else int(uid)
             output = response.output
             benchmark_response = self.dendrite.query(
                 response.axon,

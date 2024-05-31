@@ -1,4 +1,4 @@
-import torch
+import numpy as np
 import random
 import bittensor as bt
 from typing import List
@@ -30,7 +30,7 @@ def check_uid_availability(
 
 def get_top_miner_uids(
     metagraph: "bt.metagraph.Metagraph", top_rate: float = 1, exclude: List[int] = None, vpermit_tao_limit: int = 4096
-) -> torch.LongTensor:
+) -> np.int64:
     """Returns the available top miner UID from the metagraph.
     Args:
         metagraph (bt.metagraph.Metagraph): Metagraph object
@@ -68,13 +68,13 @@ def get_top_miner_uids(
     values = [(uid, metagraph.I[uid] * metagraph.trust[uid]) for uid in filtered_uids]
     sorted_values = sorted(values, key=lambda x: x[1], reverse=True)
     top_rate_num_items = max(1, int(top_rate * len(filtered_uids)))
-    top_miner_uids = torch.tensor([uid for uid, _ in sorted_values[:top_rate_num_items]])
+    top_miner_uids = np.array([uid for uid, _ in sorted_values[:top_rate_num_items]])
     return top_miner_uids
 
 
 def get_random_uids(
     self, k: int, exclude: List[int] = None
-) -> torch.LongTensor:
+) -> np.int64:
     """Returns k available random uids from the metagraph.
     Args:
         k (int): Number of uids to return.
@@ -96,7 +96,7 @@ def get_random_uids(
                 candidate_uids.append(uid)
 
     k = max(1, min(len(candidate_uids), k))
-    uids = torch.tensor(random.sample(candidate_uids, k))
+    uids = np.array(random.sample(candidate_uids, k))
     return uids
 
 def get_uids_batch(self, batch_size: int, exclude: List[int] = None):
@@ -117,4 +117,4 @@ def get_uids_batch(self, batch_size: int, exclude: List[int] = None):
 
     # Yield batches of uids
     for i in range(0, len(candidate_uids), batch_size):
-        yield torch.tensor(candidate_uids[i:i+batch_size])
+        yield np.array(candidate_uids[i:i+batch_size])
