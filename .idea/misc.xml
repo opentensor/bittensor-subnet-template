@@ -5,5 +5,5 @@
     <option name="enabledOnSave" value="true" />
     <option name="sdkName" value="Python 3.10.12 WSL (Ubuntu-22.04): (/root/.virtualenvs/blockchain-data-subnet/bin/python)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.10.12 WSL (Ubuntu-22.04): (/root/.virtualenvs/blockchain-data-subnet/bin/python)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.10.12 WSL (Ubuntu-22.04): (/home/hyperbook/.virtualenvs/blockchain-data-subnet/bin/python) (4)" project-jdk-type="Python SDK" />
 </project>

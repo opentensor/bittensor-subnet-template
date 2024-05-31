@@ -137,8 +137,6 @@ class Miner(BaseMinerNeuron):
         self.balance_search = get_balance_search(config)
         self.miner_config = MinerConfig().load_and_get_config_values()
         self.llm = LLMClient(config.llm_engine_url)
-        self.graph_search = get_graph_search(config)
-
         self.miner_config = MinerConfig().load_and_get_config_values()
 
     async def discovery(self, synapse: protocol.Discovery ) -> protocol.Discovery:
@@ -154,29 +152,36 @@ class Miner(BaseMinerNeuron):
                 balance_model_last_block=balance_model_last_block,
             )
             logger.info("Serving miner discovery output",
-                            output = {
-                                'metadata' : {
-                                    'network': synapse.output.metadata.network,
-                                },
-                                'start_block_height': synapse.output.start_block_height,
-                                'block_height': synapse.output.block_height,
-                                'balance_model_last_block': synapse.output.balance_model_last_block,
-                                'version': synapse.output.version})
+                        output={
+                            'metadata': {
+                                'network': synapse.output.metadata.network,
+                            },
+                            'start_block_height': synapse.output.start_block_height,
+                            'block_height': synapse.output.block_height,
+                            'balance_model_last_block': synapse.output.balance_model_last_block,
+                            'version': synapse.output.version})
+
         except Exception as e:
             logger.error('error', error = traceback.format_exc())
             synapse.output = None
+
         return synapse
 
     async def challenge(self, synapse: protocol.Challenge ) -> protocol.Challenge:
         try:
-            logger.info("challenge recieved", synapse = {'version' : synapse.version, 'in_total_amount' : synapse.in_total_amount, 'out_total_amount' : synapse.out_total_amount, 'tx_id_last_4_chars' : synapse.tx_id_last_4_chars, 'checksum' : synapse.checksum, 'output' : synapse.output})
+            logger.info("challenge received", synapse={'version': synapse.version,
+                                                       'in_total_amount': synapse.in_total_amount,
+                                                       'out_total_amount': synapse.out_total_amount,
+                                                       'tx_id_last_4_chars': synapse.tx_id_last_4_chars,
+                                                       'checksum': synapse.checksum,
+                                                       'output': synapse.output})
 
             if self.config.network == NETWORK_BITCOIN:
-                synapse.output = self.graph_search.solve_challenge(
-                    in_total_amount=synapse.in_total_amount,
-                    out_total_amount=synapse.out_total_amount,
-                    tx_id_last_4_chars=synapse.tx_id_last_4_chars
-                )
+                synapse.output = self.llm.challenge_utxo_v1(network=self.config.network,
+                                                            in_total_amount=synapse.in_total_amount,
+                                                            out_total_amount=synapse.out_total_amount,
+                                                            tx_id_last_4_chars=synapse.tx_id_last_4_chars)
+
             if self.config.network == NETWORK_ETHEREUM:
                 synapse.output = self.graph_search.solve_challenge(
                     checksum=synapse.checksum,
@@ -199,7 +204,7 @@ class Miner(BaseMinerNeuron):
                 logger.error("Invalid benchmark query", query = synapse.query)
                 synapse.output = None
             else:
-                result = self.graph_search.execute_benchmark_query(cypher_query=synapse.query)
+                result = self.llm.benchmark_v1(network=self.config.network, query=synapse.query)
                 synapse.output = result[0]
 
             logger.info(f"Serving miner benchmark output", output = f"{synapse.output}")
