@@ -25,7 +25,7 @@ class LLMClient:
     def discovery_v1(self, network: str) -> GenericOutput | None:
         try:
             url = f"{self.base_url}/v1/discovery/{network}"
-            response = requests.get(url, timeout=10)
+            response = requests.get(url, timeout=30)
             response.raise_for_status()
             return response.json()
         except requests.ConnectionError as e:
@@ -33,7 +33,7 @@ class LLMClient:
         except requests.Timeout as e:
             logger.error(f"Request timeout: {e}")
         except requests.RequestException as e:
-            logger.error(f"Failed to query LLM: {e}")
+            logger.error(f"Failed to query: {e}")
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
         return None
@@ -42,7 +42,7 @@ class LLMClient:
         try:
             url = f"{self.base_url}/v1/challenge/{network}"
             params = {'in_total_amount': in_total_amount, 'out_total_amount': out_total_amount, 'tx_id_last_4_chars': tx_id_last_4_chars}
-            response = requests.get(url, params, timeout=10)
+            response = requests.get(url, params, timeout=30)
             response.raise_for_status()
             return response.json()
         except requests.ConnectionError as e:
@@ -50,7 +50,7 @@ class LLMClient:
         except requests.Timeout as e:
             logger.error(f"Request timeout: {e}")
         except requests.RequestException as e:
-            logger.error(f"Failed to query LLM: {e}")
+            logger.error(f"Failed to query: {e}")
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
         return None
@@ -59,7 +59,7 @@ class LLMClient:
         try:
             url = f"{self.base_url}/v1/challenge/{network}"
             params = {'checksum': checksum}
-            response = requests.get(url, params, timeout=10)
+            response = requests.get(url, params, timeout=30)
             response.raise_for_status()
             return response.json()
         except requests.ConnectionError as e:
@@ -67,7 +67,7 @@ class LLMClient:
         except requests.Timeout as e:
             logger.error(f"Request timeout: {e}")
         except requests.RequestException as e:
-            logger.error(f"Failed to query LLM: {e}")
+            logger.error(f"Failed to query: {e}")
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
         return None
@@ -84,7 +84,7 @@ class LLMClient:
         except requests.Timeout as e:
             logger.error(f"Request timeout: {e}")
         except requests.RequestException as e:
-            logger.error(f"Failed to query LLM: {e}")
+            logger.error(f"Failed to query: {e}")
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
         return None
@@ -97,10 +97,6 @@ class LLMClient:
                 "network": network,
                 "messages": [message.dict() for message in messages]
             }
-            #TODO: add basic auth based on auth key
-            
-            logger.debug(f"Request URL: {url}")
-            logger.debug(f"Request Payload: {payload}")
             response = requests.post(url, json=payload, timeout=180)
             response.raise_for_status()
             return response.json()
@@ -109,7 +105,7 @@ class LLMClient:
         except requests.Timeout as e:
             logger.error(f"Request timeout: {e}")
         except requests.RequestException as e:
-            logger.error(f"Failed to query LLM: {e}")
+            logger.error(f"Failed to query: {e}")
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
         return None

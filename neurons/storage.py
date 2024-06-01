@@ -63,8 +63,11 @@ def store_miner_metadata(self):
         )
 
     try:
-        start_block, last_block = self.graph_search.get_min_max_block_height_cache()
-        balance_model_last_block = self.balance_search.get_latest_block_number()
+        discovery=self.llm.discovery_v1(network=self.config.network)
+        start_block=discovery['funds_flow_model_start_block']
+        last_block=discovery['funds_flow_model_ast_block']
+        balance_model_last_block = discovery['balance_model_last_block']
+
         subtensor = self.subtensor
         logger.info(f"Storing miner metadata")
         metadata = get_metadata()

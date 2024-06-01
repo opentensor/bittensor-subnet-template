@@ -112,7 +112,6 @@ class Miner(BaseMinerNeuron):
         self.request_timestamps: dict = {}
         
         self.axon = bt.axon(wallet=self.wallet, port=self.config.axon.port)        
-        # Attach determiners which functions are called when servicing a request.
         logger.info(f"Attaching forwards functions to miner axon.")
         self.axon.attach(
             forward_fn=self.discovery,
@@ -143,6 +142,11 @@ class Miner(BaseMinerNeuron):
     async def discovery(self, synapse: protocol.Discovery ) -> protocol.Discovery:
         try:
             discovery = self.llm.discovery_v1(network=self.config.network)
+            if discovery is None:
+                logger.error("Failed to query for discovery")
+                synapse.output = None
+                return synapse
+
             synapse.output = protocol.DiscoveryOutput(
                 metadata=protocol.DiscoveryMetadata(
                     network=self.config.network,
@@ -177,15 +181,22 @@ class Miner(BaseMinerNeuron):
                                                        'output': synapse.output})
 
             if self.config.network == NETWORK_BITCOIN:
-                synapse.output = self.llm.challenge_utxo_v1(network=self.config.network,
-                                                            in_total_amount=synapse.in_total_amount,
-                                                            out_total_amount=synapse.out_total_amount,
-                                                            tx_id_last_4_chars=synapse.tx_id_last_4_chars)['output']
+                challenge_output = self.llm.challenge_utxo_v1(network=self.config.network,
+                                                              in_total_amount=synapse.in_total_amount,
+                                                              out_total_amount=synapse.out_total_amount,
+                                                              tx_id_last_4_chars=synapse.tx_id_last_4_chars)
+                if challenge_output is None:
+                    logger.error("Failed to query for challenge")
+                    synapse.output = None
+                else:
+                    synapse.output = challenge_output['output']
 
             if self.config.network == NETWORK_ETHEREUM:
-                synapse.output = self.graph_search.challenge_evm_v1(
-                    checksum=synapse.checksum,
-                )['output']
+                challenge_output = self.llm.challenge_evm_v1(network=self.config.network, checksum=synapse.checksum)
+                if challenge_output is None:
+                    synapse.output = None
+                else:
+                    synapse.output = challenge_output['output']
 
             logger.info(f"Serving miner challenge", output = f"{synapse.output}")
 
@@ -205,7 +216,11 @@ class Miner(BaseMinerNeuron):
                 synapse.output = None
             else:
                 result = self.llm.benchmark_v1(network=self.config.network, query=synapse.query)
-                synapse.output = result['output']
+                if result is None:
+                    synapse.output = None
+                    logger.error("Failed to query for benchmark")
+                else:
+                    synapse.output = result['output']
 
             logger.info(f"Serving miner benchmark output", output = f"{synapse.output}")
         except Exception as e:
@@ -215,13 +230,13 @@ class Miner(BaseMinerNeuron):
     async def llm_query(self, synapse: protocol.LlmQuery ) -> protocol.LlmQuery:
         logger.info(f"llm query received: {synapse}")
         query_output = self.llm.query(synapse.messages)
-
         if query_output is None:
+            logger.error("Failed to query for llm query")
             synapse.output = [QueryOutput(type="text", error=LLM_ERROR_GENERAL_RESPONSE_FAILED, interpreted_result=protocol.LLM_ERROR_MESSAGES[LLM_CLIENT_ERROR])]
         else:
             synapse.output = query_output
+            logger.info(f"Serving miner llm query output: {synapse.output}")
 
-        logger.info(f"Serving miner llm query output: {synapse.output}")
         return synapse
     
     async def discovery_blacklist(self, synapse: protocol.Discovery) -> typing.Tuple[bool, str]:
