@@ -199,79 +199,7 @@ class APIServer:
                 "user_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
                 "message_content": "Show me 15 transactions I sent after block height 800000. My address is bc1q4s8yps9my6hun2tpd5ke5xmvgdnxcm2qspnp9r"
             }
-            ```
 
-            **Example Response:**
-            ```json
-            {
-                "miner_id": "5CUUjNeTr5WAB7q4VqBkGrCyJ9XRZ4wqQMRZBw2XTmrR3xQA",
-                "response": [
-                {
-                    "type": "text",
-                    "content": "Hello, this is the answer from you"
-                },
-                {
-                    "type": "graph",
-                    "content": [
-                    {
-                        "id": "bc9zc38fha93idi823rf0wa94fj",
-                        "type": "node",
-                        "label": "address",
-                        "content": {
-                            "address": "bc9zc38fha93idi823rf0wa94fj"
-                        }
-                    },
-                    {
-                        "id": "bc9zc38fha93idi823rf0wa943223",
-                        "type": "node",
-                        "label": "transaction",
-                        "content": {
-                            "address": "bc9zc38fha93idi823rf0wa943223"
-                        }
-                    },
-                    {
-                        "type": "edge",
-                        "from_id": "bc9zc38fha93idi823rf0wa94fj",
-                        "to_id": "bc9zc38fha93idi823rf0wa943223",
-                        "content": {}
-                    }
-                    ]
-                },
-                {
-                    "type": "table",
-                    "columns": [
-                    {
-                        "name": "tx_id",
-                        "label": "Transaction Id"
-                    },
-                    {
-                        "name": "amount",
-                        "label": "Amount"
-                    },
-                    {
-                        "name": "timestamp",
-                        "label": "Timestamp"
-                    }
-                    ],
-                    "content": [
-                    {
-                        "id": "0x123",
-                        "tx_id": "0x123",
-                        "amount": 300,
-                        "timestamp": 102932123123
-                    },
-                    {
-                        "id": "0x456",
-                        "tx_id": "0x456",
-                        "amount": 450,
-                        "timestamp": 103924927430
-                    }
-                    ]
-                }
-                ]
-            }
-
-            ```
             """
             # select top miner            
             top_miner_uids = get_top_miner_uids(self.metagraph, self.config.top_rate, self.excluded_uids)
@@ -361,7 +289,7 @@ class APIServer:
                 "user_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                 "message_content": "Show me 15 transactions I sent after block height 800000. My address is bc1q4s8yps9my6hun2tpd5ke5xmvgdnxcm2qspnp9r",
                 "temperature": "0.1",
-                miner_id: "230",
+                "miner_id": 230,
             }
             """
             logger.info(f"Miner {query.miner_id} received a variant request.")

@@ -229,7 +229,9 @@ class Miner(BaseMinerNeuron):
             logger.error("Failed to query for llm query")
             synapse.output = [QueryOutput(type="text", error=LLM_ERROR_GENERAL_RESPONSE_FAILED, interpreted_result=LLM_ERROR_MESSAGES[LLM_CLIENT_ERROR])]
         else:
-            synapse.output = query_output
+            for query_output_item in query_output:
+                query_output_item.miner_id = self.uid
+
             logger.info(f"Serving miner llm query output: {synapse.output}")
 
         return synapse
