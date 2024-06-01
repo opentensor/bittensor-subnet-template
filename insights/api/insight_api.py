@@ -1,30 +1,21 @@
-import argparse
-import os
 import random
-import time
-
 import asyncio
 import numpy as np
 from typing import List, Optional, Union, Any, Dict
 from datetime import datetime
-import traceback
 import torch
 import bittensor as bt
+from protocols.chat import ChatMessageRequest, ChatMessageResponse, ChatMessageVariantRequest
 from rich.table import Table
 from rich.console import Console
-import yaml
-
 from fastapi.middleware.cors import CORSMiddleware
-from insights import protocol
-from insights.protocol import QueryOutput
 from insights.api.query import TextQueryAPI
 from insights.api.get_query_axons import get_query_api_axons
-from insights.api.schema.chat import ChatMessageRequest, ChatMessageResponse, ChatMessageVariantRequest
 from neurons.validators.utils.uids import get_top_miner_uids
 from fastapi import FastAPI, Body, HTTPException
 import uvicorn
-
 from neurons import logger
+
 
 class APIServer:
 
@@ -398,7 +389,7 @@ class APIServer:
 
         @self.app.get("/", tags=["default"])
         def healthcheck():
-            return datetime.utcnow()  
+            return datetime.utcnow()
         
     def start(self):
         # Set the default event loop policy to avoid conflicts with uvloop

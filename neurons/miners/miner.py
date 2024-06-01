@@ -7,8 +7,11 @@ import traceback
 import typing
 import bittensor as bt
 import yaml
+from protocols.blockchain import NETWORK_BITCOIN, NETWORK_ETHEREUM
+from protocols.llm_engine import LlmMessage, QueryOutput, LLM_ERROR_TYPE_NOT_SUPPORTED, LLM_ERROR_MESSAGES, \
+    LLM_ERROR_GENERAL_RESPONSE_FAILED, LLM_CLIENT_ERROR
+
 from insights import protocol
-from insights.protocol import NETWORK_BITCOIN, NETWORK_ETHEREUM, QueryOutput, LLM_ERROR_GENERAL_RESPONSE_FAILED, LLM_CLIENT_ERROR
 from neurons import logger
 from neurons.miners import blacklist
 from neurons.miners.llm_client import LLMClient
@@ -219,12 +222,12 @@ class Miner(BaseMinerNeuron):
             logger.error('error', error = traceback.format_exc())
         return synapse
 
-    async def llm_query(self, synapse: protocol.LlmQuery ) -> protocol.LlmQuery:
+    async def llm_query(self, synapse: protocol.LlmQuery) -> protocol.LlmQuery:
         logger.info(f"llm query received: {synapse}")
         query_output = self.llm.llm_query_v1(synapse.messages)
         if query_output is None:
             logger.error("Failed to query for llm query")
-            synapse.output = [QueryOutput(type="text", error=LLM_ERROR_GENERAL_RESPONSE_FAILED, interpreted_result=protocol.LLM_ERROR_MESSAGES[LLM_CLIENT_ERROR])]
+            synapse.output = [QueryOutput(type="text", error=LLM_ERROR_GENERAL_RESPONSE_FAILED, interpreted_result=LLM_ERROR_MESSAGES[LLM_CLIENT_ERROR])]
         else:
             synapse.output = query_output
             logger.info(f"Serving miner llm query output: {synapse.output}")
@@ -242,10 +245,7 @@ class Miner(BaseMinerNeuron):
  
     async def llm_query_blacklist(self, synapse: protocol.LlmQuery) -> typing.Tuple[bool, str]:
         return blacklist.base_blacklist(self, synapse=synapse)
-    
-    async def generic_llm_query_blacklist(self, synapse: protocol.GenericLlmQuery) -> typing.Tuple[bool, str]:
-        return blacklist.base_blacklist(self, synapse=synapse)
-    
+
     def base_priority(self, synapse: bt.Synapse) -> float:
         caller_uid = self.metagraph.hotkeys.index(
             synapse.dendrite.hotkey
@@ -266,9 +266,6 @@ class Miner(BaseMinerNeuron):
         return self.base_priority(synapse=synapse)
 
     async def benchmark_priority(self, synapse: protocol.Benchmark) -> float:
-        return self.base_priority(synapse=synapse)
-    
-    async def generic_llm_query_priority(self, synapse: protocol.GenericLlmQuery) -> float:
         return self.base_priority(synapse=synapse)
 
     def resync_metagraph(self):

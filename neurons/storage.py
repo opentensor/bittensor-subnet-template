@@ -5,7 +5,7 @@ import insights
 import bittensor as bt
 from bittensor.extrinsics import serving
 from pydantic import BaseModel
-from insights.protocol import get_network_id
+from protocols.blockchain import get_network_id
 from neurons import logger
 
 class Metadata(BaseModel):
