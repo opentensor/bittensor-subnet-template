@@ -1,6 +1,5 @@
 from insights.protocol import NETWORK_BITCOIN, NETWORK_ETHEREUM
 from neurons.nodes.bitcoin.node import BitcoinNode
-from neurons.nodes.evm.ethereum.node import EthereumNode
 
 
 class NodeFactory:
@@ -8,7 +7,6 @@ class NodeFactory:
     def create_node(cls, network: str):
         node_class = {
             NETWORK_BITCOIN: BitcoinNode,
-            NETWORK_ETHEREUM: EthereumNode
             # Add other networks and their corresponding classes as needed
         }.get(network)
 
