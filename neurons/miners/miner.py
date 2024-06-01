@@ -88,6 +88,7 @@ class Miner(BaseMinerNeuron):
                 else:
                     if(newconfig.get(allow[0]) == None): newconfig[allow[0]] = {}
                     _copy(newconfig[allow[0]], config[allow[0]], allow[1:])
+
         def filter(config, allowlist):
             newconfig = {}
             for item in allowlist:
@@ -97,7 +98,7 @@ class Miner(BaseMinerNeuron):
         whitelist_config_keys = {('axon', 'port'), 'graph_db_url', 'graph_db_user', 'llm_engine_url', ('logging', 'logging_dir'), ('logging', 'record_log'), 'netuid',
                                 'network', ('subtensor', 'chain_endpoint'), ('subtensor', 'network'), 'wallet'}
 
-        json_config = json.loads(json.dumps(config, indent = 2))
+        json_config = json.loads(json.dumps(config, indent=2))
         config_out = filter(json_config, whitelist_config_keys)
         logger.info('config', config = config_out)
 
@@ -141,15 +142,14 @@ class Miner(BaseMinerNeuron):
 
     async def discovery(self, synapse: protocol.Discovery ) -> protocol.Discovery:
         try:
-            start_block, last_block = self.graph_search.get_min_max_block_height_cache()
-            balance_model_last_block = self.balance_search.get_latest_block_number()
+            discovery = self.llm.discovery_v1(network=self.config.network)
             synapse.output = protocol.DiscoveryOutput(
                 metadata=protocol.DiscoveryMetadata(
                     network=self.config.network,
                 ),
-                start_block_height=start_block,
-                block_height=last_block,
-                balance_model_last_block=balance_model_last_block,
+                start_block_height=discovery['funds_flow_model_start_block'],
+                block_height=discovery['funds_flow_model_ast_block'],
+                balance_model_last_block=discovery['balance_model_last_block'],
             )
             logger.info("Serving miner discovery output",
                         output={
@@ -162,7 +162,7 @@ class Miner(BaseMinerNeuron):
                             'version': synapse.output.version})
 
         except Exception as e:
-            logger.error('error', error = traceback.format_exc())
+            logger.error('error', error=traceback.format_exc())
             synapse.output = None
 
         return synapse
@@ -180,12 +180,12 @@ class Miner(BaseMinerNeuron):
                 synapse.output = self.llm.challenge_utxo_v1(network=self.config.network,
                                                             in_total_amount=synapse.in_total_amount,
                                                             out_total_amount=synapse.out_total_amount,
-                                                            tx_id_last_4_chars=synapse.tx_id_last_4_chars)
+                                                            tx_id_last_4_chars=synapse.tx_id_last_4_chars)['output']
 
             if self.config.network == NETWORK_ETHEREUM:
-                synapse.output = self.graph_search.solve_challenge(
+                synapse.output = self.graph_search.challenge_evm_v1(
                     checksum=synapse.checksum,
-                )
+                )['output']
 
             logger.info(f"Serving miner challenge", output = f"{synapse.output}")
 
@@ -205,7 +205,7 @@ class Miner(BaseMinerNeuron):
                 synapse.output = None
             else:
                 result = self.llm.benchmark_v1(network=self.config.network, query=synapse.query)
-                synapse.output = result[0]
+                synapse.output = result['output']
 
             logger.info(f"Serving miner benchmark output", output = f"{synapse.output}")
         except Exception as e:
