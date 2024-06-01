@@ -1,4 +1,4 @@
-from insights.protocol import NETWORK_BITCOIN, NETWORK_ETHEREUM
+from protocols.blockchain import NETWORK_BITCOIN, NETWORK_ETHEREUM
 from neurons.nodes.bitcoin.node import BitcoinNode
 
 

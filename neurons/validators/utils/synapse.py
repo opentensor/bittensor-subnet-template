@@ -1,4 +1,5 @@
-from insights.protocol import Discovery, DiscoveryMetadata, DiscoveryOutput, get_model_types, get_networks
+from insights.protocol import Discovery, DiscoveryMetadata, DiscoveryOutput
+from protocols.blockchain import get_networks
 
 
 def is_discovery_response_valid(discovery_output: Discovery) -> bool:

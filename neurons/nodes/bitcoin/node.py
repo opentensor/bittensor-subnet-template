@@ -1,7 +1,9 @@
 from decimal import Decimal
 import bittensor as bt
 from bitcoinrpc.authproxy import AuthServiceProxy
-from insights.protocol import Challenge, MODEL_TYPE_FUNDS_FLOW, MODEL_TYPE_BALANCE_TRACKING
+from protocols.llm_engine import MODEL_TYPE_FUNDS_FLOW, MODEL_TYPE_BALANCE_TRACKING
+
+from insights.protocol import Challenge
 from neurons.nodes.bitcoin.node_utils import SATOSHI, VIN, VOUT, Transaction, parse_block_data
 
 

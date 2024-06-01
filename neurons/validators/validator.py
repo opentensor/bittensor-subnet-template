@@ -29,8 +29,9 @@ import json
 
 import insights
 from insights.api.insight_api import APIServer
-from insights.protocol import Discovery, DiscoveryOutput, MAX_MINER_INSTANCE, MODEL_TYPE_BALANCE_TRACKING, \
-    NETWORK_BITCOIN
+from insights.protocol import Discovery, DiscoveryOutput, MAX_MINER_INSTANCE
+from protocols.llm_engine import MODEL_TYPE_BALANCE_TRACKING
+from protocols.blockchain import NETWORK_BITCOIN
 
 from neurons.remote_config import ValidatorConfig
 from neurons.nodes.factory import NodeFactory

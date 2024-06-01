@@ -3,7 +3,7 @@ import bittensor as bt
 from typing import List, Dict, Union
 from collections import Counter
 
-from insights.protocol import get_network_by_id
+from protocols.blockchain import get_network_by_id
 from neurons.storage import get_miners_metadata
 
 class Metadata:
