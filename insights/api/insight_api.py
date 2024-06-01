@@ -5,7 +5,7 @@ from typing import List, Optional, Union, Any, Dict
 from datetime import datetime
 import torch
 import bittensor as bt
-from protocols.chat import ChatMessageRequest, ChatMessageResponse, ChatMessageVariantRequest
+from protocols.chat import ChatMessageRequest, ChatMessageResponse, ChatMessageVariantRequest, ContentType
 from rich.table import Table
 from rich.console import Console
 from fastapi.middleware.cors import CORSMiddleware
@@ -287,7 +287,7 @@ class APIServer:
             {
                 "network": "Bitcoin",
                 "user_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                "message_content": "Show me 15 transactions I sent after block height 800000. My address is bc1q4s8yps9my6hun2tpd5ke5xmvgdnxcm2qspnp9r",
+                "message_content": "Return 3 transactions outgoing from my address bc1q4s8yps9my6hun2tpd5ke5xmvgdnxcm2qspnp9r",
                 "temperature": "0.1",
                 "miner_id": 230,
             }

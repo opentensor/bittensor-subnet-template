@@ -19,6 +19,9 @@
 
 import bittensor as bt
 from typing import List, Optional, Union, Any, Dict
+
+from protocols.llm_engine import LLM_MESSAGE_TYPE_USER
+
 from insights import protocol
 from insights.protocol import LlmQuery, LlmMessage
 from insights.api import SubnetsAPI
@@ -35,7 +38,7 @@ class TextQueryAPI(SubnetsAPI):
             network=network,
             messages=[
                 LlmMessage(
-                    type=protocol.LLM_MESSAGE_TYPE_USER,
+                    type=LLM_MESSAGE_TYPE_USER,
                     content=text
                 ),
             ],

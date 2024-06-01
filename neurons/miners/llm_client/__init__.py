@@ -97,7 +97,8 @@ class LLMClient:
                 "network": network,
                 "messages": [message.dict() for message in messages]
             }
-            response = requests.post(url, json=payload, timeout=180)
+            logger.debug(f"Querying LLM with payload: {payload}")
+            response = requests.post(url, json=payload, timeout=5*60)
             response.raise_for_status()
             return response.json()
         except requests.ConnectionError as e:
