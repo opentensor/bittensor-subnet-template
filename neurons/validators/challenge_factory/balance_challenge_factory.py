@@ -25,7 +25,7 @@ class BalanceChallengeFactory:
     def update(self):
         while self.running:
             # Use the lock to ensure safe update of the variable
-            # TODO: generate challenge logic here
+
             block_height = 0
             latest_block_height = self.node.get_current_block_height() - 6
             new_tier = self.last_generated_tier + 1

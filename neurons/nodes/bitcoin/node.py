@@ -25,10 +25,10 @@ import os
 import random
 
 parser = argparse.ArgumentParser()
-from neurons import logger
 bt.logging.add_args(parser)
 indexlogger = setup_logger("BitcoinNode")
- 
+
+
 class BitcoinNode(Node):
     def __init__(self, node_rpc_url: str = None):
         self.tx_out_hash_table = initialize_tx_out_hash_table()

@@ -1,11 +1,8 @@
 import unittest
-from unittest.mock import MagicMock, patch
-import torch
+from unittest.mock import MagicMock
 from neurons.validators.utils.uids import check_uid_availability, get_random_uids
 
 class TestYourClass(unittest.TestCase):
-
-  
 
     def test_check_uid_availability(self):
         metagraph = MagicMock()

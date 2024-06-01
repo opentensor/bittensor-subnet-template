@@ -1,7 +1,6 @@
 import unittest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
-from time import sleep
 
 from neurons.validators.uptime import Downtimes, Base, MinerUptimeManager, Miners
 
@@ -35,7 +34,6 @@ class TestMinerUptimeManager(unittest.TestCase):
         miner = self.uptime_manager.get_miner('key123')
         self.assertEqual(miner.uid, 100)
 
-
     def test_miner_up_and_down(self):
         self.uptime_manager.up(100, 'key123')
         self.uptime_manager.down(100, 'key123')
@@ -51,18 +49,6 @@ class TestMinerUptimeManager(unittest.TestCase):
         uptimes = self.uptime_manager.get_uptime_scores('key123')
         print(f"{uptimes=}")
 
-
-    def test_calculate_uptime(self):
-        self.uptime_manager.try_add_miner(123, 'key123')
-        sleep(10)
-
-        self.uptime_manager.down(123, 'key123')
-        miner = self.uptime_manager.get_miner(123, 'key123')
-        sleep(10)
-        self.uptime_manager.up(123, 'key123')
-
-        uptime = self.uptime_manager.calculate_uptime(123, 'key123', 86400)
-        print(uptime)
 
 if __name__ == '__main__':
     unittest.main()

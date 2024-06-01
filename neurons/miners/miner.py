@@ -5,21 +5,15 @@ import re
 import time
 import traceback
 import typing
-
 import bittensor as bt
 import yaml
-
 from insights import protocol
-from insights.protocol import NETWORK_BITCOIN, NETWORK_ETHEREUM, QueryOutput, LLM_ERROR_GENERAL_RESPONSE_FAILED, \
-    LLM_CLIENT_ERROR
+from insights.protocol import NETWORK_BITCOIN, NETWORK_ETHEREUM, QueryOutput, LLM_ERROR_GENERAL_RESPONSE_FAILED, LLM_CLIENT_ERROR
 from neurons import logger
 from neurons.miners import blacklist
 from neurons.miners.llm_client import LLMClient
-from neurons.miners.query import get_graph_search, get_graph_indexer, get_balance_search
-from neurons.nodes.factory import NodeFactory
 from neurons.remote_config import MinerConfig
 from neurons.storage import store_miner_metadata
-# import base miner class which takes care of most of the boilerplate
 from template.base.miner import BaseMinerNeuron
 
 
@@ -133,8 +127,6 @@ class Miner(BaseMinerNeuron):
 
         logger.info(f"Axon created: {self.axon}")
 
-        self.graph_search = get_graph_search(config)
-        self.balance_search = get_balance_search(config)
         self.miner_config = MinerConfig().load_and_get_config_values()
         self.llm = LLMClient(config.llm_engine_url)
         self.miner_config = MinerConfig().load_and_get_config_values()

@@ -1,48 +1,12 @@
 import bittensor as bt
-
 from insights import protocol
-from neurons.miners.query import is_query_only
-
 import typing
 import time
 
 from collections import deque
 from neurons import logger
 
-def query_blacklist(self, synapse: protocol.Query) -> typing.Tuple[bool, str]:
-        """
-        Determine the blacklisting or whitelisting status of a hotkey for protocol.Query.
 
-        Parameters:
-        - synapse (protocol.Query).
-        
-        Returns:
-        Tuple[bool, str]: 
-        - First element (bool): True if the hotkey is blacklisted, False if whitelisted.
-        - Second element (str): Message providing information about the hotkey status.
-
-        Blacklisting Conditions:
-        - Base blacklist check
-        - Blockchain mismatch
-        - Model type mismatch
-        - Illegal cypher keywords
-        """
-        hotkey = synapse.dendrite.hotkey
-        # Check if the dendrite hotkey is not voting the sn or not.
-
-        is_blacklist, message = base_blacklist(self, synapse=synapse)
-        if is_blacklist:
-            return is_blacklist, message
-        
-        if  self.config.network != synapse.network:
-            logger.trace("Blacklisting hot key because of wrong blockchain", miner_hotkey = hotkey)
-            return True, "Network not supported."
-
-        if not is_query_only(self.miner_config.query_restricted_keywords, synapse.query):
-            logger.trace("Blacklisting hot key because of illegal cypher keywords", miner_hotkey = hotkey)
-            return True, "Illegal cypher keywords."
-        return False, "Hotkey recognized!"
-    
 def discovery_blacklist(self, synapse: protocol.Discovery) -> typing.Tuple[bool, str]:
     """
     Perform discovery-specific blacklist checks for a hotkey.
