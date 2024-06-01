@@ -291,48 +291,12 @@ class Miner(BaseMinerNeuron):
     def send_metadata(self):
         store_miner_metadata(self)
 
-def wait_for_blocks_sync():
-        is_synced=False
 
-        config = Miner.get_config()
-        if not config.wait_for_sync:
-            logger.info(f"Skipping graph sync.")
-            return is_synced
-        
-        miner_config = MinerConfig().load_and_get_config_values()
-        
-        delta = miner_config.get_blockchain_sync_delta(config.network)
-        logger.info(f"Waiting for graph model to sync with blockchain.")
-        while not is_synced:
-            try:
-                graph_indexer = get_graph_indexer(config)
-                node = NodeFactory.create_node(config.network)
-
-                latest_block_height = node.get_current_block_height()
-                current_block_height = graph_indexer.get_latest_block_number()
-                delta = latest_block_height - current_block_height
-                if delta < 100:
-                    is_synced = True
-                    logger.success(f"Graph model is synced with blockchain.")
-                else:
-                    logger.info(f"Graph Sync", current_block_height = current_block_height, latest_block_height = latest_block_height)
-                    time.sleep(bt.__blocktime__ * 12)
-            except Exception as e:
-                logger.error('error', error = traceback.format_exc())
-                time.sleep(bt.__blocktime__ * 12)
-                logger.info(f"Failed to connect with graph database. Retrying...")
-                continue
-        return is_synced
-
-
-# This is the main function, which runs the miner.
 if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
-
-    wait_for_blocks_sync()
     with Miner() as miner:
         while True:
             logger.info(f"Miner running")
-            time.sleep(bt.__blocktime__*2)
+            time.sleep(bt.__blocktime__*10)
 
