@@ -221,7 +221,7 @@ class Miner(BaseMinerNeuron):
 
     async def llm_query(self, synapse: protocol.LlmQuery ) -> protocol.LlmQuery:
         logger.info(f"llm query received: {synapse}")
-        query_output = self.llm.query(synapse.messages)
+        query_output = self.llm.llm_query_v1(synapse.messages)
         if query_output is None:
             logger.error("Failed to query for llm query")
             synapse.output = [QueryOutput(type="text", error=LLM_ERROR_GENERAL_RESPONSE_FAILED, interpreted_result=protocol.LLM_ERROR_MESSAGES[LLM_CLIENT_ERROR])]

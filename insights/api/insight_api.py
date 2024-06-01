@@ -353,10 +353,10 @@ class APIServer:
                 user_id: UUID
                 prompt: str
                 temperature: float
-                miner_id: str
+                miner_id: int
             **Returns:**
             `ChatMessageResponse`: response in natural language.
-                - `miner_id` (str): responded miner uid
+                - `miner_id` (int): responded miner uid
                 - `response` (json): miner response containing the following types of information:
                 1. Text information in natural language
                 2. Graph information for funds flow model-based response
@@ -372,83 +372,10 @@ class APIServer:
                 "temperature": "0.1",
                 miner_id: "230",
             }
-            ```
-
-            **Example Response:**
-            ```json
-            {
-                "miner_id": "5CUUjNeTr5WAB7q4VqBkGrCyJ9XRZ4wqQMRZBw2XTmrR3xQA",
-                "response": [
-                {
-                    "type": "text",
-                    "content": "Hello, this is the answer from you"
-                },
-                {
-                    "type": "graph",
-                    "content": [
-                    {
-                        "id": "bc9zc38fha93idi823rf0wa94fj",
-                        "type": "node",
-                        "label": "address",
-                        "content": {
-                            "address": "bc9zc38fha93idi823rf0wa94fj"
-                        }
-                    },
-                    {
-                        "id": "bc9zc38fha93idi823rf0wa943223",
-                        "type": "node",
-                        "label": "transaction",
-                        "content": {
-                            "address": "bc9zc38fha93idi823rf0wa943223"
-                        }
-                    },
-                    {
-                        "type": "edge",
-                        "from_id": "bc9zc38fha93idi823rf0wa94fj",
-                        "to_id": "bc9zc38fha93idi823rf0wa943223",
-                        "content": {}
-                    }
-                    ]
-                },
-                {
-                    "type": "table",
-                    "columns": [
-                    {
-                        "name": "tx_id",
-                        "label": "Transaction Id"
-                    },
-                    {
-                        "name": "amount",
-                        "label": "Amount"
-                    },
-                    {
-                        "name": "timestamp",
-                        "label": "Timestamp"
-                    }
-                    ],
-                    "content": [
-                    {
-                        "id": "0x123",
-                        "tx_id": "0x123",
-                        "amount": 300,
-                        "timestamp": 102932123123
-                    },
-                    {
-                        "id": "0x456",
-                        "tx_id": "0x456",
-                        "amount": 450,
-                        "timestamp": 103924927430
-                    }
-                    ]
-                }
-                ]
-            }
-
-            ```
             """
             logger.info(f"Miner {query.miner_id} received a variant request.")
             
-            miner_axon = await get_query_api_axons(wallet=self.wallet, metagraph=self.metagraph, uids=query.miner_id)
+            miner_axon = await get_query_api_axons(wallet=self.wallet, metagraph=self.metagraph, uids=[query.miner_id])
             logger.info(f"Miner axon: {miner_axon}")
             
             responses, _ = await self.text_query_api(
@@ -459,7 +386,7 @@ class APIServer:
             )
             
             if not responses:
-                return ChatMessageResponse(response=[TextContent(content=self.failed_prompt_msg)])
+                raise HTTPException(status_code=503, detail=self.failed_prompt_msg)
             
             logger.info(f"Variant: {responses}")
             response_object = ChatMessageResponse(

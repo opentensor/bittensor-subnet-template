@@ -16,7 +16,7 @@ class ChatMessageVariantRequest(BaseModel):
     user_id: UUID
     prompt: str
     temperature: float
-    miner_id: str
+    miner_id: int
 
 
 class ChatMessageResponse(BaseModel):
