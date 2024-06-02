@@ -9,7 +9,7 @@ import time
 import insights
 from insights.api.query import TextQueryAPI
 from neurons.validators.utils.uids import get_top_miner_uids
-from fastapi import FastAPI, Body, HTTPException, APIRouter
+from fastapi import FastAPI, Body, HTTPException
 import uvicorn
 from neurons import logger
 
@@ -46,7 +46,7 @@ class APIServer:
             logger.info(f"Request completed: {request.method} {request.url} in {duration:.4f} seconds")
             return response
 
-        @self.app.post("v1/api/text_query", summary="", tags=["v1"])
+        @self.app.post("/v1/api/text_query", summary="Processes chat message requests and returns a response from a randomly selected miner", tags=["v1"])
         async def get_response(query: ChatMessageRequest = Body(..., example={
             "network": "bitcoin",
             "prompt": "Return 3 transactions outgoing from my address bc1q4s8yps9my6hun2tpd5ke5xmvgdnxcm2qspnp9r"
@@ -96,18 +96,21 @@ class APIServer:
             # return response and the hotkey of randomly selected miner
             return response_object
 
-        @self.app.post("v1/api/text_query/variant", summary="", tags=["v1"])
+        @self.app.post("/v1/api/text_query/variant", summary="Processes variant chat message requests and returns a response from a specific miner", tags=["v1"])
         async def get_response_variant(query: ChatMessageVariantRequest = Body(..., example={
-            "network": "Bitcoin",
+            "network": "bitcoin",
             "prompt": "Return 3 transactions outgoing from my address bc1q4s8yps9my6hun2tpd5ke5xmvgdnxcm2qspnp9r",
-            "miner_hotkey": "5EFRBND9NomKhfh5W12jww6AnNtVEy4T3SD2JAQgXEaZD78S"
+            "miner_hotkey": "5EExDvawjGyszzxF8ygvNqkM1w5M4hA82ydBjhx4cY2ut2yr"
         })) -> ChatMessageResponse:
 
             logger.info(f"Miner {query.miner_hotkey} received a variant request.")
 
-            miner = metagraph.hotkeys[query.miner_hotkey]
-            miner_id = 24 # TODO !!
-            miner_axon = metagraph.axons[miner_id]
+            try:
+                miner_id = metagraph.hotkeys.index(query.miner_hotkey)
+            except ValueError:
+                raise HTTPException(status_code=404, detail="Miner hotkey not found")
+
+            miner_axon = [metagraph.axons[uid] for uid in [miner_id]]
             logger.info(f"Miner axon: {miner_axon}")
 
             responses, _ = await self.text_query_api(
