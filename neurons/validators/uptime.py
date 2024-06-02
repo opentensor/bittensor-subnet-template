@@ -1,13 +1,13 @@
 import traceback
 from contextlib import contextmanager
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, UniqueConstraint, Boolean
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, scoped_session, relationship, selectinload, subqueryload, joinedload
+from sqlalchemy.orm import sessionmaker, scoped_session, relationship, joinedload
 from datetime import datetime, timedelta
-import bittensor as bt
 from neurons import logger
 
 Base = declarative_base()
+
 
 class Miners(Base):
     __tablename__ = 'miners'
@@ -18,6 +18,7 @@ class Miners(Base):
     __table_args__ = (UniqueConstraint('hotkey', name='hotkey_uc'),)
     downtimes = relationship('Downtimes', back_populates='miner', order_by="desc(Downtimes.start_time)")
 
+
 class Downtimes(Base):
     __tablename__ = 'downtimes'
     id = Column(Integer, primary_key=True)
@@ -26,6 +27,7 @@ class Downtimes(Base):
     end_time = Column(DateTime, nullable=True)
     miner = relationship('Miners', back_populates='downtimes')
 
+
 class MinerUptimeManager:
     def __init__(self, db_url='sqlite:///miners.db'):
         self.engine = create_engine(db_url)
@@ -33,7 +35,6 @@ class MinerUptimeManager:
         self.session_factory = sessionmaker(bind=self.engine)
         self.Session = scoped_session(self.session_factory)
         self.immunity_period = 0
-
 
     @contextmanager
     def session_scope(self):

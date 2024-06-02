@@ -1,10 +1,9 @@
 import traceback
 from collections import Counter
 from random import randint
-import bittensor as bt
 from insights import protocol
-
 from neurons import logger
+
 
 class BenchmarkValidator:
     def __init__(self, dendrite, validator_config):
@@ -78,6 +77,7 @@ class BenchmarkValidator:
             logger.error("Run benchmark failed", error=traceback.format_exc())
             return None, None, None
 
+
 class ResponseProcessor:
     def __init__(self, validator_config):
         self.validator_config = validator_config
@@ -98,7 +98,6 @@ class ResponseProcessor:
                 chunk_index = i % chunk_size
                 chunks[chunk_index].append(group)
             network_grouped_responses[network] = [chunk for chunk in chunks if len(chunk) > 0]
-
 
         new_groups = {}
 

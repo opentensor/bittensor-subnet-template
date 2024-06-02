@@ -1,6 +1,6 @@
-import bittensor as bt
 from neurons.remote_config import ValidatorConfig
 from neurons import logger
+
 
 class Scorer:
     def __init__(self, config: ValidatorConfig):
@@ -15,19 +15,19 @@ class Scorer:
         final_score = self.final_score(process_time_score, block_height_score, block_height_recency_score, blockchain_score, uptime_score)
 
         logger.info("Score calculated",
-                        hotkey=hotkey,
-                        benchmark_process_time=process_time,
-                        indexed_start_block_height=indexed_start_block_height,
-                        indexed_end_block_height=indexed_end_block_height,
-                        blockchain_last_block_height=blockchain_last_block_height,
-                        miner_distribution=miner_distribution,
-                        uptime_avg=uptime_avg,
-                        benchmark_process_time_score=process_time_score,
-                        block_height_score=block_height_score,
-                        block_height_recency_score=block_height_recency_score,
-                        blockchain_score=blockchain_score,
-                        uptime_score=uptime_score,
-                        final_score=final_score)
+                    hotkey=hotkey,
+                    benchmark_process_time=process_time,
+                    indexed_start_block_height=indexed_start_block_height,
+                    indexed_end_block_height=indexed_end_block_height,
+                    blockchain_last_block_height=blockchain_last_block_height,
+                    miner_distribution=miner_distribution,
+                    uptime_avg=uptime_avg,
+                    benchmark_process_time_score=process_time_score,
+                    block_height_score=block_height_score,
+                    block_height_recency_score=block_height_recency_score,
+                    blockchain_score=blockchain_score,
+                    uptime_score=uptime_score,
+                    final_score=final_score)
 
         return final_score
 
@@ -56,8 +56,8 @@ class Scorer:
         normalized_score = min(max(normalized_score, 0), 1)  # Ensuring the score is within 0 to 1
         return normalized_score
 
-
-    def get_performance_score(self, process_time, best_time, worst_time, timeout):
+    @staticmethod
+    def get_performance_score(process_time, best_time, worst_time, timeout):
         if process_time >= timeout:
             return 0  # Timeout case
         if process_time <= best_time:
@@ -76,8 +76,8 @@ class Scorer:
         process_time_score = self.get_performance_score(process_time, best_time, worst_time, discovery_timeout)
         return process_time_score
 
-
-    def calculate_block_height_recency_score(self, indexed_end_block_height, blockchain_block_height, worst_end_block_height):
+    @staticmethod
+    def calculate_block_height_recency_score(indexed_end_block_height, blockchain_block_height, worst_end_block_height):
 
         # this is done to ensure that the worst miner does not obtain a score of 0
         min_recency = worst_end_block_height - 100
@@ -87,7 +87,6 @@ class Scorer:
         recency_diff = blockchain_block_height - indexed_end_block_height
         recency_score = max(0, (1 - recency_diff / (blockchain_block_height-min_recency)) ** 4)
         return recency_score
-
 
     def calculate_block_height_score(self, network, indexed_start_block_height: int, indexed_end_block_height: int, blockchain_block_height: int):
 
@@ -100,7 +99,6 @@ class Scorer:
         coverage_percentage = (covered_blocks-min_blocks) / (blockchain_block_height-min_blocks)
         coverage_percentage = coverage_percentage ** 3
         return coverage_percentage
-
 
     def calculate_blockchain_weight(self, network, miner_distribution):
 
@@ -116,5 +114,6 @@ class Scorer:
 
         return overall_score
 
-    def calculate_uptime_score(self, uptime_avg):
+    @staticmethod
+    def calculate_uptime_score(uptime_avg):
         return uptime_avg

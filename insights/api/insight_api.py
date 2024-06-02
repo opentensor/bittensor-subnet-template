@@ -200,9 +200,7 @@ class APIServer:
 
             """
 
-            # select top miner
-            dendrite = bt.dendrite(wallet=wallet)
-            top_miner_uids = await get_top_miner_uids(metagraph=self.metagraph, dendrite=dendrite, top_rate=self.config.top_rate)
+            top_miner_uids = await get_top_miner_uids(metagraph=self.metagraph, wallet=wallet, top_rate=self.config.top_rate)
             logger.info(f"Top miner UIDs are {top_miner_uids}")
 
             selected_miner_uids = None
@@ -225,41 +223,17 @@ class APIServer:
                 timeout=self.config.timeout
             )
 
-            blacklist_axons = np.array(top_miner_axons)[blacklist_axon_ids]
-            blacklist_uids = np.where(np.isin(np.array(self.metagraph.axons), blacklist_axons))[0]
-            # get responded miner uids among top miners
-            responded_uids = np.setdiff1d(np.array(top_miner_uids), blacklist_uids)
-            #self.excluded_uids = np.union1d(np.array(self.excluded_uids), blacklist_uids)
-            #self.excluded_uids = self.excluded_uids.astype(int).tolist()
-            logger.info(f"Excluded_uids are {self.excluded_uids}")
-
             if not responses:
                 raise HTTPException(status_code=503, detail=self.failed_prompt_msg)
 
+            blacklist_axons = np.array(top_miner_axons)[blacklist_axon_ids]
+            blacklist_uids = np.where(np.isin(np.array(self.metagraph.axons), blacklist_axons))[0]
+            responded_uids = np.setdiff1d(np.array(top_miner_uids), blacklist_uids)
+
             # Add score to miners respond to user query
-            uids = responded_uids.tolist()
-            rewards = [
-                self.get_reward(response, uid) for response, uid in zip(responses, uids)
-            ]
-            # Remove None reward as they represent timeout cross validation
-            filtered_data = [(reward, uid) for reward, uid in zip(rewards, uids) if reward is not None]
+            # uids = responded_uids.tolist()
+            # TODO: we store the responded UIDs to progres here and that data will be take later in scoring function
 
-            if filtered_data:
-                rewards, uids = zip(*filtered_data)
-
-                rewards = torch.FloatTensor(rewards)
-                self.update_scores(rewards, uids)
-            else:  
-                logger.info('Skipping update_scores() as no responses were valid')
-
-            # If the number of excluded_uids is bigger than top x percentage of the whole axons, format it.
-            if len(self.excluded_uids) > int(self.metagraph.n * self.config.top_rate):
-                logger.info(f"Excluded UID list is too long")
-                self.excluded_uids = []            
-            logger.info(f"Excluded_uids are {self.excluded_uids}")
-
-            logger.info(f"Responses are {responses}")
-            
             selected_index = responses.index(random.choice(responses))
             response_object = ChatMessageResponse(
                 miner_id=self.metagraph.hotkeys[responded_uids[selected_index]],
@@ -316,7 +290,11 @@ class APIServer:
             
             if not responses:
                 raise HTTPException(status_code=503, detail=self.failed_prompt_msg)
-            
+
+            # TODO: we store the responded UIDs to progres here and that data will be take later in scoring function
+            # To be considered if that creates fair result, what i someone has a valdiator and will be prompting his own miner to get better score?
+            # well, he wil pay for openai usage, so he will be paying for the score, so it is fair?
+
             logger.info(f"Variant: {responses}")
             response_object = ChatMessageResponse(
                 miner_id=query.miner_id,
