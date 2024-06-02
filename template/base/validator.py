@@ -19,6 +19,7 @@
 
 
 import copy
+import os
 import torch
 import asyncio
 import argparse
@@ -357,8 +358,12 @@ class BaseValidatorNeuron(BaseNeuron):
         """Loads the state of the validator from a file."""
         bt.logging.info("Loading validator state.")
 
+        if not os.path.exists(self.config.neuron.full_path + "/state.pt"):
+            bt.logging.warning("No saved state found")
+            return
+
         # Load the state of the validator from file.
         state = torch.load(self.config.neuron.full_path + "/state.pt")
         self.step = state["step"]
-        self.scores = state["scores"]
+        self.scores = state["scores"].to(self.device)
         self.hotkeys = state["hotkeys"]
