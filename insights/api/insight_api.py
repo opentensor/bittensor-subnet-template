@@ -1,12 +1,15 @@
 import random
 import asyncio
-import numpy as np
 from datetime import datetime
+import numpy as np
 from protocols.chat import ChatMessageRequest, ChatMessageResponse, ChatMessageVariantRequest, ContentType
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.requests import Request
+import time
+import insights
 from insights.api.query import TextQueryAPI
 from neurons.validators.utils.uids import get_top_miner_uids
-from fastapi import FastAPI, Body, HTTPException
+from fastapi import FastAPI, Body, HTTPException, APIRouter
 import uvicorn
 from neurons import logger
 
@@ -15,20 +18,10 @@ class APIServer:
 
     failed_prompt_msg = "Please try again. Can't receive any responses from the miners or due to the poor network connection."
 
-    def __init__(
-            self,
-            config: None,
-            wallet: None,
-            subtensor: None,
-            metagraph: None
-        ):
-        """
-        API can be invoked while running a validator.
-        Receive config, wallet, subtensor, metagraph from the validator and share the score of miners with the validator.
-        subtensor and metagraph of APIs will change as the ones of validators change.
-        """
-        self.app = FastAPI(title="validator-api",
-                           description="The goal of validator-api is to set up how to message between Chat API and validators.")
+    def __init__(self, config, wallet, subtensor, metagraph):
+        self.app = FastAPI(title="Validator API",
+                           description="API for the Validator service",
+                           version=insights.__version__)
 
         self.app.add_middleware(
             CORSMiddleware,
@@ -44,35 +37,20 @@ class APIServer:
         self.subtensor = subtensor
         self.metagraph = metagraph
 
-        @self.app.post("/api/text_query", summary="POST /natural language query", tags=["validator api"])
-        async def get_response(query: ChatMessageRequest = Body(...)):
-            """
-            Generate a response to user query
+        @self.app.middleware("http")
+        async def log_requests(request: Request, call_next):
+            start_time = time.time()
+            response = await call_next(request)
+            end_time = time.time()
+            duration = end_time - start_time
+            logger.info(f"Request completed: {request.method} {request.url} in {duration:.4f} seconds")
+            return response
 
-            This endpoint allows miners convert the natural language query from the user into a Cypher query, and then provide a concise response in natural language.
-            
-            **Parameters:**
-            `query` (ChatMessageRequest): natural language query from users, network(Bitcoin, Ethereum, ...), User ID.
-                network: str
-                prompt: str
-
-            **Returns:**
-            `ChatMessageResponse`: response in natural language.
-                - `miner_id` (str): responded miner uid
-                - `response` (json): miner response containing the following types of information:
-                1. Text information in natural language
-                2. Graph information for funds flow model-based response
-                3. Tabular information for transaction and account balance model-based response
-            
-            **Example Request:**
-            ```json
-            POST /text-query
-            {
-                "network": "bitcoin",
-                "message_content": "Return 3 transactions outgoing from my address bc1q4s8yps9my6hun2tpd5ke5xmvgdnxcm2qspnp9r"
-            }
-
-            """
+        @self.app.post("v1/api/text_query", summary="", tags=["v1"])
+        async def get_response(query: ChatMessageRequest = Body(..., example={
+            "network": "bitcoin",
+            "prompt": "Return 3 transactions outgoing from my address bc1q4s8yps9my6hun2tpd5ke5xmvgdnxcm2qspnp9r"
+        })) -> ChatMessageResponse:
 
             top_miner_uids = await get_top_miner_uids(metagraph=self.metagraph, wallet=wallet, top_rate=self.config.top_rate)
             logger.info(f"Top miner UIDs are {top_miner_uids}")
@@ -118,49 +96,27 @@ class APIServer:
             # return response and the hotkey of randomly selected miner
             return response_object
 
-        @self.app.post("/api/text_query/variant", summary="POST /variation request for natual language query", tags=["validator api"])
-        async def get_response_variant(query: ChatMessageVariantRequest = Body(...)):
-            """            
-            A validator would be able to receive a user request to generate a variation on a previously generated message. It will return the new message and store the fact that a specific miner's message had a variation request.
-            - Receive temperature. The temperature will determine the creativity of the response.
-            - Return generated variation text and miner ID.
+        @self.app.post("v1/api/text_query/variant", summary="", tags=["v1"])
+        async def get_response_variant(query: ChatMessageVariantRequest = Body(..., example={
+            "network": "Bitcoin",
+            "prompt": "Return 3 transactions outgoing from my address bc1q4s8yps9my6hun2tpd5ke5xmvgdnxcm2qspnp9r",
+            "miner_hotkey": "5EFRBND9NomKhfh5W12jww6AnNtVEy4T3SD2JAQgXEaZD78S"
+        })) -> ChatMessageResponse:
 
-            
-            **Parameters:**
-            `query` (ChatMessageVariantRequest): natural language query from users, network(Bitcoin, Ethereum, ...), User ID, Miner UID, temperature.\
-                prompt: str
-                miner_hotkey: str
-            **Returns:**
-            `ChatMessageResponse`: response in natural language.
-                - `miner_hotkry` (str): responded miner hotkey
-                - `response` (json): miner response containing the following types of information:
-                1. Text information in natural language
-                2. Graph information for funds flow model-based response
-                3. Tabular information for transaction and account balance model-based response
-            
-            **Example Request:**
-            ```json
-            POST /text-query
-            {
-                "network": "Bitcoin",
-                "message_content": "Return 3 transactions outgoing from my address bc1q4s8yps9my6hun2tpd5ke5xmvgdnxcm2qspnp9r",
-                "miner_hotkey": "5EFRBND9NomKhfh5W12jww6AnNtVEy4T3SD2JAQgXEaZD78S",
-            }
-            """
             logger.info(f"Miner {query.miner_hotkey} received a variant request.")
 
             miner = metagraph.hotkeys[query.miner_hotkey]
             miner_id = 24 # TODO !!
             miner_axon = metagraph.axons[miner_id]
             logger.info(f"Miner axon: {miner_axon}")
-            
+
             responses, _ = await self.text_query_api(
                 axons=miner_axon,
                 network=query.network,
                 text=query.prompt,
                 timeout=self.config.timeout
             )
-            
+
             if not responses:
                 raise HTTPException(status_code=503, detail=self.failed_prompt_msg)
 
