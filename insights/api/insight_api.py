@@ -54,7 +54,6 @@ class APIServer:
             **Parameters:**
             `query` (ChatMessageRequest): natural language query from users, network(Bitcoin, Ethereum, ...), User ID.
                 network: str
-                user_id: UUID
                 prompt: str
 
             **Returns:**
@@ -69,8 +68,7 @@ class APIServer:
             ```json
             POST /text-query
             {
-                "network": "Bitcoin",
-                "user_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                "network": "bitcoin",
                 "message_content": "Return 3 transactions outgoing from my address bc1q4s8yps9my6hun2tpd5ke5xmvgdnxcm2qspnp9r"
             }
 
@@ -130,13 +128,11 @@ class APIServer:
             
             **Parameters:**
             `query` (ChatMessageVariantRequest): natural language query from users, network(Bitcoin, Ethereum, ...), User ID, Miner UID, temperature.\
-                user_id: UUID
                 prompt: str
-                temperature: float
-                miner_id: int
+                miner_hotkey: str
             **Returns:**
             `ChatMessageResponse`: response in natural language.
-                - `miner_id` (int): responded miner uid
+                - `miner_hotkry` (str): responded miner hotkey
                 - `response` (json): miner response containing the following types of information:
                 1. Text information in natural language
                 2. Graph information for funds flow model-based response
@@ -147,10 +143,8 @@ class APIServer:
             POST /text-query
             {
                 "network": "Bitcoin",
-                "user_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                 "message_content": "Return 3 transactions outgoing from my address bc1q4s8yps9my6hun2tpd5ke5xmvgdnxcm2qspnp9r",
-                "temperature": "0.1",
-                "miner_id": 230,
+                "miner_hotkey": "5EFRBND9NomKhfh5W12jww6AnNtVEy4T3SD2JAQgXEaZD78S",
             }
             """
             logger.info(f"Miner {query.miner_hotkey} received a variant request.")
