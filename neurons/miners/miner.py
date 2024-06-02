@@ -142,6 +142,7 @@ class Miner(BaseMinerNeuron):
         logger.info("Health check received")
         synapse.output = [{
             "network": self.config.network,
+            "hotkey": self.wallet.hotkey.ss58_address,
             "uid": self.uid,
         }]
         return synapse
@@ -242,7 +243,7 @@ class Miner(BaseMinerNeuron):
             synapse.output = [QueryOutput(type="text", error=LLM_ERROR_GENERAL_RESPONSE_FAILED, interpreted_result=LLM_ERROR_MESSAGES[LLM_CLIENT_ERROR])]
         else:
             for query_output_item in query_output:
-                query_output_item['miner_id'] = self.uid
+                query_output_item['miner_hotkey'] = self.wallet.hotkey.ss58_address
 
             synapse.output = query_output
             logger.info(f"Serving miner llm query output: {synapse.output}")

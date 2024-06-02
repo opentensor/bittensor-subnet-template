@@ -136,8 +136,7 @@ class Validator(BaseValidatorNeuron):
                 config=self.config,
                 wallet=self.wallet,
                 subtensor=self.subtensor,
-                metagraph=self.metagraph,
-                scores=self.scores
+                metagraph=self.metagraph
             )
         immunity_period = self.subtensor.immunity_period(self.config.netuid)
         bt.logging.info("Immunity period", immunity_period = immunity_period)
