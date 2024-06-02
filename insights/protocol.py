@@ -26,6 +26,12 @@ class BaseSynapse(bt.Synapse):
     version: int = VERSION
 
 
+class HealthCheck(BaseSynapse):
+    output: Optional[List[Dict]] = None
+
+    def deserialize(self):
+        return self.output
+
 class Discovery(BaseSynapse):
     output: DiscoveryOutput = None
                         

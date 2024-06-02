@@ -10,7 +10,6 @@ from rich.table import Table
 from rich.console import Console
 from fastapi.middleware.cors import CORSMiddleware
 from insights.api.query import TextQueryAPI
-from insights.api.get_query_axons import get_query_api_axons
 from neurons.validators.utils.uids import get_top_miner_uids
 from fastapi import FastAPI, Body, HTTPException
 import uvicorn
@@ -167,7 +166,6 @@ class APIServer:
         self.text_query_api = TextQueryAPI(wallet=self.wallet)
         self.subtensor = subtensor
         self.metagraph = metagraph
-        self.excluded_uids = []
         self.scores = scores
 
         @self.app.post("/api/text_query", summary="POST /natural language query", tags=["validator api"])
@@ -201,11 +199,23 @@ class APIServer:
             }
 
             """
-            # select top miner            
-            top_miner_uids = get_top_miner_uids(self.metagraph, self.config.top_rate, self.excluded_uids)
+
+            # select top miner
+            dendrite = bt.dendrite(wallet=wallet)
+            top_miner_uids = await get_top_miner_uids(metagraph=self.metagraph, dendrite=dendrite, top_rate=self.config.top_rate)
             logger.info(f"Top miner UIDs are {top_miner_uids}")
-            top_miner_axons = await get_query_api_axons(wallet=self.wallet, metagraph=self.metagraph, uids=top_miner_uids)
+
+            selected_miner_uids = None
+            if len(top_miner_uids) >= 3:
+                selected_miner_uids = random.sample(top_miner_uids, 3)
+            else:
+                selected_miner_uids = top_miner_uids
+            top_miner_axons = [metagraph.axons[uid] for uid in selected_miner_uids]
+
             logger.info(f"Top miner axons: {top_miner_axons}")
+
+            if not top_miner_axons:
+                raise HTTPException(status_code=503, detail=self.failed_prompt_msg)
 
             # get miner response
             responses, blacklist_axon_ids = await self.text_query_api(
@@ -293,8 +303,8 @@ class APIServer:
             }
             """
             logger.info(f"Miner {query.miner_id} received a variant request.")
-            
-            miner_axon = await get_query_api_axons(wallet=self.wallet, metagraph=self.metagraph, uids=[query.miner_id])
+
+            miner_axon = metagraph.axons[query.miner_id]
             logger.info(f"Miner axon: {miner_axon}")
             
             responses, _ = await self.text_query_api(

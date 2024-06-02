@@ -110,7 +110,11 @@ class Miner(BaseMinerNeuron):
         
         self.axon = bt.axon(wallet=self.wallet, port=self.config.axon.port)        
         logger.info(f"Attaching forwards functions to miner axon.")
-        self.axon.attach(
+        (self.axon.attach(
+            forward_fn=self.health_check,
+            blacklist_fn=self.health_check_blacklist,
+            priority_fn=self.health_check_priority)
+        .attach(
             forward_fn=self.discovery,
             blacklist_fn=self.discovery_blacklist,
             priority_fn=self.discovery_priority,
@@ -126,7 +130,7 @@ class Miner(BaseMinerNeuron):
             forward_fn=self.llm_query,
             blacklist_fn=self.llm_query_blacklist,
             priority_fn=self.llm_query_priority
-        )
+        ))
 
         logger.info(f"Axon created: {self.axon}")
 
@@ -134,7 +138,15 @@ class Miner(BaseMinerNeuron):
         self.llm = LLMClient(config.llm_engine_url)
         self.miner_config = MinerConfig().load_and_get_config_values()
 
-    async def discovery(self, synapse: protocol.Discovery ) -> protocol.Discovery:
+    async def health_check(self, synapse: protocol.HealthCheck) -> protocol.HealthCheck:
+        logger.info("Health check received")
+        synapse.output = [{
+            "network": self.config.network,
+            "uid": self.uid,
+        }]
+        return synapse
+
+    async def discovery(self, synapse: protocol.Discovery) -> protocol.Discovery:
         try:
             discovery = self.llm.discovery_v1(network=self.config.network)
             if discovery is None:
@@ -166,7 +178,7 @@ class Miner(BaseMinerNeuron):
 
         return synapse
 
-    async def challenge(self, synapse: protocol.Challenge ) -> protocol.Challenge:
+    async def challenge(self, synapse: protocol.Challenge) -> protocol.Challenge:
         try:
             logger.info("challenge received", synapse={'version': synapse.version,
                                                        'in_total_amount': synapse.in_total_amount,
@@ -236,7 +248,10 @@ class Miner(BaseMinerNeuron):
             logger.info(f"Serving miner llm query output: {synapse.output}")
 
         return synapse
-    
+
+    async def health_check_blacklist(self, synapse: protocol.HealthCheck) -> typing.Tuple[bool, str]:
+        return blacklist.base_blacklist(self, synapse=synapse)
+
     async def discovery_blacklist(self, synapse: protocol.Discovery) -> typing.Tuple[bool, str]:
         return blacklist.discovery_blacklist(self, synapse=synapse)
 
@@ -253,12 +268,15 @@ class Miner(BaseMinerNeuron):
         caller_uid = self.metagraph.hotkeys.index(
             synapse.dendrite.hotkey
         ) 
-        prirority = float(
+        priority = float(
             self.metagraph.S[caller_uid]
         )
-        logger.trace("Prioritizing hotkey", hotkey = synapse.dendrite.hotkey, priority = prirority)
-        return prirority
-    
+        logger.trace("Prioritizing hotkey", hotkey=synapse.dendrite.hotkey, priority=priority)
+        return priority
+
+    async def health_check_priority(self, synapse: protocol.HealthCheck) -> float:
+        return self.base_priority(synapse=synapse)
+
     async def discovery_priority(self, synapse: protocol.Discovery) -> float:
         return self.base_priority(synapse=synapse)
 
