@@ -1,13 +1,20 @@
+import os
 import random
 import asyncio
+import json
 from datetime import datetime
 import numpy as np
 from protocols.chat import ChatMessageRequest, ChatMessageResponse, ChatMessageVariantRequest, ContentType
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 import time
+
+from starlette.responses import JSONResponse
+from starlette.status import HTTP_403_FORBIDDEN
+
 import insights
 from insights.api.query import TextQueryAPI
+from insights.api.rate_limiter import rate_limit_middleware
 from neurons.validators.utils.uids import get_top_miner_uids
 from fastapi import FastAPI, Body, HTTPException
 import uvicorn
@@ -37,6 +44,22 @@ class APIServer:
         self.subtensor = subtensor
         self.metagraph = metagraph
 
+        self.api_key_file_path = "api_key.json"
+        self.api_keys = None
+        self.rate_limit_config = {"requests": 1}
+        if os.path.exists(self.api_key_file_path):
+            with open(self.api_key_file_path, "r") as file:
+                self.api_keys = json.load(file)
+
+        self.config_file_path = "rate_limit.json"
+        if os.path.exists(self.config_file_path):
+            with open(self.config_file_path, "r") as file:
+                config = json.load(file)
+                self.rate_limit_config = config.get("rate_limit", {"requests": 1})
+
+        if self.api_keys:
+            self.app.middleware("http")(self.rate_limit_middleware_factory(self.rate_limit_config["requests"]))
+
         @self.app.middleware("http")
         async def log_requests(request: Request, call_next):
             start_time = time.time()
@@ -47,10 +70,13 @@ class APIServer:
             return response
 
         @self.app.post("/v1/api/text_query", summary="Processes chat message requests and returns a response from a randomly selected miner", tags=["v1"])
-        async def get_response(query: ChatMessageRequest = Body(..., example={
+        async def get_response(request: Request, query: ChatMessageRequest = Body(..., example={
             "network": "bitcoin",
             "prompt": "Return 3 transactions outgoing from my address bc1q4s8yps9my6hun2tpd5ke5xmvgdnxcm2qspnp9r"
         })) -> ChatMessageResponse:
+            if self.api_keys is not None:
+                api_key_validator = self.get_api_key_validator()
+                await api_key_validator(request)
 
             top_miner_uids = await get_top_miner_uids(metagraph=self.metagraph, wallet=wallet, top_rate=self.config.top_rate)
             logger.info(f"Top miner UIDs are {top_miner_uids}")
@@ -97,11 +123,14 @@ class APIServer:
             return response_object
 
         @self.app.post("/v1/api/text_query/variant", summary="Processes variant chat message requests and returns a response from a specific miner", tags=["v1"])
-        async def get_response_variant(query: ChatMessageVariantRequest = Body(..., example={
+        async def get_response_variant(request: Request, query: ChatMessageVariantRequest = Body(..., example={
             "network": "bitcoin",
             "prompt": "Return 3 transactions outgoing from my address bc1q4s8yps9my6hun2tpd5ke5xmvgdnxcm2qspnp9r",
             "miner_hotkey": "5EExDvawjGyszzxF8ygvNqkM1w5M4hA82ydBjhx4cY2ut2yr"
         })) -> ChatMessageResponse:
+            if self.api_keys is not None:
+                api_key_validator = self.get_api_key_validator()
+                await api_key_validator(request)
 
             logger.info(f"Miner {query.miner_hotkey} received a variant request.")
 
@@ -141,6 +170,19 @@ class APIServer:
                 "status": "ok",
                 "timestamp": datetime.utcnow()
             }
+
+    def rate_limit_middleware_factory(self, max_requests):
+        async def middleware(request: Request, call_next):
+            return await rate_limit_middleware(request, call_next, max_requests)
+        return middleware
+
+    def get_api_key_validator(self):
+        async def validator(request: Request):
+            if self.api_keys is not None:
+                api_key = request.headers.get("x-api-key")
+                if not api_key or not any(api_key in keys for keys in self.api_keys):
+                    return JSONResponse(status_code=HTTP_403_FORBIDDEN, content={"detail": "Forbidden"})
+        return validator
         
     def start(self):
         # Set the default event loop policy to avoid conflicts with uvloop
