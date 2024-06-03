@@ -29,8 +29,7 @@ class StreamMiner(ABC):
         self.prompt_cache: Dict[str, Tuple[str, int]] = {}
 
         # Activating Bittensor's logging with the set configurations.
-        bt.logging(config=self.config, logging_dir=self.config.full_path)
-        bt.logging.info("Setting up bittensor objects.")
+        bt.logging.set_config(config=self.config.logging)
 
         # Wallet holds cryptographic information, ensuring secure transactions and communication.
         self.wallet = wallet or bt.wallet(config=self.config)
