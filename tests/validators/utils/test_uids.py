@@ -1,5 +1,6 @@
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
+import numpy as np
 from neurons.validators.utils.uids import check_uid_availability, get_random_uids
 
 class TestYourClass(unittest.TestCase):

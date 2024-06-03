@@ -3,6 +3,12 @@ import random
 import asyncio
 import json
 from datetime import datetime
+import traceback
+import bittensor as bt
+from rich.table import Table
+from rich.console import Console
+import yaml
+
 import numpy as np
 from protocols.chat import ChatMessageRequest, ChatMessageResponse, ChatMessageVariantRequest, ContentType
 from fastapi.middleware.cors import CORSMiddleware

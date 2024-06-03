@@ -17,7 +17,7 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-import torch
+import numpy as np
 import random
 import bittensor as bt
 from neurons import logger
@@ -83,7 +83,7 @@ async def get_query_api_nodes(dendrite, metagraph, n=0.1, timeout=3):
         for uid in metagraph.uids
         if metagraph.validator_trust[uid] > 0
     ]
-    top_uids = torch.where(metagraph.S > torch.quantile(metagraph.S, 1 - n))
+    top_uids = np.where(metagraph.S > np.quantile(metagraph.S, 1 - n))
     top_uids = top_uids[0].tolist()
     init_query_uids = set(top_uids).intersection(set(vtrust_uids))
     query_uids, _ = await ping_uids(

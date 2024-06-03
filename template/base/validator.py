@@ -19,7 +19,7 @@
 
 
 import copy
-import torch
+import numpy as np
 import asyncio
 import argparse
 import threading
@@ -68,7 +68,7 @@ class BaseValidatorNeuron(BaseNeuron):
 
         # Set up initial scoring weights for validation
         logger.info("Building validation weights.")
-        zeroes = torch.zeros_like(self.metagraph.S, dtype=torch.float32)
+        zeroes = np.zeros_like(self.metagraph.S, dtype = np.float32)
         try:
             self.load_state()
             logger.info("Scores loaded from file")
@@ -224,71 +224,70 @@ class BaseValidatorNeuron(BaseNeuron):
         """
         Sets the validator weights to the metagraph hotkeys based on the scores it has received from the miners. The weights determine the trust and incentive level the validator assigns to miner nodes on the network.
         """
-        try:
-            # Check if self.scores contains any NaN values and log a warning if it does.
-            if torch.isnan(self.scores).any():
-                logger.warning(
-                    f"Scores contain NaN values. This may be due to a lack of responses from miners, or a bug in your reward functions."
-                )
-
-            # Calculate the average reward for each uid across non-zero values.
-            # Replace any NaN values with 0.
-            raw_weights = torch.nn.functional.normalize(self.scores, p=1, dim=0)
-
-            # Process the raw weights to final_weights via subtensor limitations.
-            (
-                processed_weight_uids,
-                processed_weights,
-            ) = bt.utils.weight_utils.process_weights_for_netuid(
-                uids=self.metagraph.uids.to("cpu"),
-                weights=raw_weights.to("cpu"),
-                netuid=self.config.netuid,
-                subtensor=self.subtensor,
-                metagraph=self.metagraph,
+        # Check if self.scores contains any NaN values and log a warning if it does.
+        if np.isnan(self.scores).any():
+            logger.warning(
+                f"Scores contain NaN values. This may be due to a lack of responses from miners, or a bug in your reward functions."
             )
 
-            # Convert to uint16 weights and uids.
-            (
-                uint_uids,
-                uint_weights,
-            ) = bt.utils.weight_utils.convert_weights_and_uids_for_emit(
-                uids=processed_weight_uids, weights=processed_weights
+        # Calculate the average reward for each uid across non-zero values.
+        # Replace any NaN values with 0.
+        raw_weights = np.linalg.norm(self.scores, ord=1, axis=0, keepdims=True)
+
+        # Process the raw weights to final_weights via subtensor limitations.
+        (
+            processed_weight_uids,
+            processed_weights,
+        ) = bt.utils.weight_utils.process_weights_for_netuid(
+            uids=self.metagraph.uids,
+            weights=raw_weights,
+            netuid=self.config.netuid,
+            subtensor=self.subtensor,
+            metagraph=self.metagraph,
+        )
+
+        # Convert to uint16 weights and uids.
+        (
+            uint_uids,
+            uint_weights,
+        ) = bt.utils.weight_utils.convert_weights_and_uids_for_emit(
+            uids=processed_weight_uids, weights=processed_weights
+        )
+
+        uids_and_weights = list(
+            zip(uint_uids, uint_weights)
+            )
+        # Sort by weights descending.
+        sorted_uids_and_weights = sorted(
+            uids_and_weights, key=lambda x: x[1], reverse=True
+        )
+
+        weight_log = {}
+        for uid, weight in sorted_uids_and_weights:
+            weight_log[str(uid)] = (
+                str(round(weight, 4)),
+                str(int(self.scores[uid].item())),
             )
 
-            uids_and_weights = list(
-                zip(uint_uids, uint_weights)
-                )
-            # Sort by weights descending.
-            sorted_uids_and_weights = sorted(
-                uids_and_weights, key=lambda x: x[1], reverse=True
-            )
+        logger.info("Setting weights: ", weights=weight_log)
 
-            weight_log = {}
-            for uid, weight in sorted_uids_and_weights:
-                weight_log[str(uid)] = (
-                    str(round(weight, 4)),
-                    str(int(self.scores[uid].item())),
-                )
+        # Set the weights on chain via our subtensor connection.
+        result, msg = self.subtensor.set_weights(
+            wallet=self.wallet,
+            netuid=self.config.netuid,
+            uids=processed_weight_uids,
+            weights=processed_weights,
+            wait_for_finalization=False,
+            wait_for_inclusion=False,
+            version_key=self.spec_version
+        )
 
-            logger.info("Setting weights: ", weights=weight_log)
-
-            # Set the weights on chain via our subtensor connection.
-            self.subtensor.set_weights(
-                wallet=self.wallet,
-                netuid=self.config.netuid,
-                uids=processed_weight_uids,
-                weights=processed_weights,
-                wait_for_finalization=False,
-                wait_for_inclusion=False,
-                version_key=self.spec_version
-            )
-
-            with self.lock:
-                self.last_weights_set_block = self.block
-
-            logger.success("Finished setting weights.")
-        except Exception as e:
-            logger.error(f"Failed to set weights on chain", error = {'exception_type': e.__class__.__name__,'exception_message': str(e),'exception_args': e.args})
+        with self.lock:
+            self.last_weights_set_block = self.block
+        if result is True:
+            logger.info("set_weights on chain successfully!")
+        else:
+            logger.error("set_weights failed", return_msg = msg)
         
     def resync_metagraph(self):
         """Resyncs the metagraph and updates the hotkeys and moving averages based on the new metagraph."""
@@ -316,9 +315,7 @@ class BaseValidatorNeuron(BaseNeuron):
         # If so, we need to add new hotkeys and moving averages.
         if len(self.hotkeys) < len(self.metagraph.hotkeys):
             # Update the size of the moving average scores.
-            new_moving_average = torch.zeros((self.metagraph.n)).to(
-                self.device
-            )
+            new_moving_average = np.zeros((self.metagraph.n))
             min_len = min(len(self.hotkeys), len(self.scores))
             new_moving_average[:min_len] = self.scores[:min_len]
             self.scores = new_moving_average
@@ -326,34 +323,33 @@ class BaseValidatorNeuron(BaseNeuron):
         # Update the hotkeys.
         self.hotkeys = copy.deepcopy(self.metagraph.hotkeys)
 
-    def update_scores(self, rewards: torch.FloatTensor, uids: List[int]):
+    def update_scores(self, rewards: np.float32, uids: List[int]):
         """Performs exponential moving average on the scores based on the rewards received from the miners."""
 
         # Check if rewards contains NaN values.
-        if torch.isnan(rewards).any():
+        if np.isnan(rewards).any():
             logger.warning(f"NaN values detected in rewards", rewards = rewards.tolist())
             # Replace any NaN values in rewards with 0.
-            rewards = torch.nan_to_num(rewards, 0)
+            rewards = np.nan_to_num(rewards, 0)
 
         # Check if `uids` is already a tensor and clone it to avoid the warning.
-        if isinstance(uids, torch.Tensor):
+        if isinstance(uids, np.ndarray):
             uids_tensor = uids.clone().detach()
         else:
-            uids_tensor = torch.tensor(uids).to(self.device)
+            uids_tensor = np.array(uids)
 
         # Compute forward pass rewards, assumes uids are mutually exclusive.
         # shape: [ metagraph.n ]
-        scattered_rewards: torch.FloatTensor = self.scores.scatter(
-            0, uids_tensor, rewards
-        ).to(self.device)
+        scattered_rewards: np.float32 = self.scores.copy()
+        np.put(scattered_rewards, uids_tensor, rewards)
         logger.debug('scattered rewards', scattered_rewards = rewards.tolist())
 
         # Update scores with rewards produced by this step.
         # shape: [ metagraph.n ]
         alpha: float = self.config.neuron.moving_average_alpha
-        self.scores: torch.FloatTensor = alpha * scattered_rewards + (
+        self.scores: np.float32 = alpha * scattered_rewards + (
             1 - alpha
-        ) * self.scores.to(self.device)
+        ) * self.scores
         logger.debug(f"Updated moving avg scores", scores = self.scores.tolist())
 
     def save_state(self):
@@ -361,18 +357,16 @@ class BaseValidatorNeuron(BaseNeuron):
         logger.info("Saving validator state.")
 
         # Save the state of the validator to file.
-        torch.save(
-            {
-                "step": self.step,
-                "scores": self.scores,
-                "hotkeys": self.hotkeys,
-            },
-            self.config.neuron.full_path + "/state.pt",
+        np.savez(
+            self.config.neuron.full_path + "/state.npz",
+            step=self.step,
+            scores=self.scores,
+            hotkeys=self.hotkeys
         )
 
     def load_state(self):
         """Loads the state of the validator from a file."""
         # Load the state of the validator from file.
-        state = torch.load(self.config.neuron.full_path + "/state.pt")
+        state = np.load(self.config.neuron.full_path + "/state.npz")
         self.step = state["step"]
         self.scores = state["scores"]

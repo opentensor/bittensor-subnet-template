@@ -1,4 +1,4 @@
-import torch
+import numpy as np
 import random
 import bittensor as bt
 from typing import List
@@ -33,13 +33,13 @@ def check_uid_availability(
 
 def get_random_uids(
     self, k: int, exclude: List[int] = None
-) -> torch.LongTensor:
+) -> np.int64:
     """Returns k available random uids from the metagraph.
     Args:
         k (int): Number of uids to return.
         exclude (List[int]): List of uids to exclude from the random sampling.
     Returns:
-        uids (torch.LongTensor): Randomly sampled available uids.
+        uids (np.int64): Randomly sampled available uids.
     Notes:
         If `k` is larger than the number of available `uids`, set `k` to the number of available `uids`.
     """
@@ -56,7 +56,8 @@ def get_random_uids(
             avail_uids.append(uid)
             if uid_is_not_excluded:
                 candidate_uids.append(uid)
-
+    # If k is larger than the number of available uids, set k to the number of available uids.
+    k = min(k, len(avail_uids))
     # Check if candidate_uids contain enough for querying, if not grab all avaliable uids
     available_uids = candidate_uids
     if len(candidate_uids) < k:
@@ -65,5 +66,5 @@ def get_random_uids(
             k - len(candidate_uids),
         )
     print(available_uids)
-    uids = torch.tensor(random.sample(available_uids, k))
+    uids = np.array(random.sample(available_uids, k))
     return uids
