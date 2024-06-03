@@ -16,8 +16,7 @@
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
-
-import torch
+import numpy as np
 from typing import List
 
 
@@ -37,18 +36,22 @@ def get_rewards(
     self,
     query: int,
     responses: List[float],
-) -> torch.FloatTensor:
+) -> np.ndarray:
     """
-    Returns a tensor of rewards for the given query and responses.
+    Returns an array of rewards for the given query and responses.
 
     Args:
     - query (int): The query sent to the miner.
     - responses (List[float]): A list of responses from the miner.
 
     Returns:
-    - torch.FloatTensor: A tensor of rewards for the given query and responses.
+    - np.ndarray: An array of rewards for the given query and responses.
     """
     # Get all the reward results by iteratively calling your reward() function.
-    return torch.FloatTensor(
-        [reward(query, response) for response in responses]
-    ).to(self.device)
+    # Cast response to int as the reward function expects an int type for response.
+    
+    # Remove any None values
+    responses = [response for response in responses if response is not None]
+    return np.array(
+        [reward(query, int(response)) for response in responses]
+    )

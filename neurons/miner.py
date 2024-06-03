@@ -94,6 +94,11 @@ class Miner(BaseMinerNeuron):
 
         Otherwise, allow the request to be processed further.
         """
+
+        if synapse.dendrite is None or synapse.dendrite.hotkey is None:
+            bt.logging.warning("Received a request without a dendrite or hotkey.")
+            return True, "Missing dendrite or hotkey"
+
         # TODO(developer): Define how miners should blacklist requests.
         uid = self.metagraph.hotkeys.index(synapse.dendrite.hotkey)
         if (
@@ -139,15 +144,19 @@ class Miner(BaseMinerNeuron):
         Example priority logic:
         - A higher stake results in a higher priority value.
         """
+        if synapse.dendrite is None or synapse.dendrite.hotkey is None:
+            bt.logging.warning("Received a request without a dendrite or hotkey.")
+            return 0.0
+        
         # TODO(developer): Define how miners should prioritize requests.
         caller_uid = self.metagraph.hotkeys.index(
             synapse.dendrite.hotkey
         )  # Get the caller index.
-        prirority = float(
+        priority = float(
             self.metagraph.S[caller_uid]
         )  # Return the stake as the priority.
         bt.logging.trace(
-            f"Prioritizing {synapse.dendrite.hotkey} with value: ", prirority
+            f"Prioritizing {synapse.dendrite.hotkey} with value: {priority}"
         )
         return prirority
 
@@ -156,5 +165,5 @@ class Miner(BaseMinerNeuron):
 if __name__ == "__main__":
     with Miner() as miner:
         while True:
-            bt.logging.info("Miner running...", time.time())
+            bt.logging.info(f"Miner running... {time.time()}")
             time.sleep(5)
