@@ -17,7 +17,7 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-import torch
+import numpy as np
 from typing import List
 
 
@@ -37,7 +37,7 @@ def get_rewards(
     self,
     query: int,
     responses: List[float],
-) -> torch.FloatTensor:
+) -> np.float32:
     """
     Returns a tensor of rewards for the given query and responses.
 
@@ -46,9 +46,9 @@ def get_rewards(
     - responses (List[float]): A list of responses from the miner.
 
     Returns:
-    - torch.FloatTensor: A tensor of rewards for the given query and responses.
+    - np.float32: A tensor of rewards for the given query and responses.
     """
     # Get all the reward results by iteratively calling your reward() function.
-    return torch.FloatTensor(
+    return np.float32(
         [reward(query, response) for response in responses]
-    ).to(self.device)
+    )

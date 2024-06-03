@@ -1,4 +1,4 @@
-import torch
+import numpy as np
 import random
 import bittensor as bt
 from typing import List
@@ -37,12 +37,9 @@ def check_uid_availability(
     # Available otherwise.
     return True
 
-
-async def get_top_miner_uids(metagraph: "bt.metagraph.Metagraph",
-                             wallet: "bt.wallet.Wallet",
-                             top_rate: float = 1,
-                             vpermit_tao_limit: int = 4096) -> torch.LongTensor:
-
+def get_top_miner_uids(
+    metagraph: "bt.metagraph.Metagraph", top_rate: float = 1, exclude: List[int] = None, vpermit_tao_limit: int = 4096
+) -> np.int64:
     """Returns the available top miner UID from the metagraph.
     Args:
         metagraph (bt.metagraph.Metagraph): Metagraph object
@@ -51,7 +48,7 @@ async def get_top_miner_uids(metagraph: "bt.metagraph.Metagraph",
         vpermit_tao_limit (int): Validator permit tao limit
         exclude (List[int]): List of uids to exclude from the random sampling.
     Returns:
-        top_miner_uid (torch.LongTensor): The top miner UID.
+        top_miner_uid (np.int64): The top miner UID.
     """
 
     dendrite = bt.dendrite(wallet=wallet)
@@ -80,27 +77,29 @@ async def get_top_miner_uids(metagraph: "bt.metagraph.Metagraph",
         # Consider only incentive
         # values = [(uid, metagraph.I[uid]) for uid in candidate_uids]
 
-        sorted_values = sorted(values, key=lambda x: x[1], reverse=True)
-        top_rate_num_items = max(1, int(top_rate * len(miner_ip_filtered_uids)))
-        top_miner_uids = torch.tensor([uid for uid, _ in sorted_values[:top_rate_num_items]])
+    ips = []
+    filtered_uids = []
+    for uid, _ in sorted_values:
+        if metagraph.axons[uid].ip not in ips:
+            ips.append(metagraph.axons[uid].ip)
+            filtered_uids.append(uid)
 
-        return top_miner_uids
-    except Exception as e:
-        logger.error(message=f"Failed to get top miner uids: {e}")
-        return None
-    finally:
-        dendrite.close_session()
+    values = [(uid, metagraph.I[uid] * metagraph.trust[uid]) for uid in filtered_uids]
+    sorted_values = sorted(values, key=lambda x: x[1], reverse=True)
+    top_rate_num_items = max(1, int(top_rate * len(filtered_uids)))
+    top_miner_uids = np.array([uid for uid, _ in sorted_values[:top_rate_num_items]])
+    return top_miner_uids
 
 
 def get_random_uids(
     self, k: int, exclude: List[int] = None
-) -> torch.LongTensor:
+) -> np.int64:
     """Returns k available random uids from the metagraph.
     Args:
         k (int): Number of uids to return.
         exclude (List[int]): List of uids to exclude from the random sampling.
     Returns:
-        uids (torch.LongTensor): Randomly sampled available uids.
+        uids (np.array): Randomly sampled available uids.
     Notes:
         If `k` is larger than the number of available `uids`, set `k` to the number of available `uids`.
     """
@@ -116,7 +115,7 @@ def get_random_uids(
                 candidate_uids.append(uid)
 
     k = max(1, min(len(candidate_uids), k))
-    uids = torch.tensor(random.sample(candidate_uids, k))
+    uids = np.array(random.sample(candidate_uids, k))
     return uids
 
 def get_uids_batch(self, batch_size: int, exclude: List[int] = None):
@@ -137,4 +136,4 @@ def get_uids_batch(self, batch_size: int, exclude: List[int] = None):
 
     # Yield batches of uids
     for i in range(0, len(candidate_uids), batch_size):
-        yield torch.tensor(candidate_uids[i:i+batch_size])
+        yield np.array(candidate_uids[i:i+batch_size])
