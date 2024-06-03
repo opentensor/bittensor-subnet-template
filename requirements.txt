@@ -26,3 +26,4 @@ pymgclient
 gqlalchemy==1.4.1
 pydantic==1.10.12
 blockchain-data-subnet-shared-libs==0.0.12
+starlette
