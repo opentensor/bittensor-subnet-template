@@ -37,9 +37,11 @@ def check_uid_availability(
     # Available otherwise.
     return True
 
-def get_top_miner_uids(
-    metagraph: "bt.metagraph.Metagraph", top_rate: float = 1, exclude: List[int] = None, vpermit_tao_limit: int = 4096
-) -> np.int64:
+async def get_top_miner_uids(metagraph: "bt.metagraph.Metagraph",
+                             wallet: "bt.wallet.Wallet",
+                             top_rate: float = 1,
+                             vpermit_tao_limit: int = 4096) -> np.int64:
+
     """Returns the available top miner UID from the metagraph.
     Args:
         metagraph (bt.metagraph.Metagraph): Metagraph object
@@ -52,41 +54,40 @@ def get_top_miner_uids(
     """
 
     dendrite = bt.dendrite(wallet=wallet)
-    try:
-        miner_candidate_uids = []
-        for uid in range(metagraph.n.item()):
-            uid_is_available = check_uid_availability(
-                metagraph, uid, vpermit_tao_limit
-            )
+    miner_candidate_uids = []
+    for uid in range(metagraph.n.item()):
+        uid_is_available = check_uid_availability(
+            metagraph, uid, vpermit_tao_limit
+        )
 
-            if uid_is_available:
-                miner_candidate_uids.append(uid)
+        if uid_is_available:
+            miner_candidate_uids.append(uid)
 
-        miner_healthy_uids, _ = await ping_uids(dendrite, metagraph, miner_candidate_uids)
-
-        ips = []
-        miner_ip_filtered_uids = []
-        for uid in miner_healthy_uids:
-            if metagraph.axons[uid].ip not in ips:
-                ips.append(metagraph.axons[uid].ip)
-                miner_ip_filtered_uids.append(uid)
-
-        # Consider both of incentive and trust score
-        values = [(uid, metagraph.I[uid] * metagraph.trust[uid]) for uid in miner_ip_filtered_uids]
-
-        # Consider only incentive
-        # values = [(uid, metagraph.I[uid]) for uid in candidate_uids]
+    miner_healthy_uids, _ = await ping_uids(dendrite, metagraph, miner_candidate_uids)
 
     ips = []
-    filtered_uids = []
-    for uid, _ in sorted_values:
+    miner_ip_filtered_uids = []
+    for uid in miner_healthy_uids:
         if metagraph.axons[uid].ip not in ips:
             ips.append(metagraph.axons[uid].ip)
-            filtered_uids.append(uid)
+            miner_ip_filtered_uids.append(uid)
 
-    values = [(uid, metagraph.I[uid] * metagraph.trust[uid]) for uid in filtered_uids]
+    # Consider both of incentive and trust score
+    values = [(uid, metagraph.I[uid] * metagraph.trust[uid]) for uid in miner_ip_filtered_uids]
+
+    # # Consider only incentive
+    # # values = [(uid, metagraph.I[uid]) for uid in candidate_uids]
+
+    # ips = []
+    # filtered_uids = []
+    # for uid, _ in sorted_values:
+    #     if metagraph.axons[uid].ip not in ips:
+    #         ips.append(metagraph.axons[uid].ip)
+    #         filtered_uids.append(uid)
+
+    # values = [(uid, metagraph.I[uid] * metagraph.trust[uid]) for uid in filtered_uids]
     sorted_values = sorted(values, key=lambda x: x[1], reverse=True)
-    top_rate_num_items = max(1, int(top_rate * len(filtered_uids)))
+    top_rate_num_items = max(1, int(top_rate * len(miner_ip_filtered_uids)))
     top_miner_uids = np.array([uid for uid, _ in sorted_values[:top_rate_num_items]])
     return top_miner_uids
 

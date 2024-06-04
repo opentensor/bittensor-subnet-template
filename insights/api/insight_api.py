@@ -10,6 +10,7 @@ from rich.console import Console
 import yaml
 
 import numpy as np
+from typing import List, Dict, Tuple, Union, Any
 from protocols.chat import ChatMessageRequest, ChatMessageResponse, ChatMessageVariantRequest, ContentType
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.requests import Request
@@ -154,7 +155,6 @@ class APIServer:
             wallet: None,
             subtensor: None,
             metagraph: None,
-            scores: None,
         ):
         """
         API can be invoked while running a validator.
