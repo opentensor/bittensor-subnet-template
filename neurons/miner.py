@@ -158,7 +158,7 @@ class Miner(BaseMinerNeuron):
         bt.logging.trace(
             f"Prioritizing {synapse.dendrite.hotkey} with value: {priority}"
         )
-        return prirority
+        return priority
 
 
 # This is the main function, which runs the miner.
