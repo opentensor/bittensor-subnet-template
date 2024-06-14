@@ -314,6 +314,8 @@ class BaseValidatorNeuron(BaseNeuron):
 
     def update_scores(self, rewards: np.ndarray, uids: List[int]):
         """Performs exponential moving average on the scores based on the rewards received from the miners."""
+        bt.logging.info(f"uids from miners: {uids}")
+        bt.logging.info(f"rewards: {rewards}")
 
         # Check if rewards contains NaN values.
         if np.isnan(rewards).any():
@@ -332,6 +334,7 @@ class BaseValidatorNeuron(BaseNeuron):
 
         # Handle edge case: If either rewards or uids_array is empty.
         if rewards.size == 0 or uids_array.size == 0:
+            bt.logging.info(f"rewards: {rewards}, uids_array: {uids_array}")
             bt.logging.warning("Either rewards or uids_array is empty. No updates will be performed.")
             return
 
