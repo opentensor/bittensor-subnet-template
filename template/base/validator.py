@@ -320,11 +320,25 @@ class BaseValidatorNeuron(BaseNeuron):
             bt.logging.warning(f"NaN values detected in rewards: {rewards}")
             # Replace any NaN values in rewards with 0.
             rewards = np.nan_to_num(rewards, nan=0)
+
+        # Ensure rewards is a numpy array.
+        rewards = np.asarray(rewards)
+
         # Check if `uids` is already a numpy array and copy it to avoid the warning.
         if isinstance(uids, np.ndarray):
             uids_array = uids.copy()
         else:
             uids_array = np.array(uids)
+
+        # Handle edge case: If either rewards or uids_array is empty.
+        if rewards.size == 0 or uids_array.size == 0:
+            bt.logging.warning("Either rewards or uids_array is empty. No updates will be performed.")
+            return
+
+        # Check if sizes of rewards and uids_array match.
+        if rewards.size != uids_array.size:
+            raise ValueError(f"Shape mismatch: rewards array of shape {rewards.shape} "
+                             f"cannot be broadcast to uids array of shape {uids_array.shape}")
 
         # Compute forward pass rewards, assumes uids are mutually exclusive.
         # shape: [ metagraph.n ]
