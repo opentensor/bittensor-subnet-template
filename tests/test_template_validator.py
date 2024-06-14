@@ -17,18 +17,16 @@
 # DEALINGS IN THE SOFTWARE.
 
 import sys
-import torch
 import unittest
+
 import bittensor as bt
+import torch
 
-from neurons.validator import Neuron as Validator
-from neurons.miner import Neuron as Miner
-
+from neurons.validator import Validator
+from template.base.validator import BaseValidatorNeuron
 from template.protocol import Dummy
-from template.validator.forward import forward
 from template.utils.uids import get_random_uids
 from template.validator.reward import get_rewards
-from template.base.validator import BaseValidatorNeuron
 
 
 class TemplateValidatorNeuronTestCase(unittest.TestCase):

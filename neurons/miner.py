@@ -137,7 +137,7 @@ class Miner(BaseMinerNeuron):
         Returns:
             float: A priority score derived from the stake of the calling entity.
 
-        Miners may recieve messages from multiple entities at once. This function determines which request should be
+        Miners may receive messages from multiple entities at once. This function determines which request should be
         processed first. Higher values indicate that the request should be processed first. Lower values indicate
         that the request should be processed later.
 
