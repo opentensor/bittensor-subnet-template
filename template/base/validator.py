@@ -146,15 +146,19 @@ class BaseValidatorNeuron(BaseNeuron):
                 bt.logging.info(f"step({self.step}) block({self.block})")
 
                 # Run multiple forwards concurrently.
+                bt.logging.info("run until complete")
                 self.loop.run_until_complete(self.concurrent_forward())
 
                 # Check if we should exit.
                 if self.should_exit:
+                    bt.logging.info(f"should exit is {self.should_exit}")
                     break
 
                 # Sync metagraph and potentially set weights.
+                bt.logging.info("syncing")
                 self.sync()
 
+                bt.logging.info("increasing step")
                 self.step += 1
 
         # If someone intentionally stops the validator, it'll safely terminate operations.
