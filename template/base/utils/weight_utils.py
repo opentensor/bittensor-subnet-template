@@ -72,8 +72,19 @@ def convert_weights_and_uids_for_emit(
             Weights as a list.
     """
     # Checks.
-    weights = weights.tolist()
-    uids = uids.tolist()
+    uids = np.asarray(uids)
+    weights = np.asarray(weights)
+
+    # Get non-zero weights and corresponding uids
+    non_zero_weights = weights[weights > 0]
+    non_zero_weight_uids = uids[weights > 0]
+
+    # Debugging information
+    bittensor.logging.debug(f"weights: {weights}")
+    bittensor.logging.debug(f"non_zero_weights: {non_zero_weights}")
+    bittensor.logging.debug(f"uids: {uids}")
+    bittensor.logging.debug(f"non_zero_weight_uids: {non_zero_weight_uids}")
+
     if np.min(weights) < 0:
         raise ValueError(
             "Passed weight is negative cannot exist on chain {}".format(weights)
@@ -87,12 +98,14 @@ def convert_weights_and_uids_for_emit(
             )
         )
     if np.sum(weights) == 0:
+        bittensor.logging.debug("nothing to set on chain")
         return [], []  # Nothing to set on chain.
     else:
         max_weight = float(np.max(weights))
         weights = [
             float(value) / max_weight for value in weights
         ]  # max-upscale values (max_weight = 1).
+        bittensor.logging.debug(f"setting on chain max: {max_weight} and weights: {weights}")
 
     weight_vals = []
     weight_uids = []
@@ -105,7 +118,7 @@ def convert_weights_and_uids_for_emit(
         if uint16_val != 0:  # Filter zeros
             weight_vals.append(uint16_val)
             weight_uids.append(uid_i)
-
+    bittensor.logging.debug(f"final params: {weight_uids} : {weight_vals}")
     return weight_uids, weight_vals
 
 
