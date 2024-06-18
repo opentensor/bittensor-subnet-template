@@ -1,4 +1,4 @@
-bittensor~=7.0.1
+bittensor>=7.0.1
 starlette~=0.37.2
 pydantic~=2.7.3
 rich~=13.7.1
