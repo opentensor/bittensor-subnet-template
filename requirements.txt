@@ -1,1 +1,8 @@
-bittensor
+bittensor>=7.0.1
+starlette~=0.37.2
+pydantic~=2.7.3
+rich~=13.7.1
+pytest~=8.2.2
+torch~=2.3.1
+numpy~=1.26.4
+setuptools~=68.2.0

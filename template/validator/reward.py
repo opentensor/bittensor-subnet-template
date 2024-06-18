@@ -18,6 +18,7 @@
 # DEALINGS IN THE SOFTWARE.
 import numpy as np
 from typing import List
+import bittensor as bt
 
 
 def reward(query: int, response: int) -> float:
@@ -28,7 +29,7 @@ def reward(query: int, response: int) -> float:
     Returns:
     - float: The reward value for the miner.
     """
-
+    bt.logging.info(f"In rewards, query val: {query}, response val: {response}, rewards val: {1.0 if response == query * 2 else 0}")
     return 1.0 if response == query * 2 else 0
 
 

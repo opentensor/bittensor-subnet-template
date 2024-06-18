@@ -70,7 +70,7 @@ class Miner(BaseMinerNeuron):
         define the logic for blacklisting requests based on your needs and desired security parameters.
 
         Blacklist runs before the synapse data has been deserialized (i.e. before synapse.data is available).
-        The synapse is instead contructed via the headers of the request. It is important to blacklist
+        The synapse is instead contracted via the headers of the request. It is important to blacklist
         requests before they are deserialized to avoid wasting resources on requests that will be ignored.
 
         Args:
@@ -137,7 +137,7 @@ class Miner(BaseMinerNeuron):
         Returns:
             float: A priority score derived from the stake of the calling entity.
 
-        Miners may recieve messages from multiple entities at once. This function determines which request should be
+        Miners may receive messages from multiple entities at once. This function determines which request should be
         processed first. Higher values indicate that the request should be processed first. Lower values indicate
         that the request should be processed later.
 
