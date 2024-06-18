@@ -59,7 +59,6 @@ class Miner(BaseMinerNeuron):
         the miner's intended operation. This method demonstrates a basic transformation of input data.
         """
         # TODO(developer): Replace with actual implementation logic.
-        bt.logging.info(f"Miner recieved synapse: {synapse}")
         synapse.dummy_output = synapse.dummy_input * 2
         return synapse
 
@@ -71,7 +70,7 @@ class Miner(BaseMinerNeuron):
         define the logic for blacklisting requests based on your needs and desired security parameters.
 
         Blacklist runs before the synapse data has been deserialized (i.e. before synapse.data is available).
-        The synapse is instead contructed via the headers of the request. It is important to blacklist
+        The synapse is instead contracted via the headers of the request. It is important to blacklist
         requests before they are deserialized to avoid wasting resources on requests that will be ignored.
 
         Args:
