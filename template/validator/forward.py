@@ -17,6 +17,7 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+import time
 import bittensor as bt
 
 from template.protocol import Dummy
@@ -59,3 +60,4 @@ async def forward(self):
     bt.logging.info(f"Scored responses: {rewards}")
     # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
     self.update_scores(rewards, miner_uids)
+    time.sleep(5)

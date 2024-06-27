@@ -52,7 +52,7 @@ def get_rewards(
     # Cast response to int as the reward function expects an int type for response.
     
     # Remove any None values
-    responses = [response for response in responses if response is not None]
+    # responses = [response for response in responses if response is not None]
     return np.array(
-        [reward(query, int(response)) for response in responses]
+        [reward(query, response) for response in responses]
     )
