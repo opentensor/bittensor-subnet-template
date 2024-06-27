@@ -35,13 +35,20 @@ class MockSubtensor(bt.MockSubtensor):
             )
 
 
-class MockMetagraph(bt.metagraph):
+class MockMetagraph(bt.metagraph_class):
     def __init__(self, netuid=1, network="mock", subtensor=None):
         super().__init__(netuid=netuid, network=network, sync=False)
 
         if subtensor is not None:
             self.subtensor = subtensor
-        self.sync(subtensor=subtensor)
+
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:  # No running event loop
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        loop.run_until_complete(self.sync(subtensor=subtensor))
 
         for axon in self.axons:
             axon.ip = "127.0.0.0"
@@ -49,6 +56,8 @@ class MockMetagraph(bt.metagraph):
 
         bt.logging.info(f"Metagraph: {self}")
         bt.logging.info(f"Axons: {self.axons}")
+
+        pass
 
 
 class MockDendrite(bt.dendrite):
