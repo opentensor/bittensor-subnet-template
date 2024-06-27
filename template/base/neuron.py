@@ -87,8 +87,7 @@ class BaseNeuron(ABC):
         else:
             self.wallet = bt.wallet(config=self.config)
             self.subtensor = bt.subtensor(config=self.config)
-            self.metagraph = self.subtensor.metagraph(self.config.netuid)
-            self.metagraph = self._get_metagrapg(self.subtensor, self.config)
+            self.metagraph = self._get_metagrapg(self.subtensor, self.config.netuid)
 
         bt.logging.info(f"Wallet: {self.wallet}")
         bt.logging.info(f"Subtensor: {self.subtensor}")
