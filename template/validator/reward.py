@@ -49,10 +49,7 @@ def get_rewards(
     - np.ndarray: An array of rewards for the given query and responses.
     """
     # Get all the reward results by iteratively calling your reward() function.
-    # Cast response to int as the reward function expects an int type for response.
     
-    # Remove any None values
-    # responses = [response for response in responses if response is not None]
     return np.array(
         [reward(query, response) for response in responses]
     )

@@ -60,7 +60,7 @@ def check_config(cls, config: "bt.Config"):
         events_logger = setup_events_logger(
             config.neuron.full_path, config.neuron.events_retention_size
         )
-        # bt.logging.register_primary_logger(events_logger.name)
+        bt.logging.register_primary_logger(events_logger.name)
 
 
 def add_args(cls, parser):
