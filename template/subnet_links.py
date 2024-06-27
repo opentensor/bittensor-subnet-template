@@ -10,9 +10,8 @@ SUBNET_LINKS = [
     {"name": "sn5", "url": "https://github.com/unconst/ImageSubnet/"},
     {"name": "sn6", "url": ""},
     {"name": "sn7", "url": "https://github.com/tensorage/tensorage/"},
-    {
-        "name": "sn8",
-        "url": "https://github.com/taoshidev/time-series-prediction-subnet/",
+    { "name": "sn8",
+        "url": "https://github.com/taoshidev/proprietary-trading-network/",
     },
     {"name": "sn9", "url": "https://github.com/unconst/pretrain-subnet/"},
     {
