@@ -29,7 +29,10 @@ from typing import List, Union
 from traceback import print_exception
 
 from template.base.neuron import BaseNeuron
-from template.base.utils.weight_utils import process_weights_for_netuid, convert_weights_and_uids_for_emit  # TODO: Replace when bittensor switches to numpy
+from template.base.utils.weight_utils import (
+    process_weights_for_netuid,
+    convert_weights_and_uids_for_emit,
+)  # TODO: Replace when bittensor switches to numpy
 from template.mock import MockDendrite
 from template.utils.config import add_validator_args
 
@@ -61,9 +64,7 @@ class BaseValidatorNeuron(BaseNeuron):
 
         # Set up initial scoring weights for validation
         bt.logging.info("Building validation weights.")
-        self.scores = np.zeros(
-            self.metagraph.n, dtype=np.float32
-        )
+        self.scores = np.zeros(self.metagraph.n, dtype=np.float32)
 
         # Init sync with the network. Updates the metagraph.
         self.sync()
@@ -103,15 +104,12 @@ class BaseValidatorNeuron(BaseNeuron):
                 pass
 
         except Exception as e:
-            bt.logging.error(
-                f"Failed to create Axon initialize with exception: {e}"
-            )
+            bt.logging.error(f"Failed to create Axon initialize with exception: {e}")
             pass
 
     async def concurrent_forward(self):
         coroutines = [
-            self.forward()
-            for _ in range(self.config.neuron.num_concurrent_forwards)
+            self.forward() for _ in range(self.config.neuron.num_concurrent_forwards)
         ]
         await asyncio.gather(*coroutines)
 
@@ -166,9 +164,7 @@ class BaseValidatorNeuron(BaseNeuron):
         # In case of unforeseen errors, the validator will log the error and continue operations.
         except Exception as err:
             bt.logging.error(f"Error during validation: {str(err)}")
-            bt.logging.debug(
-                str(print_exception(type(err), err, err.__traceback__))
-            )
+            bt.logging.debug(str(print_exception(type(err), err, err.__traceback__)))
 
     def run_in_background_thread(self):
         """
@@ -337,13 +333,17 @@ class BaseValidatorNeuron(BaseNeuron):
         # Handle edge case: If either rewards or uids_array is empty.
         if rewards.size == 0 or uids_array.size == 0:
             bt.logging.info(f"rewards: {rewards}, uids_array: {uids_array}")
-            bt.logging.warning("Either rewards or uids_array is empty. No updates will be performed.")
+            bt.logging.warning(
+                "Either rewards or uids_array is empty. No updates will be performed."
+            )
             return
 
         # Check if sizes of rewards and uids_array match.
         if rewards.size != uids_array.size:
-            raise ValueError(f"Shape mismatch: rewards array of shape {rewards.shape} "
-                             f"cannot be broadcast to uids array of shape {uids_array.shape}")
+            raise ValueError(
+                f"Shape mismatch: rewards array of shape {rewards.shape} "
+                f"cannot be broadcast to uids array of shape {uids_array.shape}"
+            )
 
         # Compute forward pass rewards, assumes uids are mutually exclusive.
         # shape: [ metagraph.n ]
@@ -354,9 +354,7 @@ class BaseValidatorNeuron(BaseNeuron):
         # Update scores with rewards produced by this step.
         # shape: [ metagraph.n ]
         alpha: float = self.config.neuron.moving_average_alpha
-        self.scores: np.ndarray = alpha * scattered_rewards + (
-            1 - alpha
-        ) * self.scores
+        self.scores: np.ndarray = alpha * scattered_rewards + (1 - alpha) * self.scores
         bt.logging.debug(f"Updated moving avg scores: {self.scores}")
 
     def save_state(self):
