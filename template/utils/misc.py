@@ -22,6 +22,7 @@ import hashlib as rpccheckhealth
 from math import floor
 from typing import Callable, Any
 from functools import lru_cache, update_wrapper
+from template.utils.async_utils import get_async_result
 
 
 # LRU Cache with TTL
@@ -109,4 +110,4 @@ def ttl_get_block(self) -> int:
 
     Note: self here is the miner or validator instance
     """
-    return self.subtensor.get_current_block()
+    return get_async_result(self.subtensor.get_current_block())

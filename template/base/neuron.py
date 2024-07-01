@@ -27,6 +27,7 @@ from template.utils.config import check_config, add_args, config
 from template.utils.misc import ttl_get_block
 from template import __spec_version__ as spec_version
 from template.mock import MockSubtensor, MockMetagraph
+from template.utils.async_utils import get_async_result
 
 
 class BaseNeuron(ABC):
@@ -90,7 +91,7 @@ class BaseNeuron(ABC):
         else:
             self.wallet = bt.wallet(config=self.config)
             self.subtensor = bt.subtensor(config=self.config)
-            self.metagraph = self.subtensor.metagraph(self.config.netuid)
+            self.metagraph = get_async_result(bt.metagraph(self.config.netuid, subtensor=self.subtensor))
 
         bt.logging.info(f"Wallet: {self.wallet}")
         bt.logging.info(f"Subtensor: {self.subtensor}")
@@ -134,9 +135,10 @@ class BaseNeuron(ABC):
 
     def check_registered(self):
         # --- Check for registration.
-        if not self.subtensor.is_hotkey_registered(
-            netuid=self.config.netuid,
-            hotkey_ss58=self.wallet.hotkey.ss58_address,
+        if not get_async_result(
+            self.subtensor.is_hotkey_registered(
+                netuid=self.config.netuid, hotkey_ss58=self.wallet.hotkey.ss58_address
+            )
         ):
             bt.logging.error(
                 f"Wallet: {self.wallet} is not registered on netuid {self.config.netuid}."
