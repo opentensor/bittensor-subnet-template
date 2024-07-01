@@ -72,7 +72,7 @@ class BaseValidatorNeuron(BaseNeuron):
 
         # Serve axon to enable external connections.
         if not self.config.neuron.axon_off:
-            get_async_result(self.serve_axon())
+            get_async_result(self.serve_axon)
         else:
             bt.logging.warning("axon off, not serving ip to chain.")
 
@@ -93,10 +93,7 @@ class BaseValidatorNeuron(BaseNeuron):
             self.axon = bt.axon(wallet=self.wallet, config=self.config)
 
             try:
-                get_async_result(self.subtensor.serve_axon(
-                    netuid=self.config.netuid,
-                    axon=self.axon,
-                ))
+                get_async_result(self.subtensor.serve_axon, netuid=self.config.netuid, axon=self.axon)
                 bt.logging.info(
                     f"Running validator {self.axon} on network: {self.config.subtensor.chain_endpoint} with netuid: {self.config.netuid}"
                 )

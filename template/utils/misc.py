@@ -110,4 +110,4 @@ def ttl_get_block(self) -> int:
 
     Note: self here is the miner or validator instance
     """
-    return get_async_result(self.subtensor.get_current_block())
+    return get_async_result(self.subtensor.get_current_block)

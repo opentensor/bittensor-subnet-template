@@ -155,7 +155,7 @@ class StreamMiner(ABC):
         bt.logging.info(
             f"Serving axon {StreamPrompting} on network: {self.config.subtensor.chain_endpoint} with netuid: {self.config.netuid}"
         )
-        get_async_result(self.axon.serve(netuid=self.config.netuid, subtensor=self.subtensor))
+        get_async_result(self.axon.serve, netuid=self.config.netuid, subtensor=self.subtensor)
 
         # Start  starts the miner's axon, making it active on the network.
         bt.logging.info(f"Starting axon server on port: {self.config.axon.port}")

@@ -107,7 +107,7 @@ class BaseMinerNeuron(BaseNeuron):
         bt.logging.info(
             f"Serving miner axon {self.axon} on network: {self.config.subtensor.chain_endpoint} with netuid: {self.config.netuid}"
         )
-        get_async_result(self.axon.serve(netuid=self.config.netuid, subtensor=self.subtensor))
+        get_async_result(self.axon.serve, netuid=self.config.netuid, subtensor=self.subtensor)
 
         # Start  starts the miner's axon, making it active on the network.
         self.axon.start()
@@ -147,6 +147,7 @@ class BaseMinerNeuron(BaseNeuron):
         Starts the miner's operations in a separate background thread.
         This is useful for non-blocking operations.
         """
+        print(">>>> run run_in_background_thread")
         if not self.is_running:
             bt.logging.debug("Starting miner in background thread.")
             self.should_exit = False
