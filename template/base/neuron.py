@@ -53,7 +53,7 @@ class BaseNeuron(ABC):
 
     subtensor: "bt.subtensor"
     wallet: "bt.wallet"
-    metagraph: "bt.metagraph"
+    metagraph: "bt.metagraph_class"
     spec_version: int = spec_version
 
     @property
@@ -138,11 +138,12 @@ class BaseNeuron(ABC):
 
     def check_registered(self):
         # --- Check for registration.
-        if not get_async_result(
+        is_hotkey_registered = get_async_result(
                 self.subtensor.is_hotkey_registered,
                 netuid=self.config.netuid,
                 hotkey_ss58=self.wallet.hotkey.ss58_address
-        ):
+        )
+        if not is_hotkey_registered:
             bt.logging.error(
                 f"Wallet: {self.wallet} is not registered on netuid {self.config.netuid}."
                 f" Please register the hotkey using `btcli subnets register` before trying again"

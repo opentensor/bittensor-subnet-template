@@ -44,7 +44,7 @@ class StreamMiner(ABC):
         )
 
         # metagraph provides the network's current state, holding state about other participants in a subnet.
-        self.metagraph = self.subtensor.metagraph(self.config.netuid)
+        self.metagraph = get_async_result(self.subtensor.metagraph, self.config.netuid)
         bt.logging.info(f"Metagraph: {self.metagraph}")
 
         if self.wallet.hotkey.ss58_address not in self.metagraph.hotkeys:
@@ -140,10 +140,8 @@ class StreamMiner(ABC):
         listening for incoming requests and periodically updating the miner's knowledge
         of the network graph.
         """
-        if not self.subtensor.is_hotkey_registered(
-            netuid=self.config.netuid,
-            hotkey_ss58=self.wallet.hotkey.ss58_address,
-        ):
+        is_hotkey_registered = get_async_result(self.subtensor.is_hotkey_registered, netuid=self.config.netuid, hotkey_ss58=self.wallet.hotkey.ss58_address)
+        if not is_hotkey_registered:
             bt.logging.error(
                 f"Wallet: {self.wallet} is not registered on netuid {self.config.netuid}"
                 f"Please register the hotkey using `btcli subnets register` before trying again"
@@ -162,7 +160,7 @@ class StreamMiner(ABC):
         self.axon.start()
 
         # --- Run until should_exit = True.
-        self.last_epoch_block = self.subtensor.get_current_block()
+        self.last_epoch_block = get_async_result(self.subtensor.get_current_block)
         bt.logging.info(f"Miner starting at block: {self.last_epoch_block}")
 
         # This loop maintains the miner's operations until intentionally stopped.
@@ -173,23 +171,24 @@ class StreamMiner(ABC):
                 start_epoch = time.time()
 
                 # --- Wait until next epoch.
-                current_block = self.subtensor.get_current_block()
+                current_block = get_async_result(self.subtensor.get_current_block)
                 while (
                     current_block - self.last_epoch_block
                     < self.config.miner.blocks_per_epoch
                 ):
                     # --- Wait for next bloc.
                     time.sleep(1)
-                    current_block = self.subtensor.get_current_block()
+                    current_block = get_async_result(self.subtensor.get_current_block)
 
                     # --- Check if we should exit.
                     if self.should_exit:
                         break
 
                 # --- Update the metagraph with the latest network state.
-                self.last_epoch_block = self.subtensor.get_current_block()
+                self.last_epoch_block = get_async_result(self.subtensor.get_current_block)
 
-                metagraph = self.subtensor.metagraph(
+                metagraph = get_async_result(
+                    self.subtensor.metagraph,
                     netuid=self.config.netuid,
                     lite=True,
                     block=self.last_epoch_block,

@@ -2,6 +2,7 @@ import numpy as np
 from typing import Tuple, List, Union, Any
 import bittensor
 from numpy import ndarray, dtype, floating, complexfloating
+from template.utils.async_utils import get_async_result
 
 U32_MAX = 4294967295
 U16_MAX = 65535
@@ -127,7 +128,7 @@ def process_weights_for_netuid(
     weights: np.ndarray,
     netuid: int,
     subtensor: "bittensor.subtensor",
-    metagraph: "bittensor.metagraph" = None,
+    metagraph: "bittensor.metagraph_class" = None,
     exclude_quantile: int = 0,
 ) -> Union[
     tuple[
@@ -151,7 +152,7 @@ def process_weights_for_netuid(
 
     # Get latest metagraph from chain if metagraph is None.
     if metagraph is None:
-        metagraph = subtensor.metagraph(netuid)
+        metagraph = get_async_result(subtensor.metagraph, netuid)
 
     # Cast weights to floats.
     if not isinstance(weights, np.ndarray) or weights.dtype != np.float32:
@@ -160,8 +161,8 @@ def process_weights_for_netuid(
     # Network configuration parameters from an subtensor.
     # These parameters determine the range of acceptable weights for each neuron.
     quantile = exclude_quantile / U16_MAX
-    min_allowed_weights = subtensor.min_allowed_weights(netuid=netuid)
-    max_weight_limit = subtensor.max_weight_limit(netuid=netuid)
+    min_allowed_weights = get_async_result(subtensor.min_allowed_weights, netuid=netuid)
+    max_weight_limit = get_async_result(subtensor.max_weight_limit, netuid=netuid)
     bittensor.logging.debug("quantile", quantile)
     bittensor.logging.debug("min_allowed_weights", min_allowed_weights)
     bittensor.logging.debug("max_weight_limit", max_weight_limit)

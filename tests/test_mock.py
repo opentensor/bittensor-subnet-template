@@ -3,6 +3,7 @@ import asyncio
 import bittensor as bt
 from prompting.mock import MockDendrite, MockMetagraph, MockSubtensor
 from prompting.protocol import PromptingSynapse
+from template.utils.async_utils import get_async_result
 
 
 @pytest.mark.parametrize("netuid", [1, 2, 3])
@@ -10,9 +11,9 @@ from prompting.protocol import PromptingSynapse
 @pytest.mark.parametrize("wallet", [bt.MockWallet(), None])
 def test_mock_subtensor(netuid, n, wallet):
     subtensor = MockSubtensor(netuid=netuid, n=n, wallet=wallet)
-    neurons = subtensor.neurons(netuid=netuid)
+    neurons = get_async_result(subtensor.neurons, netuid=netuid)
     # Check netuid
-    assert subtensor.subnet_exists(netuid)
+    assert get_async_result(subtensor.subnet_exists, netuid)
     # Check network
     assert subtensor.network == "mock"
     assert subtensor.chain_endpoint == "mock_endpoint"
@@ -20,13 +21,15 @@ def test_mock_subtensor(netuid, n, wallet):
     assert len(neurons) == (n + 1 if wallet is not None else n)
     # Check wallet
     if wallet is not None:
-        assert subtensor.is_hotkey_registered(
-            netuid=netuid, hotkey_ss58=wallet.hotkey.ss58_address
+        assert get_async_result(
+            subtensor.is_hotkey_registered,
+            netuid=netuid,
+            hotkey_ss58=wallet.hotkey.ss58_address
         )
 
     for neuron in neurons:
         assert type(neuron) == bt.NeuronInfo
-        assert subtensor.is_hotkey_registered(netuid=netuid, hotkey_ss58=neuron.hotkey)
+        assert get_async_result(subtensor.is_hotkey_registered, netuid=netuid, hotkey_ss58=neuron.hotkey)
 
 
 @pytest.mark.parametrize("n", [16, 32, 64])

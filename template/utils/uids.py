@@ -5,11 +5,11 @@ from typing import List
 
 
 def check_uid_availability(
-    metagraph: "bt.metagraph.Metagraph", uid: int, vpermit_tao_limit: int
+    metagraph: "bt.metagraph_class", uid: int, vpermit_tao_limit: int
 ) -> bool:
     """Check if uid is available. The UID should be available if it is serving and has less than vpermit_tao_limit stake
     Args:
-        metagraph (:obj: bt.metagraph.Metagraph): Metagraph object
+        metagraph (:obj: bt.metagraph_class): Metagraph object
         uid (int): uid to be checked
         vpermit_tao_limit (int): Validator permit tao limit
     Returns:

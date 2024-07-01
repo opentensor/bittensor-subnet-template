@@ -19,6 +19,7 @@
 import numpy as np
 import random
 import bittensor as bt
+from template.utils.async_utils import get_async_result
 
 
 async def ping_uids(dendrite, metagraph, uids, timeout=3):
@@ -110,7 +111,7 @@ async def get_query_api_axons(wallet, metagraph=None, n=0.1, timeout=3, uids=Non
     dendrite = bt.dendrite(wallet=wallet)
 
     if metagraph is None:
-        metagraph = bt.metagraph(netuid=21)
+        metagraph = await bt.metagraph(netuid=21)
 
     if uids is not None:
         query_uids = [uids] if isinstance(uids, int) else uids
