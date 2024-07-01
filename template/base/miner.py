@@ -196,4 +196,4 @@ class BaseMinerNeuron(BaseNeuron):
         bt.logging.info("resync_metagraph()")
 
         # Sync the metagraph.
-        self.metagraph.sync(subtensor=self.subtensor)
+        get_async_result(self.metagraph.sync, subtensor=self.subtensor)
