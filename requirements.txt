@@ -7,4 +7,4 @@ numpy>=1
 setuptools>=68
 
 # bittensor>=7 async version
-git+https://github.com/opentensor/bittensor.git@merge-async
+git+https://github.com/opentensor/bittensor.git@merge-async#egg=bittensor
