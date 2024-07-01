@@ -14,6 +14,7 @@ from typing import List, Dict, Tuple, Union, Callable, Awaitable
 
 from protocol import StreamPrompting
 from config import get_config, check_config
+from template.utils.async_utils import get_async_result
 
 
 class StreamMiner(ABC):
@@ -154,7 +155,7 @@ class StreamMiner(ABC):
         bt.logging.info(
             f"Serving axon {StreamPrompting} on network: {self.config.subtensor.chain_endpoint} with netuid: {self.config.netuid}"
         )
-        self.axon.serve(netuid=self.config.netuid, subtensor=self.subtensor)
+        get_async_result(self.axon.serve(netuid=self.config.netuid, subtensor=self.subtensor))
 
         # Start  starts the miner's axon, making it active on the network.
         bt.logging.info(f"Starting axon server on port: {self.config.axon.port}")
