@@ -96,7 +96,9 @@ class Miner(BaseMinerNeuron):
         """
 
         if synapse.dendrite is None or synapse.dendrite.hotkey is None:
-            bt.logging.warning("Received a request without a dendrite or hotkey.")
+            bt.logging.warning(
+                "Received a request without a dendrite or hotkey."
+            )
             return True, "Missing dendrite or hotkey"
 
         # TODO(developer): Define how miners should blacklist requests.
@@ -145,7 +147,9 @@ class Miner(BaseMinerNeuron):
         - A higher stake results in a higher priority value.
         """
         if synapse.dendrite is None or synapse.dendrite.hotkey is None:
-            bt.logging.warning("Received a request without a dendrite or hotkey.")
+            bt.logging.warning(
+                "Received a request without a dendrite or hotkey."
+            )
             return 0.0
 
         # TODO(developer): Define how miners should prioritize requests.

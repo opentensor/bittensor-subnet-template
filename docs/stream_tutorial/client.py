@@ -30,7 +30,9 @@ async def query_synapse(my_uid, wallet_name, hotkey, network, netuid):
     wallet = bt.wallet(name=wallet_name, hotkey=hotkey)
 
     # instantiate the metagraph with provided network and netuid
-    metagraph = get_async_result(bt.metagraph, netuid=netuid, network=network, sync=True, lite=False)
+    metagraph = get_async_result(
+        bt.metagraph, netuid=netuid, network=network, sync=True, lite=False
+    )
 
     # Grab the axon you're serving
     axon = metagraph.axons[my_uid]
@@ -39,7 +41,9 @@ async def query_synapse(my_uid, wallet_name, hotkey, network, netuid):
     dendrite = bt.dendrite(wallet=wallet)
 
     async def main():
-        responses = await dendrite([axon], syn, deserialize=False, streaming=True)
+        responses = await dendrite(
+            [axon], syn, deserialize=False, streaming=True
+        )
 
         for resp in responses:
             i = 0
@@ -70,7 +74,9 @@ if __name__ == "__main__":
         required=True,
         help="Your unique miner ID on the chain",
     )
-    parser.add_argument("--netuid", type=int, required=True, help="Network Unique ID")
+    parser.add_argument(
+        "--netuid", type=int, required=True, help="Network Unique ID"
+    )
     parser.add_argument(
         "--wallet_name", type=str, default="default", help="Name of the wallet"
     )

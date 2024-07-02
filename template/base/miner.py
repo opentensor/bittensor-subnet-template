@@ -30,7 +30,6 @@ from template.utils.async_utils import get_async_result
 from typing import Union
 
 
-
 class BaseMinerNeuron(BaseNeuron):
     """
     Base class for Bittensor miners.
@@ -107,7 +106,11 @@ class BaseMinerNeuron(BaseNeuron):
         bt.logging.info(
             f"Serving miner axon {self.axon} on network: {self.config.subtensor.chain_endpoint} with netuid: {self.config.netuid}"
         )
-        get_async_result(self.axon.serve, netuid=self.config.netuid, subtensor=self.subtensor)
+        get_async_result(
+            self.axon.serve,
+            netuid=self.config.netuid,
+            subtensor=self.subtensor,
+        )
 
         # Start  starts the miner's axon, making it active on the network.
         self.axon.start()

@@ -24,12 +24,16 @@ def test_mock_subtensor(netuid, n, wallet):
         assert get_async_result(
             subtensor.is_hotkey_registered,
             netuid=netuid,
-            hotkey_ss58=wallet.hotkey.ss58_address
+            hotkey_ss58=wallet.hotkey.ss58_address,
         )
 
     for neuron in neurons:
         assert type(neuron) == bt.NeuronInfo
-        assert get_async_result(subtensor.is_hotkey_registered, netuid=netuid, hotkey_ss58=neuron.hotkey)
+        assert get_async_result(
+            subtensor.is_hotkey_registered,
+            netuid=netuid,
+            hotkey_ss58=neuron.hotkey,
+        )
 
 
 @pytest.mark.parametrize("n", [16, 32, 64])
@@ -79,13 +83,17 @@ def test_mock_dendrite_timings(timeout, min_time, max_time, n):
     responses = asyncio.run(run())
     for synapse in responses:
         assert (
-            hasattr(synapse, "dendrite") and type(synapse.dendrite) == bt.TerminalInfo
+            hasattr(synapse, "dendrite")
+            and type(synapse.dendrite) == bt.TerminalInfo
         )
 
         dendrite = synapse.dendrite
         # check synapse.dendrite has (process_time, status_code, status_message)
         for field in ("process_time", "status_code", "status_message"):
-            assert hasattr(dendrite, field) and getattr(dendrite, field) is not None
+            assert (
+                hasattr(dendrite, field)
+                and getattr(dendrite, field) is not None
+            )
 
         # check that the dendrite take between min_time and max_time
         assert min_time <= dendrite.process_time

@@ -44,7 +44,9 @@ class StreamMiner(ABC):
         )
 
         # metagraph provides the network's current state, holding state about other participants in a subnet.
-        self.metagraph = get_async_result(self.subtensor.metagraph, self.config.netuid)
+        self.metagraph = get_async_result(
+            self.subtensor.metagraph, self.config.netuid
+        )
         bt.logging.info(f"Metagraph: {self.metagraph}")
 
         if self.wallet.hotkey.ss58_address not in self.metagraph.hotkeys:
@@ -60,7 +62,9 @@ class StreamMiner(ABC):
             bt.logging.info(f"Running miner on uid: {self.my_subnet_uid}")
 
         # The axon handles request processing, allowing validators to send this process requests.
-        self.axon = axon or bt.axon(wallet=self.wallet, port=self.config.axon.port)
+        self.axon = axon or bt.axon(
+            wallet=self.wallet, port=self.config.axon.port
+        )
         # Attach determiners which functions are called when servicing a request.
         bt.logging.info(f"Attaching forward function to axon.")
         print(f"Attaching forward function to axon. {self._prompt}")
@@ -140,7 +144,11 @@ class StreamMiner(ABC):
         listening for incoming requests and periodically updating the miner's knowledge
         of the network graph.
         """
-        is_hotkey_registered = get_async_result(self.subtensor.is_hotkey_registered, netuid=self.config.netuid, hotkey_ss58=self.wallet.hotkey.ss58_address)
+        is_hotkey_registered = get_async_result(
+            self.subtensor.is_hotkey_registered,
+            netuid=self.config.netuid,
+            hotkey_ss58=self.wallet.hotkey.ss58_address,
+        )
         if not is_hotkey_registered:
             bt.logging.error(
                 f"Wallet: {self.wallet} is not registered on netuid {self.config.netuid}"
@@ -153,14 +161,22 @@ class StreamMiner(ABC):
         bt.logging.info(
             f"Serving axon {StreamPrompting} on network: {self.config.subtensor.chain_endpoint} with netuid: {self.config.netuid}"
         )
-        get_async_result(self.axon.serve, netuid=self.config.netuid, subtensor=self.subtensor)
+        get_async_result(
+            self.axon.serve,
+            netuid=self.config.netuid,
+            subtensor=self.subtensor,
+        )
 
         # Start  starts the miner's axon, making it active on the network.
-        bt.logging.info(f"Starting axon server on port: {self.config.axon.port}")
+        bt.logging.info(
+            f"Starting axon server on port: {self.config.axon.port}"
+        )
         self.axon.start()
 
         # --- Run until should_exit = True.
-        self.last_epoch_block = get_async_result(self.subtensor.get_current_block)
+        self.last_epoch_block = get_async_result(
+            self.subtensor.get_current_block
+        )
         bt.logging.info(f"Miner starting at block: {self.last_epoch_block}")
 
         # This loop maintains the miner's operations until intentionally stopped.
@@ -171,21 +187,27 @@ class StreamMiner(ABC):
                 start_epoch = time.time()
 
                 # --- Wait until next epoch.
-                current_block = get_async_result(self.subtensor.get_current_block)
+                current_block = get_async_result(
+                    self.subtensor.get_current_block
+                )
                 while (
                     current_block - self.last_epoch_block
                     < self.config.miner.blocks_per_epoch
                 ):
                     # --- Wait for next bloc.
                     time.sleep(1)
-                    current_block = get_async_result(self.subtensor.get_current_block)
+                    current_block = get_async_result(
+                        self.subtensor.get_current_block
+                    )
 
                     # --- Check if we should exit.
                     if self.should_exit:
                         break
 
                 # --- Update the metagraph with the latest network state.
-                self.last_epoch_block = get_async_result(self.subtensor.get_current_block)
+                self.last_epoch_block = get_async_result(
+                    self.subtensor.get_current_block
+                )
 
                 metagraph = get_async_result(
                     self.subtensor.metagraph,
@@ -340,7 +362,9 @@ class StreamingTemplateMiner(StreamMiner):
                 processing steps or modify how tokens are sent back to the client.
             """
             bt.logging.trace("HI. _PROMPT()")
-            input_ids = tokenizer(text, return_tensors="pt").input_ids.squeeze()
+            input_ids = tokenizer(
+                text, return_tensors="pt"
+            ).input_ids.squeeze()
             buffer = []
             bt.logging.debug(f"Input text: {text}")
             bt.logging.debug(f"Input ids: {input_ids}")
