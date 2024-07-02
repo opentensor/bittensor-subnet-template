@@ -142,40 +142,41 @@ class BaseMinerNeuron(BaseNeuron):
         except Exception as e:
             bt.logging.error(traceback.format_exc())
 
-    def run_in_background_thread(self):
+    def run_in_async_call(self):
         """
         Starts the miner's operations in a separate background thread.
         This is useful for non-blocking operations.
         """
-        print(">>>> run run_in_background_thread")
+
         if not self.is_running:
             bt.logging.debug("Starting miner in background thread.")
             self.should_exit = False
             self.thread = None
+            # I want to use async call instead of the thread
             get_async_result(self.run)
             # self.thread = threading.Thread(target=self.run, daemon=True)
             # self.thread.start()
             self.is_running = True
             bt.logging.debug("Started")
 
-    def stop_run_thread(self):
-        """
-        Stops the miner's operations that are running in the background thread.
-        """
-        if self.is_running:
-            bt.logging.debug("Stopping miner in background thread.")
-            self.should_exit = True
-            if self.thread is not None:
-                self.thread.join(5)
-            self.is_running = False
-            bt.logging.debug("Stopped")
+    # def stop_run_thread(self):
+    #     """
+    #     Stops the miner's operations that are running in the background thread.
+    #     """
+    #     if self.is_running:
+    #         bt.logging.debug("Stopping miner in background thread.")
+    #         self.should_exit = True
+    #         if self.thread is not None:
+    #             self.thread.join(5)
+    #         self.is_running = False
+    #         bt.logging.debug("Stopped")
 
     def __enter__(self):
         """
         Starts the miner's operations in a background thread upon entering the context.
         This method facilitates the use of the miner in a 'with' statement.
         """
-        self.run_in_background_thread()
+        self.run_in_async_call()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -191,7 +192,7 @@ class BaseMinerNeuron(BaseNeuron):
             traceback: A traceback object encoding the stack trace.
                        None if the context was exited without an exception.
         """
-        self.stop_run_thread()
+        print("Miner has been closed.")
 
     def resync_metagraph(self):
         """Resyncs the metagraph and updates the hotkeys and moving averages based on the new metagraph."""
