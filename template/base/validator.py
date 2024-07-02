@@ -173,16 +173,17 @@ class BaseValidatorNeuron(BaseNeuron):
                 str(print_exception(type(err), err, err.__traceback__))
             )
 
-    def run_in_background_thread(self):
+    def run_in_async_call(self):
         """
         Starts the validator's operations in a background thread upon entering the context.
         This method facilitates the use of the validator in a 'with' statement.
         """
         if not self.is_running:
-            bt.logging.debug("Starting validator in background thread.")
+            bt.logging.debug("Starting validator in background async call.")
             self.should_exit = False
-            self.thread = threading.Thread(target=self.run, daemon=True)
-            self.thread.start()
+            # self.thread = threading.Thread(target=self.run, daemon=True)
+            # self.thread.start()
+            get_async_result(self.run)
             self.is_running = True
             bt.logging.debug("Started")
 
@@ -198,7 +199,7 @@ class BaseValidatorNeuron(BaseNeuron):
             bt.logging.debug("Stopped")
 
     def __enter__(self):
-        self.run_in_background_thread()
+        self.run_in_async_call()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -217,7 +218,7 @@ class BaseValidatorNeuron(BaseNeuron):
         if self.is_running:
             bt.logging.debug("Stopping validator in background thread.")
             self.should_exit = True
-            self.thread.join(5)
+            # self.thread.join(5)
             self.is_running = False
             bt.logging.debug("Stopped")
 
