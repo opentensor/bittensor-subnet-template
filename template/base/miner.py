@@ -151,8 +151,10 @@ class BaseMinerNeuron(BaseNeuron):
         if not self.is_running:
             bt.logging.debug("Starting miner in background thread.")
             self.should_exit = False
-            self.thread = threading.Thread(target=self.run, daemon=True)
-            self.thread.start()
+            self.thread = None
+            get_async_result(self.run)
+            # self.thread = threading.Thread(target=self.run, daemon=True)
+            # self.thread.start()
             self.is_running = True
             bt.logging.debug("Started")
 
