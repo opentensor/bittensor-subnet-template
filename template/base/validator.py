@@ -291,13 +291,13 @@ class BaseValidatorNeuron(BaseNeuron):
         bt.logging.info("resync_metagraph()")
 
         # Copies state of metagraph before syncing.
-        previous_metagraph = copy.deepcopy(self.metagraph)
+        previous_axons = copy.deepcopy(self.metagraph.axons)
 
         # Sync the metagraph.
         get_async_result(self.metagraph.sync, subtensor=self.subtensor)
 
         # Check if the metagraph axon info has changed.
-        if previous_metagraph.axons == self.metagraph.axons:
+        if previous_axons == self.metagraph.axons:
             return
 
         bt.logging.info(
