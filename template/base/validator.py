@@ -72,7 +72,7 @@ class BaseValidatorNeuron(BaseNeuron):
 
         # Serve axon to enable external connections.
         if not self.config.neuron.axon_off:
-            get_async_result(self.serve_axon)
+            self.serve_axon
         else:
             bt.logging.warning("axon off, not serving ip to chain.")
 
