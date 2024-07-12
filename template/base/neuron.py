@@ -53,7 +53,7 @@ class BaseNeuron(ABC):
 
     subtensor: "bt.subtensor"
     wallet: "bt.wallet"
-    metagraph: "bt.metagraph_class"
+    metagraph: "bt.metagraph"
     spec_version: int = spec_version
 
     @property

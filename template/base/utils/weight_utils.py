@@ -134,7 +134,7 @@ def process_weights_for_netuid(
     weights: np.ndarray,
     netuid: int,
     subtensor: "bittensor.subtensor",
-    metagraph: "bittensor.metagraph_class" = None,
+    metagraph: "bittensor.metagraph" = None,
     exclude_quantile: int = 0,
 ) -> Union[
     tuple[
