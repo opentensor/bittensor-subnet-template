@@ -44,9 +44,7 @@ class StreamMiner(ABC):
         )
 
         # metagraph provides the network's current state, holding state about other participants in a subnet.
-        self.metagraph = get_async_result(
-            self.subtensor.metagraph, self.config.netuid
-        )
+        self.metagraph = self.subtensor.metagraph(netuid=self.config.netuid)
         bt.logging.info(f"Metagraph: {self.metagraph}")
 
         if self.wallet.hotkey.ss58_address not in self.metagraph.hotkeys:
@@ -211,12 +209,7 @@ class StreamMiner(ABC):
                     self.subtensor.get_current_block
                 )
 
-                metagraph = get_async_result(
-                    self.subtensor.metagraph,
-                    netuid=self.config.netuid,
-                    lite=True,
-                    block=self.last_epoch_block,
-                )
+                metagraph = self.subtensor.metagraph(netuid=self.config.netuid, lite=True, block=self.last_epoch_block)
                 log = (
                     f"Step:{step} | "
                     f"Block:{metagraph.block.item()} | "

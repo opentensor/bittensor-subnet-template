@@ -30,9 +30,7 @@ async def query_synapse(my_uid, wallet_name, hotkey, network, netuid):
     wallet = bt.wallet(name=wallet_name, hotkey=hotkey)
 
     # instantiate the metagraph with provided network and netuid
-    metagraph = get_async_result(
-        bt.metagraph, netuid=netuid, network=network, sync=True, lite=False
-    )
+    metagraph = bt.metagraph(netuid=netuid, network=network, sync=True, lite=False)
 
     # Grab the axon you're serving
     axon = metagraph.axons[my_uid]
