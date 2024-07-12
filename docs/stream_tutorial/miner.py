@@ -209,7 +209,11 @@ class StreamMiner(ABC):
                     self.subtensor.get_current_block
                 )
 
-                metagraph = self.subtensor.metagraph(netuid=self.config.netuid, lite=True, block=self.last_epoch_block)
+                metagraph = self.subtensor.metagraph(
+                    netuid=self.config.netuid,
+                    lite=True,
+                    block=self.last_epoch_block,
+                )
                 log = (
                     f"Step:{step} | "
                     f"Block:{metagraph.block.item()} | "
