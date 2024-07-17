@@ -1,0 +1,87 @@
+# Use this document to specify the minimum compute requirements.
+# This document will be used to generate a list of recommended hardware for your subnet.
+
+# This is intended to give a rough estimate of the minimum requirements
+# so that the user can make an informed decision about whether or not
+# they want to run a miner or validator on their machine.
+
+# NOTE: Specification for miners may be different from validators
+
+version: {{ cookiecutter.min_compute_version }} # update this version key as needed, ideally should match your release version
+
+compute_spec:
+
+  miner:
+
+    cpu:
+      min_cores: {{ cookiecutter.miner_cpu_min_cores }}            # Minimum number of CPU cores
+      min_speed: {{ cookiecutter.miner_cpu_min_speed }}          # Minimum speed per core (GHz)
+      recommended_cores: {{ cookiecutter.miner_cpu_recommended_cores }}    # Recommended number of CPU cores
+      recommended_speed: {{ cookiecutter.miner_cpu_recommended_speed }}  # Recommended speed per core (GHz)
+      architecture: {{ cookiecutter.miner_cpu_architecture }}  # Architecture type (e.g., x86_64, arm64)
+
+    gpu:
+      required: {{ cookiecutter.miner_gpu_required }}                       # Does the application require a GPU?
+      min_vram: {{ cookiecutter.miner_gpu_min_vram }}                          # Minimum GPU VRAM (GB)
+      recommended_vram: {{ cookiecutter.miner_gpu_recommended_vram }}                 # Recommended GPU VRAM (GB)
+      cuda_cores: {{ cookiecutter.miner_gpu_cuda_cores }}                     # Minimum number of CUDA cores (if applicable)
+      min_compute_capability: {{ cookiecutter.miner_gpu_min_compute_capability }}          # Minimum CUDA compute capability
+      recommended_compute_capability: {{ cookiecutter.miner_gpu_recommended_compute_capability }}  # Recommended CUDA compute capability
+      recommended_gpu: {{ cookiecutter.miner_gpu_recommended_gpu }}       # provide a recommended GPU to purchase/rent
+
+    memory:
+      min_ram: {{ cookiecutter.miner_memory_min_ram }}          # Minimum RAM (GB)
+      min_swap: {{ cookiecutter.miner_memory_min_swap }}          # Minimum swap space (GB)
+      recommended_swap: {{ cookiecutter.miner_memory_recommended_swap }}  # Recommended swap space (GB)
+      ram_type: {{ cookiecutter.miner_memory_ram_type }}     # RAM type (e.g., DDR4, DDR3, etc.)
+
+    storage:
+      min_space: {{ cookiecutter.miner_storage_min_space }}           # Minimum free storage space (GB)
+      recommended_space: {{ cookiecutter.miner_storage_recommended_space }}  # Recommended free storage space (GB)
+      type: {{ cookiecutter.miner_storage_type }}            # Preferred storage type (e.g., SSD, HDD)
+      min_iops: {{ cookiecutter.miner_storage_min_iops }}          # Minimum I/O operations per second (if applicable)
+      recommended_iops: {{ cookiecutter.miner_storage_recommended_iops }}  # Recommended I/O operations per second
+
+    os:
+      name: {{ cookiecutter.miner_os_name }}  # Name of the preferred operating system(s)
+      version: {{ cookiecutter.miner_os_version }}  # Version of the preferred operating system(s)
+
+  validator:
+
+    cpu:
+      min_cores: {{ cookiecutter.validator_cpu_min_cores }}            # Minimum number of CPU cores
+      min_speed: {{ cookiecutter.validator_cpu_min_speed }}          # Minimum speed per core (GHz)
+      recommended_cores: {{ cookiecutter.validator_cpu_recommended_cores }}    # Recommended number of CPU cores
+      recommended_speed: {{ cookiecutter.validator_cpu_recommended_speed }}  # Recommended speed per core (GHz)
+      architecture: {{ cookiecutter.validator_cpu_architecture }}  # Architecture type (e.g., x86_64, arm64)
+
+    gpu:
+      required: {{ cookiecutter.validator_gpu_required }}                       # Does the application require a GPU?
+      min_vram: {{ cookiecutter.validator_gpu_min_vram }}                          # Minimum GPU VRAM (GB)
+      recommended_vram: {{ cookiecutter.validator_gpu_recommended_vram }}                 # Recommended GPU VRAM (GB)
+      cuda_cores: {{ cookiecutter.validator_gpu_cuda_cores }}                     # Minimum number of CUDA cores (if applicable)
+      min_compute_capability: {{ cookiecutter.validator_gpu_min_compute_capability }}          # Minimum CUDA compute capability
+      recommended_compute_capability: {{ cookiecutter.validator_gpu_recommended_compute_capability }}  # Recommended CUDA compute capability
+      recommended_gpu: {{ cookiecutter.validator_gpu_recommended_gpu }}       # provide a recommended GPU to purchase/rent
+
+    memory:
+      min_ram: {{ cookiecutter.validator_memory_min_ram }}          # Minimum RAM (GB)
+      min_swap: {{ cookiecutter.validator_memory_min_swap }}          # Minimum swap space (GB)
+      recommended_swap: {{ cookiecutter.validator_memory_recommended_swap }}  # Recommended swap space (GB)
+      ram_type: {{ cookiecutter.validator_memory_ram_type }}     # RAM type (e.g., DDR4, DDR3, etc.)
+
+    storage:
+      min_space: {{ cookiecutter.validator_storage_min_space }}           # Minimum free storage space (GB)
+      recommended_space: {{ cookiecutter.validator_storage_recommended_space }}  # Recommended free storage space (GB)
+      type: {{ cookiecutter.validator_storage_type }}             # Preferred storage type (e.g., SSD, HDD)
+      min_iops: {{ cookiecutter.validator_storage_min_iops }}          # Minimum I/O operations per second (if applicable)
+      recommended_iops: {{ cookiecutter.validator_storage_recommended_iops }}  # Recommended I/O operations per second
+
+    os:
+      name: {{ cookiecutter.validator_os_name }}  # Name of the preferred operating system(s)
+      version: {{ cookiecutter.validator_os_version }}  # Version of the preferred operating system(s)
+
+network_spec:
+  bandwidth:
+    download: {{ cookiecutter.network_spec_bandwidth_download }}  # Minimum download bandwidth (Mbps)
+    upload: {{ cookiecutter.network_spec_bandwidth_upload }}     # Minimum upload bandwidth (Mbps)

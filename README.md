@@ -1,5 +1,7 @@
 <div align="center">
 
+
+
 # **Bittensor Subnet Template** <!-- omit in toc -->
 [![Discord Chat](https://img.shields.io/discord/308323056592486420.svg)](https://discord.gg/bittensor)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
@@ -58,6 +60,18 @@ This starter template is split into three primary files. To write your own incen
 The Bittensor Subnet 1 for Text Prompting is built using this template. See [prompting](https://github.com/macrocosm-os/prompting) for how to configure the files and how to add monitoring and telemetry and support multiple miner types. Also see this Subnet 1 in action on [Taostats](https://taostats.io/subnets/netuid-1/) explorer.
 
 ---
+
+# Cookiecutter
+
+### Install cookiecutter
+`pip install "cookiecutter>=1.7.0"`
+
+### Local testing
+Navigate to the parent directory of `bittensor-subnet-template`
+
+```bash
+$ cookiecutter bittensor-subnet-template
+```
 
 ## Installation
 
