@@ -10,7 +10,8 @@ SUBNET_LINKS = [
     {"name": "sn5", "url": "https://github.com/OpenKaito/openkaito/"},
     {"name": "sn6", "url": "https://github.com/amedeo-gigaver/infinite_games/"},
     {"name": "sn7", "url": "https://github.com/eclipsevortex/SubVortex/"},
-    { "name": "sn8",
+    {
+        "name": "sn8",
         "url": "https://github.com/taoshidev/proprietary-trading-network/",
     },
     {"name": "sn9", "url": "https://github.com/unconst/pretrain-subnet/"},
@@ -18,7 +19,10 @@ SUBNET_LINKS = [
         "name": "sn10",
         "url": "https://github.com/Sturdy-Subnet/sturdy-subnet/",
     },
-    {"name": "sn11", "url": "https://github.com/impel-intelligence/dippy-bittensor-subnet/"},
+    {
+        "name": "sn11",
+        "url": "https://github.com/impel-intelligence/dippy-bittensor-subnet/",
+    },
     {"name": "sn12", "url": "https://github.com/backend-developers-ltd/ComputeHorde/"},
     {"name": "sn13", "url": "https://github.com/macrocosm-os/data-universe/"},
     {
@@ -34,10 +38,16 @@ SUBNET_LINKS = [
     {"name": "sn18", "url": "https://github.com/corcel-api/cortex.t/"},
     {"name": "sn19", "url": "https://github.com/namoray/vision/"},
     {"name": "sn20", "url": "https://github.com/RogueTensor/bitagent_subnet/"},
-    {"name": "sn21", "url": "https://github.com/omegalabsinc/omegalabs-anytoany-bittensor"},
+    {
+        "name": "sn21",
+        "url": "https://github.com/omegalabsinc/omegalabs-anytoany-bittensor",
+    },
     {"name": "sn22", "url": "https://github.com/Datura-ai/smart-scrape/"},
     {"name": "sn23", "url": "https://github.com/SocialTensor/SocialTensorSubnet/"},
-    {"name": "sn24", "url": "https://github.com/omegalabsinc/omegalabs-bittensor-subnet/"},
+    {
+        "name": "sn24",
+        "url": "https://github.com/omegalabsinc/omegalabs-bittensor-subnet/",
+    },
     {"name": "sn25", "url": "https://github.com/macrocosm-os/folding/"},
     {
         "name": "sn26",
@@ -55,7 +65,10 @@ SUBNET_LINKS = [
         "url": "https://github.com/nimaaghli/NASChain/",
     },
     {"name": "sn32", "url": "https://github.com/It-s-AI/llm-detection/"},
-    {"name": "sn33", "url": "https://github.com/afterpartyai/bittensor-conversation-genome-project/"},
+    {
+        "name": "sn33",
+        "url": "https://github.com/afterpartyai/bittensor-conversation-genome-project/",
+    },
     {"name": "sn34", "url": "https://github.com/Healthi-Labs/healthi-subnet/"},
     {"name": "sn35", "url": "https://github.com/LogicNet-Subnet/LogicNet-prod/"},
     {"name": "sn36", "url": "https://github.com/HIP-Labs/HIP-Subnet/"},
