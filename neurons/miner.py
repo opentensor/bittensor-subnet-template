@@ -22,10 +22,10 @@ import typing
 import bittensor as bt
 
 # Bittensor Miner Template:
-import template
+import cancer_ai
 
 # import base miner class which takes care of most of the boilerplate
-from template.base.miner import BaseMinerNeuron
+from cancer_ai.base.miner import BaseMinerNeuron
 
 
 class Miner(BaseMinerNeuron):
