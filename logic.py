@@ -15,6 +15,7 @@ class Validator:
         self.config = config
         self.dataset_refresh_date = datetime.now()
         self.validator_hotkey = validator_hotkey
+        
 
     async def forward(self):
         pass
@@ -48,7 +49,9 @@ class Validator:
     def test_model(self, model) -> score:
         return get_model_accuracy(model)
 
-    def test_models(self):
+    def evaluate_models(self):
+        self.download_new_dataset()
+
         for hotkey in models_db:
             self.download_save_model(hotkey, models_db[hotkey])
 
@@ -61,7 +64,7 @@ class Validator:
 
 validator = Validator()
 
-schedule.every.day.at("18:00").do(validator.download_new_dataset)
+schedule.every.day.at("18:00").do(validator.evaluate_models)
 
     
             
