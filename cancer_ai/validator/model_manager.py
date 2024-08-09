@@ -1,25 +1,35 @@
+from dataclasses import dataclass, asdict, is_dataclass
 from datetime import datetime
 from time import sleep
+import os
 from huggingface_hub import HfApi
 
-import schedule
+from .manager import SerializableManager
 
-database = {} # validator database 
-dataset_path = "/dataset"
-model_basepath = "./models"
-models_db = {}
 
-class ModelManager:
+@dataclass
+class ModelInfo:
+    repo_id: str
+    filename: str
+    file_path: str | None = None
+
+
+class ModelManager(SerializableManager):
     def __init__(self, config) -> None:
         self.config = config
+        if "model_dir" not in self.config:
+            self.config["model_dir"] = "./models"
+        # create model_dir if it doesn't exist
+        if not os.path.exists(self.config["model_dir"]):
+            os.makedirs(self.config["model_dir"])
         self.api = HfApi()
-        self.hotkey_store = {}
-        
-    def get_model_state(self):
-        return self.hotkey_store
-    
-    def initialize_model_state(self, hotkey_models: dict):
-        self.hotkey_store = hotkey_models
+        self.hotkey_store = {}  # Now a dictionary mapping hotkeys to ModelInfo objects
+
+    def get_state(self):
+        return {k: asdict(v) for k, v in self.hotkey_store.items() if is_dataclass(v)}
+
+    def set_state(self, hotkey_models: dict):
+        self.hotkey_store = {k: ModelInfo(**v) for k, v in hotkey_models.items()}
 
     def sync_hotkeys(self, hotkeys: list):
         hotkey_copy = list(self.hotkey_store.keys())
@@ -27,27 +37,28 @@ class ModelManager:
             if hotkey not in hotkeys:
                 self.delete_model(hotkey)
 
-    def download_miner_model(self, hotkey) -> str:
-        """Downloads newest model from Hugging Face and save to disk
+    def download_miner_model(self, hotkey) -> None:
+        """Downloads the newest model from Hugging Face and saves it to disk.
         Returns:
-            str: path to downloaded model
+            str: path to the downloaded model
         """
-        return self.api.hf_hub_download(self.hotkey_store[hotkey]["repo_id"], self.hotkey_store[hotkey]["filename"], cache_dir=model_basepath,repo_type="space")
-    
-    def add_model(self,hotkey, repo_id, filename) -> None:
-        """Saves locally information about new model
-        """
-        self.hotkey_store[hotkey] = {
-            "repo_id": repo_id,
-            "filename": filename
-        }
-    
+        model_info = self.hotkey_store[hotkey]
+        model_path = self.api.hf_hub_download(
+            model_info.repo_id,
+            model_info.filename,
+            cache_dir=self.config["model_dir"],
+            repo_type="space",
+        )
+        model_info.file_path = model_path
+
+    def add_model(self, hotkey, repo_id, filename) -> None:
+        """Saves locally information about a new model."""
+        self.hotkey_store[hotkey] = ModelInfo(repo_id, filename)
+
     def delete_model(self, hotkey):
+        """Deletes locally information about a model and the corresponding file on disk."""
+
         print("Deleting model: ", hotkey)
-        del self.hotkey_store[hotkey]
-
-
-if __name__ == "__main__":
-    model_manager = ModelManager({})
-    model_manager.add_model("wojtek", "vidhiparikh/House-Price-Estimator", "model_custom.pkcls")
-    print(model_manager.download_miner_model("wojtek"))
+        if hotkey in self.hotkey_store and self.hotkey_store[hotkey].file_path:
+            os.remove(self.hotkey_store[hotkey].file_path)
+        self.hotkey_store[hotkey] = None
