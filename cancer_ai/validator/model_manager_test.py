@@ -13,7 +13,7 @@ filename = "test_filename"
 
 
 @pytest.fixture
-def model_manager():
+def model_manager() -> ModelManager:
     config = {
         "models": SimpleNamespace(**{"model_dir": "/tmp/models"}),
     }
@@ -22,7 +22,7 @@ def model_manager():
     return ModelManager(config=config_obj)
 
 
-def test_add_model(model_manager: ModelManager):
+def test_add_model(model_manager: ModelManager) -> None:
     model_manager.add_model(hotkey, repo_id, filename)
 
     assert hotkey in model_manager.get_state()
@@ -30,7 +30,7 @@ def test_add_model(model_manager: ModelManager):
     assert model_manager.get_state()[hotkey]["filename"] == filename
 
 
-def test_delete_model(model_manager: ModelManager):
+def test_delete_model(model_manager: ModelManager) -> None:
     model_manager.add_model(hotkey, repo_id, filename)
     model_manager.delete_model(hotkey)
 
@@ -44,7 +44,7 @@ def test_sync_hotkeys(model_manager: ModelManager):
     assert hotkey not in model_manager.get_state()
 
 
-def test_load_save_model_state(model_manager: ModelManager):
+def test_load_save_model_state(model_manager: ModelManager) -> None:
     # Create an instance of ModelManager
 
     # Create a dictionary of hotkey models
@@ -61,7 +61,7 @@ def test_load_save_model_state(model_manager: ModelManager):
 @pytest.mark.skip(
     reason="we don't want to test every time with downloading data from huggingface"
 )
-def test_real_downloading(model_manager: ModelManager):
+def test_real_downloading(model_manager: ModelManager) -> None:
     model_manager.add_model(
         "example", "vidhiparikh/House-Price-Estimator", "model_custom.pkcls"
     )

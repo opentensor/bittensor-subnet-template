@@ -17,7 +17,7 @@ class ModelInfo:
 class ModelManager(SerializableManager):
     def __init__(self, config) -> None:
         self.config = config
-        
+
         if not os.path.exists(self.config.models.model_dir):
             os.makedirs(self.config.models.model_dir)
         self.api = HfApi()
@@ -53,7 +53,7 @@ class ModelManager(SerializableManager):
         """Saves locally information about a new model."""
         self.hotkey_store[hotkey] = ModelInfo(repo_id, filename)
 
-    def delete_model(self, hotkey):
+    def delete_model(self, hotkey) -> None:
         """Deletes locally information about a model and the corresponding file on disk."""
 
         print("Deleting model: ", hotkey)
