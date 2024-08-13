@@ -22,6 +22,7 @@ import argparse
 import bittensor as bt
 from .logging import setup_events_logger
 
+
 def is_cuda_available():
     try:
         output = subprocess.check_output(["nvidia-smi", "-L"], stderr=subprocess.STDOUT)
@@ -36,6 +37,7 @@ def is_cuda_available():
     except Exception:
         pass
     return "cpu"
+
 
 def check_config(cls, config: "bt.Config"):
     r"""Checks/validates the config namespace object."""
@@ -240,6 +242,12 @@ def add_validator_args(cls, parser):
         type=str,
         help="The name of the project where you are sending the new run.",
         default="opentensor-dev",
+    )
+    parser.add_argument(
+        "--models.model_dir",
+        type=str,
+        help="Path for storing hugging face models.",
+        default="./models",
     )
 
 
