@@ -1,11 +1,12 @@
+from abc import ABC, abstractmethod
 
 
-class SerializableManager:
-    def __init__(self, config) -> None:
-        self.config = config
+class SerializableManager(ABC):
 
+    @abstractmethod
     def get_state(self) -> dict:
-        raise NotImplementedError
-    
+        pass
+
+    @abstractmethod
     def set_state(self, state: dict):
-        raise NotImplementedError
+        pass

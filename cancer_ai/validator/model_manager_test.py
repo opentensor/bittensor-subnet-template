@@ -14,7 +14,7 @@ filename = "test_filename"
 @pytest.fixture
 def model_manager():
     config = {
-        "model_dir": "/tmp/models",
+        "models": {"model_dir": "/tmp/models"},
     }
     return ModelManager(config)
 
@@ -55,7 +55,10 @@ def test_load_save_model_state(model_manager: ModelManager):
     assert model_manager.get_state() == hotkey_models
 
 
-def not_test_real_downloading(model_manager: ModelManager):
+@pytest.mark.skip(
+    reason="we don't want to test every time with downloading data from huggingface"
+)
+def test_real_downloading(model_manager: ModelManager):
     model_manager.add_model(
         "example", "vidhiparikh/House-Price-Estimator", "model_custom.pkcls"
     )

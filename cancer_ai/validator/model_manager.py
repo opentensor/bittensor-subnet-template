@@ -17,13 +17,11 @@ class ModelInfo:
 class ModelManager(SerializableManager):
     def __init__(self, config) -> None:
         self.config = config
-        if "model_dir" not in self.config:
-            self.config["model_dir"] = "./models"
-        # create model_dir if it doesn't exist
-        if not os.path.exists(self.config["model_dir"]):
-            os.makedirs(self.config["model_dir"])
+
+        if not os.path.exists(self.config["models"]["model_dir"]):
+            os.makedirs(self.config["models"]["model_dir"])
         self.api = HfApi()
-        self.hotkey_store = {}  # Now a dictionary mapping hotkeys to ModelInfo objects
+        self.hotkey_store = {}
 
     def get_state(self):
         return {k: asdict(v) for k, v in self.hotkey_store.items() if is_dataclass(v)}
@@ -46,7 +44,7 @@ class ModelManager(SerializableManager):
         model_path = self.api.hf_hub_download(
             model_info.repo_id,
             model_info.filename,
-            cache_dir=self.config["model_dir"],
+            cache_dir=self.config["models"]["model_dir"],
             repo_type="space",
         )
         model_info.file_path = model_path
