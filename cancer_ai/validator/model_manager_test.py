@@ -1,4 +1,5 @@
 import pytest
+from types import SimpleNamespace
 from unittest.mock import patch, MagicMock
 from .model_manager import (
     ModelManager,
@@ -14,9 +15,11 @@ filename = "test_filename"
 @pytest.fixture
 def model_manager():
     config = {
-        "models": {"model_dir": "/tmp/models"},
+        "models": SimpleNamespace(**{"model_dir": "/tmp/models"}),
     }
-    return ModelManager(config)
+    config_obj = SimpleNamespace(**config)
+    print(config_obj.models.model_dir)
+    return ModelManager(config=config_obj)
 
 
 def test_add_model(model_manager: ModelManager):

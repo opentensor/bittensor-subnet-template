@@ -17,9 +17,9 @@ class ModelInfo:
 class ModelManager(SerializableManager):
     def __init__(self, config) -> None:
         self.config = config
-
-        if not os.path.exists(self.config["models"]["model_dir"]):
-            os.makedirs(self.config["models"]["model_dir"])
+        
+        if not os.path.exists(self.config.models.model_dir):
+            os.makedirs(self.config.models.model_dir)
         self.api = HfApi()
         self.hotkey_store = {}
 
@@ -44,7 +44,7 @@ class ModelManager(SerializableManager):
         model_path = self.api.hf_hub_download(
             model_info.repo_id,
             model_info.filename,
-            cache_dir=self.config["models"]["model_dir"],
+            cache_dir=self.config.models.model_dir,
             repo_type="space",
         )
         model_info.file_path = model_path
