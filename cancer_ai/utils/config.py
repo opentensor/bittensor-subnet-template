@@ -167,6 +167,40 @@ def add_miner_args(cls, parser):
         help="Wandb entity to log to.",
     )
 
+    parser.add_argument(
+        "--models.save_model_dir",
+        type=str,
+        help="Path for storing trained model related to a training run.",
+        default="./models",
+    )
+
+    parser.add_argument(
+        "--models.save_model_dir",
+        type=str,
+        help="Path for for loading the starting model related to a training run.",
+        default="",
+    )
+
+    parser.add_argument(
+        "--models.namespace",
+        type=str,
+        help="Namespace where the model can be found.",
+        default="",
+    )
+
+    parser.add_argument(
+        "--models.model_name",
+        type=str,
+        help="Name of the model to push to hugging face.",
+        default="",
+    )
+
+    parser.add_argument(
+        "--models.epoch_checkpoint",
+        type=int,
+        help="The epoch number to submit as your checkpoint to evaluate e.g. 10",
+        default=10,
+    )
 
 def add_validator_args(cls, parser):
     """Add validator specific arguments to the parser."""

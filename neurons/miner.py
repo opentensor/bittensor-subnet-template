@@ -1,26 +1,9 @@
-# The MIT License (MIT)
-# Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
-# documentation files (the “Software”), to deal in the Software without restriction, including without limitation
-# the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
-# and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in all copies or substantial portions of
-# the Software.
-
-# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-# THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-# DEALINGS IN THE SOFTWARE.
 
 import time
 import typing
 import bittensor as bt
-
+import datetime as dt
+import os
 # Bittensor Miner Template:
 import cancer_ai
 
@@ -43,8 +26,8 @@ class Miner(BaseMinerNeuron):
         # TODO(developer): Anything specific to your use case you can do here
 
     async def forward(
-        self, synapse: template.protocol.Dummy
-    ) -> template.protocol.Dummy:
+        self, synapse: cancer_ai.protocol.Dummy
+    ) -> cancer_ai.protocol.Dummy:
         """
         Processes the incoming 'Dummy' synapse by performing a predefined operation on the input data.
         This method should be replaced with actual logic relevant to the miner's purpose.
@@ -63,7 +46,7 @@ class Miner(BaseMinerNeuron):
         return synapse
 
     async def blacklist(
-        self, synapse: template.protocol.Dummy
+        self, synapse: cancer_ai.protocol.Dummy
     ) -> typing.Tuple[bool, str]:
         """
         Determines whether an incoming request should be blacklisted and thus ignored. Your implementation should
@@ -124,7 +107,7 @@ class Miner(BaseMinerNeuron):
         )
         return False, "Hotkey recognized!"
 
-    async def priority(self, synapse: template.protocol.Dummy) -> float:
+    async def priority(self, synapse: cancer_ai.protocol.Dummy) -> float:
         """
         The priority function determines the order in which requests are handled. More valuable or higher-priority
         requests are processed before others. You should design your own priority mechanism with care.
@@ -160,6 +143,46 @@ class Miner(BaseMinerNeuron):
         )
         return priority
 
+# miner moze brac udzial w kilku competitions, ale tylko w jednej na raz przy odpaleniu. config sprawdza flagą competition
+
+
+async def compete(self, competition: str) -> None:
+    # Create a unique run id for this run.
+    run_id = dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    model_dir = model_path(self.config.save_model_dir, run_id)
+    os.makedirs(model_dir, exist_ok=True)
+
+    model = await self.load_starting_model()
+    if model is None:
+        bt.logging.error("Failed to load the starting model. Exiting competition.")
+        return
+    
+    # TODO(Miner/Bruno): Implement the training logic here.
+    bt.logging.success(f"Saving model to path: {model_dir}.")
+    # TODO(Bruno): write the save_model_to_disk() function
+    # save_model_to_disk(model, model_dir)
+
+    # TODO(Konrad): Push model to hugging face
+    # TODO(Konrad): Push model metadata to the chain
+
+
+async def load_starting_model(self):
+    """Loads the model to train based on the provided config."""
+
+    # Check if we should load a model from a local directory.
+    if self.config.load_model_dir:
+        # TODO(Bruno): write the load_model_from_disk() function
+        # model = load_model_from_disk(config.load_model_dir)
+        # bt.logging.success(f"Training with model from disk. Model={str(model)}")
+        # return model
+        ...
+    # TODO(Bruno): possibly load model from scratch? if not handle the case where no model is loaded
+
+def model_path(base_dir: str, run_id: str) -> str:
+    """
+    Constructs a file path for storing the model relating to a training run.
+    """
+    return os.path.join(base_dir, "training", run_id)
 
 # This is the main function, which runs the miner.
 if __name__ == "__main__":
@@ -167,3 +190,4 @@ if __name__ == "__main__":
         while True:
             bt.logging.info(f"Miner running... {time.time()}")
             time.sleep(5)
+
