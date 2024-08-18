@@ -23,6 +23,7 @@ class DatasetManager(SerializableManager):
         self.file_hf_id = file_hf_id
         self.hf_api = HfApi()
         self.path = ""
+        self.data = None
 
     def get_state(self) -> dict:
         return {}
@@ -67,6 +68,9 @@ class DatasetManager(SerializableManager):
         await self.unzip_dataset()
         self.set_dataset_handler()
 
-    async def get_training_data(self) -> Tuple[List, List]:
-        await self.prepare_dataset()
-        return await self.handler.get_training_data()
+    
+    async def get_data(self) -> Tuple[List, List]:
+        if not self.data:
+            await self.prepare_dataset()
+            self.data = await self.handler.get_training_data()
+        return self.data

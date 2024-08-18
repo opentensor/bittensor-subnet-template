@@ -1,8 +1,9 @@
 from .manager import SerializableManager
 from .model_manager import ModelManager, ModelInfo
 from .dataset_manager import DatasetManager
+from .model_run_manager import ModelRunManager
 from datetime import time
-
+import random
 
 class CompetitionManager(SerializableManager):
     """
@@ -39,6 +40,7 @@ class CompetitionManager(SerializableManager):
         self.dataset_manager: DatasetManager = DatasetManager(
             config, competition_id, dataset_hf_id, file_hf_id
         )
+        self.results = []
 
     def get_state(self):
         return {
@@ -61,12 +63,24 @@ class CompetitionManager(SerializableManager):
     async def init_evaluation(self):
         for hotkey in self.model_manager.hotkey_store:
             self.model_manager.hotkey_store[hotkey] = await self.get_miner_model(hotkey)
-            await self.model_manager.download_miner_model(hotkey)
-
+            
+        self.dataset_manager.prepare_dataset()
+        
         # log event
 
     async def evaluate(self):
         self.init_evaluation()
-        self.dataset
+        pred_x, pred_y = self.dataset_manager.get_data()
         for hotkey in self.model_manager.hotkey_store:
             print("Evaluating hotkey: ", hotkey)
+            await self.model_manager.download_miner_model(hotkey)
+            pred_y = ModelRunManager(self.config, self.model_manager.hotkey_store[hotkey]).run(pred_x)
+            # print "make stats and send to wandb"
+            score = random.randint(0, 100)
+            self.results.append((hotkey, score))
+
+        # sort by score 
+        self.results.sort(key=lambda x: x[1], reverse=True)
+        return self.results
+
+

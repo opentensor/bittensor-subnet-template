@@ -12,6 +12,7 @@ class ModelInfo:
     repo_id: str
     filename: str
     file_path: str | None = None
+    model_type: str | None = None
 
 
 class ModelManager(SerializableManager):
@@ -34,7 +35,6 @@ class ModelManager(SerializableManager):
         for hotkey in hotkey_copy:
             if hotkey not in hotkeys:
                 self.delete_model(hotkey)
-                
 
     def download_miner_model(self, hotkey) -> None:
         """Downloads the newest model from Hugging Face and saves it to disk.
