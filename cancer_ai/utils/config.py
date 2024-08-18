@@ -246,8 +246,14 @@ def add_validator_args(cls, parser):
     parser.add_argument(
         "--models.model_dir",
         type=str,
-        help="Path for storing hugging face models.",
+        help="Path for storing competition participants models .",
         default="./models",
+    )
+    parser.add_argument(
+        "--models.dataset_dir",
+        type=str,
+        help="Path for storing datasets.",
+        default="./datasets",
     )
 
 
