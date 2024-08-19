@@ -12,7 +12,7 @@ class ModelType(Enum):
     UNKNOWN = "Unknown format"
 
 
-def detect_model_format(file_path):
+def detect_model_format(file_path) -> ModelType:
     _, ext = os.path.splitext(file_path)
 
     if ext == ".onnx":

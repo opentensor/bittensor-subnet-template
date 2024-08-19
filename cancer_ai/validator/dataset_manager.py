@@ -6,8 +6,7 @@ from .manager import SerializableManager
 from huggingface_hub import HfApi
 
 from typing import List, Tuple
-import aiofiles
-import aiozip
+from async_unzip.unzipper import unzip
 from io import BytesIO
 
 from .dataset_handlers.image_csv import DatasetImagesCSV
@@ -47,11 +46,7 @@ class DatasetManager(SerializableManager):
         shutil.rmtree(self.path)
 
     async def unzip_dataset(self):
-        async with aiofiles.open(self.path, "rb") as f:
-            data = await f.read()
-        async with aiofiles.open(self.path, "wb") as f:
-            async with aiozip.AIOZipFile(BytesIO(data)) as z:
-                await z.extractall(path=Path(self.path).parent)
+        await unzip(self.path, Path(self.path).parent)
 
     def set_dataset_handler(self):
         if not self.path:
@@ -68,7 +63,6 @@ class DatasetManager(SerializableManager):
         await self.unzip_dataset()
         self.set_dataset_handler()
 
-    
     async def get_data(self) -> Tuple[List, List]:
         if not self.data:
             await self.prepare_dataset()

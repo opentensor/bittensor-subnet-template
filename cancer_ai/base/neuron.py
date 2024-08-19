@@ -23,7 +23,7 @@ import bittensor as bt
 from abc import ABC, abstractmethod
 
 # Sync calls set weights and also resyncs the metagraph.
-from ..utils.config import check_config, add_args, config
+from ..utils.config import check_config, add_args, path_config
 from ..utils.misc import ttl_get_block
 from .. import __spec_version__ as spec_version
 from ..mock import MockSubtensor, MockMetagraph
@@ -48,7 +48,7 @@ class BaseNeuron(ABC):
 
     @classmethod
     def config(cls):
-        return config(cls)
+        return path_config(cls)
 
     subtensor: "bt.subtensor"
     wallet: "bt.wallet"

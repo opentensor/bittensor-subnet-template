@@ -167,6 +167,13 @@ def add_miner_args(cls, parser):
         help="Wandb entity to log to.",
     )
 
+    parser.add_argument(
+        "--competition.entity",
+        type=str,
+        default="opentensor-dev",
+        help="Wandb entity to log to.",
+    )
+
 
 def add_validator_args(cls, parser):
     """Add validator specific arguments to the parser."""
@@ -257,10 +264,12 @@ def add_validator_args(cls, parser):
     )
 
 
-def config(cls):
+def path_config(cls):
     """
     Returns the configuration object specific to this miner or validator after adding relevant arguments.
     """
+
+    # config from huggingface
     parser = argparse.ArgumentParser()
     bt.wallet.add_args(parser)
     bt.subtensor.add_args(parser)
