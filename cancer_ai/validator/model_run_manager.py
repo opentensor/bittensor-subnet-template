@@ -1,34 +1,10 @@
+from typing import List
+
 from .manager import SerializableManager
 from .model_manager import ModelInfo
-from typing import List, Tuple
-from abc import abstractmethod
 from .utils import detect_model_format, ModelType
-
-
-class BaseRunnerHandler:
-    def __init__(self, config, model_path: str) -> None:
-        self.config = config
-        self.model_path = model_path
-
-    @abstractmethod
-    def run(self):
-        """Exceutes the run process of the model in separate process."""
-
-
-class TensorflowRunnerHandler(BaseRunnerHandler):
-    def run(self, pred_x: List) -> List:
-        return []
-
-
-class PytorchRunnerHandler(BaseRunnerHandler):
-    def run(self, pred_x: List) -> List:
-        # example, might not work
-        from torch import load
-
-        model = load(self.model_path)
-        model.eval()
-        output = model(pred_x)
-        return output
+from .model_runners.pytorch_runner import PytorchRunnerHandler
+from .model_runners.tensorflow_runner import TensorflowRunnerHandler
 
 
 MODEL_TYPE_HANDLERS = {
@@ -50,6 +26,10 @@ class ModelRunManager(SerializableManager):
         pass
 
     def set_runner_handler(self) -> None:
+        """
+        Sets the model runner handler based on the model type
+        """
+
         model_type = detect_model_format(self.model)
         # initializing ml model handler object
         model_handler = MODEL_TYPE_HANDLERS[model_type]
