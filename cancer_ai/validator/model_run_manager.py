@@ -27,9 +27,9 @@ class ModelRunManager(SerializableManager):
 
     def set_runner_handler(self) -> None:
         """
-        Sets the model runner handler based on the model type
+        Sets the model runner handler based on the model type.
         """
-
+        
         model_type = detect_model_format(self.model)
         # initializing ml model handler object
         model_handler = MODEL_TYPE_HANDLERS[model_type]
