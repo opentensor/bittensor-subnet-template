@@ -12,6 +12,7 @@ class ModelInfo:
     repo_id: str
     filename: str
     file_path: str | None = None
+    model_type: str | None = None
 
 
 class ModelManager(SerializableManager):
@@ -41,13 +42,12 @@ class ModelManager(SerializableManager):
             str: path to the downloaded model
         """
         model_info = self.hotkey_store[hotkey]
-        model_path = self.api.hf_hub_download(
+        model_info.file_path = self.api.hf_hub_download(
             model_info.repo_id,
             model_info.filename,
             cache_dir=self.config.models.model_dir,
             repo_type="space",
         )
-        model_info.file_path = model_path
 
     def add_model(self, hotkey, repo_id, filename) -> None:
         """Saves locally information about a new model."""
