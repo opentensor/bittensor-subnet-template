@@ -10,7 +10,7 @@ import cancer_ai
 
 # import base miner class which takes care of most of the boilerplate
 from cancer_ai.base.miner import BaseMinerNeuron
-from cancer_ai.chain_models_store import MinerModel, ChainModelMetadataStore, ModelMetadata
+from cancer_ai.chain_models_store import MinerModel, ChainModelMetadataStore
 
 
 class Miner(BaseMinerNeuron):
@@ -25,9 +25,9 @@ class Miner(BaseMinerNeuron):
     def __init__(self, config=None):
         super(Miner, self).__init__(config=config)
 
-        self.metadata_store = ChainModelMetadataStore(subtensor=self.subtensor, subnet_uid=126, wallet=self.wallet)
+        self.metadata_store = ChainModelMetadataStore(subtensor=self.subtensor, subnet_uid=163, wallet=self.wallet)
 
-        asyncio.run(self.compete("mock_competition"))
+        asyncio.run(self.store_and_retrieve_metadata_on_chain("mock_competition"))
 
     async def forward(
         self, synapse: cancer_ai.protocol.Dummy
@@ -147,60 +147,24 @@ class Miner(BaseMinerNeuron):
         )
         return priority
 
-# miner moze brac udzial w kilku competitions, ale tylko w jednej na raz przy odpaleniu. config sprawdza flagą competition
-
-
-    async def compete(self, competition: str) -> None:
-        # Create a unique run id for this run.
-        run_id = dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        model_dir = os.path.join(self.config.models.save_model_dir, f"model_{run_id}")
-        os.makedirs(model_dir, exist_ok=True)
-
-        # model = await self.load_starting_model()
-        # if model is None:
-        #     bt.logging.error("Failed to load the starting model. Exiting competition.")
-        #     return
-        
-        # TODO(Miner/Bruno): Implement the training logic here.
-        bt.logging.success(f"Saving model to path: {model_dir}.")
-        # TODO(Bruno): write the save_model_to_disk() function
-        # save_model_to_disk(model, model_dir)
+    async def store_and_retrieve_metadata_on_chain(self, competition: str) -> None:
+        """
+        PoC function to integrate with the structured business logic
+        """
 
         model_id = MinerModel(namespace=self.config.models.namespace, name=self.config.models.model_name, epoch=self.config.models.epoch_checkpoint,
-                            date=datetime.datetime.now(), block=self.subtensor.block, competition_id=competition)
-        
-        # TODO(Konrad): Push model to hugging face
+                            date=datetime.datetime.now(), competition_id=competition, block=None)
         
         await self.metadata_store.store_model_metadata(model_id)
         bt.logging.success(f"Model successfully pushed model metadata on chain. Model ID: {model_id}")
 
         time.sleep(10)
 
-        model_metadata: ModelMetadata = await self.metadata_store.retrieve_model_metadata(self.wallet.hotkey.ss58_address)
+        model_metadata = await self.metadata_store.retrieve_model_metadata(self.wallet.hotkey.ss58_address)
 
         time.sleep(10)
-        print("MODEL METADATA......", model_metadata.id.name)
-        
-        
+        print("Model Metadata name: ", model_metadata.id.name)
 
-    async def load_starting_model(self):
-        """Loads the model to train based on the provided config."""
-
-        # Check if we should load a model from a local directory.
-        if self.config.load_model_dir:
-            # TODO(Bruno): write the load_model_from_disk() function
-            # model = load_model_from_disk(config.load_model_dir)
-            # bt.logging.success(f"Training with model from disk. Model={str(model)}")
-            # return model
-            ...
-        ...
-        # TODO(Bruno): possibly load model from scratch? if not handle the case where no model is loaded
-
-    def model_path(base_dir: str, run_id: str) -> str:
-        """
-        Constructs a file path for storing the model relating to a training run.
-        """
-        return os.path.join(base_dir, "training", run_id)
 
 # This is the main function, which runs the miner.
 if __name__ == "__main__":

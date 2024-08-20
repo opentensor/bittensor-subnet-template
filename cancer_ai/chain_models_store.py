@@ -18,14 +18,14 @@ class MinerModel(BaseModel):
 
     date: datetime.datetime = Field(description="The datetime at which model was pushed to hugging face")
 
-    block: Optional[str] = Field(description="Block on which this model was claimed on the chain.")
-
     # Identifier for competition
     competition_id: Optional[str] = Field(description="The competition id")
 
+    block: Optional[str] = Field(description="Block on which this model was claimed on the chain.")
+
     def to_compressed_str(self) -> str:
         """Returns a compressed string representation."""
-        return f"{self.namespace}:{self.name}:{self.epoch}:{self.competition_id}:{self.date}:{self.block}"
+        return f"{self.namespace}:{self.name}:{self.epoch}:{self.competition_id}:{self.date}"
 
     @classmethod
     def from_compressed_str(cls, cs: str) -> Type["MinerModel"]:
@@ -36,21 +36,8 @@ class MinerModel(BaseModel):
             name=tokens[1],
             epoch=tokens[2] if tokens[2] != "None" else None,
             date=tokens[3] if tokens[3] != "None" else None,
-            block=tokens[4] if tokens[4] != "None" else None,
-            competition_id=tokens[5] if tokens[5] != "None" else None,
-            block=
+            competition_id=tokens[4] if tokens[4] != "None" else None,
         )
-
-
-class Model(BaseModel):
-    """Represents a pre trained foundation model."""
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    id: MinerModel = Field(description="Identifier for this model.")
-    local_repo_dir: str = Field(description="Local repository with the required files.")
-
 
 class ChainModelMetadataStore():
     """Chain based implementation for storing and retrieving metadata about a model."""
@@ -85,12 +72,11 @@ class ChainModelMetadataStore():
         """Retrieves model metadata on this subnet for specific hotkey"""
 
         # Wrap calls to the subtensor in a subprocess with a timeout to handle potential hangs.
-        # partial = functools.partial(
-        #     bt.extrinsics.serving.get_metadata, self.subtensor, self.subnet_uid, hotkey
-        # )
+        partial = functools.partial(
+            bt.extrinsics.serving.get_metadata, self.subtensor, self.subnet_uid, hotkey
+        )
 
-        # metadata = run_in_subprocess(partial, 60)
-        metadata = bt.extrinsics.serving.get_metadata(self.subtensor, self.subnet_uid, hotkey)
+        metadata = run_in_subprocess(partial, 60)
         if not metadata:
             return None
         print("piwo", metadata["info"]["fields"])
@@ -99,7 +85,6 @@ class ChainModelMetadataStore():
 
         chain_str = bytes.fromhex(hex_data).decode()
 
-        print("piwo", chain_str)
         try:
             model = MinerModel.from_compressed_str(chain_str)
         except:
@@ -108,5 +93,6 @@ class ChainModelMetadataStore():
                 f"Failed to parse the metadata on the chain for hotkey {hotkey}."
             )
             return None
+        # The block id at which the metadata is stored
         model.block = metadata["block"]
         return model
