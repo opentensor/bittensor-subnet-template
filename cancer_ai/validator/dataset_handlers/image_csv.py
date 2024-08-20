@@ -42,7 +42,7 @@ class DatasetImagesCSV(BaseDatasetHandler):
     async def get_training_data(self) -> Tuple[List, List]:
         await self.sync_training_data()
         print(self.entries)
-        pred_x = [Image.open(f"{Path(self.label_path).parent}/{entry.filepath}") for entry in self.entries]
+        pred_x = [f"{Path(self.label_path).parent}/{entry.filepath}" for entry in self.entries]
         pred_y = [entry.is_melanoma for entry in self.entries]
         await self.process_training_data()
         return pred_x, pred_y

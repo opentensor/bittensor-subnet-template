@@ -81,13 +81,30 @@ class CompetitionManager(SerializableManager):
 
     async def get_miner_model(self, hotkey):
         # TODO get real data
-        return ModelInfo("vidhiparikh/House-Price-Estimator", "model_custom.pkcls")
+        return ModelInfo("safescanai/test_dataset", "melanoma.keras")
 
     async def init_evaluation(self):
-        # get models from chain
-        for hotkey in self.model_manager.hotkey_store:
-            self.model_manager.hotkey_store[hotkey] = await self.get_miner_model(hotkey)
-
+        # TODO get models from chain
+        miner_models = [
+            {
+                "hotkey": "wojtasy",
+                "hf_id": "safescanai/test_dataset",
+                "file_hf_id": "melanoma.keras",
+            },
+            {
+                "hotkey": "wojtasyy",
+                "hf_id": "safescanai/test_dataset",
+                "file_hf_id": "melanoma.keras",
+            },
+        ]
+        bt.logging.info(
+            f"Populating model manager with miner models. Got {len(miner_models)} models"
+        )
+        for miner_info in miner_models:
+            self.model_manager.add_model(
+                miner_info["hotkey"], miner_info["hf_id"], miner_info["file_hf_id"]
+            )
+        bt.logging.info("Initializing dataset")
         await self.dataset_manager.prepare_dataset()
 
         # log event
@@ -103,6 +120,8 @@ class CompetitionManager(SerializableManager):
                 self.config, self.model_manager.hotkey_store[hotkey]
             )
             model_pred_y = model_manager.run(pred_x)
+            print("Model prediction ", model_pred_y)
+            print("Ground truth: ", pred_y)
             # print "make stats and send to wandb"
             score = random.randint(0, 100)
             bt.logging.info(f"Hotkey {hotkey} model score: {score}")
