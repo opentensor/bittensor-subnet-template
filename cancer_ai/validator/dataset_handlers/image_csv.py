@@ -15,7 +15,7 @@ class ImageEntry:
 class DatasetImagesCSV(BaseDatasetHandler):
     """
     DatasetImagesCSV is responsible for handling the CSV dataset where directory structure looks as follows:
-    .
+    
     ├── images
     │   ├── image_1.jpg
     │   ├── image_2.jpg
@@ -29,7 +29,7 @@ class DatasetImagesCSV(BaseDatasetHandler):
         self.metadata_columns = ["filepath", "is_melanoma"]
 
     async def sync_training_data(self):
-        self.entries = []
+        self.entries: ImageEntry = []
         # go over csv file
         async with aiofiles.open(self.path, "r") as f:
             # "filepath" "is_melanoma" columns

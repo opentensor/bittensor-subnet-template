@@ -22,7 +22,7 @@ class DatasetManager(SerializableManager):
         self.file_hf_id = file_hf_id
         self.hf_api = HfApi()
         self.path = ""
-        self.data = None
+        self.data: Tuple[List, List] = ()
 
     def get_state(self) -> dict:
         return {}

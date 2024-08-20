@@ -55,10 +55,10 @@ class CompetitionManager(SerializableManager):
         self.category = category
         self.model_manager = ModelManager(config)
 
-        self.evaluation_time = [
-            time(hour_min.split(":")[0], hour_min.split(":")[1])
-            for hour_min in evaluation_times
-        ]
+        # self.evaluation_time = [
+        #     time(hour_min.split(":")[0], hour_min.split(":")[1])
+        #     for hour_min in evaluation_times
+        # ]
         self.dataset_manager = DatasetManager(
             config, competition_id, dataset_hf_id, file_hf_id
         )
