@@ -64,8 +64,8 @@ if __name__ == "__main__":
         "melaona-1",
         "skin",
         ["12:30", "15:30"],
-        "test-dataset-hf-id",
-        "test-file-hf-id",
+        "safescanai/test_dataset",
+        "skin_melanoma.zip",
     )
     asyncio.run(competition.evaluate())
     # await competition.evaluate()

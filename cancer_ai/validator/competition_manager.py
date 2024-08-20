@@ -93,7 +93,7 @@ class CompetitionManager(SerializableManager):
         # log event
 
     async def evaluate(self):
-        self.init_evaluation()
+        await self.init_evaluation()
         pred_x, pred_y = await self.dataset_manager.get_data()
         for hotkey in self.model_manager.hotkey_store:
             bt.logging.info("Evaluating hotkey: ", hotkey)

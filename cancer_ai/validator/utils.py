@@ -1,5 +1,6 @@
 from enum import Enum
 import os
+import asyncio
 
 
 class ModelType(Enum):
@@ -21,7 +22,7 @@ def detect_model_format(file_path) -> ModelType:
         return ModelType.KERAS_H5
     elif ext in [".pt", ".pth"]:
         return ModelType.PYTORCH
-    elif ext in [".pkl", ".joblib"]:
+    elif ext in [".pkl", ".joblib", ""]:
         return ModelType.SCIKIT_LEARN
     elif ext in [".model", ".json", ".txt"]:
         return ModelType.XGBOOST
@@ -41,3 +42,16 @@ def detect_model_format(file_path) -> ModelType:
         return ModelType.UNKNOWN
 
     return ModelType.UNKNOWN
+
+
+async def run_command(cmd):
+    # Start the subprocess
+    process = await asyncio.create_subprocess_shell(
+        cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+    )
+
+    # Wait for the subprocess to finish and capture the output
+    stdout, stderr = await process.communicate()
+
+    # Return the output and error if any
+    return stdout.decode(), stderr.decode()
