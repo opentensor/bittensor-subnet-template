@@ -67,9 +67,11 @@ class DatasetManager(SerializableManager):
         """Unzip dataset"""
         print("Unzipping dataset", self.local_compressed_path)
         os.system(f"rm -R {self.local_extracted_dir}")
-        await run_command(
+        print(f"unzip {self.local_compressed_path} -d {self.local_extracted_dir}")
+        out, err = await run_command(
             f"unzip {self.local_compressed_path} -d {self.local_extracted_dir}"
         )
+        print(err)
         print("Dataset unzipped")
 
     def set_dataset_handler(self) -> None:
@@ -82,7 +84,7 @@ class DatasetManager(SerializableManager):
                 self.config, Path(self.local_extracted_dir, "labels.csv")
             )
         else:
-            print("Files in dataset: ", os.listdir(self.local_extracted_dir))
+            #print("Files in dataset: ", os.listdir(self.local_extracted_dir))
             raise NotImplementedError("Dataset handler not implemented")
 
     async def prepare_dataset(self) -> None:
