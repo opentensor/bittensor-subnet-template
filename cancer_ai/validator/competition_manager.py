@@ -86,15 +86,20 @@ class CompetitionManager(SerializableManager):
     async def init_evaluation(self):
         # TODO get models from chain
         miner_models = [
+            # {
+            #     "hotkey": "wojtasy",
+            #     "hf_id": "safescanai/test_dataset",
+            #     "file_hf_id": "melanoma.keras",
+            # },
+            # {
+            #     "hotkey": "wojtasyy",
+            #     "hf_id": "safescanai/test_dataset",
+            #     "file_hf_id": "melanoma.keras",
+            # },
             {
-                "hotkey": "wojtasy",
+                "hotkey": "obcy ludzie",
                 "hf_id": "safescanai/test_dataset",
-                "file_hf_id": "melanoma.keras",
-            },
-            {
-                "hotkey": "wojtasyy",
-                "hf_id": "safescanai/test_dataset",
-                "file_hf_id": "melanoma.keras",
+                "file_hf_id": "simple_cnn_model.onnx",
             },
         ]
         bt.logging.info(
