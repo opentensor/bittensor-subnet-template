@@ -23,50 +23,82 @@ python3 neurons/miner2.py \
     --wallet.hotkey hot_validator \
     --model_path /path/to/model
 """
+import argparse
+import bittensor as bt
+
+import argparse
 
 
 def get_config() -> bt.config:
     main_parser = argparse.ArgumentParser()
-    # always required
+
+    main_parser.add_argument(
+        "--action", choices=["submit", "evaluate", "upload"], 
+        # required=True,
+        default="evaluate",
+    )
     main_parser.add_argument(
         "--model_path",
         type=str,
-        required=True,
+        # required=True,
         help="Path to ONNX model, used for evaluation",
+        default="neurons/simple_cnn_model.onnx",
     )
     main_parser.add_argument(
         "--competition_id",
         type=str,
+        # required=True,
         help="Competition ID",
-        required=True,
+        default="your_competition_id",
     )
-    # common arguments for subparsers
-    def add_hf_arguments(parser: argparse.ArgumentParser) -> None:
-        """Adds Hugging Face arguments to the parser."""
-        parser.add_argument(
-            "--hf_repo_id",
-            type=str,
-            default=None,
-            help="Hugging Face model repository ID",
-        )
-        parser.add_argument(
-            "--hf_file_path",
-            type=str,
-            default=None,
-            help="Hugging Face model file path",
-        )
-    subparsers = main_parser.add_subparsers(title="action")
-    subparser_evaluate = subparsers.add_parser("evaluate")
 
-    subparser_upload = subparsers.add_parser("upload")
-    add_hf_arguments(subparser_upload)
+    main_parser.add_argument(
+        "--models_dataset_dir",
+        type=str,
+        help="Path for storing datasets.",
+        default="./datasets",
+    )
+    # Subparser for upload command
 
-    subparser_submit = subparsers.add_parser("submit")
-    add_hf_arguments(subparser_submit)
+    main_parser.add_argument(
+        "--hf_repo_id",
+        type=str,
+        required=False,
+        help="Hugging Face model repository ID",
+    )
+    main_parser.add_argument(
+        "--hf_file_path",
+        type=str,
+        help="Hugging Face model file path",
+    )
 
+    main_parser.add_argument(
+        "--clean-after-run",
+        action="store_true",
+        help="Whether to clean up (dataset, temporary files) after running",
+        default=False,
+    )
+
+    # Add additional args from bt modules
     bt.wallet.add_args(main_parser)
     bt.subtensor.add_args(main_parser)
     bt.logging.add_args(main_parser)
 
-    config = bt.config(main_parser)
+    # Parse the arguments and return the config
+    # config = bt.config(main_parser)
+    # parsed = main_parser.parse_args()
+    # config = bt.config(main_parser)
+    # print(config)
+
+    config = main_parser.parse_args()
+    # print(config)
+    config.logging_dir = "./"
+    config.record_log = True
+    config.trace = False
+    config.debug = True
     return config
+
+
+if __name__ == "__main__":
+    config = get_config()
+    print(config)

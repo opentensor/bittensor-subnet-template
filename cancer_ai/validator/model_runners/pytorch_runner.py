@@ -1,8 +1,9 @@
 from . import BaseRunnerHandler
 from typing import List
 
+
 class PytorchRunnerHandler(BaseRunnerHandler):
-    def run(self, pred_x: List) -> List:
+    async def run(self, pred_x: List) -> List:
         # example, might not work
         from torch import load
 
@@ -10,4 +11,3 @@ class PytorchRunnerHandler(BaseRunnerHandler):
         model.eval()
         output = model(pred_x)
         return output
-

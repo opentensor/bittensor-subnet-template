@@ -7,12 +7,13 @@ from huggingface_hub import HfApi
 import bittensor as bt
 
 from .manager import SerializableManager
-from .utils import run_command
+from .utils import run_command, log_time
 from .dataset_handlers.image_csv import DatasetImagesCSV
 
 
 class DatasetManagerException(Exception):
     pass
+
 
 class DatasetManager(SerializableManager):
     def __init__(
@@ -20,13 +21,13 @@ class DatasetManager(SerializableManager):
     ) -> None:
         """
         Initializes a new instance of the DatasetManager class.
-        
+
         Args:
             config: The configuration object.
             competition_id (str): The ID of the competition.
             dataset_hf_id (str): The Hugging Face ID of the dataset.
             file_hf_id (str): The Hugging Face ID of the file.
-        
+
         Returns:
             None
         """
@@ -36,8 +37,9 @@ class DatasetManager(SerializableManager):
         self.file_hf_id = file_hf_id
         self.hf_api = HfApi()
         self.local_compressed_path = ""
+        print(self.config)
         self.local_extracted_dir = Path(
-            self.config.models.dataset_dir, self.competition_id
+            self.config.models_dataset_dir, self.competition_id
         )
         self.data: Tuple[List, List] = ()
         self.handler = None
@@ -48,23 +50,37 @@ class DatasetManager(SerializableManager):
     def set_state(self, state: dict):
         return {}
 
-    def download_dataset(self):
+    @log_time
+    async def download_dataset(self):
         if not os.path.exists(self.local_extracted_dir):
             os.makedirs(self.local_extracted_dir)
 
         self.local_compressed_path = self.hf_api.hf_hub_download(
             self.dataset_hf_id,
             self.file_hf_id,
-            cache_dir=Path(self.config.models.dataset_dir),
+            cache_dir=Path(self.config.models_dataset_dir),
             repo_type="dataset",
         )
 
     def delete_dataset(self) -> None:
         """Delete dataset from disk"""
-        shutil.rmtree(self.local_compressed_path)
 
+        bt.logging.info("Deleting dataset: ")
+
+        try:
+            shutil.rmtree(self.local_compressed_path)
+            bt.logging.info("Dataset deleted")
+        except OSError as e:
+            bt.logging.error(f"Failed to delete dataset from disk: {e}")
+
+    @log_time
     async def unzip_dataset(self) -> None:
         """Unzip dataset"""
+
+        self.local_extracted_dir = Path(
+            self.config.models_dataset_dir, self.competition_id
+        )
+
         print("Unzipping dataset", self.local_compressed_path)
         os.system(f"rm -R {self.local_extracted_dir}")
         await run_command(
@@ -79,7 +95,9 @@ class DatasetManager(SerializableManager):
         # is csv in directory
         if os.path.exists(Path(self.local_extracted_dir, "labels.csv")):
             self.handler = DatasetImagesCSV(
-                self.config, Path(self.local_extracted_dir, "labels.csv")
+                self.config,
+                self.local_extracted_dir,
+                Path(self.local_extracted_dir, "labels.csv"),
             )
         else:
             print("Files in dataset: ", os.listdir(self.local_extracted_dir))
@@ -89,7 +107,7 @@ class DatasetManager(SerializableManager):
         """Download dataset, unzip and set dataset handler"""
 
         bt.logging.info("Downloading dataset")
-        self.download_dataset()
+        await self.download_dataset()
         bt.logging.info("Unzipping dataset")
         await self.unzip_dataset()
         bt.logging.info("Setting dataset handler")

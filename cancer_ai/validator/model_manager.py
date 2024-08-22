@@ -9,8 +9,8 @@ from .manager import SerializableManager
 
 @dataclass
 class ModelInfo:
-    repo_id: str
-    filename: str
+    repo_id: str | None = None
+    filename: str | None = None
     file_path: str | None = None
     model_type: str | None = None
 
@@ -48,6 +48,7 @@ class ModelManager(SerializableManager):
             cache_dir=self.config.models.model_dir,
             repo_type="space",
         )
+    
 
     def add_model(self, hotkey, repo_id, filename) -> None:
         """Saves locally information about a new model."""
