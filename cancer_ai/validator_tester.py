@@ -7,6 +7,11 @@ import timeit
 from types import SimpleNamespace
 
 # from cancer_ai.utils.config import config
+from validator.competition_manager import ModelEvaluationResult
+import wandb
+
+from dotenv import load_dotenv
+import os
 
 
 path_config = {
@@ -50,12 +55,35 @@ competition_config = [
         "evaluation_time": ["12:30", "15:30"],
         "dataset_hf_id": "vidhiparikh/House-Price-Estimator",
         "file_hf_id": "model_custom.pkcls",
+        "wandb_project": "testing_integration", 
+        "wandb_entity": "urbaniak-bruno-safescanai", # TODO: Update this line to official entity
     }
 ]
 
 
 # def run():
     # asyncio.run(main_loop())
+
+def log_results_to_wandb(project, entity, hotkey, evaluation_result: ModelEvaluationResult):
+    wandb.init(project=project, entity=entity)  # TODO: Update this line as needed
+
+    wandb.log({
+        "hotkey": hotkey,
+        "tested_entries": evaluation_result.tested_entries,
+        "model_test_run_time": evaluation_result.run_time,
+        "accuracy": evaluation_result.accuracy,
+        "precision": evaluation_result.precision,
+        "recall": evaluation_result.recall,
+        "confusion_matrix": evaluation_result.confusion_matrix.tolist(),
+        "roc_curve": {
+            "fpr": evaluation_result.fpr.tolist(),
+            "tpr": evaluation_result.tpr.tolist()
+        },
+        "roc_auc": evaluation_result.roc_auc
+    })
+
+    wandb.finish()
+    return
 
 
 if __name__ == "__main__":
@@ -69,4 +97,10 @@ if __name__ == "__main__":
     )
     asyncio.run(competition.evaluate())
     # await competition.evaluate()
-    print(competition.results)
+    # print(competition.results)
+    load_dotenv()
+    wandb_api_key = os.getenv("WANDB_API_KEY")
+    wandb.login(key=wandb_api_key)
+    for competition_info in competition.results:
+        hotkey, result = competition_info
+        log_results_to_wandb(competition_config[0]["wandb_project"], competition_config[0]["wandb_entity"], hotkey, result)
