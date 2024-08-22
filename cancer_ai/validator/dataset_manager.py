@@ -81,7 +81,8 @@ class DatasetManager(SerializableManager):
             self.config.models_dataset_dir, self.competition_id
         )
 
-        print("Unzipping dataset", self.local_compressed_path)
+        bt.logging.info(f"Unzipping dataset '{self.competition_id}'")
+        bt.logging.debug(f"Dataset extracted to: { self.local_compressed_path}")
         os.system(f"rm -R {self.local_extracted_dir}")
         await run_command(
             f"unzip {self.local_compressed_path} -d {self.local_extracted_dir}"
@@ -91,7 +92,7 @@ class DatasetManager(SerializableManager):
     def set_dataset_handler(self) -> None:
         """Detect dataset type and set handler"""
         if not self.local_compressed_path:
-            raise DatasetManagerException("Dataset not downloaded")
+            raise DatasetManagerException(f"Dataset '{self.competition_id}' not downloaded")
         # is csv in directory
         if os.path.exists(Path(self.local_extracted_dir, "labels.csv")):
             self.handler = DatasetImagesCSV(
@@ -105,18 +106,18 @@ class DatasetManager(SerializableManager):
 
     async def prepare_dataset(self) -> None:
         """Download dataset, unzip and set dataset handler"""
-
-        bt.logging.info("Downloading dataset")
+        bt.logging.info(f"Preparing dataset '{self.competition_id}'")
+        bt.logging.info(f"Downloading dataset '{self.competition_id}'")
         await self.download_dataset()
-        bt.logging.info("Unzipping dataset")
+        bt.logging.info(f"Unzipping dataset '{self.competition_id}'")
         await self.unzip_dataset()
-        bt.logging.info("Setting dataset handler")
+        bt.logging.info(f"Setting dataset handler '{self.competition_id}'")
         self.set_dataset_handler()
-        bt.logging.info("Preprocessing dataset")
+        bt.logging.info(f"Preprocessing dataset '{self.competition_id}'")
         self.data = await self.handler.get_training_data()
 
     async def get_data(self) -> Tuple[List, List]:
         """Get data from dataset handler"""
         if not self.data:
-            raise DatasetManagerException("Dataset not initalized ")
+            raise DatasetManagerException(f"Dataset '{self.competition_id}' not initalized ")
         return self.data

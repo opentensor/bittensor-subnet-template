@@ -1,6 +1,9 @@
 import argparse
 
+from colorama import init, Fore, Back, Style
 import bittensor as bt
+from bittensor.btlogging import format
+
 
 help = """
 How to run it:
@@ -29,11 +32,36 @@ import bittensor as bt
 import argparse
 
 
+def set_log_formatting() -> None:
+    """Override bittensor logging formats."""
+    
+
+    format.LOG_TRACE_FORMATS = {
+        level: f"{Fore.BLUE}%(asctime)s{Fore.RESET}"
+        f" | {Style.BRIGHT}{color}%(levelname)s{Fore.RESET}{Back.RESET}{Style.RESET_ALL}"
+        f" |%(message)s"
+        for level, color in format.log_level_color_prefix.items()
+    }
+
+    format.DEFAULT_LOG_FORMAT = (
+        f"{Fore.BLUE}%(asctime)s{Fore.RESET} | "
+        f"{Style.BRIGHT}{Fore.WHITE}%(levelname)s{Style.RESET_ALL} | "
+        "%(message)s"
+    )
+
+    format.DEFAULT_TRACE_FORMAT = (
+        f"{Fore.BLUE}%(asctime)s{Fore.RESET} | "
+        f"{Style.BRIGHT}{Fore.WHITE}%(levelname)s{Style.RESET_ALL} | "
+        f" %(message)s"
+    )
+
+
 def get_config() -> bt.config:
     main_parser = argparse.ArgumentParser()
 
     main_parser.add_argument(
-        "--action", choices=["submit", "evaluate", "upload"], 
+        "--action",
+        choices=["submit", "evaluate", "upload"],
         # required=True,
         default="evaluate",
     )
@@ -94,8 +122,8 @@ def get_config() -> bt.config:
     # print(config)
     config.logging_dir = "./"
     config.record_log = True
-    config.trace = False
-    config.debug = True
+    config.trace = True
+    config.debug = False
     return config
 
 
