@@ -7,10 +7,16 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
 
 👋 [Introduction](#introduction)
-- [Features](#Features)
-- [Vision](#Vision)
-- REAL-WORLD APPLICATIONS
-- [Roadmap](#roadmap)
+⚙️ [Features](#Features)
+👁️ [Vision](#👁️ VISION)
+🌍 [Real-world appliactions](#REAL-WORLD APPLICATIONS)
+⚠️ Why is safescan subnet important?
+📢 Marketing
+💰 [Tokenomy & economy](#Tokenomy & economy)
+👨‍👨‍👦‍👦 [Team composition](#Team composition)
+🛣️ [Roadmap](#roadmap)
+📊 [SETUP WandB (HIGHLY RECOMMENDED - VALIDATORS PLEASE READ)](#SETUP WandB (HIGHLY RECOMMENDED - VALIDATORS PLEASE READ)
+
 - [Overview of Miner and Validator Functionality](#overview-of-miner-and-validator-functionality)
     - [Miner](#miner)
     - [Validator](#validator)
@@ -121,14 +127,6 @@ We aim to keep our cancer detection app and software free for those who need it 
 - Rewards for miners and validators for generating economic value (e.g., analyzing mammography data for private healthcare)
 - Proceeds generated from sponsors and end-users will be distributed among the network's participants.
 
-# **🖧 PARTNERSHIP SUBNETS**
-
-To create SOTA cancer detection algorithms, we aim to fully leverage the power of the Bittensor community and closely collaborate with other subnets. Therefore, we are establishing partnerships with:
-
-POTENTIAL COLLABS
-
-- Subnet 2 - fingerprinting modeli ML - czy miner odpala na tym modelu co trzeba
-- subnet 31 - NASChain - optymalizacja layerów neuronów modeli
 
 # **👨‍👨‍👦‍👦 TEAM COMPOSITION**
 
@@ -145,8 +143,6 @@ Team members:
 - **@Izuael -** Mobile software Engineer
 
 # **🛣️ ROADMAP**
-
-zrobić plan
 
 Given the complexity of creating a state of the art roleplay LLM, we plan to divide the process into 3 distinct phases.
 
@@ -169,8 +165,6 @@ Given the complexity of creating a state of the art roleplay LLM, we plan to div
 - [ ]  Expand the state of the art in roleplay LLMs through continuous iteration and data collection
 
 # 👷🏻‍♂️ ENGINEERING ROADMAP
-
-tu potrzebuje wsparcia
 
 edgemaxxing for mobile phones
 
