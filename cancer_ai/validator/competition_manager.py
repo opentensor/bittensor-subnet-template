@@ -12,9 +12,7 @@ from .model_run_manager import ModelRunManager
 from  .competition_handlers.melanoma_handler import MelanomaCompetitionHandler
 
 
-COMPETITION_MAPPING = {
-    "melaona-1": "melanoma",
-}
+
 COMPETITION_HANDLER_MAPPING = {
     "melaona-1": MelanomaCompetitionHandler,
 }
