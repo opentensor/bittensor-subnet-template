@@ -6,12 +6,13 @@ from .utils import detect_model_format, ModelType
 from .model_runners.pytorch_runner import PytorchRunnerHandler
 from .model_runners.tensorflow_runner import TensorflowRunnerHandler
 from .model_runners.onnx_runner import ONNXRunnerHandler
+from .model_runners.onnx_runner import OnnxRunnerHandler
 
 
 MODEL_TYPE_HANDLERS = {
     ModelType.PYTORCH: PytorchRunnerHandler,
     ModelType.TENSORFLOW_SAVEDMODEL: TensorflowRunnerHandler,
-    ModelType.ONNX: ONNXRunnerHandler,
+    ModelType.ONNX: OnnxRunnerHandler,
 }
 
 
@@ -31,7 +32,7 @@ class ModelRunManager(SerializableManager):
         """Sets the model runner handler based on the model type."""
         
         model_type = detect_model_format(self.model.file_path)
-        # Initializing ml model handler object
+        # initializing ml model handler object
         model_handler = MODEL_TYPE_HANDLERS[model_type]
         self.handler = model_handler(self.config, self.model.file_path)
 

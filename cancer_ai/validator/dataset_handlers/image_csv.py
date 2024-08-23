@@ -45,6 +45,11 @@ class DatasetImagesCSV(BaseDatasetHandler):
 
     @log_time
     async def get_training_data(self) -> Tuple[List, List]:
+        """
+        Get the training data.
+
+        This method is responsible for loading the training data and returning a tuple containing two lists: the first list contains paths to the images and the second list contains the labels.
+        """
         await self.sync_training_data()
         pred_x = [
             Image.open(

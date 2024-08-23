@@ -1,4 +1,4 @@
-from datetime import time
+import time
 import random
 from typing import List
 
@@ -8,10 +8,13 @@ from .manager import SerializableManager
 from .model_manager import ModelManager, ModelInfo
 from .dataset_manager import DatasetManager
 from .model_run_manager import ModelRunManager
-from cancer_ai.chain_models_store import ChainMinerModel, ChainModelMetadataStore
 
-COMPETITION_MAPPING = {
-    "melaona-1": "melanoma",
+from  .competition_handlers.melanoma_handler import MelanomaCompetitionHandler
+
+
+
+COMPETITION_HANDLER_MAPPING = {
+    "melaona-1": MelanomaCompetitionHandler,
 }
 
 
@@ -101,7 +104,14 @@ class CompetitionManager(SerializableManager):
     
     async def evaluate(self):
         await self.dataset_manager.prepare_dataset()
-        pred_x, pred_y = await self.dataset_manager.get_data()
+        path_X_test, y_test = await self.dataset_manager.get_data()
+        
+        competition_handler = COMPETITION_HANDLER_MAPPING[self.competition_id](
+            path_X_test=path_X_test, y_test=y_test
+        )
+
+        X_test, y_test = competition_handler.preprocess_data()
+
         for hotkey in self.model_manager.hotkey_store:
             bt.logging.info("Evaluating hotkey: ", hotkey)
             await self.model_manager.download_miner_model(hotkey)
@@ -109,12 +119,13 @@ class CompetitionManager(SerializableManager):
             model_manager = ModelRunManager(
                 self.config, self.model_manager.hotkey_store[hotkey]
             )
-            model_pred_y = await model_manager.run(pred_x)
-            # print "make stats and send to wandb"
-            score = random.randint(0, 100)
-            bt.logging.info(f"Hotkey {hotkey} model score: {score}")
-            self.results.append((hotkey, score))
+            start_time = time.time()
+            y_pred = await model_manager.run(X_test)
+            run_time_s = time.time() - start_time
+            print("Model prediction ", y_pred)
+            print("Ground truth: ", y_test)
+            
+            model_result = competition_handler.get_model_result(y_test, y_pred, run_time_s)
+            self.results.append((hotkey, model_result))
 
-        # sort by score
-        self.results.sort(key=lambda x: x[1], reverse=True)
         return self.results
