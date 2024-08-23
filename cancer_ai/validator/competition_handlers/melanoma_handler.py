@@ -9,15 +9,14 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, confu
 class MelanomaCompetitionHandler(BaseCompetitionHandler):
     """
     """
-    def __init__(self, path_X_test, y_test) -> None:
-        super().__init__(path_X_test, y_test)
+    def __init__(self, X_test, y_test) -> None:
+        super().__init__(X_test, y_test)
 
     def preprocess_data(self):
-        X_test = []
+        new_X_test = []
         target_size=(224, 224) #TODO: Change this to the correct size 
 
-        for img_path in self.path_X_test:
-            img = Image.open(img_path)
+        for img in self.X_test:
             img = img.resize(target_size)
             img_array = np.array(img, dtype=np.float32) / 255.0
             img_array = np.array(img)  
@@ -26,14 +25,14 @@ class MelanomaCompetitionHandler(BaseCompetitionHandler):
             
             img_array = np.transpose(img_array, (2, 0, 1))           # Transpose image to (C, H, W)
 
-            X_test.append(img_array)
+            new_X_test.append(img_array)
 
-        X_test = np.array(X_test, dtype=np.float32)
+        new_X_test = np.array(new_X_test, dtype=np.float32)
 
         # Map y_test to 0, 1
-        y_test = [1 if y == "True" else 0 for y in self.y_test]
+        new_y_test = [1 if y == "True" else 0 for y in self.y_test]
 
-        return X_test, y_test
+        return new_X_test, new_y_test
     
     def get_model_result(self, y_test: List[float], y_pred: np.ndarray, run_time_s: float) -> ModelEvaluationResult:
         y_pred_binary = [1 if y > 0.5 else 0 for y in y_pred]

@@ -28,22 +28,20 @@ class ModelRunManager(SerializableManager):
         pass
 
     def set_runner_handler(self) -> None:
-        """
-        Sets the model runner handler based on the model type.
-        """
+        """Sets the model runner handler based on the model type."""
         
         model_type = detect_model_format(self.model.file_path)
         # initializing ml model handler object
         model_handler = MODEL_TYPE_HANDLERS[model_type]
         self.handler = model_handler(self.config, self.model.file_path)
 
-    def run(self, X_test) -> List:
+    async def run(self, pred_x: List) -> List:
         """
         Run the model with the given input.
 
         Returns:
             List: model predictions
         """
-        print(" model handler is ", self.handler)
-        model_predictions = self.handler.run(X_test)
+
+        model_predictions = await self.handler.run(pred_x)
         return model_predictions

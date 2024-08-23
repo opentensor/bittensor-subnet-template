@@ -6,10 +6,12 @@ import csv
 import aiofiles
 from pathlib import Path
 
+from ..utils import log_time
+
 
 @dataclass
 class ImageEntry:
-    filepath: str
+    relative_path: str
     is_melanoma: bool
 
 
@@ -24,11 +26,13 @@ class DatasetImagesCSV(BaseDatasetHandler):
     ├── labels.csv
     """
 
-    def __init__(self, config, path: str) -> None:
+    def __init__(self, config, dataset_path, label_path: str) -> None:
         self.config = config
-        self.label_path = path
+        self.dataset_path = dataset_path
+        self.label_path = label_path
         self.metadata_columns = ["filepath", "is_melanoma"]
 
+    @log_time
     async def sync_training_data(self):
         self.entries: List[ImageEntry] = []
         # go over csv file
@@ -39,6 +43,7 @@ class DatasetImagesCSV(BaseDatasetHandler):
             for row in reader:
                 self.entries.append(ImageEntry(row[0], row[1]))
 
+    @log_time
     async def get_training_data(self) -> Tuple[List, List]:
         """
         Get the training data.
@@ -46,8 +51,14 @@ class DatasetImagesCSV(BaseDatasetHandler):
         This method is responsible for loading the training data and returning a tuple containing two lists: the first list contains paths to the images and the second list contains the labels.
         """
         await self.sync_training_data()
-        print(self.entries)
-        pred_x = [f"{Path(self.label_path).parent}/{entry.filepath}" for entry in self.entries]
+        pred_x = [
+            Image.open(
+                str(
+                    Path(self.dataset_path, entry.relative_path).resolve(),
+                ),
+            )
+            for entry in self.entries
+        ]
         pred_y = [entry.is_melanoma for entry in self.entries]
         await self.process_training_data()
         return pred_x, pred_y

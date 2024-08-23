@@ -21,15 +21,15 @@ class BaseCompetitionHandler:
     This class initializes the config and competition_id attributes.
     """
 
-    def __init__(self, path_X_test, y_test) -> None:
+    def __init__(self, X_test, y_test) -> None:
         """
         Initializes the BaseCompetitionHandler object.
 
         Args:
-            path_X_test (str): Path to the test data.
+            X_test (list): List of test images.
             y_test (list): List of test labels.
         """
-        self.path_X_test = path_X_test
+        self.X_test = X_test
         self.y_test = y_test
 
     @abstractmethod

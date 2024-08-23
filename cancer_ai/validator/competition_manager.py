@@ -9,12 +9,13 @@ from .model_manager import ModelManager, ModelInfo
 from .dataset_manager import DatasetManager
 from .model_run_manager import ModelRunManager
 
-from  .competition_handlers.melanoma_handler import MelanomaCompetitionHandler
+from .competition_handlers.melanoma_handler import MelanomaCompetitionHandler
 
+from cancer_ai.chain_models_store import ChainModelMetadataStore, ChainMinerModel
 
 
 COMPETITION_HANDLER_MAPPING = {
-    "melaona-1": MelanomaCompetitionHandler,
+    "melanoma-1": MelanomaCompetitionHandler,
 }
 
 
@@ -35,89 +36,84 @@ class CompetitionManager(SerializableManager):
     def __init__(
         self,
         config,
+        subtensor: bt.Subtensor,
+        subnet_uid: str,
         competition_id: str,
         category: str,
-        evaluation_times: list[str],
+        dataset_hf_repo: str,
         dataset_hf_id: str,
-        file_hf_id: str,
+        dataset_hf_repo_type: str,
     ) -> None:
         """
-        Initializes a CompetitionManager instance.
+        Responsible for managing a competition.
 
         Args:
         config (dict): Config dictionary.
         competition_id (str): Unique identifier for the competition.
         category (str): Category of the competition.
-        evaluation_time (list[str]): List of times of a day at which the competition will be evaluated in XX:XX format.
-
-        Note: Times are in UTC time.
         """
         bt.logging.info(f"Initializing Competition: {competition_id}")
         self.config = config
         self.competition_id = competition_id
         self.category = category
-        self.model_manager = ModelManager(config)
-
-        # self.evaluation_time = [
-        #     time(hour_min.split(":")[0], hour_min.split(":")[1])
-        #     for hour_min in evaluation_times
-        # ]
-        self.dataset_manager = DatasetManager(
-            config, competition_id, dataset_hf_id, file_hf_id
-        )
-        # self.model_evaluator =
         self.results = []
+        self.model_manager = ModelManager(config)
+        self.dataset_manager = DatasetManager(
+            config, competition_id, dataset_hf_repo, dataset_hf_id, dataset_hf_repo_type
+        )
+        self.chain_model_metadata_store = ChainModelMetadataStore(subtensor, subnet_uid)
+
+        self.hotkeys = []
+        self.chain_miner_models = {}
 
     def get_state(self):
         return {
             "competition_id": self.competition_id,
             "model_manager": self.model_manager.get_state(),
             "category": self.category,
-            "evaluation_time": self.evaluation_time,
         }
 
     def set_state(self, state: dict):
         self.competition_id = state["competition_id"]
         self.model_manager.set_state(state["model_manager"])
         self.category = state["category"]
-        self.evaluation_time = state["evaluation_time"]
 
-    async def get_miner_model(self, hotkey):
-        # TODO get real data
-        return ModelInfo("safescanai/test_dataset", "melanoma.keras")
-
-    async def init_evaluation(self):
-        # TODO get models from chain
-        miner_models = [
-            # {
-            #     "hotkey": "obcy ludzie_2",
-            #     "hf_id": "safescanai/test_dataset",
-            #     "file_hf_id": "model_dynamic.onnx",
-            # },
-            {
-                "hotkey": "obcy ludzie",
-                "hf_id": "safescanai/test_dataset",
-                "file_hf_id": "model_dynamic.onnx",
-            },
-        ]
-        bt.logging.info(
-            f"Populating model manager with miner models. Got {len(miner_models)} models"
+    async def get_miner_model(self, chain_miner_model: ChainMinerModel):
+        model_info = ModelInfo(
+            hf_repo_id=chain_miner_model.hf_repo_id,
+            hf_filename=chain_miner_model.hf_filename,
+            hf_repo_type=chain_miner_model.hf_repo_type,
         )
-        for miner_info in miner_models:
-            self.model_manager.add_model(
-                miner_info["hotkey"], miner_info["hf_id"], miner_info["file_hf_id"]
-            )
-        bt.logging.info("Initializing dataset")
-        await self.dataset_manager.prepare_dataset()
+        return model_info
 
-        # log event
+        # return ModelInfo(hf_repo_id="safescanai/test_dataset", hf_filename="simple_cnn_model.onnx", hf_repo_type="dataset")
+
+    async def sync_chain_miners(self, hotkeys: list[str]):
+        """
+        Updates hotkeys and downloads information of models from the chain
+        """
+        bt.logging.info("Synchronizing miners from the chain")
+        self.hotkeys = hotkeys
+        bt.logging.info(f"Amount of hotkeys: {len(hotkeys)}")
+        for hotkey in hotkeys:
+            hotkey_metadata = (
+                await self.chain_model_metadata_store.retrieve_model_metadata(hotkey)
+            )
+            if hotkey_metadata:
+                self.chain_miner_models[hotkey] = hotkey_metadata
+                self.model_manager.hotkey_store[hotkey] = await self.get_miner_model(
+                    hotkey
+                )
+        bt.logging.info(
+            f"Amount of chain miners with models: {len(self.chain_miner_models)}"
+        )
 
     async def evaluate(self):
-        await self.init_evaluation()
-        path_X_test, y_test = await self.dataset_manager.get_data()
-        
+        await self.dataset_manager.prepare_dataset()
+        X_test, y_test = await self.dataset_manager.get_data()
+
         competition_handler = COMPETITION_HANDLER_MAPPING[self.competition_id](
-            path_X_test=path_X_test, y_test=y_test
+            X_test=X_test, y_test=y_test
         )
 
         X_test, y_test = competition_handler.preprocess_data()
@@ -130,12 +126,14 @@ class CompetitionManager(SerializableManager):
                 self.config, self.model_manager.hotkey_store[hotkey]
             )
             start_time = time.time()
-            y_pred = model_manager.run(X_test)
+            y_pred = await model_manager.run(X_test)
             run_time_s = time.time() - start_time
             print("Model prediction ", y_pred)
             print("Ground truth: ", y_test)
-            
-            model_result = competition_handler.get_model_result(y_test, y_pred, run_time_s)
+
+            model_result = competition_handler.get_model_result(
+                y_test, y_pred, run_time_s
+            )
             self.results.append((hotkey, model_result))
 
         return self.results
