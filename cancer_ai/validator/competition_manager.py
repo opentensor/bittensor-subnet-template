@@ -92,19 +92,14 @@ class CompetitionManager(SerializableManager):
         # TODO get models from chain
         miner_models = [
             # {
-            #     "hotkey": "wojtasy",
+            #     "hotkey": "obcy ludzie_2",
             #     "hf_id": "safescanai/test_dataset",
-            #     "file_hf_id": "melanoma.keras",
-            # },
-            # {
-            #     "hotkey": "wojtasyy",
-            #     "hf_id": "safescanai/test_dataset",
-            #     "file_hf_id": "melanoma.keras",
+            #     "file_hf_id": "model_dynamic.onnx",
             # },
             {
                 "hotkey": "obcy ludzie",
                 "hf_id": "safescanai/test_dataset",
-                "file_hf_id": "simple_cnn_model.onnx",
+                "file_hf_id": "model_dynamic.onnx",
             },
         ]
         bt.logging.info(

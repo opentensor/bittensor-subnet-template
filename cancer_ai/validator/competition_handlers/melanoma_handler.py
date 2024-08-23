@@ -24,7 +24,7 @@ class MelanomaCompetitionHandler(BaseCompetitionHandler):
                 img_array = np.stack((img_array,) * 3, axis=-1)
             
             img_array = np.transpose(img_array, (2, 0, 1))           # Transpose image to (C, H, W)
-            img_array = np.expand_dims(img_array, axis=0)            # Add batch dimension
+
             X_test.append(img_array)
 
         X_test = np.array(X_test, dtype=np.float32)
