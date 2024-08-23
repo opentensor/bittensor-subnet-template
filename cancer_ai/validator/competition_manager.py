@@ -133,10 +133,11 @@ class CompetitionManager(SerializableManager):
             )
             start_time = time.time()
             y_pred = model_manager.run(X_test)
-            run_time = time.time() - start_time
+            run_time_s = time.time() - start_time
             print("Model prediction ", y_pred)
             print("Ground truth: ", y_test)
-            model_result = competition_handler.evaluate(y_test, y_pred, run_time)
+            
+            model_result = competition_handler.get_model_result(y_test, y_pred, run_time_s)
             self.results.append((hotkey, model_result))
 
         return self.results

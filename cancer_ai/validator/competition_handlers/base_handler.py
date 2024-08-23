@@ -41,7 +41,7 @@ class BaseCompetitionHandler:
         """
 
     @abstractmethod
-    def evaluate(self, y_pred) -> ModelEvaluationResult:
+    def get_model_result(self) -> ModelEvaluationResult:
         """
         Abstract method to evaluate the competition.
 

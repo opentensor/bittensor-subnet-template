@@ -1,6 +1,7 @@
 from .base_handler import BaseCompetitionHandler
 from .base_handler import ModelEvaluationResult
 
+from typing import List
 from PIL import Image
 import numpy as np
 from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix, roc_curve, auc
@@ -34,7 +35,7 @@ class MelanomaCompetitionHandler(BaseCompetitionHandler):
 
         return X_test, y_test
     
-    def evaluate(self, y_test, y_pred, run_time) -> ModelEvaluationResult:
+    def get_model_result(self, y_test: List[float], y_pred: np.ndarray, run_time_s: float) -> ModelEvaluationResult:
         y_pred_binary = [1 if y > 0.5 else 0 for y in y_pred]
         tested_entries = len(y_test)
         accuracy = accuracy_score(y_test, y_pred_binary)
@@ -45,7 +46,7 @@ class MelanomaCompetitionHandler(BaseCompetitionHandler):
         roc_auc = auc(fpr, tpr)
         return ModelEvaluationResult(
             tested_entries=tested_entries,  
-            run_time=run_time,
+            run_time=run_time_s,
             accuracy=accuracy,
             precision=precision,
             recall=recall,

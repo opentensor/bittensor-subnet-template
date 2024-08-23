@@ -40,6 +40,14 @@ class DatasetImagesCSV(BaseDatasetHandler):
                 self.entries.append(ImageEntry(row[0], row[1]))
 
     async def get_training_data(self) -> Tuple[List, List]:
+        """
+        Get the training data.
+
+        This method is responsible for loading the training data and returning it as a tuple of two lists: the first list contains the input data and the second list contains the labels.
+
+        Returns:
+            Tuple[List, List]: A tuple containing two lists: the first list contains paths to the images and the second list contains the labels.
+        """
         await self.sync_training_data()
         print(self.entries)
         pred_x = [f"{Path(self.label_path).parent}/{entry.filepath}" for entry in self.entries]
