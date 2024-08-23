@@ -10,7 +10,7 @@ import cancer_ai
 
 # import base miner class which takes care of most of the boilerplate
 from cancer_ai.base.miner import BaseMinerNeuron
-from cancer_ai.chain_models_store import MinerModel, ChainModelMetadataStore
+from cancer_ai.chain_models_store import ChainMinerModel, ChainModelMetadataStore
 
 
 class Miner(BaseMinerNeuron):
@@ -152,7 +152,7 @@ class Miner(BaseMinerNeuron):
         PoC function to integrate with the structured business logic
         """
 
-        model_id = MinerModel(namespace=self.config.models.namespace, name=self.config.models.model_name, epoch=self.config.models.epoch_checkpoint,
+        model_id = ChainMinerModel(namespace=self.config.models.namespace, name=self.config.models.model_name, epoch=self.config.models.epoch_checkpoint,
                             date=datetime.datetime.now(), competition_id=competition, block=None)
         
         await self.metadata_store.store_model_metadata(model_id)

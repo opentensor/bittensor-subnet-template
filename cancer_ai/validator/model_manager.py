@@ -9,8 +9,9 @@ from .manager import SerializableManager
 
 @dataclass
 class ModelInfo:
-    repo_id: str | None = None
-    filename: str | None = None
+    hf_repo_id: str | None = None
+    hf_filename: str | None = None
+    hf_repo_type: str | None = None
     file_path: str | None = None
     model_type: str | None = None
 
@@ -43,10 +44,10 @@ class ModelManager(SerializableManager):
         """
         model_info = self.hotkey_store[hotkey]
         model_info.file_path = self.api.hf_hub_download(
-            model_info.repo_id,
-            model_info.filename,
+            model_info.hf_repo_id,
+            model_info.hf_filename,
             cache_dir=self.config.model_dir,
-            repo_type="dataset",
+            repo_type=model_info.hf_repo_type,
         )
     
 

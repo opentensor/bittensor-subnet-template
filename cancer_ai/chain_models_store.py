@@ -6,7 +6,8 @@ from typing import ClassVar, Optional, Type
 from .utils.models_storage_utils import run_in_subprocess
 from pydantic import BaseModel, Field, PositiveInt
 
-class MinerModel(BaseModel):
+
+class ChainMinerModel(BaseModel):
     """Uniquely identifies a trained model"""
 
     namespace: str = Field(
@@ -14,21 +15,34 @@ class MinerModel(BaseModel):
     )
     name: str = Field(description="Name of the model.")
 
-    epoch: int = Field(description="The epoch number to submit as your checkpoint to evaluate e.g. 10")
+    epoch: int = Field(
+        description="The epoch number to submit as your checkpoint to evaluate e.g. 10"
+    )
 
-    date: datetime.datetime = Field(description="The datetime at which model was pushed to hugging face")
+    date: datetime.datetime = Field(
+        description="The datetime at which model was pushed to hugging face"
+    )
 
     # Identifier for competition
     competition_id: Optional[str] = Field(description="The competition id")
 
-    block: Optional[str] = Field(description="Block on which this model was claimed on the chain.")
+    block: Optional[str] = Field(
+        description="Block on which this model was claimed on the chain."
+    )
+
+    hf_repo_id: Optional[str] = Field(description="Hugging Face repo id.")
+    hf_filename: Optional[str] = Field(description="Hugging Face filename.")
+    hf_repo_type: Optional[str] = Field(description="Hugging Face repo type.")
+
+    class Config:
+        arbitrary_types_allowed = True
 
     def to_compressed_str(self) -> str:
         """Returns a compressed string representation."""
         return f"{self.namespace}:{self.name}:{self.epoch}:{self.competition_id}:{self.date}"
 
     @classmethod
-    def from_compressed_str(cls, cs: str) -> Type["MinerModel"]:
+    def from_compressed_str(cls, cs: str) -> Type["ChainMinerModel"]:
         """Returns an instance of this class from a compressed string representation"""
         tokens = cs.split(":")
         return cls(
@@ -39,7 +53,8 @@ class MinerModel(BaseModel):
             competition_id=tokens[4] if tokens[4] != "None" else None,
         )
 
-class ChainModelMetadataStore():
+
+class ChainModelMetadataStore:
     """Chain based implementation for storing and retrieving metadata about a model."""
 
     def __init__(
@@ -54,7 +69,7 @@ class ChainModelMetadataStore():
         )
         self.subnet_uid = subnet_uid
 
-    async def store_model_metadata(self, model_id: MinerModel):
+    async def store_model_metadata(self, model_id: ChainMinerModel):
         """Stores model metadata on this subnet for a specific wallet."""
         if self.wallet is None:
             raise ValueError("No wallet available to write to the chain.")
@@ -68,7 +83,7 @@ class ChainModelMetadataStore():
         )
         run_in_subprocess(partial, 60)
 
-    async def retrieve_model_metadata(self, hotkey: str) -> Optional[MinerModel]:
+    async def retrieve_model_metadata(self, hotkey: str) -> Optional[ChainMinerModel]:
         """Retrieves model metadata on this subnet for specific hotkey"""
 
         # Wrap calls to the subtensor in a subprocess with a timeout to handle potential hangs.
@@ -86,11 +101,11 @@ class ChainModelMetadataStore():
         chain_str = bytes.fromhex(hex_data).decode()
 
         try:
-            model = MinerModel.from_compressed_str(chain_str)
+            model = ChainMinerModel.from_compressed_str(chain_str)
         except:
             # If the metadata format is not correct on the chain then we return None.
-            bt.logging.trace(
-                f"Failed to parse the metadata on the chain for hotkey {hotkey}."
+            bt.logging.error(
+                f"Failed to parse the metadata on the chain for hotkey {hotkey}. Raw value: {chain_str}"
             )
             return None
         # The block id at which the metadata is stored

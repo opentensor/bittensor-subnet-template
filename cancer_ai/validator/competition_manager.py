@@ -8,7 +8,7 @@ from .manager import SerializableManager
 from .model_manager import ModelManager, ModelInfo
 from .dataset_manager import DatasetManager
 from .model_run_manager import ModelRunManager
-
+from cancer_ai.chain_models_store import ChainMinerModel, ChainModelMetadataStore
 
 COMPETITION_MAPPING = {
     "melaona-1": "melanoma",
@@ -32,6 +32,8 @@ class CompetitionManager(SerializableManager):
     def __init__(
         self,
         config,
+        subtensor: bt.Subtensor,
+        subnet_uid: str,
         competition_id: str,
         category: str,
         dataset_hf_id: str,
@@ -54,6 +56,10 @@ class CompetitionManager(SerializableManager):
         self.dataset_manager = DatasetManager(
             config, competition_id, dataset_hf_id, file_hf_id
         )
+        self.chain_model_metadata_store = ChainModelMetadataStore(subtensor, subnet_uid )
+
+        self.hotkeys = []
+        self.chain_miner_models = {}
 
     def get_state(self):
         return {
@@ -68,24 +74,32 @@ class CompetitionManager(SerializableManager):
         self.model_manager.set_state(state["model_manager"])
         self.category = state["category"]
 
-    async def get_miner_model(self, hotkey):
-        # TODO get real data
-        return ModelInfo("safescanai/test_dataset", "simple_cnn_model.onnx")
+    async def get_miner_model(self, chain_miner_model: ChainMinerModel):
+        model_info = ModelInfo(
+            hf_repo_id=chain_miner_model.hf_repo_id,
+            hf_filename=chain_miner_model.hf_filename,
+            hf_repo_type=chain_miner_model.hf_repo_type,
+        )
+        return model_info
 
-    async def init_evaluation(self):
-        # get models from chain
-        hotkeys = [
-            "example_hotkey",
-        ]
+        # return ModelInfo(hf_repo_id="safescanai/test_dataset", hf_filename="simple_cnn_model.onnx", hf_repo_type="dataset")
+
+    async def sync_chain_miners(self, hotkeys: list[str]):
+        """
+        Updates hotkeys and downloads information of models from the chain
+        """
+        bt.logging.info("Synchronizing miners from the chain")
+        self.hotkeys = hotkeys
+        bt.logging.info(f"Amount of hotkeys: {len(hotkeys)}")
         for hotkey in hotkeys:
-            self.model_manager.hotkey_store[hotkey] = await self.get_miner_model(hotkey)
-
-        await self.dataset_manager.prepare_dataset()
-
-        # log event
-
+            hotkey_metadata = await self.chain_model_metadata_store.retrieve_model_metadata(hotkey)
+            if hotkey_metadata:
+                self.chain_miner_models[hotkey] = hotkey_metadata
+                self.model_manager.hotkey_store[hotkey] = await self.get_miner_model(hotkey)
+        bt.logging.info(f"Amount of chain miners with models: {len(self.chain_miner_models)}")
+    
     async def evaluate(self):
-        await self.init_evaluation()
+        await self.dataset_manager.prepare_dataset()
         pred_x, pred_y = await self.dataset_manager.get_data()
         for hotkey in self.model_manager.hotkey_store:
             bt.logging.info("Evaluating hotkey: ", hotkey)
