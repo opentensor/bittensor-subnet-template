@@ -15,7 +15,7 @@ from cancer_ai.validator.dataset_manager import DatasetManager
 from cancer_ai.validator.model_manager import ModelManager
 
 
-class ModelManagerCLI:
+class MinerManagerCLI:
     def __init__(self, config: bt.config):
         self.config = config
         self.hf_api = HfApi()
@@ -98,5 +98,5 @@ if __name__ == "__main__":
     config = get_config()
     set_log_formatting()
     load_dotenv()
-    cli_manager = ModelManagerCLI(config)
+    cli_manager = MinerManagerCLI(config)
     asyncio.run(cli_manager.main())
