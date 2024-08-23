@@ -9,12 +9,13 @@ from .model_manager import ModelManager, ModelInfo
 from .dataset_manager import DatasetManager
 from .model_run_manager import ModelRunManager
 
-from  .competition_handlers.melanoma_handler import MelanomaCompetitionHandler
+from .competition_handlers.melanoma_handler import MelanomaCompetitionHandler
 
+from cancer_ai.chain_models_store import ChainModelMetadataStore, ChainMinerModel
 
 
 COMPETITION_HANDLER_MAPPING = {
-    "melaona-1": MelanomaCompetitionHandler,
+    "melanoma-1": MelanomaCompetitionHandler,
 }
 
 
@@ -60,7 +61,7 @@ class CompetitionManager(SerializableManager):
         self.dataset_manager = DatasetManager(
             config, competition_id, dataset_hf_repo, dataset_hf_id, dataset_hf_repo_type
         )
-        self.chain_model_metadata_store = ChainModelMetadataStore(subtensor, subnet_uid )
+        self.chain_model_metadata_store = ChainModelMetadataStore(subtensor, subnet_uid)
 
         self.hotkeys = []
         self.chain_miner_models = {}
@@ -70,7 +71,6 @@ class CompetitionManager(SerializableManager):
             "competition_id": self.competition_id,
             "model_manager": self.model_manager.get_state(),
             "category": self.category,
-            "evaluation_time": self.evaluation_time,
         }
 
     def set_state(self, state: dict):
@@ -96,16 +96,22 @@ class CompetitionManager(SerializableManager):
         self.hotkeys = hotkeys
         bt.logging.info(f"Amount of hotkeys: {len(hotkeys)}")
         for hotkey in hotkeys:
-            hotkey_metadata = await self.chain_model_metadata_store.retrieve_model_metadata(hotkey)
+            hotkey_metadata = (
+                await self.chain_model_metadata_store.retrieve_model_metadata(hotkey)
+            )
             if hotkey_metadata:
                 self.chain_miner_models[hotkey] = hotkey_metadata
-                self.model_manager.hotkey_store[hotkey] = await self.get_miner_model(hotkey)
-        bt.logging.info(f"Amount of chain miners with models: {len(self.chain_miner_models)}")
-    
+                self.model_manager.hotkey_store[hotkey] = await self.get_miner_model(
+                    hotkey
+                )
+        bt.logging.info(
+            f"Amount of chain miners with models: {len(self.chain_miner_models)}"
+        )
+
     async def evaluate(self):
         await self.dataset_manager.prepare_dataset()
         path_X_test, y_test = await self.dataset_manager.get_data()
-        
+
         competition_handler = COMPETITION_HANDLER_MAPPING[self.competition_id](
             path_X_test=path_X_test, y_test=y_test
         )
@@ -124,8 +130,10 @@ class CompetitionManager(SerializableManager):
             run_time_s = time.time() - start_time
             print("Model prediction ", y_pred)
             print("Ground truth: ", y_test)
-            
-            model_result = competition_handler.get_model_result(y_test, y_pred, run_time_s)
+
+            model_result = competition_handler.get_model_result(
+                y_test, y_pred, run_time_s
+            )
             self.results.append((hotkey, model_result))
 
         return self.results

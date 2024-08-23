@@ -1,4 +1,5 @@
 from cancer_ai.validator.competition_manager import CompetitionManager
+from cancer_ai.validator.competition_handlers.base_handler import ModelEvaluationResult
 from datetime import time, datetime
 
 import asyncio
@@ -9,7 +10,9 @@ from datetime import datetime, timezone, timedelta
 import bittensor as bt
 from typing import List
 
-from competition_config import competitions
+from competition_config import competitions as competitions_cfg
+
+import wandb
 
 # from cancer_ai.utils.config import config
 
@@ -37,6 +40,27 @@ def calculate_next_evaluation_times(evaluation_times) -> List[datetime]:
         next_times.append(evaluation_time_utc)
 
     return next_times
+
+def log_results_to_wandb(project, entity, hotkey, evaluation_result: ModelEvaluationResult):
+    wandb.init(project=project, entity=entity)  # TODO: Update this line as needed
+
+    wandb.log({
+        "hotkey": hotkey,
+        "tested_entries": evaluation_result.tested_entries,
+        "model_test_run_time": evaluation_result.run_time,
+        "accuracy": evaluation_result.accuracy,
+        "precision": evaluation_result.precision,
+        "recall": evaluation_result.recall,
+        "confusion_matrix": evaluation_result.confusion_matrix.tolist(),
+        "roc_curve": {
+            "fpr": evaluation_result.fpr.tolist(),
+            "tpr": evaluation_result.tpr.tolist()
+        },
+        "roc_auc": evaluation_result.roc_auc
+    })
+
+    wandb.finish()
+    return
 
 
 async def schedule_competitions(
@@ -97,24 +121,24 @@ async def schedule_competitions(
             print("Waiting for next scheduled competition")
         await asyncio.sleep(60) 
 
-def run_all_competitions(path_config: str, competitions: List[dict]) -> None:
-    for competition_config in competitions:
-            print("Starting competition: ", competition_config)
+def run_all_competitions(path_config: str, competitions_cfg: List[dict]) -> None:
+    for competition_cfg in competitions_cfg:
+            print("Starting competition: ", competition_cfg)
             competition_manager = CompetitionManager(
                 path_config,
                 None,
                 7,
-                competition_config["competition_id"],
-                competition_config["category"],
-                competition_config["dataset_hf_repo"],
-                competition_config["dataset_hf_filename"],
-                competition_config["dataset_hf_repo_type"],
+                competition_cfg["competition_id"],
+                competition_cfg["category"],
+                competition_cfg["dataset_hf_repo"],
+                competition_cfg["dataset_hf_filename"],
+                competition_cfg["dataset_hf_repo_type"],
             )
             asyncio.run(competition_manager.evaluate())
 
 if __name__ == "__main__":
     if True:  # run them right away
-        run_all_competitions(path_config, competitions)
+        run_all_competitions(path_config, competitions_cfg)
     
     else: # Run the scheduling coroutine
         asyncio.run(schedule_competitions(competitions, path_config))

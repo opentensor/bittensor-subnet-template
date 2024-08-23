@@ -5,7 +5,6 @@ from .model_manager import ModelInfo
 from .utils import detect_model_format, ModelType
 from .model_runners.pytorch_runner import PytorchRunnerHandler
 from .model_runners.tensorflow_runner import TensorflowRunnerHandler
-from .model_runners.onnx_runner import ONNXRunnerHandler
 from .model_runners.onnx_runner import OnnxRunnerHandler
 
 
