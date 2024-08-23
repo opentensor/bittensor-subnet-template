@@ -4,6 +4,7 @@ from typing import List, Tuple
 from dataclasses import dataclass
 import csv
 import aiofiles
+from pathlib import Path
 
 
 @dataclass
@@ -39,9 +40,14 @@ class DatasetImagesCSV(BaseDatasetHandler):
                 self.entries.append(ImageEntry(row[0], row[1]))
 
     async def get_training_data(self) -> Tuple[List, List]:
+        """
+        Get the training data.
+
+        This method is responsible for loading the training data and returning a tuple containing two lists: the first list contains paths to the images and the second list contains the labels.
+        """
         await self.sync_training_data()
         print(self.entries)
-        pred_x = [Image.open(entry.filepath) for entry in self.entries]
+        pred_x = [f"{Path(self.label_path).parent}/{entry.filepath}" for entry in self.entries]
         pred_y = [entry.is_melanoma for entry in self.entries]
         await self.process_training_data()
         return pred_x, pred_y
