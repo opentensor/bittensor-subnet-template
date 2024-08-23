@@ -6,16 +6,16 @@
 [![Discord Chat](https://img.shields.io/discord/308323056592486420.svg)]([https://discord.gg/bittensor](https://discord.com/channels/1259812760280236122/1262383307832823809))
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
 
-👋 [Introduction](#introduction)
-⚙️ [Features](#Features)
-👁️ [Vision](#👁️ VISION)
-🌍 [Real-world appliactions](#REAL-WORLD APPLICATIONS)
-⚠️ Why is safescan subnet important?
-📢 Marketing
-💰 [Tokenomy & economy](#Tokenomy & economy)
-👨‍👨‍👦‍👦 [Team composition](#Team composition)
-🛣️ [Roadmap](#roadmap)
-📊 [SETUP WandB (HIGHLY RECOMMENDED - VALIDATORS PLEASE READ)](#SETUP WandB (HIGHLY RECOMMENDED - VALIDATORS PLEASE READ)
+- [👋 Introduction](#-introduction)
+- [⚙️ Features](#️-features)
+- [👁️ Vision](#️-vision)
+- [🌍 Real-world appliactions](#REAL-WORLD APPLICATIONS)
+- [⚠️ Why is safescan subnet important?]
+- [📢 Marketing]
+- [💰Tokenomy & economy](#Tokenomy & economy)
+- [👨‍👨‍👦‍👦 Team composition](#Team composition)
+- [🛣️ Roadmap](#roadmap)
+- [📊 SETUP WandB (HIGHLY RECOMMENDED - VALIDATORS PLEASE READ)](#SETUP WandB (HIGHLY RECOMMENDED - VALIDATORS PLEASE READ)
 
 - [Overview of Miner and Validator Functionality](#overview-of-miner-and-validator-functionality)
     - [Miner](#miner)
