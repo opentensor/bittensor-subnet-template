@@ -6,9 +6,10 @@
 [![Discord Chat](https://img.shields.io/discord/308323056592486420.svg)]([https://discord.gg/bittensor](https://discord.com/channels/1259812760280236122/1262383307832823809))
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
 
-- [Introduction](#introduction)
+👋 [Introduction](#introduction)
 - [Features](#Features)
 - [Vision](#Vision)
+- REAL-WORLD APPLICATIONS
 - [Roadmap](#roadmap)
 - [Overview of Miner and Validator Functionality](#overview-of-miner-and-validator-functionality)
     - [Miner](#miner)
