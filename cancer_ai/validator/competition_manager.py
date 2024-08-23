@@ -110,10 +110,10 @@ class CompetitionManager(SerializableManager):
 
     async def evaluate(self):
         await self.dataset_manager.prepare_dataset()
-        path_X_test, y_test = await self.dataset_manager.get_data()
+        X_test, y_test = await self.dataset_manager.get_data()
 
         competition_handler = COMPETITION_HANDLER_MAPPING[self.competition_id](
-            path_X_test=path_X_test, y_test=y_test
+            X_test=X_test, y_test=y_test
         )
 
         X_test, y_test = competition_handler.preprocess_data()
