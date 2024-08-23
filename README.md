@@ -17,15 +17,10 @@
 - [👨‍👨‍👦‍👦 Team Composition](#team-composition)
 - [🛣️ Roadmap](#roadmap)
 - [📊 SETUP WandB (HIGHLY RECOMMENDED - VALIDATORS PLEASE READ)](#setup-wandb-highly-recommended---validators-please-read)
-
-- [Overview of Miner and Validator Functionality](#overview-of-miner-and-validator-functionality)
-    - [Miner](#miner)
-    - [Validator](#validator)
-- [Running Miners and Validators](#running-miners-and-validators)
-    - [Running a Miner](#running-a-miner)
-    - [Running a Validator](#running-a-validator)
-- [Contributing](#contributing)
-- [License](#license)
+- [👍 RUNNING VALIDATOR](#running-validator)
+- [⛏️ RUNNING MINER](#running-miner)
+- [🚀 GET INVOLVED](#get-involved)
+- [📝 LICENSE](#license)
 
 # **👋 INTRODUCTION**
 
@@ -221,6 +216,6 @@ To configure your WANDB API key on your Ubuntu machine, follow these steps:
 
 # **🚀 GET INVOLVED**
 
-1. Visit our  to explore the code behind TensorAlchemy
-    
-    [https://camo.githubusercontent.com/e8608a6316b9d88ea49559b15837c90b1c14fb172ca6743b50150cd54f208e26/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f4769744875622d3130303030303f7374796c653d666f722d7468652d6261646765266c6f676f3d676974687562266c6f676f436f6c6f723d7768697465](https://camo.githubusercontent.com/e8608a6316b9d88ea49559b15837c90b1c14fb172ca6743b50150cd54f208e26/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f4769744875622d3130303030303f7374796c653
+# **📝 LICENSE**
+
+
