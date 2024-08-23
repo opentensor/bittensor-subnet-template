@@ -9,13 +9,13 @@
 - [👋 Introduction](#-introduction)
 - [⚙️ Features](#️-features)
 - [👁️ Vision](#️-vision)
-- [🌍 Real-world appliactions](#REAL-WORLD APPLICATIONS)
-- [⚠️ Why is safescan subnet important?]
-- [📢 Marketing]
-- [💰Tokenomy & economy](#Tokenomy & economy)
-- [👨‍👨‍👦‍👦 Team composition](#Team composition)
+- [🌍 Real-world Applications](#real-world-applications)
+- [⚠️ Why is SafeScan Subnet Important?](#why-is-safescan-subnet-important)
+- [📢 Marketing](#marketing)
+- [💰 Tokenomy & Economy](#tokenomy--economy)
+- [👨‍👨‍👦‍👦 Team Composition](#team-composition)
 - [🛣️ Roadmap](#roadmap)
-- [📊 SETUP WandB (HIGHLY RECOMMENDED - VALIDATORS PLEASE READ)](#SETUP WandB (HIGHLY RECOMMENDED - VALIDATORS PLEASE READ)
+- [📊 SETUP WandB (HIGHLY RECOMMENDED - VALIDATORS PLEASE READ)](#setup-wandb-highly-recommended---validators-please-read)
 
 - [Overview of Miner and Validator Functionality](#overview-of-miner-and-validator-functionality)
     - [Miner](#miner)
