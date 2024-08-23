@@ -7,7 +7,7 @@ import timeit
 from types import SimpleNamespace
 
 # from cancer_ai.utils.config import config
-from validator.competition_manager import ModelEvaluationResult
+from validator.competition_handlers.base_handler import ModelEvaluationResult
 import wandb
 
 from dotenv import load_dotenv

@@ -9,11 +9,14 @@ from .model_manager import ModelManager, ModelInfo
 from .dataset_manager import DatasetManager
 from .model_run_manager import ModelRunManager
 
-from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix, roc_curve, auc
-from dataclasses import dataclass
+from  .competition_handlers.melanoma_handler import MelanomaCompetitionHandler
+
 
 COMPETITION_MAPPING = {
     "melaona-1": "melanoma",
+}
+COMPETITION_HANDLER_MAPPING = {
+    "melaona-1": MelanomaCompetitionHandler,
 }
 
 
@@ -23,18 +26,6 @@ class ImagePredictionCompetition:
     ) -> float:
         pass
 
-@dataclass
-class ModelEvaluationResult:
-    accuracy: float
-    precision: float
-    recall: float
-    confusion_matrix: any
-    fpr: any
-    tpr: any
-    roc_auc: float
-    run_time: float
-    tested_entries: int
-    
 
 class CompetitionManager(SerializableManager):
     """
@@ -129,64 +120,28 @@ class CompetitionManager(SerializableManager):
         # log event
 
     async def evaluate(self):
-        from PIL import Image
-        import numpy as np
         await self.init_evaluation()
         path_X_test, y_test = await self.dataset_manager.get_data()
-        # Prepre X_test form paths to images
-        X_test = []
-        target_size=(224, 224) #TODO: Change this to the correct size 
+        
+        competition_handler = COMPETITION_HANDLER_MAPPING[self.competition_id](
+            path_X_test=path_X_test, y_test=y_test
+        )
 
-        for img_path in path_X_test:
-            img = Image.open(img_path)
-            img = img.resize(target_size)
-            img_array = np.array(img, dtype=np.float32) / 255.0
-            img_array = np.array(img)  
-            if img_array.shape[-1] != 3:    # Handle grayscale images
-                img_array = np.stack((img_array,) * 3, axis=-1)
-            
-            img_array = np.transpose(img_array, (2, 0, 1))           # Convert image to numpy array
-            img_array = np.expand_dims(img_array, axis=0)            # Add batch dimension
-            X_test.append(img_array)
-        X_test = np.array(X_test, dtype=np.float32)
-
-        # print("X_test shape: ", X_test.shape)
-
-        # map y_test to 0, 1
-        y_test = [1 if y == "True" else 0 for y in y_test]
+        X_test, y_test = competition_handler.preprocess_data()
 
         for hotkey in self.model_manager.hotkey_store:
             bt.logging.info("Evaluating hotkey: ", hotkey)
             await self.model_manager.download_miner_model(hotkey)
 
-            start_time = time.time()
             model_manager = ModelRunManager(
                 self.config, self.model_manager.hotkey_store[hotkey]
             )
+            start_time = time.time()
             y_pred = model_manager.run(X_test)
+            run_time = time.time() - start_time
             print("Model prediction ", y_pred)
             print("Ground truth: ", y_test)
-            # print "make stats and send to wandb"
-            run_time = time.time() - start_time
-            tested_entries = len(y_test)
-            accuracy = accuracy_score(y_test, y_pred)
-            precision = precision_score(y_test, y_pred)
-            recall = recall_score(y_test, y_pred)
-            conf_matrix = confusion_matrix(y_test, y_pred)
-            fpr, tpr, _ = roc_curve(y_test, y_pred)
-            roc_auc = auc(fpr, tpr)
-
-            model_result = ModelEvaluationResult(
-                tested_entries=tested_entries,  
-                run_time=run_time,
-                accuracy=accuracy,
-                precision=precision,
-                recall=recall,
-                confusion_matrix=conf_matrix,
-                fpr=fpr,
-                tpr=tpr,
-                roc_auc=roc_auc,
-            )
+            model_result = competition_handler.evaluate(y_test, y_pred, run_time)
             self.results.append((hotkey, model_result))
 
         return self.results
