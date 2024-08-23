@@ -3,19 +3,21 @@
 *Bittensor Subnet for improving cancer detection algorithms*
 
 ![image.png](OUR%20GITHUB%20481afe11c91843b796c4afc6b838d8fb/image.png)
+[![Discord Chat](https://img.shields.io/discord/308323056592486420.svg)]([https://discord.gg/bittensor](https://discord.com/channels/1259812760280236122/1262383307832823809))
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
 
-- [Introduction](https://github.com/impel-intelligence/dippy-bittensor-subnet#introduction)
-- Features
-- Vision
-- [Roadmap](https://github.com/impel-intelligence/dippy-bittensor-subnet#roadmap)
-- [Overview of Miner and Validator Functionality](https://github.com/impel-intelligence/dippy-bittensor-subnet#overview-of-miner-and-validator-functionality)
-    - [Miner](https://github.com/impel-intelligence/dippy-bittensor-subnet#miner)
-    - [Validator](https://github.com/impel-intelligence/dippy-bittensor-subnet#validator)
-- [Running Miners and Validators](https://github.com/impel-intelligence/dippy-bittensor-subnet#running-miners-and-validators)
-    - [Running a Miner](https://github.com/impel-intelligence/dippy-bittensor-subnet#running-a-miner)
-    - [Running a Validator](https://github.com/impel-intelligence/dippy-bittensor-subnet#running-a-validator)
-- [Contributing](https://github.com/impel-intelligence/dippy-bittensor-subnet#contributing)
-- [License](https://github.com/impel-intelligence/dippy-bittensor-subnet#license)
+- [Introduction](#introduction)
+- [Features](#Features)
+- [Vision](#Vision)
+- [Roadmap](#roadmap)
+- [Overview of Miner and Validator Functionality](#overview-of-miner-and-validator-functionality)
+    - [Miner](#miner)
+    - [Validator](#validator)
+- [Running Miners and Validators](#running-miners-and-validators)
+    - [Running a Miner](#running-a-miner)
+    - [Running a Validator](#running-a-validator)
+- [Contributing](#contributing)
+- [License](#license)
 
 # **👋 INTRODUCTION**
 
