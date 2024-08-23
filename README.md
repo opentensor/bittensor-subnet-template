@@ -144,21 +144,22 @@ Given the complexity of creating a state of the art roleplay LLM, we plan to div
 
 **Phase 1:**
 
-- [x]  Subnet launch with robust pipeline for roleplay LLM evaluation on public datasets and response length
-- [x]  Public model leaderboard based on evaluation criteria
-- [x]  Introduce Coherence and Creativity as a criteria for live model evaluation
+- [ ]  Launch competition for melanoma skin cancer
+- [ ]  Public model leaderboard based on evaluation criteria
+- [ ]  Start marketing of Skin Scan app and Bittensor
 
 **Phase 2:**
 
-- [ ]  Publicly release front-end powered by top miner submitted model of the week
-- [ ]  Segment model submission into different "expert" categories (funny, romantic, therapeutic etc)
-- [ ]  Models with the highest score in each personality type are chosen as "expert" models and made publicly available on the front-end
+- [ ]  Run mutliple competitions at once for other skin cancer types
+- [ ]  Integrate skin cancer detection models within our Skin Scan app
+- [ ]  Publicly release website for testing models
 
 **Phase 3:**
 
-- [ ]  New Mixture of Experts model made as a baseline based on the "expert" models chosen from Phase 2
-- [ ]  Robust pipeline to evaluate new MOE model submissions against live evaluation criteria
-- [ ]  Expand the state of the art in roleplay LLMs through continuous iteration and data collection
+- [ ]  Optimize skin cancer detection models to create one mixture-of-experts model which will run  on mobile device
+- [ ]  Start a process for certifying  models  - FDA approval
+- [ ]  Make competitions for breast cancer
+
 
 # 👷🏻‍♂️ ENGINEERING ROADMAP
 
