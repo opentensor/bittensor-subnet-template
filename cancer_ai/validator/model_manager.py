@@ -36,7 +36,7 @@ class ModelManager(SerializableManager):
             if hotkey not in hotkeys:
                 self.delete_model(hotkey)
 
-    def download_miner_model(self, hotkey) -> None:
+    async def download_miner_model(self, hotkey) -> None:
         """Downloads the newest model from Hugging Face and saves it to disk.
         Returns:
             str: path to the downloaded model
@@ -46,7 +46,7 @@ class ModelManager(SerializableManager):
             model_info.repo_id,
             model_info.filename,
             cache_dir=self.config.model_dir,
-            repo_type="space",
+            repo_type="dataset",
         )
     
 

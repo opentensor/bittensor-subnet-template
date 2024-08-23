@@ -77,7 +77,7 @@ def get_config() -> bt.config:
         type=str,
         # required=True,
         help="Competition ID",
-        default="your_competition_id",
+        default="melanoma-1",
     )
 
     main_parser.add_argument(

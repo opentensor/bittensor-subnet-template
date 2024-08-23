@@ -34,36 +34,26 @@ class CompetitionManager(SerializableManager):
         config,
         competition_id: str,
         category: str,
-        evaluation_times: list[str],
         dataset_hf_id: str,
         file_hf_id: str,
     ) -> None:
         """
-        Initializes a CompetitionManager instance.
+        Responsible for managing a competition.
 
         Args:
         config (dict): Config dictionary.
         competition_id (str): Unique identifier for the competition.
         category (str): Category of the competition.
-        evaluation_time (list[str]): List of times of a day at which the competition will be evaluated in XX:XX format.
-
-        Note: Times are in UTC time.
         """
         bt.logging.info(f"Initializing Competition: {competition_id}")
         self.config = config
         self.competition_id = competition_id
         self.category = category
+        self.results = []
         self.model_manager = ModelManager(config)
-
-        # self.evaluation_time = [
-        #     time(hour_min.split(":")[0], hour_min.split(":")[1])
-        #     for hour_min in evaluation_times
-        # ]
         self.dataset_manager = DatasetManager(
             config, competition_id, dataset_hf_id, file_hf_id
         )
-        # self.model_evaluator =
-        self.results = []
 
     def get_state(self):
         return {
@@ -77,15 +67,17 @@ class CompetitionManager(SerializableManager):
         self.competition_id = state["competition_id"]
         self.model_manager.set_state(state["model_manager"])
         self.category = state["category"]
-        self.evaluation_time = state["evaluation_time"]
 
     async def get_miner_model(self, hotkey):
         # TODO get real data
-        return ModelInfo("vidhiparikh/House-Price-Estimator", "model_custom.pkcls")
+        return ModelInfo("safescanai/test_dataset", "simple_cnn_model.onnx")
 
     async def init_evaluation(self):
         # get models from chain
-        for hotkey in self.model_manager.hotkey_store:
+        hotkeys = [
+            "example_hotkey",
+        ]
+        for hotkey in hotkeys:
             self.model_manager.hotkey_store[hotkey] = await self.get_miner_model(hotkey)
 
         await self.dataset_manager.prepare_dataset()
@@ -102,7 +94,7 @@ class CompetitionManager(SerializableManager):
             model_manager = ModelRunManager(
                 self.config, self.model_manager.hotkey_store[hotkey]
             )
-            model_pred_y = model_manager.run(pred_x)
+            model_pred_y = await model_manager.run(pred_x)
             # print "make stats and send to wandb"
             score = random.randint(0, 100)
             bt.logging.info(f"Hotkey {hotkey} model score: {score}")
