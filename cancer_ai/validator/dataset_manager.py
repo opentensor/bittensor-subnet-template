@@ -17,7 +17,7 @@ class DatasetManagerException(Exception):
 
 class DatasetManager(SerializableManager):
     def __init__(
-        self, config, competition_id: str, dataset_hf_id: str, file_hf_id: str
+        self, config, competition_id: str, hf_repo_id: str, hf_filename: str, hf_repo_type: str
     ) -> None:
         """
         Initializes a new instance of the DatasetManager class.
@@ -33,9 +33,9 @@ class DatasetManager(SerializableManager):
         """
         self.config = config
         self.competition_id = competition_id
-        self.dataset_hf_id = dataset_hf_id
-        self.file_hf_id = file_hf_id
-        self.hf_api = HfApi()
+        self.hf_repo_id = hf_repo_id
+        self.hf_filename = hf_filename
+        self.hf_repo_type = hf_repo_type
         self.local_compressed_path = ""
         print(self.config)
         self.local_extracted_dir = Path(
@@ -54,12 +54,12 @@ class DatasetManager(SerializableManager):
     async def download_dataset(self):
         if not os.path.exists(self.local_extracted_dir):
             os.makedirs(self.local_extracted_dir)
-
-        self.local_compressed_path = self.hf_api.hf_hub_download(
-            self.dataset_hf_id,
-            self.file_hf_id,
+        
+        self.local_compressed_path = HfApi().hf_hub_download(
+            self.hf_repo_id,
+            self.hf_filename,
             cache_dir=Path(self.config.models_dataset_dir),
-            repo_type="dataset",
+            repo_type=self.hf_repo_type,
         )
 
     def delete_dataset(self) -> None:

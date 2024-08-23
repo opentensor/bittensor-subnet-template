@@ -73,10 +73,13 @@ async def schedule_competitions(
                     # If it's time to run the competition
                     competition_manager = CompetitionManager(
                         path_config,
+                        None,
+                        7,
                         competition_config["competition_id"],
                         competition_config["category"],
-                        competition_config["dataset_hf_id"],
-                        competition_config["file_hf_id"],
+                        competition_config["dataset_hf_repo"],
+                        competition_config["dataset_hf_filename"],
+                        competition_config["dataset_hf_repo_type"],
                     )
                     print(f"Evaluating competition {competition_id} at {now_utc}")
                     await competition_manager.evaluate()
@@ -99,10 +102,13 @@ def run_all_competitions(path_config: str, competitions: List[dict]) -> None:
             print("Starting competition: ", competition_config)
             competition_manager = CompetitionManager(
                 path_config,
+                None,
+                7,
                 competition_config["competition_id"],
                 competition_config["category"],
-                competition_config["dataset_hf_id"],
-                competition_config["file_hf_id"],
+                competition_config["dataset_hf_repo"],
+                competition_config["dataset_hf_filename"],
+                competition_config["dataset_hf_repo_type"],
             )
             asyncio.run(competition_manager.evaluate())
 

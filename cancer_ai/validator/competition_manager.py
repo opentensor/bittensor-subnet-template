@@ -36,8 +36,9 @@ class CompetitionManager(SerializableManager):
         subnet_uid: str,
         competition_id: str,
         category: str,
+        dataset_hf_repo: str,
         dataset_hf_id: str,
-        file_hf_id: str,
+        dataset_hf_repo_type: str,
     ) -> None:
         """
         Responsible for managing a competition.
@@ -54,7 +55,7 @@ class CompetitionManager(SerializableManager):
         self.results = []
         self.model_manager = ModelManager(config)
         self.dataset_manager = DatasetManager(
-            config, competition_id, dataset_hf_id, file_hf_id
+            config, competition_id, dataset_hf_repo, dataset_hf_id, dataset_hf_repo_type
         )
         self.chain_model_metadata_store = ChainModelMetadataStore(subtensor, subnet_uid )
 

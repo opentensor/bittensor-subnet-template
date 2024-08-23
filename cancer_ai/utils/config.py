@@ -174,15 +174,11 @@ def add_miner_args(cls, parser):
         help="Wandb entity to log to.",
     )
 
-        help="Path for storing trained model related to a training run.",
-        default="./models",
-    )
-
     parser.add_argument(
         "--models.load_model_dir",
         type=str,
         help="Path for for loading the starting model related to a training run.",
-        default="",
+        default="./models",
     )
 
     parser.add_argument(
