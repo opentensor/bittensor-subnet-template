@@ -81,7 +81,7 @@ def get_config() -> bt.config:
     )
 
     main_parser.add_argument(
-        "--models_dataset_dir",
+        "--dataset_dir",
         type=str,
         help="Path for storing datasets.",
         default="./datasets",
@@ -93,11 +93,7 @@ def get_config() -> bt.config:
         type=str,
         required=False,
         help="Hugging Face model repository ID",
-    )
-    main_parser.add_argument(
-        "--hf_file_path",
-        type=str,
-        help="Hugging Face model file path",
+        default="eatcats/melanoma-test",
     )
 
     main_parser.add_argument(
@@ -105,6 +101,12 @@ def get_config() -> bt.config:
         action="store_true",
         help="Whether to clean up (dataset, temporary files) after running",
         default=False,
+    )
+    main_parser.add_argument(
+        "--code-directory",
+        type=str,
+        help="Path to code directory",
+        default=".",
     )
 
     # Add additional args from bt modules
@@ -116,10 +118,9 @@ def get_config() -> bt.config:
     # config = bt.config(main_parser)
     # parsed = main_parser.parse_args()
     # config = bt.config(main_parser)
-    # print(config)
+    
 
     config = main_parser.parse_args()
-    # print(config)
     config.logging_dir = "./"
     config.record_log = True
     config.trace = True

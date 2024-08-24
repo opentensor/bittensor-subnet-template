@@ -9,10 +9,11 @@ from huggingface_hub import HfApi
 import onnx
 
 from neurons.miner_config import get_config, set_log_formatting
-from cancer_ai.validator.utils import ModelType
+from cancer_ai.validator.utils import ModelType, run_command
 from cancer_ai.validator.model_run_manager import ModelRunManager, ModelInfo
 from cancer_ai.validator.dataset_manager import DatasetManager
 from cancer_ai.validator.model_manager import ModelManager
+from datetime import datetime
 
 
 class MinerManagerCLI:
@@ -20,16 +21,23 @@ class MinerManagerCLI:
         self.config = config
         self.hf_api = HfApi()
 
-    async def test_model(self, model_path: str) -> None:
-        # Placeholder for actual implementation
-        pass
-
-    def upload_model_to_hf(self) -> None:
-        """Uploads model to Hugging Face."""
+    async def upload_to_hf(self) -> None:
+        """Uploads model and code to Hugging Face."""
         bt.logging.info("Uploading model to Hugging Face.")
+        now_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         path = self.hf_api.upload_file(
-            path_or_fileobj=self.config.models.model_path,
+            path_or_fileobj=self.config.model_path,
+            path_in_repo=f"{now_str}-{self.config.competition_id}.onnx",
+            repo_id=self.config.hf_repo_id,
+            repo_type="model",
         )
+        path = self.hf_api.upload_file(
+            path_or_fileobj=f"{self.config.code_directory}/code.zip",
+            path_in_repo=f"{now_str}-{self.config.competition_id}.zip",
+            repo_id=self.config.hf_repo_id,
+            repo_type="model",
+        )
+
         bt.logging.info(f"Uploaded model to Hugging Face: {path}")
 
     @staticmethod
@@ -52,6 +60,7 @@ class MinerManagerCLI:
             self.config.competition_id,
             "safescanai/test_dataset",
             "skin_melanoma.zip",
+            "dataset",
         )
         await dataset_manager.prepare_dataset()
 
@@ -65,16 +74,23 @@ class MinerManagerCLI:
         if self.config.clean_after_run:
             dataset_manager.delete_dataset()
 
+    async def compress_code(self) -> str:
+        bt.logging.info("Compressing code")
+        out, err = await run_command(
+            f"zip  {self.config.code_directory}/code.zip {self.config.code_directory}/*"
+        )
+        return f"{self.config.code_directory}/code.zip"
+
     async def submit_model(self) -> None:
-         # The wallet holds the cryptographic key pairs for the miner.
-                bt.logging.info(
-                    f"Initializing connection with Bittensor subnet {self.config.netuid} - Safe-Scan Project"
-                )
-                bt.logging.info(f"Subtensor network: {self.config.subtensor.network}")
-                bt.logging.info(f"Wallet hotkey: {self.config.wallet.hotkey.ss58_address}")
-                wallet = bt.wallet(config=self.config)
-                subtensor = bt.subtensor(config=self.config)
-                metagraph = subtensor.metagraph(self.config.netuid)
+        # The wallet holds the cryptographic key pairs for the miner.
+        bt.logging.info(
+            f"Initializing connection with Bittensor subnet {self.config.netuid} - Safe-Scan Project"
+        )
+        bt.logging.info(f"Subtensor network: {self.config.subtensor.network}")
+        bt.logging.info(f"Wallet hotkey: {self.config.wallet.hotkey.ss58_address}")
+        wallet = bt.wallet(config=self.config)
+        subtensor = bt.subtensor(config=self.config)
+        metagraph = subtensor.metagraph(self.config.netuid)
 
     async def main(self) -> None:
         bt.logging(config=self.config)
@@ -85,11 +101,12 @@ class MinerManagerCLI:
 
         match self.config.action:
             case "submit":
-               await self.submit_model()
+                await self.submit_model()
             case "evaluate":
                 await self.evaluate_model()
             case "upload":
-                self.upload_model_to_hf()
+                await self.compress_code()
+                await self.upload_to_hf()
             case _:
                 bt.logging.error(f"Unrecognized action: {self.config.action}")
 

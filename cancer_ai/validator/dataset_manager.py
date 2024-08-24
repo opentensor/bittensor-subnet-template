@@ -39,7 +39,7 @@ class DatasetManager(SerializableManager):
         self.local_compressed_path = ""
         print(self.config)
         self.local_extracted_dir = Path(
-            self.config.models_dataset_dir, self.competition_id
+            self.config.dataset_dir, self.competition_id
         )
         self.data: Tuple[List, List] = ()
         self.handler = None
@@ -58,7 +58,7 @@ class DatasetManager(SerializableManager):
         self.local_compressed_path = HfApi().hf_hub_download(
             self.hf_repo_id,
             self.hf_filename,
-            cache_dir=Path(self.config.models_dataset_dir),
+            cache_dir=Path(self.config.dataset_dir),
             repo_type=self.hf_repo_type,
         )
 
@@ -78,10 +78,9 @@ class DatasetManager(SerializableManager):
         """Unzip dataset"""
 
         self.local_extracted_dir = Path(
-            self.config.models_dataset_dir, self.competition_id
+            self.config.dataset_dir, self.competition_id
         )
 
-        bt.logging.info(f"Unzipping dataset '{self.competition_id}'")
         bt.logging.debug(f"Dataset extracted to: { self.local_compressed_path}")
         os.system(f"rm -R {self.local_extracted_dir}")
         print(f"unzip {self.local_compressed_path} -d {self.local_extracted_dir}")
