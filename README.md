@@ -2,7 +2,8 @@
 
 *Bittensor Subnet for improving cancer detection algorithms*
 
-![image.png](OUR%20GITHUB%20481afe11c91843b796c4afc6b838d8fb/docs/header.png)
+![header.png](https://github.com/safe-scan-ai/cancer-ai-3/blob/LEMSTUDI0-patch-1/DOCS/header.png)
+
 
 [![Discord Chat](https://img.shields.io/discord/308323056592486420.svg)]([https://discord.gg/bittensor](https://discord.com/channels/1259812760280236122/1262383307832823809))
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
