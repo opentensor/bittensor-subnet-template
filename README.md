@@ -10,7 +10,7 @@
 
 - [👋 Introduction](#-introduction)
 - [⚙️ Features](#-features)
-- [👁️ Vision](#vision)
+- [👁️ Vision](#-vision)
 - [🌍 Real-world Applications](#-real-world-applications)
 - [⚠️ Why is SafeScan Subnet Important?](#-why-is-safescan-subnet-important)
 - [📢 Marketing](#-marketing)
