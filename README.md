@@ -12,15 +12,15 @@
 - [👁️ Vision](#vision)
 - [🌍 Real-world Applications](#real-world-applications)
 - [⚠️ Why is SafeScan Subnet Important?](#why-is-safescan-subnet-important)
-- [📢 Marketing](#MARKETING)
+- [📢 Marketing](#marketing)
 - [💰 Tokenomy & Economy](#tokenomy--economy)
 - [👨‍👨‍👦‍👦 Team Composition](#team-composition)
 - [🛣️ Roadmap](#roadmap)
 - [📊 SETUP WandB (HIGHLY RECOMMENDED - VALIDATORS PLEASE READ)](#setup-wandb-highly-recommended---validators-please-read)
-- [👍 RUNNING VALIDATOR](#running-validator)
-- [⛏️ RUNNING MINER](#running-miner)
-- [🚀 GET INVOLVED](#get-involved)
-- [📝 LICENSE](#license)
+- [👍 RUNNING VALIDATOR](#-running-validator)
+- [⛏️ RUNNING MINER](#-running-miner)
+- [🚀 GET INVOLVED](#-get-involved)
+- [📝 LICENSE](#-license)
 
 
 # **👋 INTRODUCTION**
@@ -47,7 +47,7 @@ This repository contains subnet code to run on Bittensor network.
 
 💸 Self-sustaining economy
 
-# 👁️ VISION
+# **👁️ VISION**
 
 Cancer is one of the most significant challenges of our time, and we believe that AI holds the key to addressing it. However, this solution should be accessible and free for everyone. Machine vision technology has long proven effective in early diagnosis, which is crucial for curing cancer. Yet, until now, it has largely remained in the realm of whitepapers. SAFESCAN is a project dedicated to aggregating and enhancing the best algorithms for detecting various types of cancer and providing free computational power for practical cancer detection. We aim to create open-source products that support cancer diagnosis for both patients and doctors.
 
@@ -99,7 +99,6 @@ Additionally with Safe Scan, we can significantly broaden awareness of Bittensor
 
 # **📢 MARKETING**
 
-
 Our first goal is to develop the best skin cancer detection algorithm and establish ourselves as a recognized leader in cancer detection. We aim not only to create the most popular and widely accessible skin cancer detection app but also to demonstrate Bittensor's power. We plan to spread awareness through partnerships with skin cancer foundations, growth hacking strategies like affiliate links for unlocking premium features, and promotional support from Apple and Google stores, aiming to reach over 1 million users within 18 months.  And every app launch will display “proudly powered by BITTENSOR.”
 
 However, brand recognition is just the beginning. Our marketing strategy will focus on creating hype by engaging bloggers, reaching to celebrities affected by skin cancer, and sending articles to major tech, health, and news outlets. We will leverage the current interest in AI and blockchain to showcase the life-saving potential of these technologies. 
@@ -112,7 +111,7 @@ Our tokenomics are uniquely designed to drive research and development of new al
 
 **Incentives**: Miners with the best-performing algorithms in our ongoing competitions are rewarded through our leaderboard system. The top-ranked miner receives significant incentives, promoting continuous improvement and innovation.
 
-**Royalties**: Miners whose algorithms are integrated into our app and software for real-life cancer detection applications earn additional  1% of emission royalties. This ensures ongoing motivation for developers to create cutting-edge solutions that contribute to our mission of saving lives
+**Royalties**: Miners whose algorithms are integrated into our app and software for real-life cancer detection applications earn additional 1% of emission royalties. This ensures ongoing motivation for developers to create cutting-edge solutions that contribute to our mission of saving lives.
 
 **📈 SELF-SUSTAINING ECONOMY**
 
@@ -125,10 +124,14 @@ We aim to keep our cancer detection app and software free for those who need it 
 - Rewards for miners and validators for generating economic value (e.g., analyzing mammography data for private healthcare)
 - Proceeds generated from sponsors and end-users will be distributed among the network's participants.
 
-
 # **👨‍👨‍👦‍👦 TEAM COMPOSITION**
 
-The SafeScan team is not only composed of professionals with diverse expertise in crypto, software development, machine learning, marketing, ux design and business, but we are also close friends united by a shared vision. 
+The SafeScan team is not only composed of professionals with diverse expertise in crypto, software development, machine learning, marketing, UX designIt seems like the message was cut off. Let me continue the full content with properly functioning links:
+
+```markdown
+# **👨‍👨‍👦‍👦 TEAM COMPOSITION**
+
+The SafeScan team is not only composed of professionals with diverse expertise in crypto, software development, machine learning, marketing, UX design, and business, but we are also close friends united by a shared vision.
 
 Our team is deeply committed to supporting and improving the Bittensor network with passion and dedication. While we are still in development, we are actively engaging with the Bittensor community and contributing to the overall experience, continuously striving to make a meaningful difference.
 
@@ -142,45 +145,46 @@ Team members:
 
 # **🛣️ ROADMAP**
 
-Given the complexity of creating a state of the art roleplay LLM, we plan to divide the process into 3 distinct phases.
+Given the complexity of creating a state-of-the-art roleplay LLM, we plan to divide the process into 3 distinct phases.
 
 **Phase 1:**
 
-- [ ]  Launch competition for melanoma skin cancer
-- [ ]  Public model leaderboard based on evaluation criteria
-- [ ]  Start marketing of Skin Scan app and Bittensor
+- [ ] Launch competition for melanoma skin cancer
+- [ ] Public model leaderboard based on evaluation criteria
+- [ ] Start marketing of Skin Scan app and Bittensor
 
 **Phase 2:**
 
-- [ ]  Run mutliple competitions at once for other skin cancer types
-- [ ]  Integrate skin cancer detection models within our Skin Scan app
-- [ ]  Publicly release website for testing models
+- [ ] Run multiple competitions at once for other skin cancer types
+- [ ] Integrate skin cancer detection models within our Skin Scan app
+- [ ] Publicly release website for testing models
 
 **Phase 3:**
 
-- [ ]  Optimize skin cancer detection models to create one mixture-of-experts model which will run  on mobile device
-- [ ]  Start a process for certifying  models  - FDA approval
-- [ ]  Make competitions for breast cancer
-
+- [ ] Optimize skin cancer detection models to create one mixture-of-experts model which will run on mobile devices
+- [ ] Start the process for certifying models - FDA approval
+- [ ] Make competitions for breast cancer
 
 # 👷🏻‍♂️ ENGINEERING ROADMAP
 
-edgemaxxing for mobile phones
+Edgemaxxing for mobile phones.
 
 # **📊 SETUP WandB (HIGHLY RECOMMENDED - VALIDATORS PLEASE READ)**
 
-Before running your miner and validator, you may also choose to set up Weights & Biases (WANDB). It is a popular tool for tracking and visualizing machine learning experiments, and we use it for logging and tracking key metrics across miners and validators, all of which is available publicly [here](https://wandb.ai/shr1ftyy/sturdy-subnet/table?nw=nwusershr1ftyy). We ***highly recommend*** validators use wandb, as it allows subnet developers and miners to diagnose issues more quickly and effectively, say, in the event a validator were to be set abnormal weights. Wandb logs are collected by default, and done so in an anonymous fashion, but we recommend setting up an account to make it easier to differentiate between validators when searching for runs on our dashboard. If you would *not* like to run WandB, you can do so by adding the flag `--wandb.off` when running your miner/validator.
+Before running your miner and validator, you may also choose to set up Weights & Biases (WANDB). It is a popular tool for tracking and visualizing machine learning experiments, and we use it for logging and tracking key metrics across miners and validators, all of which is available publicly [here](https://wandb.ai/shr1ftyy/sturdy-subnet/table?nw=nwusershr1ftyy). We ***highly recommend*** validators use WandB, as it allows subnet developers and miners to diagnose issues more quickly and effectively, say, in the event a validator were to be set abnormal weights. WandB logs are collected by default and done so in an anonymous fashion, but we recommend setting up an account to make it easier to differentiate between validators when searching for runs on our dashboard. If you would *not* like to run WandB, you can do so by adding the flag `--wandb.off` when running your miner/validator.
 
-Before getting started, as mentioned previously, you'll first need to [register](https://wandb.ai/login?signup=true) for a WANDB account, and then set your API key on your system. Here's a step-by-step guide on how to do this on Ubuntu:
+Before getting started, as mentioned previously, you'll first need to [register](https://wandb.ai/login?signup=true) for a WANDB account, and then set your API key on your system. Here's a step-by-step guide on how to do this on Ubuntu:
 
 **Step 1: Installation of WANDB**
 
 Before logging in, make sure you have the WANDB Python package installed. If you haven't installed it yet, you can do so using pip:
 
+
 ```
 # Should already be installed with the sturdy repo
 pip install wandb
 ```
+
 
 **Step 2: Obtain Your API Key**
 
@@ -200,25 +204,31 @@ To configure your WANDB API key on your Ubuntu machine, follow these steps:
     ```
     
 2. **Enter Your API Key**: When prompted, paste the API key you copied from your WANDB account settings.
-    - After pasting your API key, press `Enter`.
+    - After pasting your API key, press `Enter`.
     - WANDB should display a message confirming that you are logged in.
 3. **Verifying the Login**: To verify that the API key was set correctly, you can start a small test script in Python that uses WANDB. If everything is set up correctly, the script should run without any authentication errors.
-4. **Setting API Key Environment Variable (Optional)**: If you prefer not to log in every time, you can set your API key as an environment variable in your `~/.bashrc` or `~/.bash_profile` file:
+4. **Setting API Key Environment Variable (Optional)**: If you prefer not to log in every time, you can set your API key as an environment variable in your `~/.bashrc` or `~/.bash_profile` file:
     
     ```
     echo 'export WANDB_API_KEY=your_api_key' >> ~/.bashrc
     source ~/.bashrc
     ```
     
-    Replace `your_api_key` with the actual API key. This method automatically authenticates you with wandb every time you open a new terminal session.
-    
+    Replace `your_api_key` with the actual API key. This method automatically authenticates you with WandB every time you open a new terminal session.
 
-# **👍** RUNNING VALIDATOR
+# **👍 RUNNING VALIDATOR**
 
-# ⛏️ RUNNING MINER
+...
+
+# **⛏️ RUNNING MINER**
+
+...
 
 # **🚀 GET INVOLVED**
 
+...
+
 # **📝 LICENSE**
 
+...
 
