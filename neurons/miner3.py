@@ -87,9 +87,9 @@ class MinerManagerCLI:
         )
         bt.logging.info(f"Subtensor network: {self.config.subtensor.network}")
         bt.logging.info(f"Wallet hotkey: {self.config.wallet.hotkey.ss58_address}")
-        wallet = bt.wallet(config=self.config)
-        subtensor = bt.subtensor(config=self.config)
-        metagraph = subtensor.metagraph(self.config.netuid)
+        wallet = self.wallet
+        subtensor = self.subtensor
+        metagraph = self.metagraph
 
     async def main(self) -> None:
         bt.logging(config=self.config)
