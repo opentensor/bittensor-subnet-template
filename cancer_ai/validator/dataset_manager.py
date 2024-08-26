@@ -17,7 +17,7 @@ class DatasetManagerException(Exception):
 
 class DatasetManager(SerializableManager):
     def __init__(
-        self, config, competition_id: str, hf_repo_id: str, hf_filename: str, hf_repo_type: str
+        self, config, hf_repo_id: str, hf_filename: str, hf_repo_type: str
     ) -> None:
         """
         Initializes a new instance of the DatasetManager class.
@@ -32,7 +32,7 @@ class DatasetManager(SerializableManager):
             None
         """
         self.config = config
-        self.competition_id = competition_id
+        self.competition_id = config.competition_id
         self.hf_repo_id = hf_repo_id
         self.hf_filename = hf_filename
         self.hf_repo_type = hf_repo_type

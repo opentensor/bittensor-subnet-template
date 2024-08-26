@@ -1,41 +1,60 @@
-import argparse
-import sys
 import asyncio
-from typing import Optional
 
 import bittensor as bt
 from dotenv import load_dotenv
 from huggingface_hub import HfApi
+import huggingface_hub
 import onnx
+import cancer_ai
+import typing
+import datetime
 
-from neurons.miner_config import get_config, set_log_formatting
 from cancer_ai.validator.utils import ModelType, run_command
 from cancer_ai.validator.model_run_manager import ModelRunManager, ModelInfo
 from cancer_ai.validator.dataset_manager import DatasetManager
 from cancer_ai.validator.model_manager import ModelManager
-from datetime import datetime
+from cancer_ai.base.miner import BaseMinerNeuron
+from cancer_ai.chain_models_store import ChainMinerModel, ChainModelMetadataStore
 
 
-class MinerManagerCLI:
-    def __init__(self, config: bt.config):
-        self.config = config
+class MinerManagerCLI(BaseMinerNeuron):
+    def __init__(self, config=None):
+        super(MinerManagerCLI, self).__init__(config=config)
+        self.metadata_store = ChainModelMetadataStore(subtensor=self.subtensor,
+                                                       subnet_uid=self.config.netuid, wallet=self.wallet)
         self.hf_api = HfApi()
+
+    # TODO: Dive into BaseNeuron to switch off requirement to implement legacy methods, for now they are mocked.
+    async def forward(
+        self, synapse: cancer_ai.protocol.Dummy
+    ) -> cancer_ai.protocol.Dummy:
+        ...
+
+    async def blacklist(
+        self, synapse: cancer_ai.protocol.Dummy
+    ) -> typing.Tuple[bool, str]:
+        ...
+
+    async def priority(self, synapse: cancer_ai.protocol.Dummy) -> float:
+        ...
 
     async def upload_to_hf(self) -> None:
         """Uploads model and code to Hugging Face."""
         bt.logging.info("Uploading model to Hugging Face.")
-        now_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         path = self.hf_api.upload_file(
             path_or_fileobj=self.config.model_path,
-            path_in_repo=f"{now_str}-{self.config.competition_id}.onnx",
+            path_in_repo=f"{self.config.competition_id}-{self.config.hf_model_name}.onnx",
             repo_id=self.config.hf_repo_id,
             repo_type="model",
+            token=self.config.hf_token,
         )
+        bt.logging.info("Uploading code to Hugging Face.")
         path = self.hf_api.upload_file(
             path_or_fileobj=f"{self.config.code_directory}/code.zip",
-            path_in_repo=f"{now_str}-{self.config.competition_id}.zip",
+            path_in_repo=f"{self.config.competition_id}-{self.config.hf_model_name}.zip",
             repo_id=self.config.hf_repo_id,
             repo_type="model",
+            token=self.config.hf_token,
         )
 
         bt.logging.info(f"Uploaded model to Hugging Face: {path}")
@@ -57,7 +76,6 @@ class MinerManagerCLI:
         )
         dataset_manager = DatasetManager(
             self.config,
-            self.config.competition_id,
             "safescanai/test_dataset",
             "skin_melanoma.zip",
             "dataset",
@@ -68,9 +86,6 @@ class MinerManagerCLI:
 
         model_predictions = await run_manager.run(pred_x)
 
-        print(pred_y)
-        print(model_predictions)
-
         if self.config.clean_after_run:
             dataset_manager.delete_dataset()
 
@@ -80,16 +95,20 @@ class MinerManagerCLI:
             f"zip  {self.config.code_directory}/code.zip {self.config.code_directory}/*"
         )
         return f"{self.config.code_directory}/code.zip"
-
+    
     async def submit_model(self) -> None:
-        bt.logging.info(
-            f"Initializing connection with Bittensor subnet {self.config.netuid} - Safe-Scan Project"
-        )
-        bt.logging.info(f"Subtensor network: {self.config.subtensor.network}")
-        bt.logging.info(f"Wallet hotkey: {self.config.wallet.hotkey.ss58_address}")
-        wallet = self.wallet
-        subtensor = self.subtensor
-        metagraph = self.metagraph
+        # Check if the required model and files are present in hugging face repo
+        filenames = [self.config.hf_model_name + ".onnx", self.config.hf_model_name + ".zip"]
+        for file in filenames:
+            if not huggingface_hub.file_exists(repo_id=self.config.hf_repo_id, filename=file, token=self.config.hf_token):
+                bt.logging.error(f"{file} not found in Hugging Face repo")
+                return
+        bt.logging.info("Model and code found in Hugging Face repo")
+
+        # Push model metadata to chain
+        model_id = ChainMinerModel(hf_repo_id=self.config.hf_repo_id, name=self.config.hf_model_name, date=datetime.datetime.now(), competition_id=self.config.competition_id, block=None)
+        await self.metadata_store.store_model_metadata(model_id)
+        bt.logging.success(f"Successfully pushed model metadata on chain. Model ID: {model_id}")
 
     async def main(self) -> None:
         bt.logging(config=self.config)
@@ -111,8 +130,6 @@ class MinerManagerCLI:
 
 
 if __name__ == "__main__":
-    config = get_config()
-    set_log_formatting()
     load_dotenv()
-    cli_manager = MinerManagerCLI(config)
+    cli_manager = MinerManagerCLI()
     asyncio.run(cli_manager.main())
