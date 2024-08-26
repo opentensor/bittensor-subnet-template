@@ -64,7 +64,7 @@ def log_results_to_wandb(project, entity, hotkey, evaluation_result: ModelEvalua
 
 
 async def schedule_competitions(
-    competitions: CompetitionManager, path_config: str
+    competitions: List[CompetitionManager], path_config: str
 ) -> None:
     # Cache the next evaluation times for each competition
     print("Initializing competitions")
@@ -106,7 +106,7 @@ async def schedule_competitions(
                         competition_config["dataset_hf_repo_type"],
                     )
                     print(f"Evaluating competition {competition_id} at {now_utc}")
-                    await competition_manager.evaluate()
+                    results = await competition_manager.evaluate()
                     print(
                         f"Results for competition {competition_id}: {competition_manager.results}"
                     )
