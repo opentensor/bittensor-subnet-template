@@ -89,7 +89,7 @@ SKIN SCAN app live demo:
 
 [https://x.com/SAFESCAN_AI/status/1819351129362149876](https://x.com/SAFESCAN_AI/status/1819351129362149876)
 
-# ⚠️ WHY IS SAFESCAN SUBNET IMPORTANT?
+# **⚠️ WHY IS SAFESCAN SUBNET IMPORTANT?**
 
 tutaj będzie jak protein folding opisane czemu nas wspierać i jak to dobrze zrobi dla bittensor
 
@@ -97,13 +97,14 @@ SAFE SCAN harnesses the power of the Bittensor network to address one of the wor
 
 Additionally with Safe Scan, we can significantly broaden awareness of Bittensor's capabilities and resonate with a more general audience. This will be crucial for the network's growth and increasing market cap, attracting both large and microinvestors.
 
-# 📢 MARKETING
+# **📢 MARKETING**
+
 
 Our first goal is to develop the best skin cancer detection algorithm and establish ourselves as a recognized leader in cancer detection. We aim not only to create the most popular and widely accessible skin cancer detection app but also to demonstrate Bittensor's power. We plan to spread awareness through partnerships with skin cancer foundations, growth hacking strategies like affiliate links for unlocking premium features, and promotional support from Apple and Google stores, aiming to reach over 1 million users within 18 months.  And every app launch will display “proudly powered by BITTENSOR.”
 
 However, brand recognition is just the beginning. Our marketing strategy will focus on creating hype by engaging bloggers, reaching to celebrities affected by skin cancer, and sending articles to major tech, health, and news outlets. We will leverage the current interest in AI and blockchain to showcase the life-saving potential of these technologies. 
 
-# 💰 TOKENOMY & ECONOMY
+# **💰 TOKENOMY & ECONOMY**
 
 **🪙 UNIQUE TOKENOMY**
 
