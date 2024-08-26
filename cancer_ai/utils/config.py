@@ -210,6 +210,7 @@ def add_miner_args(cls, parser):
     )
 
 
+
 def add_validator_args(cls, parser):
     """Add validator specific arguments to the parser."""
 
