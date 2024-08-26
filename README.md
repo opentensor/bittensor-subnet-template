@@ -12,7 +12,7 @@
 - [⚙️ Features](#features)
 - [👁️ Vision](#vision)
 - [🌍 Real-world Applications](#-real-world-applications)
-- [⚠️ Why is SafeScan Subnet Important?](#-why-is-safescan-subnet-important)
+- [⚠️ Why is SAFESCAN Subnet Important?](#why-is-safescan-subnet-important)
 - [📢 Marketing](#-marketing)
 - [💰 Tokenomy & Economy](#-tokenomy--economy)
 - [👨‍👨‍👦‍👦 Team Composition](#-team-composition)
@@ -92,6 +92,7 @@ SKIN SCAN app live demo:
 
 [https://x.com/SAFESCAN_AI/status/1819351129362149876](https://x.com/SAFESCAN_AI/status/1819351129362149876)
 
+<a name="why-is-safescan-subnet-important"></a>
 # **⚠️ WHY IS SAFESCAN SUBNET IMPORTANT?**
 
 SAFE SCAN harnesses the power of the Bittensor network to address one of the world's most pressing issues: cancer detection. Researchers can contribute to refining detection algorithms and earn TAO, with additional royalties for those whose algorithms are integrated into our software. By focusing on obtaining large datasets, including paid and hard-to-access medical data, we ensure the development of superior models. Our decentralized, transparent system guarantees fair competition and protects against model overfitting. With strong community and validator support, we can expand to create and register standalone software for detecting other types of cancer. 
