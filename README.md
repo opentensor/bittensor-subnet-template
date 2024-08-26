@@ -92,8 +92,6 @@ SKIN SCAN app live demo:
 
 # **⚠️ WHY IS SAFESCAN SUBNET IMPORTANT?**
 
-tutaj będzie jak protein folding opisane czemu nas wspierać i jak to dobrze zrobi dla bittensor
-
 SAFE SCAN harnesses the power of the Bittensor network to address one of the world's most pressing issues: cancer detection. Researchers can contribute to refining detection algorithms and earn TAO, with additional royalties for those whose algorithms are integrated into our software. By focusing on obtaining large datasets, including paid and hard-to-access medical data, we ensure the development of superior models. Our decentralized, transparent system guarantees fair competition and protects against model overfitting. With strong community and validator support, we can expand to create and register standalone software for detecting other types of cancer. 
 
 Additionally with Safe Scan, we can significantly broaden awareness of Bittensor's capabilities and resonate with a more general audience. This will be crucial for the network's growth and increasing market cap, attracting both large and microinvestors.
@@ -102,7 +100,7 @@ Additionally with Safe Scan, we can significantly broaden awareness of Bittensor
 
 Our first goal is to develop the best skin cancer detection algorithm and establish ourselves as a recognized leader in cancer detection. We aim not only to create the most popular and widely accessible skin cancer detection app but also to demonstrate Bittensor's power. We plan to spread awareness through partnerships with skin cancer foundations, growth hacking strategies like affiliate links for unlocking premium features, and promotional support from Apple and Google stores, aiming to reach over 1 million users within 18 months.  And every app launch will display “proudly powered by BITTENSOR.”
 
-However, brand recognition is just the beginning. Our marketing strategy will focus on creating hype by engaging bloggers, reaching to celebrities affected by skin cancer, and sending articles to major tech, health, and news outlets. We will leverage the current interest in AI and blockchain to showcase the life-saving potential of these technologies. 
+However, brand recognition is just the beginning. Our marketing strategy will focus on creating hype by engaging bloggers, reaching to celebrities affected by skin cancer, and sending articles to major tech, health, and news outlets. We will leverage the current interest in AI and blockchain to showcase the life-saving potential of these technologies.
 
 # **💰 TOKENOMY & ECONOMY**
 
@@ -125,11 +123,6 @@ We aim to keep our cancer detection app and software free for those who need it 
 - Rewards for miners and validators for generating economic value (e.g., analyzing mammography data for private healthcare)
 - Proceeds generated from sponsors and end-users will be distributed among the network's participants.
 
-# **👨‍👨‍👦‍👦 TEAM COMPOSITION**
-
-The SafeScan team is not only composed of professionals with diverse expertise in crypto, software development, machine learning, marketing, UX designIt seems like the message was cut off. Let me continue the full content with properly functioning links:
-
-```markdown
 # **👨‍👨‍👦‍👦 TEAM COMPOSITION**
 
 The SafeScan team is not only composed of professionals with diverse expertise in crypto, software development, machine learning, marketing, UX design, and business, but we are also close friends united by a shared vision.
@@ -165,10 +158,6 @@ Given the complexity of creating a state-of-the-art roleplay LLM, we plan to div
 - [ ] Optimize skin cancer detection models to create one mixture-of-experts model which will run on mobile devices
 - [ ] Start the process for certifying models - FDA approval
 - [ ] Make competitions for breast cancer
-
-# 👷🏻‍♂️ ENGINEERING ROADMAP
-
-Edgemaxxing for mobile phones.
 
 # **📊 SETUP WandB (HIGHLY RECOMMENDED - VALIDATORS PLEASE READ)**
 
@@ -227,7 +216,11 @@ To configure your WANDB API key on your Ubuntu machine, follow these steps:
 
 # **🚀 GET INVOLVED**
 
-...
+1. Visit our [GitHub repository](https://github.com/safe-scan-ai/cancer-ai-3) to explore the code behind SAFE SCAN.
+
+2. Join our [Discord server](https://discord.com/channels/1259812760280236122/1262383307832823809) to stay updated and engage with the team.
+
+3. Follow us on [X (Twitter)](https://x.com/SAFESCAN_AI) and help us spread the word.
 
 # **📝 LICENSE**
 
