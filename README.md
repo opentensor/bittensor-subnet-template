@@ -7,9 +7,9 @@
 [![Discord Chat](https://img.shields.io/discord/308323056592486420.svg)]([https://discord.gg/bittensor](https://discord.com/channels/1259812760280236122/1262383307832823809))
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
 
-- [👋 Introduction](#-introduction)
-- [⚙️ Features](#️-features)
-- [👁️ Vision](#️-vision)
+- [👋 Introduction](#introduction)
+- [⚙️ Features](#features)
+- [👁️ Vision](#vision)
 - [🌍 Real-world Applications](#real-world-applications)
 - [⚠️ Why is SafeScan Subnet Important?](#why-is-safescan-subnet-important)
 - [📢 Marketing](#marketing)
@@ -21,6 +21,7 @@
 - [⛏️ RUNNING MINER](#running-miner)
 - [🚀 GET INVOLVED](#get-involved)
 - [📝 LICENSE](#license)
+
 
 # **👋 INTRODUCTION**
 
