@@ -9,7 +9,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
 
 - [👋 Introduction](#-introduction)
-- [⚙️ Features](#-FEATURES)
+- [⚙️ Features](#-features)
 - [👁️ Vision](#-vision)
 - [🌍 Real-world Applications](#-real-world-applications)
 - [⚠️ Why is SafeScan Subnet Important?](#-why-is-safescan-subnet-important)
