@@ -175,31 +175,73 @@ def add_miner_args(cls, parser):
     )
 
     parser.add_argument(
-        "--models.load_model_dir",
+        "--load_model_dir",
         type=str,
         help="Path for for loading the starting model related to a training run.",
         default="./models",
     )
 
     parser.add_argument(
-        "--models.namespace",
-        type=str,
-        help="Namespace where the model can be found.",
-        default="mock-namespace",
-    )
-
-    parser.add_argument(
-        "--models.model_name",
+        "--hf_model_name",
         type=str,
         help="Name of the model to push to hugging face.",
-        default="mock-name",
+        default="",
     )
 
     parser.add_argument(
-        "--models.epoch_checkpoint",
-        type=int,
-        help="The epoch number to submit as your checkpoint to evaluate e.g. 10",
-        default=10,
+        "--action",
+        choices=["submit", "evaluate", "upload"],
+        default="submit",
+    )
+
+    parser.add_argument(
+        "--model_path",
+        type=str,
+        help="Path to ONNX model, used for evaluation",
+        default="",
+    )
+
+    parser.add_argument(
+        "--competition_id",
+        type=str,
+        help="Competition ID",
+        default="melanoma-1",
+    )
+
+    parser.add_argument(
+        "--dataset_dir",
+        type=str,
+        help="Path for storing datasets.",
+        default="./datasets",
+    )
+
+    parser.add_argument(
+        "--hf_repo_id",
+        type=str,
+        # required=False,
+        help="Hugging Face model repository ID",
+        default="",
+    )
+
+    parser.add_argument(
+        "--hf_token",
+        type=str,
+        help="Hugging Face API token",
+        default="",
+    )
+
+    parser.add_argument(
+        "--clean_after_run",
+        action="store_true",
+        help="Whether to clean up (dataset, temporary files) after running",
+        default=False,
+    )
+
+    parser.add_argument(
+        "--code_directory",
+        type=str,
+        help="Path to code directory",
+        default=".",
     )
 
 def add_validator_args(cls, parser):
