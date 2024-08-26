@@ -12,7 +12,7 @@
 - [👁️ Vision](#vision)
 - [🌍 Real-world Applications](#real-world-applications)
 - [⚠️ Why is SafeScan Subnet Important?](#why-is-safescan-subnet-important)
-- [📢 Marketing](#marketing)
+- [📢 Marketing](#MARKETING)
 - [💰 Tokenomy & Economy](#tokenomy--economy)
 - [👨‍👨‍👦‍👦 Team Composition](#team-composition)
 - [🛣️ Roadmap](#roadmap)
