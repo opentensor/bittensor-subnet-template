@@ -16,12 +16,12 @@
 - [📢 Marketing](#-marketing)
 - [💰 Tokenomy & Economy](#-tokenomy--economy)
 - [👨‍👨‍👦‍👦 Team Composition](#-team-composition)
-- [🛣️ Roadmap](#roadmap)
-- [📊 SETUP WandB (#-HIGHLY RECOMMENDED - VALIDATORS PLEASE READ)](#setup-wandb-highly-recommended---validators-please-read)
-- [👍 RUNNING VALIDATOR](#-running-validator)
-- [⛏️ RUNNING MINER](#-running-miner)
-- [🚀 GET INVOLVED](#-get-involved)
-- [📝 LICENSE](#-license)
+- [🛣️ Roadmap](#-roadmap)
+- [📊 SETUP WandB (HIGHLY RECOMMENDED - VALIDATORS PLEASE READ)](#-setup-wandb-highly-recommended---validators-please-read)
+- [👍 Running Validator](#-running-validator)
+- [⛏️ Running Miner](#-running-miner)
+- [🚀 Get invloved](#-get-involved)
+- [📝 License](#-license)
 
 
 # **👋 INTRODUCTION**
