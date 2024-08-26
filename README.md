@@ -30,8 +30,7 @@ Welcome to Safe Scan Cancer AI Detection, a groundbreaking initiative leveraging
 
 This repository contains subnet code to run on Bittensor network.
 
-<a name="features"></a>
-# **⚙️ FEATURES**
+<a name="features"></a># **⚙️ FEATURES**
 
 🤗 Validator-friendly code
 
