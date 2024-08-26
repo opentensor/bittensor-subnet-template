@@ -48,6 +48,7 @@ This repository contains subnet code to run on Bittensor network.
 
 💸 Self-sustaining economy
 
+<a name="vision"></a>
 # **👁️ VISION**
 
 Cancer is one of the most significant challenges of our time, and we believe that AI holds the key to addressing it. However, this solution should be accessible and free for everyone. Machine vision technology has long proven effective in early diagnosis, which is crucial for curing cancer. Yet, until now, it has largely remained in the realm of whitepapers. SAFESCAN is a project dedicated to aggregating and enhancing the best algorithms for detecting various types of cancer and providing free computational power for practical cancer detection. We aim to create open-source products that support cancer diagnosis for both patients and doctors.
