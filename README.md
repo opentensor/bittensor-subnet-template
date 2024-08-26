@@ -216,11 +216,12 @@ To configure your WANDB API key on your Ubuntu machine, follow these steps:
 
 # **🚀 GET INVOLVED**
 
-1. Visit our [GitHub repository](https://github.com/safe-scan-ai/cancer-ai-3) to explore the code behind SAFE SCAN.
+1. Visit our [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/safe-scan-ai/cancer-ai-3) to explore the code behind SAFE SCAN.
 
-2. Join our [Discord server](https://discord.com/channels/1259812760280236122/1262383307832823809) to stay updated and engage with the team.
+2. Join our [![Discord](https://img.shields.io/discord/308323056592486420.svg)](https://discord.com/channels/1259812760280236122/1262383307832823809) to stay updated and engage with the team.
 
-3. Follow us on [X (Twitter)](https://x.com/SAFESCAN_AI) and help us spread the word.
+3. Follow us on [![X (Twitter)](https://img.shields.io/badge/X-000000?style=for-the-badge&logo=twitter&logoColor=white)](https://x.com/SAFESCAN_AI) and help us spread the word.
+
 
 # **📝 LICENSE**
 
