@@ -82,7 +82,6 @@ class MinerManagerCLI:
         return f"{self.config.code_directory}/code.zip"
 
     async def submit_model(self) -> None:
-        # The wallet holds the cryptographic key pairs for the miner.
         bt.logging.info(
             f"Initializing connection with Bittensor subnet {self.config.netuid} - Safe-Scan Project"
         )
