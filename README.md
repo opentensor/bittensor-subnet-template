@@ -9,14 +9,14 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
 
 - [👋 Introduction](#-introduction)
-- [⚙️ Features](#-features)
+- [⚙️ Features](#features)
 - [👁️ Vision](#vision)
 - [🌍 Real-world Applications](#-real-world-applications)
 - [⚠️ Why is SafeScan Subnet Important?](#-why-is-safescan-subnet-important)
 - [📢 Marketing](#-marketing)
 - [💰 Tokenomy & Economy](#-tokenomy--economy)
 - [👨‍👨‍👦‍👦 Team Composition](#-team-composition)
-- [🛣️ Roadmap](#-roadmap)
+- [🛣️ Roadmap](#roadmap)
 - [📊 SETUP WandB (HIGHLY RECOMMENDED - VALIDATORS PLEASE READ)](#-setup-wandb-highly-recommended---validators-please-read)
 - [👍 Running Validator](#-running-validator)
 - [⛏️ Running Miner](#-running-miner)
@@ -30,6 +30,7 @@ Welcome to Safe Scan Cancer AI Detection, a groundbreaking initiative leveraging
 
 This repository contains subnet code to run on Bittensor network.
 
+<a name="features"></a>
 # **⚙️ FEATURES**
 
 🤗 Validator-friendly code
@@ -48,8 +49,8 @@ This repository contains subnet code to run on Bittensor network.
 
 💸 Self-sustaining economy
 
-<a name="vision">
-# **👁️ VISION**</a>
+<a name="vision"></a>
+# **👁️ VISION**
 
 Cancer is one of the most significant challenges of our time, and we believe that AI holds the key to addressing it. However, this solution should be accessible and free for everyone. Machine vision technology has long proven effective in early diagnosis, which is crucial for curing cancer. Yet, until now, it has largely remained in the realm of whitepapers. SAFESCAN is a project dedicated to aggregating and enhancing the best algorithms for detecting various types of cancer and providing free computational power for practical cancer detection. We aim to create open-source products that support cancer diagnosis for both patients and doctors.
 
@@ -138,6 +139,7 @@ Team members:
 - **@bulubula -** Machine learning engineer
 - **@Izuael -** Mobile software Engineer
 
+<a name="roadmap"></a>
 # **🛣️ ROADMAP**
 
 Given the complexity of creating a state-of-the-art roleplay LLM, we plan to divide the process into 3 distinct phases.
