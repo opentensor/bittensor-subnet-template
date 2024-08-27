@@ -218,7 +218,6 @@ def add_miner_args(cls, parser):
     parser.add_argument(
         "--hf_repo_id",
         type=str,
-        # required=False,
         help="Hugging Face model repository ID",
         default="",
     )
