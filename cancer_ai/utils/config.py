@@ -189,7 +189,14 @@ def add_miner_args(cls, parser):
     )
 
     parser.add_argument(
-        "--hf-token",
+        "--hf_repo_id",
+        type=str,
+        help="Hugging Face model repository ID",
+        default="",
+    )
+
+    parser.add_argument(
+        "--hf_token",
         type=str,
         help="Hugging Face API token",
         default="",
