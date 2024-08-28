@@ -36,8 +36,8 @@ class CompetitionManager(SerializableManager):
     def __init__(
         self,
         config,
-        subtensor: bt.Subtensor,
-        subnet_uid: str,
+        subtensor: bt.Subtensor, # fetch from config, so not needed 
+        subnet_uid: str, # fetch from config, so not needed 
         competition_id: str,
         category: str,
         dataset_hf_repo: str,
@@ -81,7 +81,7 @@ class CompetitionManager(SerializableManager):
     async def get_miner_model(self, chain_miner_model: ChainMinerModel):
         model_info = ModelInfo(
             hf_repo_id=chain_miner_model.hf_repo_id,
-            hf_filename=chain_miner_model.hf_filename,
+            hf_model_filename=chain_miner_model.hf_filename,
             hf_repo_type=chain_miner_model.hf_repo_type,
         )
         return model_info
@@ -116,7 +116,7 @@ class CompetitionManager(SerializableManager):
         competition_handler = COMPETITION_HANDLER_MAPPING[self.competition_id](
             X_test=X_test, y_test=y_test
         )
-
+        await self.sync_chain_miners([])
         X_test, y_test = competition_handler.preprocess_data()
 
         for hotkey in self.model_manager.hotkey_store:
