@@ -109,10 +109,13 @@ However, brand recognition is just the beginning. Our marketing strategy will fo
 **🪙 UNIQUE TOKENOMY**
 
 Our tokenomics are uniquely designed to drive research and development of new algorithms while also supporting real-life applications.
+**Competitions** Safe Scan organizes ongoing competitions focused on cancer detection using machine learning, providing a structured environment for participants to develop and test their models.
 
-**Incentives**: Miners with the best-performing algorithms in our ongoing competitions are rewarded through our leaderboard system. The top-ranked miner receives significant incentives, promoting continuous improvement and innovation.
+You can find comprehensive details about competition scheduling, dataset release, model submission, evaluation, configuration, and development tools here: [LINK]
 
-**Royalties**: Miners whose algorithms are integrated into our app and software for real-life cancer detection applications earn additional 1% of emission royalties. This ensures ongoing motivation for developers to create cutting-edge solutions that contribute to our mission of saving lives.
+**Incentives**: The winner of each competition receives the entire reward pool for that specific competition. The reward pool is determined by the total emission allocated for miners, divided by the number of competitions being held.
+
+If a miner stays at the top position for more than 30 days, their rewards start to decrease gradually. Every 7 days after the initial 30 days, their share of the rewards decreases by 10%. This reduction continues until their share reaches a minimum of 10% of the original reward.
 
 **📈 SELF-SUSTAINING ECONOMY**
 
