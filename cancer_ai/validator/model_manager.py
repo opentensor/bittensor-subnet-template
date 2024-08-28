@@ -9,17 +9,19 @@ from .manager import SerializableManager
 
 @dataclass
 class ModelInfo:
-    repo_id: str
-    filename: str
+    hf_repo_id: str | None = None
+    hf_filename: str | None = None
+    hf_repo_type: str | None = None
     file_path: str | None = None
+    model_type: str | None = None
 
 
 class ModelManager(SerializableManager):
     def __init__(self, config) -> None:
         self.config = config
 
-        if not os.path.exists(self.config.models.model_dir):
-            os.makedirs(self.config.models.model_dir)
+        if not os.path.exists(self.config.model_dir):
+            os.makedirs(self.config.model_dir)
         self.api = HfApi()
         self.hotkey_store = {}
 
@@ -35,19 +37,19 @@ class ModelManager(SerializableManager):
             if hotkey not in hotkeys:
                 self.delete_model(hotkey)
 
-    def download_miner_model(self, hotkey) -> None:
+    async  def download_miner_model(self, hotkey) -> None:
         """Downloads the newest model from Hugging Face and saves it to disk.
         Returns:
             str: path to the downloaded model
         """
         model_info = self.hotkey_store[hotkey]
-        model_path = self.api.hf_hub_download(
-            model_info.repo_id,
-            model_info.filename,
-            cache_dir=self.config.models.model_dir,
-            repo_type="space",
+        model_info.file_path = self.api.hf_hub_download(
+            model_info.hf_repo_id,
+            model_info.hf_filename,
+            cache_dir=self.config.model_dir,
+            repo_type=model_info.hf_repo_type,
         )
-        model_info.file_path = model_path
+    
 
     def add_model(self, hotkey, repo_id, filename) -> None:
         """Saves locally information about a new model."""

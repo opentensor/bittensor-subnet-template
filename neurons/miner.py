@@ -1,31 +1,16 @@
-# The MIT License (MIT)
-# Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
-# documentation files (the “Software”), to deal in the Software without restriction, including without limitation
-# the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
-# and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in all copies or substantial portions of
-# the Software.
-
-# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-# THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-# DEALINGS IN THE SOFTWARE.
 
 import time
 import typing
 import bittensor as bt
-
-# Bittensor Miner Template:
+import datetime as dt
+import os
+import datetime
+import asyncio
 import cancer_ai
 
 # import base miner class which takes care of most of the boilerplate
 from cancer_ai.base.miner import BaseMinerNeuron
+from cancer_ai.chain_models_store import ChainMinerModel, ChainModelMetadataStore
 
 
 class Miner(BaseMinerNeuron):
@@ -40,11 +25,13 @@ class Miner(BaseMinerNeuron):
     def __init__(self, config=None):
         super(Miner, self).__init__(config=config)
 
-        # TODO(developer): Anything specific to your use case you can do here
+        self.metadata_store = ChainModelMetadataStore(subtensor=self.subtensor, subnet_uid=163, wallet=self.wallet)
+
+        asyncio.run(self.store_and_retrieve_metadata_on_chain("mock_competition"))
 
     async def forward(
-        self, synapse: template.protocol.Dummy
-    ) -> template.protocol.Dummy:
+        self, synapse: cancer_ai.protocol.Dummy
+    ) -> cancer_ai.protocol.Dummy:
         """
         Processes the incoming 'Dummy' synapse by performing a predefined operation on the input data.
         This method should be replaced with actual logic relevant to the miner's purpose.
@@ -63,7 +50,7 @@ class Miner(BaseMinerNeuron):
         return synapse
 
     async def blacklist(
-        self, synapse: template.protocol.Dummy
+        self, synapse: cancer_ai.protocol.Dummy
     ) -> typing.Tuple[bool, str]:
         """
         Determines whether an incoming request should be blacklisted and thus ignored. Your implementation should
@@ -124,7 +111,7 @@ class Miner(BaseMinerNeuron):
         )
         return False, "Hotkey recognized!"
 
-    async def priority(self, synapse: template.protocol.Dummy) -> float:
+    async def priority(self, synapse: cancer_ai.protocol.Dummy) -> float:
         """
         The priority function determines the order in which requests are handled. More valuable or higher-priority
         requests are processed before others. You should design your own priority mechanism with care.
@@ -160,6 +147,24 @@ class Miner(BaseMinerNeuron):
         )
         return priority
 
+    async def store_and_retrieve_metadata_on_chain(self, competition: str) -> None:
+        """
+        PoC function to integrate with the structured business logic
+        """
+
+        model_id = ChainMinerModel(namespace=self.config.models.namespace, name=self.config.models.model_name, epoch=self.config.models.epoch_checkpoint,
+                            date=datetime.datetime.now(), competition_id=competition, block=None)
+        
+        await self.metadata_store.store_model_metadata(model_id)
+        bt.logging.success(f"Model successfully pushed model metadata on chain. Model ID: {model_id}")
+
+        time.sleep(10)
+
+        model_metadata = await self.metadata_store.retrieve_model_metadata(self.wallet.hotkey.ss58_address)
+
+        time.sleep(10)
+        print("Model Metadata name: ", model_metadata.id.name)
+
 
 # This is the main function, which runs the miner.
 if __name__ == "__main__":
@@ -167,3 +172,4 @@ if __name__ == "__main__":
         while True:
             bt.logging.info(f"Miner running... {time.time()}")
             time.sleep(5)
+
