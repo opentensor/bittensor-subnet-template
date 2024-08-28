@@ -21,25 +21,6 @@ path_config = SimpleNamespace(
 
 competitions_cfg = json.load(open("neurons/competition_config.json", "r"))
 
-def calculate_next_evaluation_times(evaluation_times) -> List[datetime]:
-    """Calculate the next evaluation times for a given list of times in UTC."""
-    now_utc = datetime.now(timezone.utc)
-    next_times = []
-
-    for time_str in evaluation_times:
-        # Parse the evaluation time to a datetime object in UTC
-        evaluation_time_utc = datetime.strptime(time_str, "%H:%M").replace(
-            tzinfo=timezone.utc, year=now_utc.year, month=now_utc.month, day=now_utc.day
-        )
-
-        # If the evaluation time has already passed today, schedule it for tomorrow
-        if evaluation_time_utc < now_utc:
-            evaluation_time_utc += timedelta(days=1)
-
-        next_times.append(evaluation_time_utc)
-
-    return next_times
-
 def log_results_to_wandb(project, entity, hotkey, evaluation_result: ModelEvaluationResult):
     wandb.init(project=project, entity=entity)  # TODO: Update this line as needed
 

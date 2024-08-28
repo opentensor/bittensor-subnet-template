@@ -88,10 +88,21 @@ class CompetitionManager(SerializableManager):
 
         # return ModelInfo(hf_repo_id="safescanai/test_dataset", hf_filename="simple_cnn_model.onnx", hf_repo_type="dataset")
 
+    async def sync_chain_miners_test(self, hotkeys: list[str]):
+        hotkeys_with_models = {
+            "wojtek": ModelInfo(hf_repo_id="safescanai/test_dataset", hf_model_filename="model_dynamic.onnx", hf_repo_type="dataset"),
+            "bruno": ModelInfo(hf_repo_id="safescanai/test_dataset", hf_model_filename="best_model.onnx", hf_repo_type="dataset"),
+        }
+        self.model_manager.hotkey_store = hotkeys_with_models
+
+
+
     async def sync_chain_miners(self, hotkeys: list[str]):
         """
         Updates hotkeys and downloads information of models from the chain
         """
+
+        
         bt.logging.info("Synchronizing miners from the chain")
         self.hotkeys = hotkeys
         bt.logging.info(f"Amount of hotkeys: {len(hotkeys)}")
@@ -116,7 +127,7 @@ class CompetitionManager(SerializableManager):
         competition_handler = COMPETITION_HANDLER_MAPPING[self.competition_id](
             X_test=X_test, y_test=y_test
         )
-        await self.sync_chain_miners([])
+        await self.sync_chain_miners_test([])
         X_test, y_test = competition_handler.preprocess_data()
 
         for hotkey in self.model_manager.hotkey_store:
