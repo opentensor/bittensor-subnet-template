@@ -111,7 +111,12 @@ class MinerManagerCLI:
 
 
 if __name__ == "__main__":
+    from types import SimpleNamespace
     config = get_config()
+    config = {
+        "dataset_dir": "./data",
+    }
+    config = SimpleNamespace( **config)
     set_log_formatting()
     load_dotenv()
     cli_manager = MinerManagerCLI(config)
