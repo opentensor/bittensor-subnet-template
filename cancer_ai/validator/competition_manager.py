@@ -108,6 +108,8 @@ class CompetitionManager(SerializableManager):
         bt.logging.info("Recall: ", evaluation_result.recall)
         bt.logging.info("roc_auc: ", evaluation_result.roc_auc)
 
+
+
     def get_state(self):
         return {
             "competition_id": self.competition_id,
@@ -150,7 +152,6 @@ class CompetitionManager(SerializableManager):
         Updates hotkeys and downloads information of models from the chain
         """
 
-        
         bt.logging.info("Synchronizing miners from the chain")
         
         bt.logging.info(f"Amount of hotkeys: {len(self.hotkeys)}")
@@ -197,6 +198,7 @@ class CompetitionManager(SerializableManager):
             model_result = competition_handler.get_model_result(
                 y_test, y_pred, run_time_s
             )
+            # log_results_to_wandb(y_test, y_pred, run_time_s, hotkey)
             self.results.append((hotkey, model_result))
             self.log_results_to_wandb(hotkey, model_result)
 
