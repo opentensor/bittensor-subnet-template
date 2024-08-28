@@ -176,7 +176,7 @@ Given the complexity of creating a state-of-the-art roleplay LLM, we plan to div
 
 # **🚀 GET INVOLVED**
 
-1. Visit our [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/safe-scan-ai/cancer-ai-3) to explore the code behind SAFE SCAN.
+1. Visit our [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/safe-scan-ai/cancer-ai) to explore the code behind SAFE SCAN.
 
 2. Join our [![Discord](https://img.shields.io/discord/308323056592486420.svg)](https://discord.com/channels/1259812760280236122/1262383307832823809) to stay updated and engage with the team.
 
