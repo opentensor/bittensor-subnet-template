@@ -8,6 +8,12 @@
 [![Discord Chat](https://img.shields.io/discord/308323056592486420.svg)]([https://discord.gg/bittensor](https://discord.com/channels/1259812760280236122/1262383307832823809))
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
 
+[www.SAFE-SCAN.ai](https://www.safe-scan.ai)   &nbsp;&nbsp;&nbsp;&nbsp;  [www.SKIN-SCAN.ai](https://www.skin-scan.ai)   &nbsp;&nbsp;&nbsp;&nbsp;  [Follow us on X](https://x.com/SAFESCAN_AI)
+
+
+# **📋 TABLE OF CONTENT**
+
+
 - [👋 Introduction](#-introduction)
 - [⚙️ Features](#features)
 - [👁️ Vision](#vision)
