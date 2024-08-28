@@ -111,7 +111,7 @@ However, brand recognition is just the beginning. Our marketing strategy will fo
 Our tokenomics are uniquely designed to drive research and development of new algorithms while also supporting real-life applications.
 **Competitions** Safe Scan organizes ongoing competitions focused on cancer detection using machine learning, providing a structured environment for participants to develop and test their models.
 
-You can find comprehensive details about competition scheduling, dataset release, model submission, evaluation, configuration, and development tools here: [LINK]
+You can find comprehensive details about competition scheduling, dataset release, model submission, evaluation, configuration, and development tools here: [COMPETITION README](DOCS/COMPETITIONS.md)
 
 **Incentives**: The winner of each competition receives the entire reward pool for that specific competition. The reward pool is determined by the total emission allocated for miners, divided by the number of competitions being held.
 
