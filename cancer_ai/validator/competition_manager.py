@@ -13,6 +13,8 @@ from .competition_handlers.melanoma_handler import MelanomaCompetitionHandler
 
 from cancer_ai.chain_models_store import ChainModelMetadataStore, ChainMinerModel
 
+from neurons.competition_runner  import log_results_to_wandb
+
 
 COMPETITION_HANDLER_MAPPING = {
     "melanoma-1": MelanomaCompetitionHandler,
@@ -140,8 +142,10 @@ class CompetitionManager(SerializableManager):
             start_time = time.time()
             y_pred = await model_manager.run(X_test)
             run_time_s = time.time() - start_time
-            print("Model prediction ", y_pred)
-            print("Ground truth: ", y_test)
+            # print("Model prediction ", y_pred)
+            # print("Ground truth: ", y_test)
+            log_results_to_wandb(y_test, y_pred, run_time_s, hotkey)
+            
 
             model_result = competition_handler.get_model_result(
                 y_test, y_pred, run_time_s

@@ -22,24 +22,33 @@ path_config = SimpleNamespace(
 competitions_cfg = json.load(open("neurons/competition_config.json", "r"))
 
 def log_results_to_wandb(project, entity, hotkey, evaluation_result: ModelEvaluationResult):
-    wandb.init(project=project, entity=entity)  # TODO: Update this line as needed
+    # wandb.init(project=project, entity=entity)  # TODO: Update this line as needed
 
-    wandb.log({
-        "hotkey": hotkey,
-        "tested_entries": evaluation_result.tested_entries,
-        "model_test_run_time": evaluation_result.run_time,
-        "accuracy": evaluation_result.accuracy,
-        "precision": evaluation_result.precision,
-        "recall": evaluation_result.recall,
-        "confusion_matrix": evaluation_result.confusion_matrix.tolist(),
-        "roc_curve": {
-            "fpr": evaluation_result.fpr.tolist(),
-            "tpr": evaluation_result.tpr.tolist()
-        },
-        "roc_auc": evaluation_result.roc_auc
-    })
+    # wandb.log({
+    #     "hotkey": hotkey,
+    #     "tested_entries": evaluation_result.tested_entries,
+    #     "model_test_run_time": evaluation_result.run_time,
+    #     "accuracy": evaluation_result.accuracy,
+    #     "precision": evaluation_result.precision,
+    #     "recall": evaluation_result.recall,
+    #     "confusion_matrix": evaluation_result.confusion_matrix.tolist(),
+    #     "roc_curve": {
+    #         "fpr": evaluation_result.fpr.tolist(),
+    #         "tpr": evaluation_result.tpr.tolist()
+    #     },
+    #     "roc_auc": evaluation_result.roc_auc
+    # })
 
-    wandb.finish()
+    # wandb.finish()
+    print("Logged results to wandb")
+    print("Hotkey: ", hotkey)
+    print("Tested entries: ", evaluation_result.tested_entries)
+    print("Model test run time: ", evaluation_result.run_time)
+    print("Accuracy: ", evaluation_result.accuracy)
+    print("Precision: ", evaluation_result.precision)
+    print("Recall: ", evaluation_result.recall)
+    print("roc_auc: ", evaluation_result.roc_auc)
+
     return
 
 def run_all_competitions(path_config: str, competitions_cfg: List[dict]) -> None:
