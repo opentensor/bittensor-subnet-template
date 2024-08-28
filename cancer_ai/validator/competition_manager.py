@@ -149,6 +149,8 @@ class CompetitionManager(SerializableManager):
         """
         Updates hotkeys and downloads information of models from the chain
         """
+
+        
         bt.logging.info("Synchronizing miners from the chain")
         
         bt.logging.info(f"Amount of hotkeys: {len(self.hotkeys)}")
