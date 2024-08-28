@@ -273,14 +273,14 @@ def add_validator_args(cls, parser):
     )
 
     parser.add_argument(
-        "--wandb.project_name",
+        "--wandb_project_name",
         type=str,
         help="The name of the project where you are sending the new run.",
         default="template-validators",
     )
 
     parser.add_argument(
-        "--wandb.entity",
+        "--wandb_entity",
         type=str,
         help="The name of the project where you are sending the new run.",
         default="opentensor-dev",

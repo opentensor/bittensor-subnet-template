@@ -1,8 +1,16 @@
 import time
-import random
 from typing import List
 
 import bittensor as bt
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    confusion_matrix,
+    roc_curve,
+    auc,
+)
+import wandb
 
 from .manager import SerializableManager
 from .model_manager import ModelManager, ModelInfo
@@ -10,11 +18,12 @@ from .dataset_manager import DatasetManager
 from .model_run_manager import ModelRunManager
 
 from .competition_handlers.melanoma_handler import MelanomaCompetitionHandler
+from .competition_handlers.base_handler import ModelEvaluationResult
 
 from cancer_ai.chain_models_store import ChainModelMetadataStore, ChainMinerModel
+from dotenv import load_dotenv
 
-from neurons.competition_runner  import log_results_to_wandb
-
+load_dotenv()
 
 COMPETITION_HANDLER_MAPPING = {
     "melanoma-1": MelanomaCompetitionHandler,
@@ -38,8 +47,8 @@ class CompetitionManager(SerializableManager):
     def __init__(
         self,
         config,
-        subtensor: bt.Subtensor, # fetch from config, so not needed 
-        subnet_uid: str, # fetch from config, so not needed 
+        subtensor: bt.Subtensor,  # fetch from config, so not needed
+        subnet_uid: str,  # fetch from config, so not needed
         competition_id: str,
         category: str,
         dataset_hf_repo: str,
@@ -68,6 +77,41 @@ class CompetitionManager(SerializableManager):
         self.hotkeys = []
         self.chain_miner_models = {}
 
+    def log_results_to_wandb(
+        self, hotkey: str, evaluation_result: ModelEvaluationResult
+    ):
+        # wandb.init(entity=self.config.wandb_entity, project=self.config.wandb_project_name)
+        wandb.init(project=self.config.wandb_project_name)
+
+        wandb.log(
+            {
+                "hotkey": hotkey,
+                "tested_entries": evaluation_result.tested_entries,
+                # "model_test_run_time": evaluation_result.run_time,
+                "accuracy": evaluation_result.accuracy,
+                "precision": evaluation_result.precision,
+                "recall": evaluation_result.recall,
+                "confusion_matrix": evaluation_result.confusion_matrix.tolist(),
+                "roc_curve": {
+                    "fpr": evaluation_result.fpr.tolist(),
+                    "tpr": evaluation_result.tpr.tolist(),
+                },
+                "roc_auc": evaluation_result.roc_auc,
+            }
+        )
+
+        wandb.finish()
+        print("Logged results to wandb")
+        print("Hotkey: ", hotkey)
+        print("Tested entries: ", evaluation_result.tested_entries)
+        print("Model test run time: ", evaluation_result.run_time)
+        print("Accuracy: ", evaluation_result.accuracy)
+        print("Precision: ", evaluation_result.precision)
+        print("Recall: ", evaluation_result.recall)
+        print("roc_auc: ", evaluation_result.roc_auc)
+
+        return
+
     def get_state(self):
         return {
             "competition_id": self.competition_id,
@@ -84,27 +128,31 @@ class CompetitionManager(SerializableManager):
         model_info = ModelInfo(
             hf_repo_id=chain_miner_model.hf_repo_id,
             hf_model_filename=chain_miner_model.hf_filename,
+            hf_code_filename=chain_miner_model.hf_code_filename,
             hf_repo_type=chain_miner_model.hf_repo_type,
         )
         return model_info
 
-        # return ModelInfo(hf_repo_id="safescanai/test_dataset", hf_filename="simple_cnn_model.onnx", hf_repo_type="dataset")
-
     async def sync_chain_miners_test(self, hotkeys: list[str]):
         hotkeys_with_models = {
-            "wojtek": ModelInfo(hf_repo_id="safescanai/test_dataset", hf_model_filename="model_dynamic.onnx", hf_repo_type="dataset"),
-            "bruno": ModelInfo(hf_repo_id="safescanai/test_dataset", hf_model_filename="best_model.onnx", hf_repo_type="dataset"),
+            "wojtek": ModelInfo(
+                hf_repo_id="safescanai/test_dataset",
+                hf_model_filename="model_dynamic.onnx",
+                hf_repo_type="dataset",
+            ),
+            "bruno": ModelInfo(
+                hf_repo_id="safescanai/test_dataset",
+                hf_model_filename="best_model.onnx",
+                hf_repo_type="dataset",
+            ),
         }
         self.model_manager.hotkey_store = hotkeys_with_models
-
-
 
     async def sync_chain_miners(self, hotkeys: list[str]):
         """
         Updates hotkeys and downloads information of models from the chain
         """
 
-        
         bt.logging.info("Synchronizing miners from the chain")
         self.hotkeys = hotkeys
         bt.logging.info(f"Amount of hotkeys: {len(hotkeys)}")
@@ -122,7 +170,7 @@ class CompetitionManager(SerializableManager):
         )
 
     async def evaluate(self):
-        
+        """Returns hotkey of winning model miner and"""
         await self.dataset_manager.prepare_dataset()
         X_test, y_test = await self.dataset_manager.get_data()
 
@@ -131,7 +179,7 @@ class CompetitionManager(SerializableManager):
         )
         await self.sync_chain_miners_test([])
         X_test, y_test = competition_handler.preprocess_data()
-
+        # print("Ground truth: ", y_test)
         for hotkey in self.model_manager.hotkey_store:
             bt.logging.info("Evaluating hotkey: ", hotkey)
             await self.model_manager.download_miner_model(hotkey)
@@ -143,13 +191,15 @@ class CompetitionManager(SerializableManager):
             y_pred = await model_manager.run(X_test)
             run_time_s = time.time() - start_time
             # print("Model prediction ", y_pred)
-            # print("Ground truth: ", y_test)
-            log_results_to_wandb(y_test, y_pred, run_time_s, hotkey)
-            
 
             model_result = competition_handler.get_model_result(
                 y_test, y_pred, run_time_s
             )
+            # log_results_to_wandb(y_test, y_pred, run_time_s, hotkey)
             self.results.append((hotkey, model_result))
+            self.log_results_to_wandb(hotkey, model_result)
 
-        return self.results
+        winning_hotkey = sorted(
+            self.results, key=lambda x: x[1].accuracy, reverse=True
+        )[0][0]
+        return winning_hotkey
