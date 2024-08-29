@@ -63,7 +63,7 @@ def log_results_to_wandb(project, entity, hotkey, evaluation_result: ModelEvalua
     return
 
 
-async def schedule_competitions(
+async def run_the_scheduler(
     competitions: CompetitionManager, path_config: str
 ) -> None:
     # Cache the next evaluation times for each competition
@@ -106,7 +106,7 @@ async def schedule_competitions(
                         competition_config["dataset_hf_repo_type"],
                     )
                     print(f"Evaluating competition {competition_id} at {now_utc}")
-                    await competition_manager.evaluate()
+                    results = await competition_manager.evaluate()
                     print(
                         f"Results for competition {competition_id}: {competition_manager.results}"
                     )
@@ -141,4 +141,4 @@ if __name__ == "__main__":
         run_all_competitions(path_config, competitions_cfg)
     
     else: # Run the scheduling coroutine
-        asyncio.run(schedule_competitions(competitions, path_config))
+        asyncio.run(run_the_scheduler(competitions, path_config))

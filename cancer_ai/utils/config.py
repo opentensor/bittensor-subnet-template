@@ -175,10 +175,10 @@ def add_miner_args(cls, parser):
     )
 
     parser.add_argument(
-        "--load_model_dir",
+        "--model_dir",
         type=str,
-        help="Path for for loading the starting model related to a training run.",
-        default="./models",
+        help="The directory where the models are stored.",
+        default="/tmp/models",
     )
 
     parser.add_argument(
@@ -212,7 +212,7 @@ def add_miner_args(cls, parser):
         "--dataset_dir",
         type=str,
         help="Path for storing datasets.",
-        default="./datasets",
+        default="/tmp/datasets",
     )
 
     parser.add_argument(

@@ -19,14 +19,18 @@
 
 
 import time
-
-# Bittensor
+from typing import Any, List
 import bittensor as bt
+import asyncio
 
-# import base validator class which takes care of most of the boilerplate
+from numpy import ndarray
+
 from cancer_ai.base.validator import BaseValidatorNeuron
-# Bittensor Validator Template:
 from cancer_ai.validator import forward
+from types import SimpleNamespace
+from datetime import datetime, timezone, timedelta
+from cancer_ai.validator.competition_manager import CompetitionManager
+from cancer_ai.validator.competition_handlers.base_handler import ModelEvaluationResult
 
 
 class Validator(BaseValidatorNeuron):
@@ -40,24 +44,12 @@ class Validator(BaseValidatorNeuron):
 
     def __init__(self, config=None):
         super(Validator, self).__init__(config=config)
-
-        bt.logging.info("load_state()")
+        # competition_id to (hotkey_uid, days_as_leader)
+        self.competitions_leaders = {}
         self.load_state()
-
-        # TODO(developer): Anything specific to your use case you can do here
-
+        
     async def forward(self):
-        """
-        Validator forward pass. Consists of:
-        - Generating the query
-        - Querying the miners
-        - Getting the responses
-        - Rewarding the miners
-        - Updating the scores
-        """
-        # TODO(developer): Rewrite this function based on your protocol definition.
-        return await forward(self)
-
+        ...
 
 # The main function parses the configuration and runs the validator.
 if __name__ == "__main__":

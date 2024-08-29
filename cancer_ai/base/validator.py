@@ -107,32 +107,7 @@ class BaseValidatorNeuron(BaseNeuron):
             bt.logging.error(f"Failed to create Axon initialize with exception: {e}")
             pass
 
-    async def concurrent_forward(self):
-        coroutines = [
-            self.forward() for _ in range(self.config.neuron.num_concurrent_forwards)
-        ]
-        await asyncio.gather(*coroutines)
-
     def run(self):
-        """
-        Initiates and manages the main loop for the miner on the Bittensor network. The main loop handles graceful shutdown on keyboard interrupts and logs unforeseen errors.
-
-        This function performs the following primary tasks:
-        1. Check for registration on the Bittensor network.
-        2. Continuously forwards queries to the miners on the network, rewarding their responses and updating the scores accordingly.
-        3. Periodically resynchronizes with the chain; updating the metagraph with the latest network state and setting weights.
-
-        The essence of the validator's operations is in the forward function, which is called every step. The forward function is responsible for querying the network and scoring the responses.
-
-        Note:
-            - The function leverages the global configurations set during the initialization of the miner.
-            - The miner's axon serves as its interface to the Bittensor network, handling incoming and outgoing requests.
-
-        Raises:
-            KeyboardInterrupt: If the miner is stopped by a manual interruption.
-            Exception: For unforeseen errors during the miner's operation, which are logged for diagnosis.
-        """
-
         # Check that validator is registered on the network.
         self.sync()
 
@@ -144,7 +119,7 @@ class BaseValidatorNeuron(BaseNeuron):
                 bt.logging.info(f"step({self.step}) block({self.block})")
 
                 # Run multiple forwards concurrently.
-                self.loop.run_until_complete(self.concurrent_forward())
+                self.loop.run_until_complete(self.forward())
 
                 # Check if we should exit.
                 if self.should_exit:
