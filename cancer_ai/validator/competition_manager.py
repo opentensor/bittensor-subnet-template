@@ -77,11 +77,10 @@ class CompetitionManager(SerializableManager):
         self.hotkeys = []
         self.chain_miner_models = {}
 
-        wandb.init(project=self.config.wandb_project_name)
-
     def log_results_to_wandb(
         self, hotkey: str, evaluation_result: ModelEvaluationResult
     ) -> None:
+        wandb.init(project=self.config.wandb_project_name)
         wandb.log(
             {
                 "hotkey": hotkey,
