@@ -77,12 +77,11 @@ class CompetitionManager(SerializableManager):
         self.hotkeys = []
         self.chain_miner_models = {}
 
-    def log_results_to_wandb(
-        self, hotkey: str, evaluation_result: ModelEvaluationResult
-    ):
-        # wandb.init(entity=self.config.wandb_entity, project=self.config.wandb_project_name)
         wandb.init(project=self.config.wandb_project_name)
 
+    def log_results_to_wandb(
+        self, hotkey: str, evaluation_result: ModelEvaluationResult
+    ) -> None:
         wandb.log(
             {
                 "hotkey": hotkey,
@@ -104,13 +103,11 @@ class CompetitionManager(SerializableManager):
         print("Logged results to wandb")
         print("Hotkey: ", hotkey)
         print("Tested entries: ", evaluation_result.tested_entries)
-        print("Model test run time: ", evaluation_result.run_time)
+        print("Model test run time: ", evaluation_result.run_time_s)
         print("Accuracy: ", evaluation_result.accuracy)
         print("Precision: ", evaluation_result.precision)
         print("Recall: ", evaluation_result.recall)
         print("roc_auc: ", evaluation_result.roc_auc)
-
-        return
 
     def get_state(self):
         return {
@@ -169,8 +166,8 @@ class CompetitionManager(SerializableManager):
             f"Amount of chain miners with models: {len(self.chain_miner_models)}"
         )
 
-    async def evaluate(self):
-        """Returns hotkey of winning model miner and"""
+    async def evaluate(self) -> str:
+        """Returns hotkey of winning model miner"""
         await self.dataset_manager.prepare_dataset()
         X_test, y_test = await self.dataset_manager.get_data()
 
