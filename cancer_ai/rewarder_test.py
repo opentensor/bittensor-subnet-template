@@ -17,6 +17,28 @@ class TestRewarder(unittest.TestCase):
 
         # Assert that the leader takes it all
         self.assertAlmostEqual(rewarder.scores["leader-1"], 1.0)
+    
+    def test_4_2_reduction(self):
+        """Test case 2: 4 competitions with 2 different leaders, reduction -> 2 have 50% of the shares"""
+        leader_1_reward = 0.125
+        leader_2_reward = 0.125
+        leader_3_reward = leader_4_reward = 0.25 + 0.125
+        reduction_50_percent_days = datetime.now() - timedelta(days=14 + 7*5)
+        competitions_leaders = {
+            "competition-1": CompetitionLeader(hotkey="leader-1", leader_since=reduction_50_percent_days),
+            "competition-2": CompetitionLeader(hotkey="leader-2", leader_since=reduction_50_percent_days),
+            "competition-3": CompetitionLeader(hotkey="leader-3", leader_since=reduction_50_percent_days),
+            "competition-4": CompetitionLeader(hotkey="leader-4", leader_since=reduction_50_percent_days),
+        }
+        scores = {"leader-1": 0, "leader-2": 0, "leader-3": 0, "leader-4": 0}
+        rewarder_config = RewarderConfig(competition_leader_mapping=competitions_leaders, scores=scores)
+        rewarder = Rewarder(config=rewarder_config)
+        rewarder.update_scores()
+        self.assertAlmostEqual(rewarder.scores["leader-1"], leader_1_reward, places=2)
+        self.assertAlmostEqual(rewarder.scores["leader-2"], leader_2_reward, places=2)
+        self.assertAlmostEqual(rewarder.scores["leader-3"], leader_3_reward, places=2)
+        self.assertAlmostEqual(rewarder.scores["leader-4"], leader_4_reward, places=2)
+
 
     def test_three_competitions_three_leaders_no_reduction(self):
         """Test case 2: 3 competitions with 3 different leaders, no reduction -> all have 33% of the shares"""
