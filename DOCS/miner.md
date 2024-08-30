@@ -29,7 +29,7 @@ This mode will do following things
 - download dataset 
 - load your model
 - prepare data for executing
-- prints evaluation results 
+- logs evaluation results 
 
 
 
