@@ -166,7 +166,7 @@ class CompetitionManager(SerializableManager):
         )
 
     async def evaluate(self) -> str:
-        """Returns hotkey of winning model miner"""
+        """Returns hotkey and competition id of winning model miner"""
         await self.dataset_manager.prepare_dataset()
         X_test, y_test = await self.dataset_manager.get_data()
 
