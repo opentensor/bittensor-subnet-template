@@ -27,7 +27,7 @@ Here's an example Dockerfile that demonstrates how to create a Python container 
 
 ```dockerfile
 # Build stage
-FROM python:3.9-slim-buster AS builder
+FROM python:3.11-slim-bookworm AS builder
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -48,7 +48,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Final stage
-FROM python:3.9-slim-buster
+FROM python:3.11-slim-bookworm
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -61,7 +61,7 @@ RUN useradd --create-home subuser
 WORKDIR /home/subuser/app
 
 # Copy installed dependencies from builder stage
-COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 
 # Copy project files
 COPY . .
