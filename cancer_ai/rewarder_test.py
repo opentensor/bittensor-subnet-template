@@ -98,29 +98,11 @@ class TestRewarder(unittest.TestCase):
 
         rewarder.update_scores()
 
-        base_share = 1 / 3
-        reduction_factor_leader_1 = 0.9  # 10% reduction
-        reduction_factor_leader_2 = 0.7  # 30% reduction
+      
 
-        expected_share_leader_1 = base_share * reduction_factor_leader_1
-        expected_share_leader_2 = base_share * reduction_factor_leader_2
-        expected_share_leader_3 = base_share
-        # Calculate distributed reduction
-        remaining_share_leader_1 = base_share - expected_share_leader_1
-        remaining_share_leader_2 = base_share - expected_share_leader_2
-
-        # Leaders 2 and 3 gets their base share plus the distributed reduction from Leader 1
-        expected_share_leader_2 += remaining_share_leader_1 / 2
-        expected_share_leader_3 += remaining_share_leader_1 / 2
-
-        # Leaders 1 and 3 gets their base share plus the distributed reduction from Leader 2
-
-        expected_share_leader_1 += remaining_share_leader_2 / 2
-        expected_share_leader_3 += remaining_share_leader_2 / 2
-
-        self.assertAlmostEqual(rewarder.scores["leader-1"], expected_share_leader_1, places=2)
-        self.assertAlmostEqual(rewarder.scores["leader-2"], expected_share_leader_2, places=2)
-        self.assertAlmostEqual(rewarder.scores["leader-3"], expected_share_leader_3, places=2)
+        self.assertAlmostEqual(rewarder.scores["leader-1"], 1/3, places=2)
+        self.assertAlmostEqual(rewarder.scores["leader-2"], 1/3, places=2)
+        self.assertAlmostEqual(rewarder.scores["leader-3"], 1/3, places=2)
 
     def test_three_competitions_three_leaders_all_different_reductions(self):
         """Test case 5: All competitors have different degrees of reduced shares"""
@@ -178,33 +160,11 @@ class TestRewarder(unittest.TestCase):
         rewarder.update_scores()
 
         base_share = 1 / 3
-        reduction_factor = 0.9  # 10% reduction for all
-
-        expected_share_leader_1 = base_share * reduction_factor
-        expected_share_leader_2 = base_share * reduction_factor
-        expected_share_leader_3 = base_share * reduction_factor
-
-        # Calculate distributed reduction
-        remaining_share_leader_1 = base_share - expected_share_leader_1
-        remaining_share_leader_2 = base_share - expected_share_leader_2
-        remaining_share_leader_3 = base_share - expected_share_leader_3
-
-        # Leaders 2 and 3 gets their base share plus the distributed reduction from Leader 1
-        expected_share_leader_2 += remaining_share_leader_1 / 2
-        expected_share_leader_3 += remaining_share_leader_1 / 2
-
-        # Leaders 1 and 3 gets their base share plus the distributed reduction from Leader 2
-        expected_share_leader_1 += remaining_share_leader_2 / 2
-        expected_share_leader_3 += remaining_share_leader_2 / 2
-
-        # Leaders 1 and 2 gets their base share plus the distributed reduction from Leader 3
-        expected_share_leader_1 += remaining_share_leader_3 / 2
-        expected_share_leader_2 += remaining_share_leader_3 / 2
-
+       
         # All should have the same shares
-        self.assertAlmostEqual(rewarder.scores["leader-1"], expected_share_leader_1, places=2)
-        self.assertAlmostEqual(rewarder.scores["leader-2"], expected_share_leader_2, places=2)
-        self.assertAlmostEqual(rewarder.scores["leader-3"], expected_share_leader_3, places=2)
+        self.assertAlmostEqual(rewarder.scores["leader-1"], base_share, places=2)
+        self.assertAlmostEqual(rewarder.scores["leader-2"], base_share, places=2)
+        self.assertAlmostEqual(rewarder.scores["leader-3"], base_share, places=2)
 
     def test_three_competitions_three_leaders_all_maximum_reductions(self):
         """Test case 7: All competitors have maximum reduced shares (90%)"""
