@@ -53,6 +53,7 @@ class CompetitionManager(SerializableManager):
         dataset_hf_repo: str,
         dataset_hf_id: str,
         dataset_hf_repo_type: str,
+        test_mode: bool = False,
     ) -> None:
         """
         Responsible for managing a competition.
@@ -75,6 +76,7 @@ class CompetitionManager(SerializableManager):
 
         self.hotkeys = hotkeys
         self.chain_miner_models = {}
+        self.test_mode = test_mode
 
     def log_results_to_wandb(
         self, hotkey: str, evaluation_result: ModelEvaluationResult
@@ -84,7 +86,6 @@ class CompetitionManager(SerializableManager):
             {
                 "hotkey": hotkey,
                 "tested_entries": evaluation_result.tested_entries,
-                # "model_test_run_time": evaluation_result.run_time,
                 "accuracy": evaluation_result.accuracy,
                 "precision": evaluation_result.precision,
                 "recall": evaluation_result.recall,
@@ -128,7 +129,7 @@ class CompetitionManager(SerializableManager):
         )
         return model_info
 
-    async def sync_chain_miners_test(self, hotkeys: list[str]):
+    async def sync_chain_miners_test(self):
         """For testing purposes"""
         hotkeys_with_models = {
             "wojtek": ModelInfo(
@@ -172,9 +173,11 @@ class CompetitionManager(SerializableManager):
         competition_handler = COMPETITION_HANDLER_MAPPING[self.competition_id](
             X_test=X_test, y_test=y_test
         )
-        # test 
-        # await self.sync_chain_miners_test()
-        await self.sync_chain_miners()
+        if self.test_mode:
+            await self.sync_chain_miners_test()
+        else:
+            await self.sync_chain_miners()
+
         X_test, y_test = competition_handler.preprocess_data()
         # bt.logging.info("Ground truth: ", y_test)
         for hotkey in self.model_manager.hotkey_store:
@@ -192,7 +195,6 @@ class CompetitionManager(SerializableManager):
             model_result = competition_handler.get_model_result(
                 y_test, y_pred, run_time_s
             )
-            # log_results_to_wandb(y_test, y_pred, run_time_s, hotkey)
             self.results.append((hotkey, model_result))
             self.log_results_to_wandb(hotkey, model_result)
 

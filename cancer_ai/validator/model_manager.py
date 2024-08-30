@@ -2,6 +2,7 @@ from dataclasses import dataclass, asdict, is_dataclass
 from datetime import datetime
 from time import sleep
 import os
+import bittensor as bt
 from huggingface_hub import HfApi
 
 from .manager import SerializableManager
@@ -68,7 +69,7 @@ class ModelManager(SerializableManager):
     def delete_model(self, hotkey) -> None:
         """Deletes locally information about a model and the corresponding file on disk."""
 
-        print("Deleting model: ", hotkey)
+        bt.logging.info(f"Deleting model: {hotkey}")
         if hotkey in self.hotkey_store and self.hotkey_store[hotkey].file_path:
             os.remove(self.hotkey_store[hotkey].file_path)
         self.hotkey_store[hotkey] = None

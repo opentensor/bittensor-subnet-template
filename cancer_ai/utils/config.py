@@ -52,7 +52,7 @@ def check_config(cls, config: "bt.Config"):
             config.neuron.name,
         )
     )
-    print("full path:", full_path)
+    print("Log path:", full_path)
     config.neuron.full_path = os.path.expanduser(full_path)
     if not os.path.exists(config.neuron.full_path):
         os.makedirs(config.neuron.full_path, exist_ok=True)
@@ -296,6 +296,12 @@ def add_validator_args(cls, parser):
         type=str,
         help="Path for storing datasets.",
         default="./datasets",
+    )
+    parser.add_argument(
+        "--competition_config_path",
+        type=str,
+        help="Path with competition configuration .",
+        default="./neurons/competition_config.json",
     )
 
 
