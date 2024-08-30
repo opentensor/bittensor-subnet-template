@@ -198,7 +198,6 @@ class CompetitionManager(SerializableManager):
             model_result = competition_handler.get_model_result(
                 y_test, y_pred, run_time_s
             )
-            # log_results_to_wandb(y_test, y_pred, run_time_s, hotkey)
             self.results.append((hotkey, model_result))
             self.log_results_to_wandb(hotkey, model_result)
 
