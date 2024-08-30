@@ -154,7 +154,17 @@ def add_miner_args(cls, parser):
     parser.add_argument(
         "--hf-model-name",
         type=str,
-        help="Name of the model to push to hugging face.",
+        help="Filename of the model to push to hugging face.",
+    )
+    parser.add_argument(
+        "--hf-code-filename",
+        type=str,
+        help="Filename of the code zip  to push to hugging face.",
+    )
+    parser.add_argument(
+        "--hf-repo-type",
+        type=str,
+        help="Type of hugging face repository.",
     )
 
     parser.add_argument(

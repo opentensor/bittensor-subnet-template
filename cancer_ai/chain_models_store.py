@@ -21,7 +21,7 @@ class ChainMinerModel(BaseModel):
 
     def to_compressed_str(self) -> str:
         """Returns a compressed string representation."""
-        return f"{self.hf_repo_id}:{self.name}:{self.date}:{self.competition_id}:{self.hf_repo_type}:{self.hf_model_filename}:{self.hf_code_filename}"
+        return f"{self.hf_repo_id}:{self.hf_model_filename}:{self.hf_code_filename}:{self.competition_id}:{self.hf_repo_type}"
 
     @classmethod
     def from_compressed_str(cls, cs: str) -> Type["ChainMinerModel"]:
@@ -29,12 +29,10 @@ class ChainMinerModel(BaseModel):
         tokens = cs.split(":")
         return cls(
             hf_repo_id=tokens[0],
-            name=tokens[1],
-            date=tokens[2],
+            hf_model_filename=tokens[1],
+            hf_code_filename=tokens[2],
             competition_id=tokens[3],
             hf_repo_type=tokens[4],
-            hf_model_filename=tokens[5],
-            hf_code_filename=tokens[6],
         )
 
 

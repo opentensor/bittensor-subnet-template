@@ -43,8 +43,8 @@ class MinerManagerCLI:
         hf_api = HfApi()
         hf_login(token=self.config.hf_token)
 
-        hf_model_path = f"{self.config.competition_id}-{self.config.hf_model_name}.onnx"
-        hf_code_path = f"{self.config.competition_id}-{self.config.hf_model_name}.zip"
+        hf_model_path = f"{self.config.competition_id}-{self.config.hf_model_name}"
+        hf_code_path = f"{self.config.competition_id}-{self.config.hf_model_name}"
 
         path = hf_api.upload_file(
             path_or_fileobj=self.config.model_path,
@@ -55,7 +55,7 @@ class MinerManagerCLI:
         )
         bt.logging.info("Uploading code to Hugging Face.")
         path = hf_api.upload_file(
-            path_or_fileobj=f"{self.config.code_directory}/code.zip",
+            path_or_fileobj=f"{self.code_zip_path}",
             path_in_repo=hf_code_path,
             repo_id=self.config.hf_repo_id,
             repo_type="model",
@@ -104,19 +104,18 @@ class MinerManagerCLI:
         if self.config.clean_after_run:
             dataset_manager.delete_dataset()
 
-    async def compress_code(self) -> str:
+    async def compress_code(self) -> None:
         bt.logging.info("Compressing code")
+        code_zip_path = f"{self.config.code_directory}/code.zip"
         out, err = await run_command(
-            f"zip  {self.config.code_directory}/code.zip {self.config.code_directory}/*"
+            f"zip  -r {code_zip_path} {self.config.code_directory}/*"
         )
-        return f"{self.config.code_directory}/code.zip"
+        bt.logging.info(f"Code zip path: {code_zip_path}")
+        self.code_zip_path = code_zip_path
 
     async def submit_model(self) -> None:
         # Check if the required model and files are present in hugging face repo
-        filenames = [
-            self.config.hf_model_name + ".onnx",
-            self.config.hf_model_name + ".zip",
-        ]
+
         self.wallet = bt.wallet(config=self.config)
         self.subtensor = bt.subtensor(config=self.config)
         self.metagraph = self.subtensor.metagraph(self.config.netuid)
@@ -135,23 +134,35 @@ class MinerManagerCLI:
         self.metadata_store = ChainModelMetadataStore(
             subtensor=self.subtensor, subnet_uid=self.config.netuid, wallet=self.wallet
         )
-        for file in filenames:
-            if not huggingface_hub.file_exists(
-                repo_id=self.config.hf_repo_id,
-                filename=file,
-                token=self.config.hf_token,
-            ):
-                bt.logging.error(f"{file} not found in Hugging Face repo")
-                return
+
+        if not huggingface_hub.file_exists(
+            repo_id=self.config.hf_repo_id,
+            filename=self.config.hf_model_name,
+            repo_type=self.config.hf_repo_type,
+        ):
+            bt.logging.error(
+                f"{self.config.hf_model_name} not found in Hugging Face repo"
+            )
+            return
+
+        if not huggingface_hub.file_exists(
+            repo_id=self.config.hf_repo_id,
+            filename=self.config.hf_code_filename,
+            repo_type=self.config.hf_repo_type,
+        ):
+            bt.logging.error(
+                f"{self.config.hf_model_name} not found in Hugging Face repo"
+            )
+            return
         bt.logging.info("Model and code found in Hugging Face repo")
 
         # Push model metadata to chain
         model_id = ChainMinerModel(
             hf_repo_id=self.config.hf_repo_id,
-            name=self.config.hf_model_name,
-            date=datetime.datetime.now(),
+            hf_model_filename=self.config.hf_model_name,
+            hf_code_filename=self.config.hf_code_filename,
             competition_id=self.config.competition_id,
-            block=None,
+            hf_repo_type=self.config.hf_repo_type,
         )
         await self.metadata_store.store_model_metadata(model_id)
         bt.logging.success(
