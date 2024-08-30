@@ -47,8 +47,7 @@ class CompetitionManager(SerializableManager):
     def __init__(
         self,
         config,
-        subtensor: bt.Subtensor,  # fetch from config, so not needed
-        subnet_uid: str,  # fetch from config, so not needed
+        hotkeys: list[str],
         competition_id: str,
         category: str,
         dataset_hf_repo: str,
@@ -72,9 +71,9 @@ class CompetitionManager(SerializableManager):
         self.dataset_manager = DatasetManager(
             config, dataset_hf_repo, dataset_hf_id, dataset_hf_repo_type
         )
-        self.chain_model_metadata_store = ChainModelMetadataStore(subtensor, subnet_uid)
+        self.chain_model_metadata_store = ChainModelMetadataStore(self.config.subtensor.network, self.config.netuid)
 
-        self.hotkeys = []
+        self.hotkeys = hotkeys
         self.chain_miner_models = {}
 
     def log_results_to_wandb(
@@ -99,14 +98,14 @@ class CompetitionManager(SerializableManager):
         )
 
         wandb.finish()
-        print("Logged results to wandb")
-        print("Hotkey: ", hotkey)
-        print("Tested entries: ", evaluation_result.tested_entries)
-        print("Model test run time: ", evaluation_result.run_time_s)
-        print("Accuracy: ", evaluation_result.accuracy)
-        print("Precision: ", evaluation_result.precision)
-        print("Recall: ", evaluation_result.recall)
-        print("roc_auc: ", evaluation_result.roc_auc)
+        bt.logging.info("Logged results to wandb")
+        bt.logging.info("Hotkey: ", hotkey)
+        bt.logging.info("Tested entries: ", evaluation_result.tested_entries)
+        bt.logging.info("Model test run time: ", evaluation_result.run_time_s)
+        bt.logging.info("Accuracy: ", evaluation_result.accuracy)
+        bt.logging.info("Precision: ", evaluation_result.precision)
+        bt.logging.info("Recall: ", evaluation_result.recall)
+        bt.logging.info("roc_auc: ", evaluation_result.roc_auc)
 
     def get_state(self):
         return {
@@ -130,6 +129,7 @@ class CompetitionManager(SerializableManager):
         return model_info
 
     async def sync_chain_miners_test(self, hotkeys: list[str]):
+        """For testing purposes"""
         hotkeys_with_models = {
             "wojtek": ModelInfo(
                 hf_repo_id="safescanai/test_dataset",
@@ -144,15 +144,14 @@ class CompetitionManager(SerializableManager):
         }
         self.model_manager.hotkey_store = hotkeys_with_models
 
-    async def sync_chain_miners(self, hotkeys: list[str]):
+    async def sync_chain_miners(self):
         """
         Updates hotkeys and downloads information of models from the chain
         """
-
         bt.logging.info("Synchronizing miners from the chain")
-        self.hotkeys = hotkeys
-        bt.logging.info(f"Amount of hotkeys: {len(hotkeys)}")
-        for hotkey in hotkeys:
+        
+        bt.logging.info(f"Amount of hotkeys: {len(self.hotkeys)}")
+        for hotkey in self.hotkeys:
             hotkey_metadata = (
                 await self.chain_model_metadata_store.retrieve_model_metadata(hotkey)
             )
@@ -173,9 +172,11 @@ class CompetitionManager(SerializableManager):
         competition_handler = COMPETITION_HANDLER_MAPPING[self.competition_id](
             X_test=X_test, y_test=y_test
         )
-        await self.sync_chain_miners_test([])
+        # test 
+        # await self.sync_chain_miners_test()
+        await self.sync_chain_miners()
         X_test, y_test = competition_handler.preprocess_data()
-        # print("Ground truth: ", y_test)
+        # bt.logging.info("Ground truth: ", y_test)
         for hotkey in self.model_manager.hotkey_store:
             bt.logging.info("Evaluating hotkey: ", hotkey)
             await self.model_manager.download_miner_model(hotkey)
@@ -186,7 +187,7 @@ class CompetitionManager(SerializableManager):
             start_time = time.time()
             y_pred = await model_manager.run(X_test)
             run_time_s = time.time() - start_time
-            # print("Model prediction ", y_pred)
+            # bt.logging.info("Model prediction ", y_pred)
 
             model_result = competition_handler.get_model_result(
                 y_test, y_pred, run_time_s
