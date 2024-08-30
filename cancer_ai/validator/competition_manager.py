@@ -151,7 +151,6 @@ class CompetitionManager(SerializableManager):
         """
         Updates hotkeys and downloads information of models from the chain
         """
-
         bt.logging.info("Synchronizing miners from the chain")
         
         bt.logging.info(f"Amount of hotkeys: {len(self.hotkeys)}")
@@ -176,6 +175,7 @@ class CompetitionManager(SerializableManager):
         competition_handler = COMPETITION_HANDLER_MAPPING[self.competition_id](
             X_test=X_test, y_test=y_test
         )
+        # TODO get hotkeys
         if self.test_mode:
             await self.sync_chain_miners_test()
         else:
