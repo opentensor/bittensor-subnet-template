@@ -68,7 +68,7 @@ class DatasetManager(SerializableManager):
         bt.logging.info("Deleting dataset: ")
 
         try:
-            shutil.rmtree(self.local_compressed_path)
+            shutil.rmtree(self.local_extracted_dir)
             bt.logging.info("Dataset deleted")
         except OSError as e:
             bt.logging.error(f"Failed to delete dataset from disk: {e}")
