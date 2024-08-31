@@ -14,7 +14,7 @@ class MelanomaCompetitionHandler(BaseCompetitionHandler):
 
     def preprocess_data(self):
         new_X_test = []
-        target_size=(224, 224) #TODO: Change this to the correct size 
+        target_size=(224, 224) # TODO: Change this to the correct size 
 
         for img in self.X_test:
             img = img.resize(target_size)

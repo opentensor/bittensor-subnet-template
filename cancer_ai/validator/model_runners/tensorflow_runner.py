@@ -3,7 +3,7 @@ from typing import List
 
 
 class TensorflowRunnerHandler(BaseRunnerHandler):
-    def run(self, pred_x: List) -> List:
+    async def run(self, pred_x: List) -> List:
         import tensorflow as tf
         import numpy as np
         from tensorflow.keras.preprocessing.image import load_img

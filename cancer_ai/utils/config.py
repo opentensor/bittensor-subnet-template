@@ -131,76 +131,84 @@ def add_args(cls, parser):
 
 def add_miner_args(cls, parser):
     """Add miner specific arguments to the parser."""
-
     parser.add_argument(
-        "--neuron.name",
+        "--competition-id",
         type=str,
-        help="Trials for this neuron go in neuron.root / (wallet_cold - wallet_hot) / neuron.name. ",
-        default="miner",
+        help="Competition ID",
+        required=True,
     )
 
     parser.add_argument(
-        "--blacklist.force_validator_permit",
-        action="store_true",
-        help="If set, we will force incoming requests to have a permit.",
-        default=False,
-    )
-
-    parser.add_argument(
-        "--blacklist.allow_non_registered",
-        action="store_true",
-        help="If set, miners will accept queries from non registered entities. (Dangerous!)",
-        default=False,
-    )
-
-    parser.add_argument(
-        "--wandb.project_name",
-        type=str,
-        default="template-miners",
-        help="Wandb project to log to.",
-    )
-
-    parser.add_argument(
-        "--wandb.entity",
-        type=str,
-        default="opentensor-dev",
-        help="Wandb entity to log to.",
-    )
-
-    parser.add_argument(
-        "--competition.entity",
-        type=str,
-        default="opentensor-dev",
-        help="Wandb entity to log to.",
-    )
-
-    parser.add_argument(
-        "--models.load_model_dir",
+        "--model-dir",
         type=str,
         help="Path for for loading the starting model related to a training run.",
         default="./models",
     )
 
     parser.add_argument(
-        "--models.namespace",
+        "--hf-repo-id",
         type=str,
-        help="Namespace where the model can be found.",
-        default="mock-namespace",
+        help="Hugging Face model repository ID",
+        
     )
 
     parser.add_argument(
-        "--models.model_name",
+        "--hf-model-name",
         type=str,
-        help="Name of the model to push to hugging face.",
-        default="mock-name",
+        help="Filename of the model to push to hugging face.",
+    )
+    parser.add_argument(
+        "--hf-code-filename",
+        type=str,
+        help="Filename of the code zip  to push to hugging face.",
+    )
+    parser.add_argument(
+        "--hf-repo-type",
+        type=str,
+        help="Type of hugging face repository.",
     )
 
     parser.add_argument(
-        "--models.epoch_checkpoint",
-        type=int,
-        help="The epoch number to submit as your checkpoint to evaluate e.g. 10",
-        default=10,
+        "--action",
+        choices=["submit", "evaluate", "upload"],
+        required=True,
     )
+
+    parser.add_argument(
+        "--model-path",
+        type=str,
+        help="Path to ONNX model, used for evaluation",
+        required=True,
+    )
+
+    parser.add_argument(
+        "--dataset-dir",
+        type=str,
+        help="Path for storing datasets.",
+        default="./datasets",
+    )
+
+    parser.add_argument(
+        "--hf-token",
+        type=str,
+        help="Hugging Face API token",
+        default="",
+    )
+
+    parser.add_argument(
+        "--clean-after-run",
+        action="store_true",
+        help="Whether to clean up (dataset, temporary files) after running",
+        default=False,
+    )
+
+    parser.add_argument(
+        "--code-directory",
+        type=str,
+        help="Path to code directory",
+        default=".",
+    )
+
 
 def add_validator_args(cls, parser):
     """Add validator specific arguments to the parser."""

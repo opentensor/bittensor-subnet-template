@@ -59,7 +59,7 @@ class CompetitionManager(SerializableManager):
         self.results = []
         self.model_manager = ModelManager(config)
         self.dataset_manager = DatasetManager(
-            config, competition_id, dataset_hf_repo, dataset_hf_id, dataset_hf_repo_type
+            config, dataset_hf_repo, dataset_hf_id, dataset_hf_repo_type
         )
         self.chain_model_metadata_store = ChainModelMetadataStore(subtensor, subnet_uid)
 
@@ -109,6 +109,7 @@ class CompetitionManager(SerializableManager):
         )
 
     async def evaluate(self):
+        
         await self.dataset_manager.prepare_dataset()
         X_test, y_test = await self.dataset_manager.get_data()
 
