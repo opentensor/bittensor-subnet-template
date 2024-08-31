@@ -13,6 +13,8 @@ test_config = SimpleNamespace(
         "dataset_dir": "/tmp/datasets",
         "wandb_entity": "testnet",
         "wandb_project_name": "melanoma-1",
+        "competition_id": "melaonoma-1",
+        "hotkeys": [],
         "subtensor": SimpleNamespace(**{"network": "test"}),
         "netuid": 163,
     }
