@@ -2,6 +2,7 @@ from dataclasses import dataclass, asdict, is_dataclass
 from datetime import datetime
 from time import sleep
 import os
+import bittensor as bt
 from huggingface_hub import HfApi
 
 from .manager import SerializableManager
@@ -10,8 +11,10 @@ from .manager import SerializableManager
 @dataclass
 class ModelInfo:
     hf_repo_id: str | None = None
-    hf_filename: str | None = None
+    hf_model_filename: str | None = None
+    hf_code_filename: str | None = None
     hf_repo_type: str | None = None
+
     file_path: str | None = None
     model_type: str | None = None
 
@@ -37,7 +40,7 @@ class ModelManager(SerializableManager):
             if hotkey not in hotkeys:
                 self.delete_model(hotkey)
 
-    async  def download_miner_model(self, hotkey) -> None:
+    async def download_miner_model(self, hotkey) -> None:
         """Downloads the newest model from Hugging Face and saves it to disk.
         Returns:
             str: path to the downloaded model
@@ -45,20 +48,28 @@ class ModelManager(SerializableManager):
         model_info = self.hotkey_store[hotkey]
         model_info.file_path = self.api.hf_hub_download(
             model_info.hf_repo_id,
-            model_info.hf_filename,
+            model_info.hf_model_filename,
             cache_dir=self.config.model_dir,
             repo_type=model_info.hf_repo_type,
         )
-    
 
-    def add_model(self, hotkey, repo_id, filename) -> None:
+    def add_model(
+        self,
+        hotkey,
+        hf_repo_id,
+        hf_model_filename,
+        hf_code_filename=None,
+        hf_repo_type=None,
+    ) -> None:
         """Saves locally information about a new model."""
-        self.hotkey_store[hotkey] = ModelInfo(repo_id, filename)
+        self.hotkey_store[hotkey] = ModelInfo(
+            hf_repo_id, hf_model_filename, hf_code_filename, hf_repo_type
+        )
 
     def delete_model(self, hotkey) -> None:
         """Deletes locally information about a model and the corresponding file on disk."""
 
-        print("Deleting model: ", hotkey)
+        bt.logging.info(f"Deleting model: {hotkey}")
         if hotkey in self.hotkey_store and self.hotkey_store[hotkey].file_path:
             os.remove(self.hotkey_store[hotkey].file_path)
         self.hotkey_store[hotkey] = None

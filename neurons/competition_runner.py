@@ -1,5 +1,4 @@
 from cancer_ai.validator.competition_manager import CompetitionManager
-from cancer_ai.validator.competition_handlers.base_handler import ModelEvaluationResult
 from datetime import time, datetime
 
 import asyncio
@@ -8,137 +7,68 @@ import timeit
 from types import SimpleNamespace
 from datetime import datetime, timezone, timedelta
 import bittensor as bt
-from typing import List
-
-from competition_config import competitions as competitions_cfg
-
-import wandb
+from typing import List, Tuple, Dict
 
 # from cancer_ai.utils.config import config
 
-# TODO integrate with bt config
-path_config = SimpleNamespace(
-    **{"model_dir": "/tmp/models", "models_dataset_dir": "/tmp/datasets"}
-)
 
-
-def calculate_next_evaluation_times(evaluation_times) -> List[datetime]:
-    """Calculate the next evaluation times for a given list of times in UTC."""
-    now_utc = datetime.now(timezone.utc)
-    next_times = []
-
-    for time_str in evaluation_times:
-        # Parse the evaluation time to a datetime object in UTC
-        evaluation_time_utc = datetime.strptime(time_str, "%H:%M").replace(
-            tzinfo=timezone.utc, year=now_utc.year, month=now_utc.month, day=now_utc.day
-        )
-
-        # If the evaluation time has already passed today, schedule it for tomorrow
-        if evaluation_time_utc < now_utc:
-            evaluation_time_utc += timedelta(days=1)
-
-        next_times.append(evaluation_time_utc)
-
-    return next_times
-
-def log_results_to_wandb(project, entity, hotkey, evaluation_result: ModelEvaluationResult):
-    wandb.init(project=project, entity=entity)  # TODO: Update this line as needed
-
-    wandb.log({
-        "hotkey": hotkey,
-        "tested_entries": evaluation_result.tested_entries,
-        "model_test_run_time": evaluation_result.run_time,
-        "accuracy": evaluation_result.accuracy,
-        "precision": evaluation_result.precision,
-        "recall": evaluation_result.recall,
-        "confusion_matrix": evaluation_result.confusion_matrix.tolist(),
-        "roc_curve": {
-            "fpr": evaluation_result.fpr.tolist(),
-            "tpr": evaluation_result.tpr.tolist()
-        },
-        "roc_auc": evaluation_result.roc_auc
-    })
-
-    wandb.finish()
-    return
-
-
-async def run_the_scheduler(
-    competitions: CompetitionManager, path_config: str
-) -> None:
-    # Cache the next evaluation times for each competition
-    print("Initializing competitions")
-    next_evaluation_times = {}
-
-    # Calculate initial evaluation times
-    for competition_config in competitions:
-        competition_id = competition_config["competition_id"]
-        evaluation_times = competition_config["evaluation_time"]
-        next_evaluation_times[competition_id] = calculate_next_evaluation_times(
-            evaluation_times
-        )
-        print(
-            f"Next evaluation times for competition {competition_id}: {next_evaluation_times[competition_id]}"
-        )
-
-    while True:
-        now_utc = datetime.now(timezone.utc)
-
-        for competition_config in competitions:
-            competition_id = competition_config["competition_id"]
-            # Get the cached next evaluation times
-            next_times = next_evaluation_times[competition_id]
-
-            for next_time in next_times:
-                if now_utc >= next_time:
-                    print(
-                        f"Next evaluation time for competition {competition_id} is {next_time}"
-                    )
-                    # If it's time to run the competition
-                    competition_manager = CompetitionManager(
-                        path_config,
-                        None,
-                        7,
-                        competition_config["competition_id"],
-                        competition_config["category"],
-                        competition_config["dataset_hf_repo"],
-                        competition_config["dataset_hf_filename"],
-                        competition_config["dataset_hf_repo_type"],
-                    )
-                    print(f"Evaluating competition {competition_id} at {now_utc}")
-                    results = await competition_manager.evaluate()
-                    print(
-                        f"Results for competition {competition_id}: {competition_manager.results}"
-                    )
-
-                    # Calculate the next evaluation time for this specific time
-                    next_times.remove(next_time)
-                    next_times.append(next_time + timedelta(days=1))
-
-            # Update the cache with the next evaluation times
-            next_evaluation_times[competition_id] = next_times
-        if now_utc.minute % 5 == 0:
-            print("Waiting for next scheduled competition")
-        await asyncio.sleep(60) 
-
-def run_all_competitions(path_config: str, competitions_cfg: List[dict]) -> None:
-    for competition_cfg in competitions_cfg:
-            print("Starting competition: ", competition_cfg)
-            competition_manager = CompetitionManager(
-                path_config,
-                None,
-                7,
+def config_for_scheduler(
+    bt_config, hotkeys: List[str]
+) -> Dict[str, CompetitionManager]:
+    """Returns CompetitionManager instances arranged by competition time"""
+    time_arranged_competitions = {}
+    for competition_cfg in main_competitions_cfg:
+        for competition_time in competition_cfg["evaluation_time"]:
+            time_arranged_competitions[competition_time] = CompetitionManager(
+                bt_config,
+                hotkeys,
                 competition_cfg["competition_id"],
                 competition_cfg["category"],
                 competition_cfg["dataset_hf_repo"],
                 competition_cfg["dataset_hf_filename"],
                 competition_cfg["dataset_hf_repo_type"],
             )
-            asyncio.run(competition_manager.evaluate())
+    return time_arranged_competitions
+
+
+async def run_competitions_tick(
+    competition_times: Dict[str, CompetitionManager],
+) -> Tuple[str, str] | None:
+    """Checks if time is right and launches competition, returns winning hotkey and Competition ID. Should be run each minute."""
+    now_time = datetime.now()
+    now_time = f"{now_time.hour}:{now_time.minute}"
+    bt.logging.debug(now_time)
+    if now_time not in competition_times:
+        return None
+    for time_competition in competition_times:
+        if now_time == time_competition:
+            bt.logging.info(
+                f"Running {competition_times[time_competition].competition_id} at {now_time}"
+            )
+            winning_evaluation_hotkey = await competition_times[
+                time_competition
+            ].evaluate()
+            return (
+                winning_evaluation_hotkey,
+                competition_times[time_competition].competition_id,
+            )
+
+
+async def competition_loop(scheduler_config: Dict[str, CompetitionManager]):
+    """Example of scheduling coroutine"""
+    while True:
+        competition_result = await run_competitions_tick(scheduler_config)
+        bt.logging.debug(f"Competition result: {competition_result}")
+        await asyncio.sleep(60)
+
 
 if __name__ == "__main__":
-    if True:  # run them right away
-        run_all_competitions(path_config, competitions_cfg)
-    
-    else: # Run the scheduling coroutine
-        asyncio.run(run_the_scheduler(competitions, path_config))
+    # fetch from config
+    competition_config_path = "neurons/competition_config.json"
+    main_competitions_cfg = json.load(
+        open(competition_config_path, "r")
+    )  # TODO fetch from config
+    hotkeys = []
+    bt_config = {}  # get from bt config
+    scheduler_config = config_for_scheduler(bt_config, hotkeys)
+    asyncio.run(competition_loop(scheduler_config))

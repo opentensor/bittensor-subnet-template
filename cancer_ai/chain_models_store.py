@@ -10,31 +10,25 @@ from pydantic import BaseModel, Field, PositiveInt
 class ChainMinerModel(BaseModel):
     """Uniquely identifies a trained model"""
 
-    hf_repo_id: str = Field(
-        description="Namespace where the model can be found. ex. Hugging Face username/org."
-    )
-    name: str = Field(description="Name of the model.")
-
-    date: datetime.datetime = Field(
-        description="The datetime at which model was pushed to hugging face"
-    )
-
-    # Identifier for competition
     competition_id: Optional[str] = Field(description="The competition id")
 
     block: Optional[str] = Field(
         description="Block on which this model was claimed on the chain."
     )
 
-    # hf_filename: Optional[str] = Field(description="Hugging Face filename.")
-    # hf_repo_type: Optional[str] = Field(description="Hugging Face repo type.")
+    hf_repo_id: Optional[str] = Field(description="Hugging Face repository id.")
+    hf_filename: Optional[str] = Field(description="Hugging Face model filename.")
+    hf_repo_type: Optional[str] = Field(description="Hugging Face repository type.")
+    hf_code_filename: Optional[str] = Field(
+        description="Hugging Face code zip filename."
+    )
 
     class Config:
         arbitrary_types_allowed = True
 
     def to_compressed_str(self) -> str:
         """Returns a compressed string representation."""
-        return f"{self.hf_repo_id}:{self.name}:{self.date}:{self.competition_id}"
+        return f"{self.hf_repo_id}:{self.hf_model_filename}:{self.hf_code_filename}:{self.competition_id}:{self.hf_repo_type}"
 
     @classmethod
     def from_compressed_str(cls, cs: str) -> Type["ChainMinerModel"]:
@@ -42,9 +36,10 @@ class ChainMinerModel(BaseModel):
         tokens = cs.split(":")
         return cls(
             hf_repo_id=tokens[0],
-            name=tokens[1],
-            date=tokens[2] if tokens[2] != "None" else None,
-            competition_id=tokens[3] if tokens[3] != "None" else None,
+            hf_model_filename=tokens[1],
+            hf_code_filename=tokens[2],
+            competition_id=tokens[3],
+            hf_repo_type=tokens[4],
         )
 
 
@@ -88,6 +83,7 @@ class ChainModelMetadataStore:
         metadata = run_in_subprocess(partial, 60)
         if not metadata:
             return None
+        bt.logging.info(f"Model metadata: {metadata["info"]["fields"]}")
         commitment = metadata["info"]["fields"][0]
         hex_data = commitment[list(commitment.keys())[0]][2:]
 

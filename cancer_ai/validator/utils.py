@@ -64,7 +64,7 @@ async def run_command(cmd):
     process = await asyncio.create_subprocess_shell(
         cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
     )
-
+    bt.logging.debug(f"Running command: {cmd}")
     # Wait for the subprocess to finish and capture the output
     stdout, stderr = await process.communicate()
 

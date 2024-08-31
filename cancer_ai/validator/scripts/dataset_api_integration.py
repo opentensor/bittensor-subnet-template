@@ -1,6 +1,7 @@
 import os
 import csv
 import requests
+import bittensor as bt
 
 
 # Base URL for downloading images (replace with actual base URL)
@@ -24,15 +25,15 @@ with open("labels.csv", mode="w", newline="") as csv_file:
 
         # Define the local file path
         image_filename = f"images/{image_id}.jpg"
-        
+
         # Download the image
         response = requests.get(image_url)
         if response.status_code == 200:
             with open(image_filename, "wb") as image_file:
                 image_file.write(response.content)
-            print(f"Downloaded {image_filename}")
+            bt.logging.info(f"Downloaded {image_filename}")
         else:
-            print(f"Failed to download {image_filename}")
+            bt.logging.info(f"Failed to download {image_filename}")
 
         # Write the image path and label to the CSV file
         csv_writer.writerow([image_filename, is_melanoma])

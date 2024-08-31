@@ -1,57 +1,62 @@
 import asyncio
+import copy
+import time
 
 import bittensor as bt
 from dotenv import load_dotenv
-from huggingface_hub import HfApi
+from huggingface_hub import HfApi, login as hf_login
 import huggingface_hub
 import onnx
 import cancer_ai
 import typing
-import datetime
+import argparse
 
-from cancer_ai.validator.utils import ModelType, run_command
+from cancer_ai.validator.utils import run_command
 from cancer_ai.validator.model_run_manager import ModelRunManager, ModelInfo
 from cancer_ai.validator.dataset_manager import DatasetManager
-from cancer_ai.validator.model_manager import ModelManager
-from cancer_ai.base.miner import BaseMinerNeuron
+from cancer_ai.validator.competition_manager import COMPETITION_HANDLER_MAPPING
+
+from cancer_ai.base.miner import BaseNeuron
 from cancer_ai.chain_models_store import ChainMinerModel, ChainModelMetadataStore
+from cancer_ai.utils.config import path_config, add_miner_args
 
 
-class MinerManagerCLI(BaseMinerNeuron):
+class MinerManagerCLI:
     def __init__(self, config=None):
-        super(MinerManagerCLI, self).__init__(config=config)
-        self.metadata_store = ChainModelMetadataStore(subtensor=self.subtensor,
-                                                       subnet_uid=self.config.netuid, wallet=self.wallet)
-        self.hf_api = HfApi()
 
-    # TODO: Dive into BaseNeuron to switch off requirement to implement legacy methods, for now they are mocked.
-    async def forward(
-        self, synapse: cancer_ai.protocol.Dummy
-    ) -> cancer_ai.protocol.Dummy:
-        ...
+        # setting basic Bittensor objects
+        base_config = copy.deepcopy(config or BaseNeuron.config())
+        self.config = path_config(self)
+        self.config.merge(base_config)
+        BaseNeuron.check_config(self.config)
+        bt.logging.set_config(config=self.config.logging)
+        bt.logging.info(self.config)
 
-    async def blacklist(
-        self, synapse: cancer_ai.protocol.Dummy
-    ) -> typing.Tuple[bool, str]:
-        ...
-
-    async def priority(self, synapse: cancer_ai.protocol.Dummy) -> float:
-        ...
+    @classmethod
+    def add_args(cls, parser: argparse.ArgumentParser):
+        """Method for injecting miner arguments to the parser."""
+        add_miner_args(cls, parser)
 
     async def upload_to_hf(self) -> None:
         """Uploads model and code to Hugging Face."""
         bt.logging.info("Uploading model to Hugging Face.")
-        path = self.hf_api.upload_file(
+        hf_api = HfApi()
+        hf_login(token=self.config.hf_token)
+
+        hf_model_path = f"{self.config.competition_id}-{self.config.hf_model_name}"
+        hf_code_path = f"{self.config.competition_id}-{self.config.hf_model_name}"
+
+        path = hf_api.upload_file(
             path_or_fileobj=self.config.model_path,
-            path_in_repo=f"{self.config.competition_id}-{self.config.hf_model_name}.onnx",
+            path_in_repo=hf_model_path,
             repo_id=self.config.hf_repo_id,
             repo_type="model",
             token=self.config.hf_token,
         )
         bt.logging.info("Uploading code to Hugging Face.")
-        path = self.hf_api.upload_file(
-            path_or_fileobj=f"{self.config.code_directory}/code.zip",
-            path_in_repo=f"{self.config.competition_id}-{self.config.hf_model_name}.zip",
+        path = hf_api.upload_file(
+            path_or_fileobj=f"{self.code_zip_path}",
+            path_in_repo=hf_code_path,
             repo_id=self.config.hf_repo_id,
             repo_type="model",
             token=self.config.hf_token,
@@ -71,6 +76,7 @@ class MinerManagerCLI(BaseMinerNeuron):
 
     async def evaluate_model(self) -> None:
         bt.logging.info("Evaluate model mode")
+
         run_manager = ModelRunManager(
             config=self.config, model=ModelInfo(file_path=self.config.model_path)
         )
@@ -82,39 +88,94 @@ class MinerManagerCLI(BaseMinerNeuron):
         )
         await dataset_manager.prepare_dataset()
 
-        pred_x, pred_y = await dataset_manager.get_data()
+        X_test, y_test = await dataset_manager.get_data()
 
-        model_predictions = await run_manager.run(pred_x)
+        competition_handler = COMPETITION_HANDLER_MAPPING[self.config.competition_id](
+            X_test=X_test, y_test=y_test
+        )
 
+        X_test, y_test = competition_handler.preprocess_data()
+
+        start_time = time.time()
+        y_pred = await run_manager.run(X_test)
+        run_time_s = time.time() - start_time
+        model_result = competition_handler.get_model_result(y_test, y_pred, run_time_s)
+        bt.logging.info(model_result)
         if self.config.clean_after_run:
             dataset_manager.delete_dataset()
 
-    async def compress_code(self) -> str:
+    async def compress_code(self) -> None:
         bt.logging.info("Compressing code")
+        code_zip_path = f"{self.config.code_directory}/code.zip"
         out, err = await run_command(
-            f"zip  {self.config.code_directory}/code.zip {self.config.code_directory}/*"
+            f"zip  -r {code_zip_path} {self.config.code_directory}/*"
         )
-        return f"{self.config.code_directory}/code.zip"
-    
+        bt.logging.info(f"Code zip path: {code_zip_path}")
+        self.code_zip_path = code_zip_path
+
     async def submit_model(self) -> None:
         # Check if the required model and files are present in hugging face repo
-        filenames = [self.config.hf_model_name + ".onnx", self.config.hf_model_name + ".zip"]
-        for file in filenames:
-            if not huggingface_hub.file_exists(repo_id=self.config.hf_repo_id, filename=file, token=self.config.hf_token):
-                bt.logging.error(f"{file} not found in Hugging Face repo")
-                return
+
+        self.wallet = bt.wallet(config=self.config)
+        self.subtensor = bt.subtensor(config=self.config)
+        self.metagraph = self.subtensor.metagraph(self.config.netuid)
+        bt.logging.info(f"Wallet: {self.wallet}")
+        bt.logging.info(f"Subtensor: {self.subtensor}")
+        bt.logging.info(f"Metagraph: {self.metagraph}")
+        if not self.subtensor.is_hotkey_registered(
+            netuid=self.config.netuid,
+            hotkey_ss58=self.wallet.hotkey.ss58_address,
+        ):
+            bt.logging.error(
+                f"Wallet: {self.wallet} is not registered on netuid {self.config.netuid}."
+                f" Please register the hotkey using `btcli subnets register` before trying again"
+            )
+            exit()
+        self.metadata_store = ChainModelMetadataStore(
+            subtensor=self.subtensor, subnet_uid=self.config.netuid, wallet=self.wallet
+        )
+
+        if not huggingface_hub.file_exists(
+            repo_id=self.config.hf_repo_id,
+            filename=self.config.hf_model_name,
+            repo_type=self.config.hf_repo_type,
+        ):
+            bt.logging.error(
+                f"{self.config.hf_model_name} not found in Hugging Face repo"
+            )
+            return
+
+        if not huggingface_hub.file_exists(
+            repo_id=self.config.hf_repo_id,
+            filename=self.config.hf_code_filename,
+            repo_type=self.config.hf_repo_type,
+        ):
+            bt.logging.error(
+                f"{self.config.hf_model_name} not found in Hugging Face repo"
+            )
+            return
         bt.logging.info("Model and code found in Hugging Face repo")
 
         # Push model metadata to chain
-        model_id = ChainMinerModel(hf_repo_id=self.config.hf_repo_id, name=self.config.hf_model_name, date=datetime.datetime.now(), competition_id=self.config.competition_id, block=None)
+        model_id = ChainMinerModel(
+            hf_repo_id=self.config.hf_repo_id,
+            hf_model_filename=self.config.hf_model_name,
+            hf_code_filename=self.config.hf_code_filename,
+            competition_id=self.config.competition_id,
+            hf_repo_type=self.config.hf_repo_type,
+        )
         await self.metadata_store.store_model_metadata(model_id)
-        bt.logging.success(f"Successfully pushed model metadata on chain. Model ID: {model_id}")
+        bt.logging.success(
+            f"Successfully pushed model metadata on chain. Model ID: {model_id}"
+        )
 
     async def main(self) -> None:
-        bt.logging(config=self.config)
-
-        if not self.is_onnx_model(self.config.model_path):
-            bt.logging.error("Provided model with --model_type is not in ONNX format")
+        # bt.logging(config=self.config)
+        if not self.config.model_path:
+            bt.logging.error("Missing --model-path argument")
+            return
+        if not MinerManagerCLI.is_onnx_model(self.config.model_path):
+            bt.logging.error("Provided model with is not in ONNX format")
             return
 
         match self.config.action:
@@ -130,6 +191,13 @@ class MinerManagerCLI(BaseMinerNeuron):
 
 
 if __name__ == "__main__":
+    from types import SimpleNamespace
+    config = get_config()
+    config = {
+        "dataset_dir": "./data",
+    }
+    config = SimpleNamespace( **config)
+    set_log_formatting()
     load_dotenv()
     cli_manager = MinerManagerCLI()
     asyncio.run(cli_manager.main())
