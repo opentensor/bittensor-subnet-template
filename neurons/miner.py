@@ -191,11 +191,6 @@ class MinerManagerCLI:
 
 
 if __name__ == "__main__":
-    from types import SimpleNamespace
-    config = {
-        "dataset_dir": "./data",
-    }
-    config = SimpleNamespace( **config)
     load_dotenv()
     cli_manager = MinerManagerCLI()
     asyncio.run(cli_manager.main())
