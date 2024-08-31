@@ -1,283 +1,273 @@
-import unittest
+import pytest
 from datetime import datetime, timedelta
-from rewarder import CompetitionLeader, RewarderConfig, Rewarder
+from pydantic import BaseModel
+from .rewarder import CompetitionLeader, Score, RewarderConfig, Rewarder
 
-class TestRewarder(unittest.TestCase):
+def test_update_scores_single_competitor():
+    # Set up initial data for a single competitor
+    competition_leaders = {
+        "competition1": CompetitionLeader(hotkey="competitor1", leader_since=datetime.now() - timedelta(days=10))
+    }
 
-    def test_single_competition_single_leader(self):
-        """Test case 1: Only one competition with 1 leader -> leader takes it all"""
-        competitions_leaders = {
-            "competition-1": CompetitionLeader(hotkey="leader-1", leader_since=datetime.now())
-        }
-        scores = {"leader-1": 0}
-        rewarder_config = RewarderConfig(competition_leader_mapping=competitions_leaders, scores=scores)
-        rewarder = Rewarder(config=rewarder_config)
-        
-        rewarder.update_scores()
+    scores = {
+        "competitor1": Score(score=0.0, reduction=0.0)
+    }
 
-        # Assert that the leader takes it all
-        self.assertAlmostEqual(rewarder.scores["leader-1"], 1.0)
-    
-    def test_4_2_reduction(self):
-        """Test case 2: 4 competitions with 2 different leaders, reduction -> 2 have 50% of the shares"""
-        leader_1_reward = 0.125
-        leader_2_reward = 0.125
-        leader_3_reward = leader_4_reward = 0.25 + 0.125
-        reduction_50_percent_days = datetime.now() - timedelta(days=14 + 7*5)
-        competitions_leaders = {
-            "competition-1": CompetitionLeader(hotkey="leader-1", leader_since=reduction_50_percent_days),
-            "competition-2": CompetitionLeader(hotkey="leader-2", leader_since=reduction_50_percent_days),
-            "competition-3": CompetitionLeader(hotkey="leader-3", leader_since=reduction_50_percent_days),
-            "competition-4": CompetitionLeader(hotkey="leader-4", leader_since=reduction_50_percent_days),
-        }
-        scores = {"leader-1": 0, "leader-2": 0, "leader-3": 0, "leader-4": 0}
-        rewarder_config = RewarderConfig(competition_leader_mapping=competitions_leaders, scores=scores)
-        rewarder = Rewarder(config=rewarder_config)
-        rewarder.update_scores()
-        self.assertAlmostEqual(rewarder.scores["leader-1"], leader_1_reward, places=2)
-        self.assertAlmostEqual(rewarder.scores["leader-2"], leader_2_reward, places=2)
-        self.assertAlmostEqual(rewarder.scores["leader-3"], leader_3_reward, places=2)
-        self.assertAlmostEqual(rewarder.scores["leader-4"], leader_4_reward, places=2)
+    # Set up the configuration with a single competition and a single competitor
+    rewarder_config = RewarderConfig(
+        competitionID_to_leader_hotkey_map=competition_leaders,
+        hotkey_to_score_map=scores
+    )
 
+    rewarder = Rewarder(rewarder_config)
+    rewarder.update_scores()
 
-    def test_three_competitions_three_leaders_no_reduction(self):
-        """Test case 2: 3 competitions with 3 different leaders, no reduction -> all have 33% of the shares"""
-        reward_split_by_three = 1 / 3
-        competitions_leaders = {
-            "competition-1": CompetitionLeader(hotkey="leader-1", leader_since=datetime.now()),
-            "competition-2": CompetitionLeader(hotkey="leader-2", leader_since=datetime.now()),
-            "competition-3": CompetitionLeader(hotkey="leader-3", leader_since=datetime.now())
-        }
-        scores = {"leader-1": 0, "leader-2": 0, "leader-3": 0}
-        rewarder_config = RewarderConfig(competition_leader_mapping=competitions_leaders, scores=scores)
-        rewarder = Rewarder(config=rewarder_config)
-        rewarder.update_scores()
+    # Check the updated scores and reductions for the single competitor
+    updated_score = rewarder.scores["competitor1"].score
+    updated_reduction = rewarder.scores["competitor1"].reduction
 
-        # Assert that all leaders have roughly 1/3 of the shares
-        self.assertAlmostEqual(rewarder.scores["leader-1"], reward_split_by_three, places=2)
-        self.assertAlmostEqual(rewarder.scores["leader-2"], reward_split_by_three, places=2)
-        self.assertAlmostEqual(rewarder.scores["leader-3"], reward_split_by_three, places=2)
+    # # With only one competitor, they should receive the full score of 1.0
+    expected_score = 1.0
+    expected_reduction = 0.0
 
-    def test_three_competitions_three_leaders_with_reduction(self):
-        """Test case 3: 3 competitions with 3 different leaders, one has a reduced share by 10%"""
-        first_competion_leader_since = datetime.now() - timedelta(days=21)
+    assert updated_score == expected_score, f"Expected score: {expected_score}, got: {updated_score}"
+    assert updated_reduction == expected_reduction, f"Expected reduction: {expected_reduction}, got: {updated_reduction}"
 
-        base_share = 1/3
-        reduction_factor = 0.9  # 10% reduction
-        expected_share_leader_1 = base_share * reduction_factor
-        expected_reduction = base_share - expected_share_leader_1
-        expected_share_leader_2_3 = base_share + (expected_reduction / 2)  # Distributed reduction
-        
-        scores = {"leader-1": 0, "leader-2": 0, "leader-3": 0}
+def test_update_scores_multiple_competitors_no_reduction():
+    # Set up initial data for multiple competitors
+    competition_leaders = {
+        "competition1": CompetitionLeader(hotkey="competitor1", leader_since=datetime.now() - timedelta(days=10)),
+        "competition2": CompetitionLeader(hotkey="competitor2", leader_since=datetime.now() - timedelta(days=10)),
+        "competition3": CompetitionLeader(hotkey="competitor3", leader_since=datetime.now() - timedelta(days=10))
+    }
 
-        competitions_leaders = {
-            "competition-1": CompetitionLeader(hotkey="leader-1", leader_since=first_competion_leader_since),
-            "competition-2": CompetitionLeader(hotkey="leader-2", leader_since=datetime.now()),
-            "competition-3": CompetitionLeader(hotkey="leader-3", leader_since=datetime.now())
-        }
-        
-        rewarder_config = RewarderConfig(competition_leader_mapping=competitions_leaders, scores=scores)
-        rewarder = Rewarder(config=rewarder_config)
+    scores = {
+        "competitor1": Score(score=0.0, reduction=0.0),
+        "competitor2": Score(score=0.0, reduction=0.0),
+        "competitor3": Score(score=0.0, reduction=0.0)
+    }
 
-        rewarder.update_scores()
-        # Assert that leader-1 has the reduced share and others are higher
-        self.assertAlmostEqual(rewarder.scores["leader-1"], expected_share_leader_1, places=2)
-        self.assertAlmostEqual(rewarder.scores["leader-2"], expected_share_leader_2_3, places=2)
-        self.assertAlmostEqual(rewarder.scores["leader-3"], expected_share_leader_2_3, places=2)
+    # Set up the configuration with multiple competitions and multiple competitors
+    rewarder_config = RewarderConfig(
+        competitionID_to_leader_hotkey_map=competition_leaders,
+        hotkey_to_score_map=scores
+    )
 
-    def test_three_competitions_three_leaders_two_reductions(self):
-        """Test case 4: 3 competitions with 3 different leaders, two with reduced shares"""
-        competitions_leaders = {
-            "competition-1": CompetitionLeader(hotkey="leader-1", leader_since=datetime.now() - timedelta(days=21)),
-            "competition-2": CompetitionLeader(hotkey="leader-2", leader_since=datetime.now() - timedelta(days=35)),
-            "competition-3": CompetitionLeader(hotkey="leader-3", leader_since=datetime.now())
-        }
-        scores = {"leader-1": 0, "leader-2": 0, "leader-3": 0}
-        rewarder_config = RewarderConfig(competition_leader_mapping=competitions_leaders, scores=scores)
-        rewarder = Rewarder(config=rewarder_config)
+    rewarder = Rewarder(rewarder_config)
+    rewarder.update_scores()
 
-        rewarder.update_scores()
+    # Check the updated scores and reductions for the multiple competitors
+    updated_scores = {hotkey: score.score for hotkey, score in rewarder.scores.items()}
+    updated_reductions = {hotkey: score.reduction for hotkey, score in rewarder.scores.items()}
 
-      
+    # With multiple competitors and no reductions, they should all receive the same score of 1/3
+    expected_score = 1/3
+    expected_reduction = 0.0
 
-        self.assertAlmostEqual(rewarder.scores["leader-1"], 1/3, places=2)
-        self.assertAlmostEqual(rewarder.scores["leader-2"], 1/3, places=2)
-        self.assertAlmostEqual(rewarder.scores["leader-3"], 1/3, places=2)
+    for _, score in updated_scores.items():
+        assert score == expected_score, f"Expected score: {expected_score}, got: {score}"
 
-    def test_three_competitions_three_leaders_all_different_reductions(self):
-        """Test case 5: All competitors have different degrees of reduced shares"""
-        competitions_leaders = {
-            "competition-1": CompetitionLeader(hotkey="leader-1", leader_since=datetime.now() - timedelta(days=21)),
-            "competition-2": CompetitionLeader(hotkey="leader-2", leader_since=datetime.now() - timedelta(days=35)),
-            "competition-3": CompetitionLeader(hotkey="leader-3", leader_since=datetime.now() - timedelta(days=49))
-        }
-        scores = {"leader-1": 0, "leader-2": 0, "leader-3": 0}
-        rewarder_config = RewarderConfig(competition_leader_mapping=competitions_leaders, scores=scores)
-        rewarder = Rewarder(config=rewarder_config)
+    for _, reduction in updated_reductions.items():
+        assert reduction == expected_reduction, f"Expected reduction: {expected_reduction}, got: {reduction}"
 
-        rewarder.update_scores()
+def test_update_scores_multiple_competitors_with_some_reduced_shares():
+    # Set up initial data for multiple competitors
+    competition_leaders = {
+        "competition1": CompetitionLeader(hotkey="competitor1", leader_since=datetime.now() - timedelta(days=14 + 3 * 7)),
+        "competition2": CompetitionLeader(hotkey="competitor2", leader_since=datetime.now() - timedelta(days=14 + 6 * 7)),
+        "competition3": CompetitionLeader(hotkey="competitor3", leader_since=datetime.now() - timedelta(days=14)),
+        "competition4": CompetitionLeader(hotkey="competitor4", leader_since=datetime.now() - timedelta(days=14)),
+    }
 
-        base_share = 1 / 3
-        reduction_factor_leader_1 = 0.9  # 10% reduction
-        reduction_factor_leader_2 = 0.7  # 30% reduction
-        reduction_factor_leader_3 = 0.5  # 50% reduction
+    scores = {
+        "competitor1": Score(score=0.0, reduction=0.0),
+        "competitor2": Score(score=0.0, reduction=0.0),
+        "competitor3": Score(score=0.0, reduction=0.0),
+        "competitor4": Score(score=0.0, reduction=0.0),
+    }
 
-        expected_share_leader_1 = base_share * reduction_factor_leader_1
-        expected_share_leader_2 = base_share * reduction_factor_leader_2
-        expected_share_leader_3 = base_share * reduction_factor_leader_3
-        # Calculate distributed reduction
-        remaining_share_leader_1 = base_share - expected_share_leader_1
-        remaining_share_leader_2 = base_share - expected_share_leader_2
-        remaining_share_leader_3 = base_share - expected_share_leader_3
+    # Set up the configuration with multiple competitions and multiple competitors
+    rewarder_config = RewarderConfig(
+        competitionID_to_leader_hotkey_map=competition_leaders,
+        hotkey_to_score_map=scores
+    )
 
-        # Leaders 2 and 3 gets their base share plus the distributed reduction from Leader 1
-        expected_share_leader_2 += remaining_share_leader_1 / 2
-        expected_share_leader_3 += remaining_share_leader_1 / 2
+    rewarder = Rewarder(rewarder_config)
+    rewarder.update_scores()
 
-        # Leaders 1 and 3 gets their base share plus the distributed reduction from Leader 2
-        expected_share_leader_1 += remaining_share_leader_2 / 2
-        expected_share_leader_3 += remaining_share_leader_2 / 2
+    # Check the updated scores and reductions for the multiple competitors
+    updated_scores = {hotkey: score.score for hotkey, score in rewarder.scores.items()}
+    updated_reductions = {hotkey: score.reduction for hotkey, score in rewarder.scores.items()}
 
-        # Leaders 1 and 2 gets their base share plus the distributed reduction from Leader 3
-        expected_share_leader_1 += remaining_share_leader_3 / 2
-        expected_share_leader_2 += remaining_share_leader_3 / 2
+    # With multiple competitors and some reduced shares, they should receive different scores and reductions
+    expected_reductions = {
+        "competitor1": 1/4 * 0.3,
+        "competitor2": 1/4 * 0.6,
+        "competitor3": 0.0,
+        "competitor4": 0.0,
+    }
 
-        self.assertAlmostEqual(rewarder.scores["leader-1"], expected_share_leader_1, places=2)
-        self.assertAlmostEqual(rewarder.scores["leader-2"], expected_share_leader_2, places=2)
-        self.assertAlmostEqual(rewarder.scores["leader-3"], expected_share_leader_3, places=2)
+    expected_reductions_sum = sum(expected_reductions.values())
+    expected_scores = {
+        "competitor1": 1/4 - expected_reductions["competitor1"],
+        "competitor2": 1/4 - expected_reductions["competitor2"],
+        "competitor3": 1/4 + expected_reductions_sum/2,
+        "competitor4": 1/4 + expected_reductions_sum/2,
+    }
 
-    def test_three_competitions_three_leaders_all_same_reductions(self):
-        """Test case 6: All competitors have the same amount of reduced shares"""
-        competitions_leaders = {
-            "competition-1": CompetitionLeader(hotkey="leader-1", leader_since=datetime.now() - timedelta(days=21)),
-            "competition-2": CompetitionLeader(hotkey="leader-2", leader_since=datetime.now() - timedelta(days=21)),
-            "competition-3": CompetitionLeader(hotkey="leader-3", leader_since=datetime.now() - timedelta(days=21))
-        }
-        scores = {"leader-1": 0, "leader-2": 0, "leader-3": 0}
-        rewarder_config = RewarderConfig(competition_leader_mapping=competitions_leaders, scores=scores)
-        rewarder = Rewarder(config=rewarder_config)
+    for hotkey, score in updated_scores.items():
+        assert score == pytest.approx(expected_scores[hotkey], rel=1e-9), f"Expected score: {expected_scores[hotkey]}, got: {score}"
 
-        rewarder.update_scores()
+    for hotkey, reduction in updated_reductions.items():
+        assert reduction == pytest.approx(expected_reductions[hotkey], rel=1e-9), f"Expected reduction: {expected_reductions[hotkey]}, got: {reduction}"
 
-        base_share = 1 / 3
-       
-        # All should have the same shares
-        self.assertAlmostEqual(rewarder.scores["leader-1"], base_share, places=2)
-        self.assertAlmostEqual(rewarder.scores["leader-2"], base_share, places=2)
-        self.assertAlmostEqual(rewarder.scores["leader-3"], base_share, places=2)
+def test_update_scores_all_competitors_with_reduced_shares():
+    # Set up initial data for multiple competitors
+    competition_leaders = {
+        "competition1": CompetitionLeader(hotkey="competitor1", leader_since=datetime.now() - timedelta(days=14 + 3 * 7)),
+        "competition2": CompetitionLeader(hotkey="competitor2", leader_since=datetime.now() - timedelta(days=14 + 6 * 7)),
+        "competition3": CompetitionLeader(hotkey="competitor3", leader_since=datetime.now() - timedelta(days=14 + 9 * 7))
+    }
 
-    def test_three_competitions_three_leaders_all_maximum_reductions(self):
-        """Test case 7: All competitors have maximum reduced shares (90%)"""
-        competitions_leaders = {
-            "competition-1": CompetitionLeader(hotkey="leader-1", leader_since=datetime.now() - timedelta(days=91)),
-            "competition-2": CompetitionLeader(hotkey="leader-2", leader_since=datetime.now() - timedelta(days=91)),
-            "competition-3": CompetitionLeader(hotkey="leader-3", leader_since=datetime.now() - timedelta(days=91))
-        }
-        scores = {"leader-1": 0, "leader-2": 0, "leader-3": 0}
-        rewarder_config = RewarderConfig(competition_leader_mapping=competitions_leaders, scores=scores)
-        rewarder = Rewarder(config=rewarder_config)
+    scores = {
+        "competitor1": Score(score=0.0, reduction=0.0),
+        "competitor2": Score(score=0.0, reduction=0.0),
+        "competitor3": Score(score=0.0, reduction=0.0)
+    }
 
-        rewarder.update_scores()
+    # Set up the configuration with multiple competitions and multiple competitors
+    rewarder_config = RewarderConfig(
+        competitionID_to_leader_hotkey_map=competition_leaders,
+        hotkey_to_score_map=scores
+    )
 
-        base_share = 1 / 3
-        reduction_factor = 0.1  # 90% reduction for all
+    rewarder = Rewarder(rewarder_config)
+    rewarder.update_scores()
 
-        expected_share_leader_1 = base_share * reduction_factor
-        expected_share_leader_2 = base_share * reduction_factor
-        expected_share_leader_3 = base_share * reduction_factor
+    # Check the updated scores and reductions for the multiple competitors
+    updated_scores = {hotkey: score.score for hotkey, score in rewarder.scores.items()}
+    updated_reductions = {hotkey: score.reduction for hotkey, score in rewarder.scores.items()}
 
-        # Calculate distributed reduction
-        remaining_share_leader_1 = base_share - expected_share_leader_1
-        remaining_share_leader_2 = base_share - expected_share_leader_2
-        remaining_share_leader_3 = base_share - expected_share_leader_3
+    # With multiple competitors and reduced shares, they should receive different scores and reductions
+    expected_reductions = {
+        "competitor1": 0.1,
+        "competitor2": 0.2,
+        "competitor3": 0.3
+    }
 
-        # Leaders 2 and 3 gets their base share plus the distributed reduction from Leader 1
-        expected_share_leader_2 += remaining_share_leader_1 / 2
-        expected_share_leader_3 += remaining_share_leader_1 / 2
+    expected_reductions_sum = sum(expected_reductions.values())
+    expected_scores = {
+        "competitor1": 1/3 - expected_reductions["competitor1"] + expected_reductions_sum/3,
+        "competitor2": 1/3 - expected_reductions["competitor2"] + expected_reductions_sum/3,
+        "competitor3": 1/3 - expected_reductions["competitor3"] + expected_reductions_sum/3,
+    }
 
-        # Leaders 1 and 3 gets their base share plus the distributed reduction from Leader 2
-        expected_share_leader_1 += remaining_share_leader_2 / 2
-        expected_share_leader_3 += remaining_share_leader_2 / 2
+    for hotkey, score in updated_scores.items():
+        assert score == expected_scores[hotkey], f"Expected score: {expected_scores[hotkey]}, got: {score}"
 
-        # Leaders 1 and 2 gets their base share plus the distributed reduction from Leader 3
-        expected_share_leader_1 += remaining_share_leader_3 / 2
-        expected_share_leader_2 += remaining_share_leader_3 / 2
+    for hotkey, reduction in updated_reductions.items():
+        assert reduction == expected_reductions[hotkey], f"Expected reduction: {expected_reductions[hotkey]}, got: {reduction}"
 
-        # All should have the same shares
-        self.assertAlmostEqual(rewarder.scores["leader-1"], expected_share_leader_1, places=2)
-        self.assertAlmostEqual(rewarder.scores["leader-2"], expected_share_leader_2, places=2)
-        self.assertAlmostEqual(rewarder.scores["leader-3"], expected_share_leader_3, places=2)
+def test_update_scores_more_competitions_then_competitors():
+    # Set up initial data for multiple competitors
+    competition_leaders = {
+        "competition1": CompetitionLeader(hotkey="competitor1", leader_since=datetime.now() - timedelta(days=14 + 3 * 7)),
+        "competition2": CompetitionLeader(hotkey="competitor2", leader_since=datetime.now() - timedelta(days=14)),
+        "competition3": CompetitionLeader(hotkey="competitor1", leader_since=datetime.now() - timedelta(days=14)),
+        "competition4": CompetitionLeader(hotkey="competitor3", leader_since=datetime.now() - timedelta(days=14)),
+    }
 
-    def test_three_competitions_two_competitors(self):
-        """Test case 8: 3 competitions but only 2 competitors"""
-        competitions_leaders = {
-            "competition-1": CompetitionLeader(hotkey="leader-1", leader_since=datetime.now() - timedelta(days=21)),
-            "competition-2": CompetitionLeader(hotkey="leader-1", leader_since=datetime.now() - timedelta(days=10)),
-            "competition-3": CompetitionLeader(hotkey="leader-2", leader_since=datetime.now())
-        }
-        scores = {"leader-1": 0, "leader-2": 0}
-        rewarder_config = RewarderConfig(competition_leader_mapping=competitions_leaders, scores=scores)
-        rewarder = Rewarder(config=rewarder_config)
+    scores = {
+        "competitor1": Score(score=0.0, reduction=0.0),
+        "competitor2": Score(score=0.0, reduction=0.0),
+        "competitor3": Score(score=0.0, reduction=0.0),
+    }
 
-        rewarder.update_scores()
+    # Set up the configuration with multiple competitions and multiple competitors
+    rewarder_config = RewarderConfig(
+        competitionID_to_leader_hotkey_map=competition_leaders,
+        hotkey_to_score_map=scores
+    )
 
-        base_share = 1 / 3
-        reduction_factor_leader_1_competition_1 = 0.9  # 10% reduction for 21 days
+    rewarder = Rewarder(rewarder_config)
+    rewarder.update_scores()
 
-        # Calculate expected scores
-        expected_share_leader_1_competition_1 = base_share * reduction_factor_leader_1_competition_1
-        expected_share_leader_1_competition_2 = base_share
-        expected_share_leader_2 = base_share
+    # Check the updated scores and reductions for the multiple competitors
+    updated_scores = {hotkey: score.score for hotkey, score in rewarder.scores.items()}
+    updated_reductions = {hotkey: score.reduction for hotkey, score in rewarder.scores.items()}
 
-        remaining_share_leader_1_competition_1 = base_share - expected_share_leader_1_competition_1
-        # The competitors of competition 2 and 3 (including leader-1) get the distributed reduction    
-        expected_score_leader_1 = expected_share_leader_1_competition_1 + expected_share_leader_1_competition_2\
-              + remaining_share_leader_1_competition_1 / 2
-        expected_score_leader_2 = expected_share_leader_2 + remaining_share_leader_1_competition_1 / 2
+    # With multiple competitors and some reduced shares, they should receive different scores and reductions
+    expected_reductions = {
+        "competitor1": 1/4 * 0.3,
+        "competitor2": 0.0,
+        "competitor3": 0.0,
+    }
 
-        self.assertAlmostEqual(rewarder.scores["leader-1"], expected_score_leader_1, places=2)
-        self.assertAlmostEqual(rewarder.scores["leader-2"], expected_score_leader_2, places=2)
+    expected_reductions_sum = sum(expected_reductions.values())
+    expected_scores = {
+        "competitor1": 2/4 - expected_reductions["competitor1"] + expected_reductions_sum/3,
+        "competitor2": 1/4 + expected_reductions_sum/3,
+        "competitor3": 1/4 + expected_reductions_sum/3,
+    }
 
-    def test_five_competitions_three_competitors_two_repeating(self):
-        """Test case 9: 5 competitions with 3 competitors, 2 of them are repeating"""
-        competitions_leaders = {
-            "competition-1": CompetitionLeader(hotkey="leader-1", leader_since=datetime.now() - timedelta(days=21)),  # 10% reduction
-            "competition-2": CompetitionLeader(hotkey="leader-2", leader_since=datetime.now() - timedelta(days=10)),  # No reduction
-            "competition-3": CompetitionLeader(hotkey="leader-1", leader_since=datetime.now()),  # No reduction
-            "competition-4": CompetitionLeader(hotkey="leader-3", leader_since=datetime.now() - timedelta(days=35)),  # 30% reduction
-            "competition-5": CompetitionLeader(hotkey="leader-2", leader_since=datetime.now())  # No reduction
-        }
-        scores = {"leader-1": 0, "leader-2": 0, "leader-3": 0}
-        rewarder_config = RewarderConfig(competition_leader_mapping=competitions_leaders, scores=scores)
-        rewarder = Rewarder(config=rewarder_config)
+    for hotkey, score in updated_scores.items():
+        assert score == pytest.approx(expected_scores[hotkey], rel=1e-9), f"Expected score: {expected_scores[hotkey]}, got: {score} for {hotkey}"
 
-        rewarder.update_scores()
+    for hotkey, reduction in updated_reductions.items():
+        assert reduction == pytest.approx(expected_reductions[hotkey], rel=1e-9), f"Expected reduction: {expected_reductions[hotkey]}, got: {reduction} for {hotkey}"
 
-        base_share = 1 / 5
-        reduction_factor_leader_1_competition_1 = 0.9  # 10% reduction for 21 days
-        reduction_factor_leader_3_competition_4 = 0.7  # 30% reduction for 35 days
+def test_update_scores_6_competitions_3_competitors():
+    # Set up initial data for multiple competitors
+    competition_leaders = {
+        "competition1": CompetitionLeader(hotkey="competitor1", leader_since=datetime.now() - timedelta(days=14 + 3 * 7)),
+        "competition2": CompetitionLeader(hotkey="competitor2", leader_since=datetime.now() - timedelta(days=14 + 6 * 7)),
+        "competition3": CompetitionLeader(hotkey="competitor3", leader_since=datetime.now() - timedelta(days=14 + 9 * 7)),
+        "competition4": CompetitionLeader(hotkey="competitor4", leader_since=datetime.now() - timedelta(days=14)),
+        "competition5": CompetitionLeader(hotkey="competitor1", leader_since=datetime.now() - timedelta(days=14)),
+        "competition6": CompetitionLeader(hotkey="competitor2", leader_since=datetime.now() - timedelta(days=14 + 3 * 7)),
+    }
 
-        # Calculate expected shares for each leader
-        expected_share_leader_1_competition_1 = base_share * reduction_factor_leader_1_competition_1
-        expected_share_leader_1_competition_3 = base_share
-        expected_share_leader_2_competition_2 = base_share
-        expected_share_leader_2_competition_5 = base_share
-        expected_share_leader_3_competition_4 = base_share * reduction_factor_leader_3_competition_4
+    scores = {
+        "competitor1": Score(score=0.0, reduction=0.0),
+        "competitor2": Score(score=0.0, reduction=0.0),
+        "competitor3": Score(score=0.0, reduction=0.0),
+        "competitor4": Score(score=0.0, reduction=0.0),
+    }
 
-        remaining_share_leader_1_competition_1 = base_share - expected_share_leader_1_competition_1
-        remaining_share_leader_3_competition_4 = base_share - expected_share_leader_3_competition_4
+    # Set up the configuration with multiple competitions and multiple competitors
+    rewarder_config = RewarderConfig(
+        competitionID_to_leader_hotkey_map=competition_leaders,
+        hotkey_to_score_map=scores
+    )
 
-        # Calculate final scores with distributed reduction shares
-        expected_score_leader_1 = expected_share_leader_1_competition_1 + expected_share_leader_1_competition_3\
-              + (remaining_share_leader_1_competition_1 / 3) + (remaining_share_leader_3_competition_4 / 2)
-        expected_score_leader_2 = expected_share_leader_2_competition_2 + expected_share_leader_2_competition_5\
-              + (remaining_share_leader_1_competition_1 / 3) + (remaining_share_leader_3_competition_4 / 2)
-        expected_score_leader_3 = expected_share_leader_3_competition_4 + (remaining_share_leader_1_competition_1 / 3)
+    rewarder = Rewarder(rewarder_config)
+    rewarder.update_scores()
 
-        self.assertAlmostEqual(rewarder.scores["leader-1"], expected_score_leader_1, places=2)
-        self.assertAlmostEqual(rewarder.scores["leader-2"], expected_score_leader_2, places=2)
-        self.assertAlmostEqual(rewarder.scores["leader-3"], expected_score_leader_3, places=2)
+    # Check the updated scores and reductions for the multiple competitors
+    updated_scores = {hotkey: score.score for hotkey, score in rewarder.scores.items()}
+    updated_reductions = {hotkey: score.reduction for hotkey, score in rewarder.scores.items()}
 
+    # With multiple competitors and some reduced shares, they should receive different scores and reductions
+    expected_reductions = {
+        "competitor1": 1/6 * 0.3,
+        "competitor2": (1/6 * 0.6) + (1/6 * 0.3),
+        "competitor3": 1/6 * 0.9,
+        "competitor4": 0.0,
+    }
+
+    expected_reductions_sum = sum(expected_reductions.values())
+    expected_scores = {
+        "competitor1": (2/6 - expected_reductions["competitor1"]) + expected_reductions_sum/2,
+        "competitor2": (2/6 - expected_reductions["competitor2"]),
+        "competitor3": 1/6 - expected_reductions["competitor3"],
+        "competitor4": 1/6 + expected_reductions_sum/2,
+    }
+
+    for hotkey, score in updated_scores.items():
+        assert score == pytest.approx(expected_scores[hotkey], rel=1e-9), f"Expected score: {expected_scores[hotkey]}, got: {score} for {hotkey}"
+
+    for hotkey, reduction in updated_reductions.items():
+        assert reduction == pytest.approx(expected_reductions[hotkey], rel=1e-9), f"Expected reduction: {expected_reductions[hotkey]}, got: {reduction} for {hotkey}"
 
 if __name__ == "__main__":
-    unittest.main()
+    pytest.main()
