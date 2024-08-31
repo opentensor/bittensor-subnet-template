@@ -11,10 +11,17 @@ class ChainMinerModel(BaseModel):
     """Uniquely identifies a trained model"""
 
     competition_id: Optional[str] = Field(description="The competition id")
-    hf_repo_id: str | None = None
-    hf_model_filename: str | None = None
-    hf_code_filename: str | None = None
-    hf_repo_type: str | None = None
+
+    block: Optional[str] = Field(
+        description="Block on which this model was claimed on the chain."
+    )
+
+    hf_repo_id: Optional[str] = Field(description="Hugging Face repository id.")
+    hf_filename: Optional[str] = Field(description="Hugging Face model filename.")
+    hf_repo_type: Optional[str] = Field(description="Hugging Face repository type.")
+    hf_code_filename: Optional[str] = Field(
+        description="Hugging Face code zip filename."
+    )
 
     class Config:
         arbitrary_types_allowed = True
@@ -76,6 +83,7 @@ class ChainModelMetadataStore:
         metadata = run_in_subprocess(partial, 60)
         if not metadata:
             return None
+        bt.logging.info(f"Model metadata: {metadata["info"]["fields"]}")
         commitment = metadata["info"]["fields"][0]
         hex_data = commitment[list(commitment.keys())[0]][2:]
 

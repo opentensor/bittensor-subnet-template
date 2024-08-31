@@ -52,7 +52,7 @@ def check_config(cls, config: "bt.Config"):
             config.neuron.name,
         )
     )
-    print("full path:", full_path)
+    print("Log path:", full_path)
     config.neuron.full_path = os.path.expanduser(full_path)
     if not os.path.exists(config.neuron.full_path):
         os.makedirs(config.neuron.full_path, exist_ok=True)
@@ -169,6 +169,12 @@ def add_miner_args(cls, parser):
     )
 
     parser.add_argument(
+        "--hf-model-name",
+        type=str,
+        help="Name of the model to push to hugging face.",
+    )
+
+    parser.add_argument(
         "--action",
         choices=["submit", "evaluate", "upload"],
         required=True,
@@ -208,6 +214,7 @@ def add_miner_args(cls, parser):
         help="Path to code directory",
         default=".",
     )
+
 
 
 def add_validator_args(cls, parser):
@@ -273,14 +280,14 @@ def add_validator_args(cls, parser):
     )
 
     parser.add_argument(
-        "--wandb.project_name",
+        "--wandb_project_name",
         type=str,
         help="The name of the project where you are sending the new run.",
         default="template-validators",
     )
 
     parser.add_argument(
-        "--wandb.entity",
+        "--wandb_entity",
         type=str,
         help="The name of the project where you are sending the new run.",
         default="opentensor-dev",
@@ -296,6 +303,12 @@ def add_validator_args(cls, parser):
         type=str,
         help="Path for storing datasets.",
         default="./datasets",
+    )
+    parser.add_argument(
+        "--competition_config_path",
+        type=str,
+        help="Path with competition configuration .",
+        default="./neurons/competition_config.json",
     )
 
 

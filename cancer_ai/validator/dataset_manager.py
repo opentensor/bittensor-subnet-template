@@ -37,7 +37,6 @@ class DatasetManager(SerializableManager):
         self.hf_filename = hf_filename
         self.hf_repo_type = hf_repo_type
         self.local_compressed_path = ""
-        print(self.config)
         self.local_extracted_dir = Path(
             self.config.dataset_dir, self.competition_id
         )
@@ -83,12 +82,12 @@ class DatasetManager(SerializableManager):
 
         bt.logging.debug(f"Dataset extracted to: { self.local_compressed_path}")
         os.system(f"rm -R {self.local_extracted_dir}")
-        print(f"unzip {self.local_compressed_path} -d {self.local_extracted_dir}")
+        # TODO add error handling
         out, err = await run_command(
             f"unzip {self.local_compressed_path} -d {self.local_extracted_dir}"
         )
-        print(err)
-        print("Dataset unzipped")
+        bt.logging.error(err)
+        bt.logging.info("Dataset unzipped")
 
     def set_dataset_handler(self) -> None:
         """Detect dataset type and set handler"""
@@ -102,7 +101,6 @@ class DatasetManager(SerializableManager):
                 Path(self.local_extracted_dir, "labels.csv"),
             )
         else:
-            #print("Files in dataset: ", os.listdir(self.local_extracted_dir))
             raise NotImplementedError("Dataset handler not implemented")
 
     async def prepare_dataset(self) -> None:

@@ -11,7 +11,7 @@ class ModelEvaluationResult:
     fpr: any
     tpr: any
     roc_auc: float
-    run_time: float
+    run_time_s: float
     tested_entries: int
 
 class BaseCompetitionHandler:
