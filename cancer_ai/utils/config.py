@@ -135,6 +135,7 @@ def add_miner_args(cls, parser):
         "--competition-id",
         type=str,
         help="Competition ID",
+        required=True,
     )
 
     parser.add_argument(
@@ -148,7 +149,7 @@ def add_miner_args(cls, parser):
         "--hf-repo-id",
         type=str,
         help="Hugging Face model repository ID",
-        default="",
+        
     )
 
     parser.add_argument(
@@ -170,12 +171,14 @@ def add_miner_args(cls, parser):
     parser.add_argument(
         "--action",
         choices=["submit", "evaluate", "upload"],
+        required=True,
     )
 
     parser.add_argument(
         "--model-path",
         type=str,
         help="Path to ONNX model, used for evaluation",
+        required=True,
     )
 
     parser.add_argument(
