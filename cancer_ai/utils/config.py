@@ -132,84 +132,75 @@ def add_args(cls, parser):
 def add_miner_args(cls, parser):
     """Add miner specific arguments to the parser."""
     parser.add_argument(
-        "--competition-id",
+        "--competition_id",
         type=str,
         help="Competition ID",
-        required=True,
     )
 
     parser.add_argument(
-        "--model-dir",
+        "--model_dir",
         type=str,
         help="Path for for loading the starting model related to a training run.",
         default="./models",
     )
 
     parser.add_argument(
-        "--hf-repo-id",
+        "--hf_repo_id",
         type=str,
         help="Hugging Face model repository ID",
         
     )
 
     parser.add_argument(
-        "--hf-model-name",
+        "--hf_model_name",
         type=str,
         help="Filename of the model to push to hugging face.",
     )
     parser.add_argument(
-        "--hf-code-filename",
+        "--hf_code_filename",
         type=str,
         help="Filename of the code zip  to push to hugging face.",
     )
     parser.add_argument(
-        "--hf-repo-type",
+        "--hf_repo_type",
         type=str,
         help="Type of hugging face repository.",
     )
 
     parser.add_argument(
-        "--hf-model-name",
-        type=str,
-        help="Name of the model to push to hugging face.",
-    )
-
-    parser.add_argument(
         "--action",
         choices=["submit", "evaluate", "upload"],
-        required=True,
     )
 
     parser.add_argument(
-        "--model-path",
+        "--model_path",
         type=str,
         help="Path to ONNX model, used for evaluation",
-        required=True,
     )
 
     parser.add_argument(
-        "--dataset-dir",
+        "--dataset_dir",
         type=str,
         help="Path for storing datasets.",
         default="./datasets",
     )
 
     parser.add_argument(
-        "--hf-token",
+        "--hf_token",
         type=str,
         help="Hugging Face API token",
         default="",
     )
 
     parser.add_argument(
-        "--clean-after-run",
+        "--clean_after_run",
         action="store_true",
         help="Whether to clean up (dataset, temporary files) after running",
         default=False,
     )
 
     parser.add_argument(
-        "--code-directory",
+        "--code_directory",
         type=str,
         help="Path to code directory",
         default=".",
@@ -326,4 +317,4 @@ def path_config(cls):
     bt.logging.add_args(parser)
     bt.axon.add_args(parser)
     cls.add_args(parser)
-    return bt.config(parser)
+    return bt.config(parser.parse_args())

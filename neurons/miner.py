@@ -7,8 +7,6 @@ from dotenv import load_dotenv
 from huggingface_hub import HfApi, login as hf_login
 import huggingface_hub
 import onnx
-import cancer_ai
-import typing
 import argparse
 
 from cancer_ai.validator.utils import run_command
@@ -35,6 +33,7 @@ class MinerManagerCLI:
     @classmethod
     def add_args(cls, parser: argparse.ArgumentParser):
         """Method for injecting miner arguments to the parser."""
+        print("add")
         add_miner_args(cls, parser)
 
     async def upload_to_hf(self) -> None:
@@ -191,13 +190,6 @@ class MinerManagerCLI:
 
 
 if __name__ == "__main__":
-    from types import SimpleNamespace
-    config = get_config()
-    config = {
-        "dataset_dir": "./data",
-    }
-    config = SimpleNamespace( **config)
-    set_log_formatting()
     load_dotenv()
     cli_manager = MinerManagerCLI()
     asyncio.run(cli_manager.main())
