@@ -1,6 +1,5 @@
 import pytest
 from datetime import datetime, timedelta
-from pydantic import BaseModel
 from .rewarder import CompetitionLeader, Score, RewarderConfig, Rewarder
 
 def test_update_scores_single_competitor():

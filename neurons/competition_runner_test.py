@@ -5,6 +5,8 @@ from types import SimpleNamespace
 import bittensor as bt
 from typing import List, Dict
 from competition_runner import run_competitions_tick, competition_loop
+from rewarder import RewarderConfig, Rewarder
+import time
 
 # TODO integrate with bt config
 test_config = SimpleNamespace(
@@ -57,14 +59,30 @@ def config_for_scheduler() -> Dict[str, CompetitionManager]:
             )
     return time_arranged_competitions
 
+async def competition_loop():
+    """Example of scheduling coroutine"""
+    while True:
+        test_cases = [
+            ("hotkey1", "melanoma-1"),
+            ("hotkey2", "melanoma-1"),
+            ("hotkey1", "melanoma-2"),
+            ("hotkey1", "melanoma-1"),
+            ("hotkey2", "melanoma-3"),
+        ]
 
+        rewarder_config = RewarderConfig(competitionID_to_leader_hotkey_map={}, hotkey_to_score_map={})
+        rewarder = Rewarder(rewarder_config)
 
-
+        for winning_evaluation_hotkey, competition_id in test_cases:
+            rewarder.scores = {}
+            updated_rewarder_config = rewarder.update_scores(winning_evaluation_hotkey, competition_id)
+            print("Updated rewarder config:", updated_rewarder_config)
+        await asyncio.sleep(10)
 
 if __name__ == "__main__":
-    if True:  # run them right away
-        run_all_competitions(test_config, [],main_competitions_cfg)
+    # if True:  # run them right away
+    #     run_all_competitions(test_config, [],main_competitions_cfg)
 
-    else:  # Run the scheduling coroutine
-        scheduler_config = config_for_scheduler()
-        asyncio.run(competition_loop(scheduler_config))
+    # else:  # Run the scheduling coroutine
+        # scheduler_config = config_for_scheduler()
+    asyncio.run(competition_loop())

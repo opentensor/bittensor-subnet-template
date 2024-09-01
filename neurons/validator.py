@@ -31,6 +31,8 @@ from types import SimpleNamespace
 from datetime import datetime, timezone, timedelta
 from cancer_ai.validator.competition_manager import CompetitionManager
 from cancer_ai.validator.competition_handlers.base_handler import ModelEvaluationResult
+from .competition_runner import competition_loop, config_for_scheduler, run_competitions_tick
+from .rewarder import RewarderConfig, Rewarder
 
 
 class Validator(BaseValidatorNeuron):
@@ -44,12 +46,39 @@ class Validator(BaseValidatorNeuron):
 
     def __init__(self, config=None):
         super(Validator, self).__init__(config=config)
-        # competition_id to (hotkey_uid, days_as_leader)
-        self.competitions_leaders = {}
+
+        self.rewarder_config = RewarderConfig({},{})
         self.load_state()
+        self.scheduler_config = config_for_scheduler(self.config, self.hotkeys)
+
+        self.rewarder = Rewarder(self.rewarder_config)
         
-    async def forward(self):
-        ...
+        asyncio.run_coroutine_threadsafe(competition_loop(self.scheduler_config, self.rewarder_config), self.loop)
+
+
+    async def competition_loop(self, scheduler_config: dict[str, CompetitionManager], rewarder_config: RewarderConfig):
+        """Example of scheduling coroutine"""
+        while True:
+            competition_result = await run_competitions_tick(scheduler_config)
+            bt.logging.debug(f"Competition result: {competition_result}")
+            if competition_result:
+                winning_evaluation_hotkey, competition_id = competition_result
+
+                # reset the scores before updating them
+                self.rewarder.scores = {}
+
+                # update the scores
+                updated_rewarder_config = await self.rewarder.update_scores(winning_evaluation_hotkey, competition_id)
+                self.rewarder_config = updated_rewarder_config
+                self.save_state()
+
+                hotkey_to_score_map = updated_rewarder_config.hotkey_to_score_map
+
+                # get hotkeys to uid mapping
+                # save state of self.score (map rewarder config to scores)
+                print(".....................Updated rewarder config:")
+                print(updated_rewarder_config)
+            await asyncio.sleep(60)
 
 # The main function parses the configuration and runs the validator.
 if __name__ == "__main__":
