@@ -23,16 +23,12 @@ from typing import Any, List
 import bittensor as bt
 import asyncio
 
-from numpy import ndarray
+import numpy as np
 
 from cancer_ai.base.validator import BaseValidatorNeuron
-from cancer_ai.validator import forward
-from types import SimpleNamespace
-from datetime import datetime, timezone, timedelta
 from cancer_ai.validator.competition_manager import CompetitionManager
-from cancer_ai.validator.competition_handlers.base_handler import ModelEvaluationResult
-from .competition_runner import competition_loop, config_for_scheduler, run_competitions_tick
-from .rewarder import RewarderConfig, Rewarder, Score
+from competition_runner import competition_loop, config_for_scheduler, run_competitions_tick
+from rewarder import RewarderConfig, Rewarder, Score
 
 
 class Validator(BaseValidatorNeuron):
@@ -49,7 +45,7 @@ class Validator(BaseValidatorNeuron):
 
         self.rewarder_config = RewarderConfig({},{})
         self.load_state()
-        self.scheduler_config = config_for_scheduler(self.config, self.hotkeys)
+        self.scheduler_config = config_for_scheduler(self.config, self.hotkeys, test_mode=True)
 
         self.rewarder = Rewarder(self.rewarder_config)
         
@@ -71,7 +67,7 @@ class Validator(BaseValidatorNeuron):
                 hotkey_to_score_map = self.rewarder_config.hotkey_to_score_map
 
                 self.scores = [
-                    hotkey_to_score_map.get(hotkey, Score(score=0.0, reduction=0.0)).score 
+                    np.float32(hotkey_to_score_map.get(hotkey, Score(score=0.0, reduction=0.0)).score)
                     for hotkey in self.metagraph.hotkeys
                 ]
                 self.save_state()

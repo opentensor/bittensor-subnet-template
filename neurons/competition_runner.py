@@ -12,7 +12,7 @@ from rewarder import Rewarder, RewarderConfig, CompetitionLeader
 
 
 def config_for_scheduler(
-    bt_config, hotkeys: List[str]
+    bt_config, hotkeys: List[str], test_mode: bool = False
 ) -> Dict[str, CompetitionManager]:
     """Returns CompetitionManager instances arranged by competition time"""
     time_arranged_competitions = {}
@@ -26,6 +26,7 @@ def config_for_scheduler(
                 competition_cfg["dataset_hf_repo"],
                 competition_cfg["dataset_hf_filename"],
                 competition_cfg["dataset_hf_repo_type"],
+                test_mode=test_mode,
             )
     return time_arranged_competitions
 
@@ -37,20 +38,21 @@ async def run_competitions_tick(
     now_time = datetime.now(timezone.utc)
     now_time = f"{now_time.hour}:{now_time.minute}"
     bt.logging.debug(now_time)
-    if now_time not in competition_times:
-        return None
+    # if now_time not in competition_times:
+    #     return None
     for time_competition in competition_times:
-        if now_time == time_competition:
-            bt.logging.info(
-                f"Running {competition_times[time_competition].competition_id} at {now_time}"
-            )
-            winning_evaluation_hotkey = await competition_times[
-                time_competition
-            ].evaluate()
-            return (
-                winning_evaluation_hotkey,
-                competition_times[time_competition].competition_id,
-            )
+        asyncio.sleep(60)
+        # if now_time == time_competition:
+        bt.logging.info(
+            f"Running {competition_times[time_competition].competition_id} at {now_time}"
+        )
+        winning_evaluation_hotkey = await competition_times[
+            time_competition
+        ].evaluate()
+        return (
+            winning_evaluation_hotkey,
+            competition_times[time_competition].competition_id,
+        )
 
 
 async def competition_loop(scheduler_config: Dict[str, CompetitionManager], rewarder_config: RewarderConfig):
