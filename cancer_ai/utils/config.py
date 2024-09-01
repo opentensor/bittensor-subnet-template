@@ -317,4 +317,4 @@ def path_config(cls):
     bt.logging.add_args(parser)
     bt.axon.add_args(parser)
     cls.add_args(parser)
-    return bt.config(parser)
+    return bt.config(parser.parse_args())
