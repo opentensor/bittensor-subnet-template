@@ -74,9 +74,9 @@ async def competition_loop():
         rewarder = Rewarder(rewarder_config)
 
         for winning_evaluation_hotkey, competition_id in test_cases:
-            rewarder.scores = {}
-            updated_rewarder_config = rewarder.update_scores(winning_evaluation_hotkey, competition_id)
-            print("Updated rewarder config:", updated_rewarder_config)
+            rewarder.update_scores(winning_evaluation_hotkey, competition_id)
+            print("Updated rewarder competition leader map:", rewarder.competition_leader_mapping)
+            print("Updated rewarder scores:", rewarder.scores)
         await asyncio.sleep(10)
 
 if __name__ == "__main__":

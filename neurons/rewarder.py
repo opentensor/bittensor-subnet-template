@@ -38,7 +38,10 @@ class Rewarder():
             return final_share, reduced_share
         return base_share, 0
     
-    def update_scores(self, new_winner_hotkey: str, new_winner_comp_id: str) -> RewarderConfig:
+    def update_scores(self, new_winner_hotkey: str, new_winner_comp_id: str):
+        # reset the scores before updating them
+        self.scores = {}
+        
         # get score and reduced share for the new winner
         self.get_score_and_reduction(new_winner_comp_id, new_winner_hotkey)
 
@@ -48,7 +51,7 @@ class Rewarder():
             competition_id = next(iter(self.competition_leader_mapping))
             hotkey = self.competition_leader_mapping[competition_id].hotkey
             self.scores[hotkey] = Score(score=1.0, reduction=0.0)
-            return RewarderConfig(competitionID_to_leader_hotkey_map=self.competition_leader_mapping, hotkey_to_score_map=self.scores)
+            return
 
         # gather reduced shares for all competitors
         competitions_without_reduction = []
@@ -73,10 +76,8 @@ class Rewarder():
             for hotkey, score in self.scores.items():
                 self.scores[hotkey].score += total_reduced_share / num_competitions
             return
-        else:
-            # distribute the total reduced share among non-reduced competitons winners
-            for comp_id in competitions_without_reduction:
-                hotkey = self.competition_leader_mapping[comp_id].hotkey
-                self.scores[hotkey].score += total_reduced_share / len(competitions_without_reduction)
-
-        return RewarderConfig(competitionID_to_leader_hotkey_map=self.competition_leader_mapping, hotkey_to_score_map=self.scores)
+        
+        # distribute the total reduced share among non-reduced competitons winners
+        for comp_id in competitions_without_reduction:
+            hotkey = self.competition_leader_mapping[comp_id].hotkey
+            self.scores[hotkey].score += total_reduced_share / len(competitions_without_reduction)
