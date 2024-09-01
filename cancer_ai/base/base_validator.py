@@ -28,8 +28,8 @@ import bittensor as bt
 from typing import List, Union
 from traceback import print_exception
 
-from ..base.neuron import BaseNeuron
-from ..base.utils.weight_utils import (
+from .neuron import BaseNeuron
+from .utils.weight_utils import (
     process_weights_for_netuid,
     convert_weights_and_uids_for_emit,
 )  # TODO: Replace when bittensor switches to numpy

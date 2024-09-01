@@ -14,7 +14,7 @@ from cancer_ai.validator.model_run_manager import ModelRunManager, ModelInfo
 from cancer_ai.validator.dataset_manager import DatasetManager
 from cancer_ai.validator.competition_manager import COMPETITION_HANDLER_MAPPING
 
-from cancer_ai.base.miner import BaseNeuron
+from cancer_ai.base.base_miner import BaseNeuron
 from cancer_ai.chain_models_store import ChainMinerModel, ChainModelMetadataStore
 from cancer_ai.utils.config import path_config, add_miner_args
 

@@ -11,14 +11,16 @@ class RewarderConfig(BaseModel):
     competitionID_to_leader_hotkey_map: dict[str, CompetitionLeader] # competition_id -> CompetitionLeader
     hotkey_to_score_map: dict[str, Score] # hotkey -> Score
 
-NON_REDUCTION_PERIOD = 30
+REWARD_REDUCTION_START_DAY = 30
+REWARD_REDUCTION_STEP = 0.1
+REWARD_REDUCTION_STEP_DAYS = 7
 
 class Rewarder():
     def __init__(self, rewarder_config: RewarderConfig):
         self.competition_leader_mapping = rewarder_config.competitionID_to_leader_hotkey_map
         self.scores = rewarder_config.hotkey_to_score_map
 
-    def get_miner_score_and_reduction(self, competition_id: str, hotkey: str) -> tuple[float, float]:
+    async def get_miner_score_and_reduction(self, competition_id: str, hotkey: str) -> tuple[float, float]:
         # check if current hotkey is already a leader
         competition = self.competition_leader_mapping.get(competition_id)
         if competition and competition.hotkey == hotkey:
@@ -32,20 +34,20 @@ class Rewarder():
         
         # Score degradation starts on 3rd week of leadership 
         base_share = 1/len(self.competition_leader_mapping)
-        if days_as_leader > NON_REDUCTION_PERIOD:
-            periods = (days_as_leader - NON_REDUCTION_PERIOD) // 7
-            reduction_factor = max(0.1, 1 - 0.1 * periods)
+        if days_as_leader > REWARD_REDUCTION_START_DAY:
+            periods = (days_as_leader - REWARD_REDUCTION_START_DAY) // REWARD_REDUCTION_STEP_DAYS
+            reduction_factor = max(REWARD_REDUCTION_STEP, 1 - REWARD_REDUCTION_STEP * periods)
             final_share = base_share * reduction_factor
             reduced_share = base_share - final_share
             return final_share, reduced_share
         return base_share, 0
     
-    def update_scores(self, new_winner_hotkey: str, new_winner_comp_id: str):
+    async def update_scores(self, new_winner_hotkey: str, new_winner_comp_id: str):
         # reset the scores before updating them
         self.scores = {}
         
         # get score and reduced share for the new winner
-        self.get_miner_score_and_reduction(new_winner_comp_id, new_winner_hotkey)
+        await self.get_miner_score_and_reduction(new_winner_comp_id, new_winner_hotkey)
 
         num_competitions = len(self.competition_leader_mapping)
         # If there is only one competition, the winner takes it all
@@ -53,12 +55,13 @@ class Rewarder():
             competition_id = next(iter(self.competition_leader_mapping))
             hotkey = self.competition_leader_mapping[competition_id].hotkey
             self.scores[hotkey] = Score(score=1.0, reduction=0.0)
+            print("BRUNO WYGRAL", self.scores, self.competition_leader_mapping)
             return
 
         # gather reduced shares for all competitors
         competitions_without_reduction = []
         for curr_competition_id, comp_leader in self.competition_leader_mapping.items():
-            score, reduced_share = self.get_miner_score_and_reduction(curr_competition_id, comp_leader.hotkey)
+            score, reduced_share = await self.get_miner_score_and_reduction(curr_competition_id, comp_leader.hotkey)
 
             if comp_leader.hotkey in self.scores:
                 self.scores[comp_leader.hotkey].score += score

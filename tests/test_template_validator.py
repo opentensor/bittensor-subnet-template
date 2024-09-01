@@ -23,7 +23,7 @@ import bittensor as bt
 import torch
 
 from neurons.validator import Validator
-from cancer_ai.base.validator import BaseValidatorNeuron
+from cancer_ai.base.base_validator import BaseValidatorNeuron
 from cancer_ai.protocol import Dummy
 from cancer_ai.utils.uids import get_random_uids
 from cancer_ai.validator.reward import get_rewards

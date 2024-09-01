@@ -41,7 +41,6 @@ async def run_competitions_tick(
     # if now_time not in competition_times:
     #     return None
     for time_competition in competition_times:
-        asyncio.sleep(60)
         # if now_time == time_competition:
         bt.logging.info(
             f"Running {competition_times[time_competition].competition_id} at {now_time}"

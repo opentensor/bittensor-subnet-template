@@ -25,7 +25,7 @@ import asyncio
 
 import numpy as np
 
-from cancer_ai.base.validator import BaseValidatorNeuron
+from cancer_ai.base.base_validator import BaseValidatorNeuron
 from cancer_ai.validator.competition_manager import CompetitionManager
 from competition_runner import competition_loop, config_for_scheduler, run_competitions_tick
 from rewarder import RewarderConfig, Rewarder, Score
@@ -49,7 +49,12 @@ class Validator(BaseValidatorNeuron):
 
         self.rewarder = Rewarder(self.rewarder_config)
         
-        asyncio.run_coroutine_threadsafe(competition_loop(self.scheduler_config, self.rewarder_config), self.loop)
+        self.loop.run_until_complete(self.competition_loop(self.scheduler_config, self.rewarder_config))
+
+    async def run_test_function(self):
+        print("Running test function")
+        await asyncio.sleep(5)
+        print("Test function done")
 
     async def competition_loop(self, scheduler_config: dict[str, CompetitionManager], rewarder_config: RewarderConfig):
         """Example of scheduling coroutine"""
@@ -61,7 +66,9 @@ class Validator(BaseValidatorNeuron):
 
                 # update the scores
                 await self.rewarder.update_scores(winning_evaluation_hotkey, competition_id)
-                self.rewarder_config = RewarderConfig(self.rewarder.competition_leader_mapping, self.rewarder.scores)
+                print("...,.,.,.,.,.,.,.,",self.rewarder.competition_leader_mapping, self.rewarder.scores)
+                self.rewarder_config = RewarderConfig(competitionID_to_leader_hotkey_map=self.rewarder.competition_leader_mapping,
+                                                       hotkey_to_score_map=self.rewarder.scores)
                 self.save_state()
 
                 hotkey_to_score_map = self.rewarder_config.hotkey_to_score_map
@@ -74,6 +81,39 @@ class Validator(BaseValidatorNeuron):
                 print(".....................Updated rewarder config:")
                 print(self.rewarder_config)
             await asyncio.sleep(60)
+
+    def save_state(self):
+        """Saves the state of the validator to a file."""
+        bt.logging.info("Saving validator state.")
+
+        # Save the state of the validator to file.
+        np.savez(
+            self.config.neuron.full_path + "/state.npz",
+            scores=self.scores,
+            hotkeys=self.hotkeys,
+            rewarder_config=self.rewarder_config.model_dump(),
+        )
+
+    def load_state(self):
+        """Loads the state of the validator from a file."""
+        bt.logging.info("Loading validator state.")
+
+        if not os.path.exists(self.config.neuron.full_path + "/state.npz"):
+            bt.logging.info("No state file found. Creating the file.")
+            np.savez(
+                self.config.neuron.full_path + "/state.npz",
+                scores=self.scores,
+                hotkeys=self.hotkeys,
+                rewarder_config=self.rewarder_config.model_dump(),
+            )
+            return
+
+        # Load the state of the validator from file.
+        state = np.load(self.config.neuron.full_path + "/state.npz", allow_pickle=True)
+        self.scores = state["scores"]
+        self.hotkeys = state["hotkeys"]
+        self.rewarder_config = RewarderConfig.model_validate(state["rewarder_config"].item())
+
 
 # The main function parses the configuration and runs the validator.
 if __name__ == "__main__":

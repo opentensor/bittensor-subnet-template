@@ -51,6 +51,7 @@ class ModelManager(SerializableManager):
             model_info.hf_model_filename,
             cache_dir=self.config.model_dir,
             repo_type=model_info.hf_repo_type,
+            token=self.config.hf_token,
         )
 
     def add_model(
