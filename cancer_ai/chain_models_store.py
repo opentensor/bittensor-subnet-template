@@ -83,7 +83,7 @@ class ChainModelMetadataStore:
         metadata = run_in_subprocess(partial, 60)
         if not metadata:
             return None
-        bt.logging.info(f"Model metadata: {metadata["info"]["fields"]}")
+        bt.logging.info(f"Model metadata: {metadata['info']['fields']}")
         commitment = metadata["info"]["fields"][0]
         hex_data = commitment[list(commitment.keys())[0]][2:]
 
