@@ -1,34 +1,20 @@
-"""
-This script runs a validator process and automatically updates it when a new version is released.
-Command-line arguments will be forwarded to validator (`neurons/validator.py`), so you can pass
-them like this:
-    python3 scripts/start_validator.py --wallet.name=my-wallet
-Auto-updates are enabled by default and will make sure that the latest version is always running
-by pulling the latest version from git and upgrading python packages. This is done periodically.
-Local changes may prevent the update, but they will be preserved.
-
-The script will use the same virtual environment as the one used to run it. If you want to run
-validator within virtual environment, run this auto-update script from the virtual environment.
-
-Pm2 is required for this script. This script will start a pm2 process using the name provided by
-the --pm2_name argument.
-"""
 import argparse
 import logging
 import subprocess
 import sys
 import time
+import os
 from datetime import timedelta
 from shlex import split
 from typing import List
+from argparse import Namespace
 from pathlib import Path
-
-sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 log = logging.getLogger(__name__)
 UPDATES_CHECK_TIME = timedelta(seconds=30)
 CURRENT_WORKING_DIR = Path(__file__).parent.parent
 
+ECOSYSTEM_CONFIG_PATH = CURRENT_WORKING_DIR / "ecosystem.config.js"  # Path to the pm2 ecosystem config file
 
 def get_version() -> str:
     """Extract the version as current git commit hash"""
@@ -43,27 +29,44 @@ def get_version() -> str:
     return commit[:8]
 
 
+def generate_pm2_config(pm2_name: str, args: List[str]) -> None:
+    """
+    Generate a pm2 ecosystem config file to run the validator.
+    """
+    config_content = f"""
+        module.exports = {{
+            apps: [
+            {{
+                name: '{pm2_name}',
+                script: 'neurons/validator.py',
+                interpreter: '{sys.executable}',
+                env: {{
+                PYTHONPATH: '{os.environ.get('PYTHONPATH', '')}:./',
+                }},
+                args: '{' '.join(args)}'
+            }}
+            ]
+        }};
+    """
+    with open(ECOSYSTEM_CONFIG_PATH, "w") as f:
+        f.write(config_content)
+    log.info("Generated pm2 ecosystem config at: %s", ECOSYSTEM_CONFIG_PATH)
+
+
 def start_validator_process(pm2_name: str, args: List[str]) -> subprocess.Popen:
     """
-    Spawn a new python process running neurons.validator.
-    `sys.executable` ensures thet the same python interpreter is used as the one
-    used to run this auto-updater.
+    Spawn a new python process running neurons.validator using pm2.
     """
     assert sys.executable, "Failed to get python executable"
+    generate_pm2_config(pm2_name, args)  # Generate the pm2 config file
 
     log.info("Starting validator process with pm2, name: %s", pm2_name)
     process = subprocess.Popen(
-        (
+        [
             "pm2",
             "start",
-            sys.executable,
-            "--name",
-            pm2_name,
-            "--",
-            "-m",
-            "neurons.validator",
-            *args,
-        ),
+            str(ECOSYSTEM_CONFIG_PATH)
+        ],
         cwd=CURRENT_WORKING_DIR,
     )
     process.pm2_name = pm2_name
@@ -103,7 +106,6 @@ def upgrade_packages() -> None:
     Notice: this won't work if some package in `requirements.txt` is downgraded.
     Ignored as this is unlikely to happen.
     """
-
     log.info("Upgrading packages")
     try:
         subprocess.run(
@@ -115,14 +117,21 @@ def upgrade_packages() -> None:
         log.error("Failed to upgrade packages, proceeding anyway. %s", exc)
 
 
-def main(pm2_name: str, args: List[str]) -> None:
+def main(pm2_name: str, args_namespace: Namespace) -> None:
     """
     Run the validator process and automatically update it when a new version is released.
     This will check for updates every `UPDATES_CHECK_TIME` and update the validator
     if a new version is available. Update is performed as simple `git pull --rebase`.
     """
 
-    validator = start_validator_process(pm2_name, args)
+    args_list = []
+    for key, value in vars(args_namespace).items():
+        if value != '' and value is not None:
+            args_list.append(f"--{key}")
+            if not isinstance(value, bool):
+                args_list.append(str(value))
+
+    validator = start_validator_process(pm2_name, args_list)
     current_version = latest_version = get_version()
     log.info("Current version: %s", current_version)
 
@@ -187,5 +196,4 @@ if __name__ == "__main__":
     )
 
     flags, extra_args = parser.parse_known_args()
-
-    main(flags.pm2_name, extra_args)
+    main(flags.pm2_name, flags)

@@ -19,7 +19,6 @@
 
 
 import time
-from typing import Any, List
 import bittensor as bt
 import asyncio
 import os 
@@ -27,7 +26,7 @@ import numpy as np
 
 from cancer_ai.base.base_validator import BaseValidatorNeuron
 from cancer_ai.validator.competition_manager import CompetitionManager
-from competition_runner import competition_loop, config_for_scheduler, run_competitions_tick
+from competition_runner import config_for_scheduler, run_competitions_tick
 from rewarder import WinnersMapping, Rewarder, Score
 
 
