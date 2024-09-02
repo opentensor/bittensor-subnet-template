@@ -105,7 +105,7 @@ def upgrade_packages() -> None:
     log.info("Upgrading packages")
     try:
         subprocess.run(
-            split(f"{sys.executable} -m pip install -e ."),
+            split(f"{sys.executable} -m pip install --upgrade -r requirements.txt"),
             check=True,
             cwd=CURRENT_WORKING_DIR,
         )
