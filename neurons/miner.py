@@ -81,6 +81,7 @@ class MinerManagerCLI:
         )
         dataset_manager = DatasetManager(
             self.config,
+            self.config.competition.id,
             "safescanai/test_dataset",
             "skin_melanoma.zip",
             "dataset",
@@ -99,7 +100,7 @@ class MinerManagerCLI:
         y_pred = await run_manager.run(X_test)
         run_time_s = time.time() - start_time
         model_result = competition_handler.get_model_result(y_test, y_pred, run_time_s)
-        bt.logging.info(model_result)
+        bt.logging.info(f"\n {model_result}\n")
         if self.config.clean_after_run:
             dataset_manager.delete_dataset()
 

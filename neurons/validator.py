@@ -48,12 +48,12 @@ class Validator(BaseValidatorNeuron):
         self.scheduler_config = config_for_scheduler(self.config, self.hotkeys, test_mode=True)
 
         self.rewarder = Rewarder(self.winners_mapping)
-        
-        self.loop.run_until_complete(self.competition_loop_tick(self.scheduler_config, self.winners_mapping))
+
 
     async def concurrent_forward(self):
         coroutines = [
             self.run_test_function(),
+            self.competition_loop_tick(self.scheduler_config, self.winners_mapping)
         ]
         await asyncio.gather(*coroutines)
 
@@ -129,5 +129,5 @@ class Validator(BaseValidatorNeuron):
 if __name__ == "__main__":
     with Validator() as validator:
         while True:
-            bt.logging.info(f"Validator running... {time.time()}")
+            # bt.logging.info(f"Validator running... {time.time()}")
             time.sleep(5)

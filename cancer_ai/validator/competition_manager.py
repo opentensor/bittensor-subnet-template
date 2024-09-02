@@ -70,9 +70,15 @@ class CompetitionManager(SerializableManager):
         self.results = []
         self.model_manager = ModelManager(self.config)
         self.dataset_manager = DatasetManager(
-            self.config, dataset_hf_repo, dataset_hf_id, dataset_hf_repo_type
+            self.config,
+            competition_id,
+            dataset_hf_repo,
+            dataset_hf_id,
+            dataset_hf_repo_type,
         )
-        self.chain_model_metadata_store = ChainModelMetadataStore(self.config.subtensor.network, self.config.netuid)
+        self.chain_model_metadata_store = ChainModelMetadataStore(
+            self.config.subtensor.network, self.config.netuid
+        )
 
         self.hotkeys = hotkeys
         self.chain_miner_models = {}
@@ -108,8 +114,6 @@ class CompetitionManager(SerializableManager):
     #     bt.logging.info("Recall: ", evaluation_result.recall)
     #     bt.logging.info("roc_auc: ", evaluation_result.roc_auc)
 
-
-
     def get_state(self):
         return {
             "competition_id": self.competition_id,
@@ -123,11 +127,16 @@ class CompetitionManager(SerializableManager):
         self.category = state["category"]
 
     async def get_miner_model(self, chain_miner_model: ChainMinerModel):
+        if chain_miner_model.competition_id != self.competition_id:
+            raise ValueError(
+                f"Chain miner model {chain_miner_model.to_compressed_str()} does not belong to this competition"
+            )
         model_info = ModelInfo(
             hf_repo_id=chain_miner_model.hf_repo_id,
             hf_model_filename=chain_miner_model.hf_filename,
             hf_code_filename=chain_miner_model.hf_code_filename,
             hf_repo_type=chain_miner_model.hf_repo_type,
+            competition_id=chain_miner_model.competition_id,
         )
         return model_info
 
@@ -152,16 +161,23 @@ class CompetitionManager(SerializableManager):
         Updates hotkeys and downloads information of models from the chain
         """
         bt.logging.info("Synchronizing miners from the chain")
-        
         bt.logging.info(f"Amount of hotkeys: {len(self.hotkeys)}")
         for hotkey in self.hotkeys:
             hotkey_metadata = (
                 await self.chain_model_metadata_store.retrieve_model_metadata(hotkey)
             )
-            if hotkey_metadata:
+            if not hotkey_metadata:
+                bt.logging.warning(
+                    f"Cannot get miner model for hotkey {hotkey} from the chain, skipping"
+                )
+                continue
+            try:
+                miner_model = await self.get_miner_model(hotkey)
                 self.chain_miner_models[hotkey] = hotkey_metadata
-                self.model_manager.hotkey_store[hotkey] = await self.get_miner_model(
-                    hotkey
+                self.model_manager.hotkey_store[hotkey] = miner_model
+            except ValueError:
+                bt.logging.error(
+                    f"Miner {hotkey} with data  {hotkey_metadata.to_compressed_str()} does not belong to this competition, skipping"
                 )
         bt.logging.info(
             f"Amount of chain miners with models: {len(self.chain_miner_models)}"
