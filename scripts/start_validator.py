@@ -23,6 +23,8 @@ from shlex import split
 from typing import List
 from pathlib import Path
 
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
 log = logging.getLogger(__name__)
 UPDATES_CHECK_TIME = timedelta(seconds=30)
 CURRENT_WORKING_DIR = Path(__file__).parent.parent
