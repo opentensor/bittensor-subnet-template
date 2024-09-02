@@ -192,7 +192,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--logging.debug", default="", help="Enable debug logging."
+        "--logging.debug", default=1, help="Enable debug logging."
     )
 
     flags, extra_args = parser.parse_known_args()
