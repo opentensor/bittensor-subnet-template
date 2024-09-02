@@ -27,6 +27,7 @@ load_dotenv()
 
 COMPETITION_HANDLER_MAPPING = {
     "melanoma-1": MelanomaCompetitionHandler,
+    "melanoma-testnet": MelanomaCompetitionHandler,
 }
 
 
@@ -141,14 +142,15 @@ class CompetitionManager(SerializableManager):
         return model_info
 
     async def sync_chain_miners_test(self):
-        """For testing purposes"""
+        """Get registered mineres from testnet subnet 163"""
+
         hotkeys_with_models = {
-            "wojtek": ModelInfo(
+            "5Fo2fenxPY1D7hgTHc88g1zrX2ZX17g8DvE5KnazueYefjN5": ModelInfo(
                 hf_repo_id="safescanai/test_dataset",
                 hf_model_filename="model_dynamic.onnx",
                 hf_repo_type="dataset",
             ),
-            "bruno": ModelInfo(
+            "5DZZnwU2LapwmZfYL9AEAWpUR6FoFvqHnzQ5F71Mhwotxujq": ModelInfo(
                 hf_repo_id="safescanai/test_dataset",
                 hf_model_filename="best_model.onnx",
                 hf_repo_type="dataset",
