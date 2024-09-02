@@ -42,8 +42,8 @@ class MinerManagerCLI:
         hf_api = HfApi()
         hf_login(token=self.config.hf_token)
 
-        hf_model_path = f"{self.config.competition_id}-{self.config.hf_model_name}"
-        hf_code_path = f"{self.config.competition_id}-{self.config.hf_model_name}"
+        hf_model_path = f"{self.config.competition.id}-{self.config.hf_model_name}"
+        hf_code_path = f"{self.config.competition.id}-{self.config.hf_model_name}"
 
         path = hf_api.upload_file(
             path_or_fileobj=self.config.model_path,
@@ -89,7 +89,7 @@ class MinerManagerCLI:
 
         X_test, y_test = await dataset_manager.get_data()
 
-        competition_handler = COMPETITION_HANDLER_MAPPING[self.config.competition_id](
+        competition_handler = COMPETITION_HANDLER_MAPPING[self.config.competition.id](
             X_test=X_test, y_test=y_test
         )
 
@@ -160,7 +160,7 @@ class MinerManagerCLI:
             hf_repo_id=self.config.hf_repo_id,
             hf_model_filename=self.config.hf_model_name,
             hf_code_filename=self.config.hf_code_filename,
-            competition_id=self.config.competition_id,
+            competition_id=self.config.competition.id,
             hf_repo_type=self.config.hf_repo_type,
         )
         await self.metadata_store.store_model_metadata(model_id)

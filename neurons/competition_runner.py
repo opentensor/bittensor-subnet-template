@@ -6,10 +6,12 @@ import json
 from datetime import datetime, timezone
 import bittensor as bt
 from typing import List, Tuple, Dict
-from rewarder import Rewarder, RewarderConfig, CompetitionLeader
+from rewarder import Rewarder, WinnersMapping, CompetitionLeader
 
 # from cancer_ai.utils.config import config
 
+# TODO MOVE SOMEWHERE
+main_competitions_cfg = json.load(open("neurons/competition_config.json", "r"))
 
 def config_for_scheduler(
     bt_config, hotkeys: List[str], test_mode: bool = False
@@ -54,7 +56,7 @@ async def run_competitions_tick(
         )
 
 
-async def competition_loop(scheduler_config: Dict[str, CompetitionManager], rewarder_config: RewarderConfig):
+async def competition_loop(scheduler_config: Dict[str, CompetitionManager], rewarder_config: WinnersMapping):
     """Example of scheduling coroutine"""
     while True:
         competition_result = await run_competitions_tick(scheduler_config)
@@ -79,5 +81,5 @@ if __name__ == "__main__":
     hotkeys = []
     bt_config = {}  # get from bt config
     scheduler_config = config_for_scheduler(bt_config, hotkeys)
-    rewarder_config = RewarderConfig({},{})
+    rewarder_config = WinnersMapping({},{})
     asyncio.run(competition_loop(scheduler_config, rewarder_config))

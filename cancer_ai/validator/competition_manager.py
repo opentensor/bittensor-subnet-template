@@ -68,9 +68,9 @@ class CompetitionManager(SerializableManager):
         self.competition_id = competition_id
         self.category = category
         self.results = []
-        self.model_manager = ModelManager(config)
+        self.model_manager = ModelManager(self.config)
         self.dataset_manager = DatasetManager(
-            config, dataset_hf_repo, dataset_hf_id, dataset_hf_repo_type
+            self.config, dataset_hf_repo, dataset_hf_id, dataset_hf_repo_type
         )
         self.chain_model_metadata_store = ChainModelMetadataStore(self.config.subtensor.network, self.config.netuid)
 

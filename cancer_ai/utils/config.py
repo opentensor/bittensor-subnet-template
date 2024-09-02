@@ -131,18 +131,8 @@ def add_args(cls, parser):
 
 def add_miner_args(cls, parser):
     """Add miner specific arguments to the parser."""
-    parser.add_argument(
-        "--competition_id",
-        type=str,
-        help="Competition ID",
-    )
 
-    parser.add_argument(
-        "--model_dir",
-        type=str,
-        help="Path for for loading the starting model related to a training run.",
-        default="./models",
-    )
+    
 
     parser.add_argument(
         "--hf_repo_id",
@@ -176,21 +166,7 @@ def add_miner_args(cls, parser):
         "--model_path",
         type=str,
         help="Path to ONNX model, used for evaluation",
-    )
-
-    parser.add_argument(
-        "--dataset_dir",
-        type=str,
-        help="Path for storing datasets.",
-        default="./datasets",
-    )
-
-    parser.add_argument(
-        "--hf_token",
-        type=str,
-        help="Hugging Face API token",
-        default="",
-    )
+    )    
 
     parser.add_argument(
         "--clean_after_run",
@@ -206,6 +182,42 @@ def add_miner_args(cls, parser):
         default=".",
     )
 
+
+
+def add_common_args(cls, parser):
+    """Add validator and miner specific arguments to the parser."""
+    parser.add_argument(
+        "--hf_token",
+        type=str,
+        help="Hugging Face API token",
+        default="",
+    )
+    parser.add_argument(
+            "--competition.id",
+            type=str,
+            help="Path for storing competition participants models .",
+    )
+
+    parser.add_argument(
+        "--models.model_dir",
+        type=str,
+        help="Path for storing competition participants models .",
+        default="/tmp/models",
+    )
+
+    parser.add_argument(
+        "--models.dataset_dir",
+        type=str,
+        help="Path for storing datasets.",
+        default="/tmp/datasets",
+    )
+
+    parser.add_argument(
+        "--competition.config_path",
+        type=str,
+        help="Path with competition configuration .",
+        default="./neurons/competition_config.json",
+    )
 
 
 
@@ -285,24 +297,11 @@ def add_validator_args(cls, parser):
         help="The name of the project where you are sending the new run.",
         default="opentensor-dev",
     )
-    parser.add_argument(
-        "--models.model_dir",
-        type=str,
-        help="Path for storing competition participants models .",
-        default="./models",
-    )
-    parser.add_argument(
-        "--models.dataset_dir",
-        type=str,
-        help="Path for storing datasets.",
-        default="./datasets",
-    )
-    parser.add_argument(
-        "--competition_config_path",
-        type=str,
-        help="Path with competition configuration .",
-        default="./neurons/competition_config.json",
-    )
+
+
+    
+    
+
 
 
 def path_config(cls):
@@ -316,5 +315,6 @@ def path_config(cls):
     bt.subtensor.add_args(parser)
     bt.logging.add_args(parser)
     bt.axon.add_args(parser)
+    add_common_args(cls, parser)
     cls.add_args(parser)
-    return bt.config(parser.parse_args())
+    return bt.config(parser)

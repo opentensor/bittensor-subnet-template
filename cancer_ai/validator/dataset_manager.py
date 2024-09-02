@@ -32,13 +32,13 @@ class DatasetManager(SerializableManager):
             None
         """
         self.config = config
-        self.competition_id = config.competition_id
+        
         self.hf_repo_id = hf_repo_id
         self.hf_filename = hf_filename
         self.hf_repo_type = hf_repo_type
         self.local_compressed_path = ""
         self.local_extracted_dir = Path(
-            self.config.dataset_dir, self.competition_id
+            self.config.models.dataset_dir, self.config.competition.id
         )
         self.data: Tuple[List, List] = ()
         self.handler = None
@@ -57,7 +57,7 @@ class DatasetManager(SerializableManager):
         self.local_compressed_path = HfApi().hf_hub_download(
             self.hf_repo_id,
             self.hf_filename,
-            cache_dir=Path(self.config.dataset_dir),
+            cache_dir=Path(self.config.models.dataset_dir),
             repo_type=self.hf_repo_type,
             token=self.config.hf_token,
         )
@@ -78,7 +78,7 @@ class DatasetManager(SerializableManager):
         """Unzip dataset"""
 
         self.local_extracted_dir = Path(
-            self.config.dataset_dir, self.config.competition_id
+            self.config.models.dataset_dir, self.config.competition.id
         )
 
         bt.logging.debug(f"Dataset extracted to: { self.local_compressed_path}")
@@ -93,7 +93,7 @@ class DatasetManager(SerializableManager):
     def set_dataset_handler(self) -> None:
         """Detect dataset type and set handler"""
         if not self.local_compressed_path:
-            raise DatasetManagerException(f"Dataset '{self.config.competition_id}' not downloaded")
+            raise DatasetManagerException(f"Dataset '{self.config.competition.id}' not downloaded")
         # is csv in directory
         if os.path.exists(Path(self.local_extracted_dir, "labels.csv")):
             self.handler = DatasetImagesCSV(
@@ -106,18 +106,17 @@ class DatasetManager(SerializableManager):
 
     async def prepare_dataset(self) -> None:
         """Download dataset, unzip and set dataset handler"""
-        bt.logging.info(f"Preparing dataset '{self.config.competition_id}'")
-        bt.logging.info(f"Downloading dataset '{self.config.competition_id}'")
+        bt.logging.info(f"Downloading dataset '{self.config.competition.id}'")
         await self.download_dataset()
-        bt.logging.info(f"Unzipping dataset '{self.config.competition_id}'")
+        bt.logging.info(f"Unzipping dataset '{self.config.competition.id}'")
         await self.unzip_dataset()
-        bt.logging.info(f"Setting dataset handler '{self.config.competition_id}'")
+        bt.logging.info(f"Setting dataset handler '{self.config.competition.id}'")
         self.set_dataset_handler()
-        bt.logging.info(f"Preprocessing dataset '{self.config.competition_id}'")
+        bt.logging.info(f"Preprocessing dataset '{self.config.competition.id}'")
         self.data = await self.handler.get_training_data()
 
     async def get_data(self) -> Tuple[List, List]:
         """Get data from dataset handler"""
         if not self.data:
-            raise DatasetManagerException(f"Dataset '{self.config.competition_id}' not initalized ")
+            raise DatasetManagerException(f"Dataset '{self.config.competition.id}' not initalized ")
         return self.data

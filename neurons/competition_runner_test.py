@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import bittensor as bt
 from typing import List, Dict
 from competition_runner import run_competitions_tick, competition_loop
-from rewarder import RewarderConfig, Rewarder
+from rewarder import WinnersMapping, Rewarder
 import time
 
 # TODO integrate with bt config
@@ -70,7 +70,7 @@ async def competition_loop():
             ("hotkey2", "melanoma-3"),
         ]
 
-        rewarder_config = RewarderConfig(competitionID_to_leader_hotkey_map={}, hotkey_to_score_map={})
+        rewarder_config = WinnersMapping(competition_leader_map={}, hotkey_score_map={})
         rewarder = Rewarder(rewarder_config)
 
         for winning_evaluation_hotkey, competition_id in test_cases:
