@@ -2,9 +2,18 @@
     {
         "competition_id": "melanoma-1",
         "category": "skin",
-        "evaluation_time": [
-            "21:31",
-            "21:32"
+        "evaluation_times": [
+            "23:12"
+        ],
+        "dataset_hf_repo": "safescanai/test_dataset",
+        "dataset_hf_filename": "skin_melanoma.zip",
+        "dataset_hf_repo_type": "dataset"
+    },
+    {
+        "competition_id": "melanoma-testnet",
+        "category": "skin",
+        "evaluation_times": [
+            "22:10"
         ],
         "dataset_hf_repo": "safescanai/test_dataset",
         "dataset_hf_filename": "skin_melanoma.zip",

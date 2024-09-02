@@ -17,6 +17,7 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from abc import abstractmethod
 
 import copy
 import numpy as np
@@ -106,6 +107,10 @@ class BaseValidatorNeuron(BaseNeuron):
         except Exception as e:
             bt.logging.error(f"Failed to create Axon initialize with exception: {e}")
             pass
+
+    @abstractmethod
+    def concurrent_forward(self):
+        pass
 
     def run(self):
         """
@@ -311,7 +316,7 @@ class BaseValidatorNeuron(BaseNeuron):
             self.config.neuron.full_path + "/state.npz",
             scores=self.scores,
             hotkeys=self.hotkeys,
-            rewarder_config = self.rewarder_config,
+            rewarder_config=self.rewarder_config,
         )
 
     def load_state(self):

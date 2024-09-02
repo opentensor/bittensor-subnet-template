@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import bittensor as bt
 from typing import List, Dict
 from competition_runner import run_competitions_tick, competition_loop
-from rewarder import WinnersMapping, Rewarder
+from cancer_ai.validator.rewarder import WinnersMapping, Rewarder
 import time
 
 # TODO integrate with bt config
