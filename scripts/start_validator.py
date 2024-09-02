@@ -184,10 +184,6 @@ if __name__ == "__main__":
         "--logging.debug", default="", help="Enable debug logging."
     )
 
-    parser.add_argument(
-        "--interpreter", default="python3", help="Python interpreter to use."
-    )
-
     flags, extra_args = parser.parse_known_args()
 
     main(flags.pm2_name, extra_args)
