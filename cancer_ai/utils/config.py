@@ -193,9 +193,9 @@ def add_common_args(cls, parser):
         default="",
     )
     parser.add_argument(
-            "--competition.id",
-            type=str,
-            help="Path for storing competition participants models .",
+        "--competition.id",
+        type=str,
+        help="Path for storing competition participants models .",
     )
 
     parser.add_argument(

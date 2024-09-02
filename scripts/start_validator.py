@@ -150,7 +150,7 @@ def main(pm2_name: str, args_namespace: Namespace) -> None:
                 upgrade_packages()
 
                 stop_validator_process(validator)
-                validator = start_validator_process(pm2_name, args)
+                validator = start_validator_process(pm2_name, args_list)
                 current_version = latest_version
 
             time.sleep(UPDATES_CHECK_TIME.total_seconds())
