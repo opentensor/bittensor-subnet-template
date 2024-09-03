@@ -85,35 +85,35 @@ class CompetitionManager(SerializableManager):
         self.chain_miner_models = {}
         self.test_mode = test_mode
 
-    # def log_results_to_wandb(
-    #     self, hotkey: str, evaluation_result: ModelEvaluationResult
-    # ) -> None:
-    #     wandb.init(project=self.config.wandb_project_name)
-    #     wandb.log(
-    #         {
-    #             "hotkey": hotkey,
-    #             "tested_entries": evaluation_result.tested_entries,
-    #             "accuracy": evaluation_result.accuracy,
-    #             "precision": evaluation_result.precision,
-    #             "recall": evaluation_result.recall,
-    #             "confusion_matrix": evaluation_result.confusion_matrix.tolist(),
-    #             "roc_curve": {
-    #                 "fpr": evaluation_result.fpr.tolist(),
-    #                 "tpr": evaluation_result.tpr.tolist(),
-    #             },
-    #             "roc_auc": evaluation_result.roc_auc,
-    #         }
-    #     )
+    def log_results_to_wandb(
+        self, hotkey: str, evaluation_result: ModelEvaluationResult
+    ) -> None:
+        wandb.init(project=self.config.wandb_project_name)
+        wandb.log(
+            {
+                "hotkey": hotkey,
+                "tested_entries": evaluation_result.tested_entries,
+                "accuracy": evaluation_result.accuracy,
+                "precision": evaluation_result.precision,
+                "recall": evaluation_result.recall,
+                "confusion_matrix": evaluation_result.confusion_matrix.tolist(),
+                "roc_curve": {
+                    "fpr": evaluation_result.fpr.tolist(),
+                    "tpr": evaluation_result.tpr.tolist(),
+                },
+                "roc_auc": evaluation_result.roc_auc,
+            }
+        )
 
-    #     wandb.finish()
-    #     bt.logging.info("Logged results to wandb")
-    #     bt.logging.info("Hotkey: ", hotkey)
-    #     bt.logging.info("Tested entries: ", evaluation_result.tested_entries)
-    #     bt.logging.info("Model test run time: ", evaluation_result.run_time_s)
-    #     bt.logging.info("Accuracy: ", evaluation_result.accuracy)
-    #     bt.logging.info("Precision: ", evaluation_result.precision)
-    #     bt.logging.info("Recall: ", evaluation_result.recall)
-    #     bt.logging.info("roc_auc: ", evaluation_result.roc_auc)
+        wandb.finish()
+        bt.logging.info("Logged results to wandb")
+        bt.logging.info("Hotkey: ", hotkey)
+        bt.logging.info("Tested entries: ", evaluation_result.tested_entries)
+        bt.logging.info("Model test run time: ", evaluation_result.run_time_s)
+        bt.logging.info("Accuracy: ", evaluation_result.accuracy)
+        bt.logging.info("Precision: ", evaluation_result.precision)
+        bt.logging.info("Recall: ", evaluation_result.recall)
+        bt.logging.info("roc_auc: ", evaluation_result.roc_auc)
 
     def get_state(self):
         return {

@@ -4,28 +4,36 @@ import json
 from types import SimpleNamespace
 import bittensor as bt
 from typing import List, Dict
-from competition_runner import run_competitions_tick, competition_loop
 from cancer_ai.validator.rewarder import WinnersMapping, Rewarder
 import time
+from cancer_ai.base.base_miner import BaseNeuron
+from cancer_ai.utils.config import path_config, add_miner_args
+import copy
 
 # TODO integrate with bt config
 test_config = SimpleNamespace(
     **{
-        "model_dir": "/tmp/models",
-        "dataset_dir": "/tmp/datasets",
         "wandb_entity": "testnet",
         "wandb_project_name": "melanoma-1",
         "competition_id": "melaonoma-1",
         "hotkeys": [],
         "subtensor": SimpleNamespace(**{"network": "test"}),
         "netuid": 163,
+        "models": SimpleNamespace(
+            **{
+                "model_dir": "/tmp/models",
+                "dataset_dir": "/tmp/datasets",
+            }
+        ),
     }
 )
 
 main_competitions_cfg = json.load(open("neurons/competition_config.json", "r"))
 
 
-def run_all_competitions(path_config: str, hotkeys: List[str], competitions_cfg: List[dict]) -> None:
+async def run_all_competitions(
+    path_config: str, hotkeys: List[str], competitions_cfg: List[dict]
+) -> None:
     """Run all competitions, for debug purposes"""
     for competition_cfg in competitions_cfg:
         bt.logging.info("Starting competition: ", competition_cfg)
@@ -39,7 +47,7 @@ def run_all_competitions(path_config: str, hotkeys: List[str], competitions_cfg:
             competition_cfg["dataset_hf_repo_type"],
             test_mode=True,
         )
-        bt.logging.info(asyncio.run(competition_manager.evaluate()))
+        bt.logging.info(await competition_manager.evaluate())
 
 
 def config_for_scheduler() -> Dict[str, CompetitionManager]:
@@ -59,6 +67,7 @@ def config_for_scheduler() -> Dict[str, CompetitionManager]:
             )
     return time_arranged_competitions
 
+
 async def competition_loop():
     """Example of scheduling coroutine"""
     while True:
@@ -74,15 +83,22 @@ async def competition_loop():
         rewarder = Rewarder(rewarder_config)
 
         for winning_evaluation_hotkey, competition_id in test_cases:
-            rewarder.update_scores(winning_evaluation_hotkey, competition_id)
-            print("Updated rewarder competition leader map:", rewarder.competition_leader_mapping)
+            await rewarder.update_scores(winning_evaluation_hotkey, competition_id)
+            print(
+                "Updated rewarder competition leader map:",
+                rewarder.competition_leader_mapping,
+            )
             print("Updated rewarder scores:", rewarder.scores)
         await asyncio.sleep(10)
 
-if __name__ == "__main__":
-    # if True:  # run them right away
-    #     run_all_competitions(test_config, [],main_competitions_cfg)
 
-    # else:  # Run the scheduling coroutine
-        # scheduler_config = config_for_scheduler()
-    asyncio.run(competition_loop())
+if __name__ == "__main__":
+    config = BaseNeuron.config()
+    bt.logging.set_config(config=config)
+    # if True:  # run them right away
+    path_config = path_config(None)
+    # config = config.merge(path_config)
+    # BaseNeuron.check_config(config)
+    bt.logging.set_config(config=config.logging)
+    bt.logging.info(config)
+    asyncio.run(run_all_competitions(test_config, [], main_competitions_cfg))
