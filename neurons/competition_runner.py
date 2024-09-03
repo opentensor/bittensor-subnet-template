@@ -38,7 +38,7 @@ class CompetitionRunLog(BaseModel):
                 run.end_time = datetime.now(timezone.utc)
 
     def was_competition_already_executed(
-        self, last_minutes: int = 5, competition_id: str = None
+        self, last_minutes: int = 5, competition_id: str
     ):
         """Check if competition was executed in last minutes"""
         now_time = datetime.now(timezone.utc)
