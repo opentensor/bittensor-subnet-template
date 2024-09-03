@@ -2,9 +2,11 @@
 
 ## Installation 
 
-- create virtualenv
+- `git clone https://github.com/safe-scan-ai/cancer-ai`
 
-`virtualenv venv --python=3.10
+- create python virtualenv
+
+`virtualenv venv --python=3.10`
 
 - activate it 
 
