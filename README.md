@@ -172,7 +172,7 @@ Given the complexity of creating a state-of-the-art roleplay LLM, we plan to div
 
 # **⛏️ RUNNING MINER**
 
-...
+[Miner](DOCS/miner.md)
 
 # **🚀 GET INVOLVED**
 
