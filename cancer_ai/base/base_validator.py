@@ -37,6 +37,12 @@ from .utils.weight_utils import (
 from ..mock import MockDendrite
 from ..utils.config import add_validator_args
 
+from neurons.competition_runner import (
+    CompetitionRunLog,
+)
+
+from cancer_ai.validator.rewarder import WinnersMapping
+
 
 class BaseValidatorNeuron(BaseNeuron):
     """
@@ -66,6 +72,11 @@ class BaseValidatorNeuron(BaseNeuron):
         # Set up initial scoring weights for validation
         bt.logging.info("Building validation weights.")
         self.scores = np.zeros(self.metagraph.n, dtype=np.float32)
+        self.run_log = CompetitionRunLog(runs=[])
+        self.winners_mapping = WinnersMapping(
+            competition_leader_map={}, hotkey_score_map={}
+        )
+        self.load_state()
 
         # Init sync with the network. Updates the metagraph.
         self.sync()

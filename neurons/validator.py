@@ -38,13 +38,6 @@ class Validator(BaseValidatorNeuron):
     def __init__(self, config=None):
         super(Validator, self).__init__(config=config)
 
-        self.run_log = CompetitionRunLog(runs=[])
-        self.winners_mapping = WinnersMapping(
-            competition_leader_map={}, hotkey_score_map={}
-        )
-
-        self.load_state()
-
         self.competition_scheduler = config_for_scheduler(
             self.config, self.hotkeys, test_mode=True
         )
@@ -80,11 +73,6 @@ class Validator(BaseValidatorNeuron):
 
         # update the scores
         await self.rewarder.update_scores(winning_evaluation_hotkey, competition_id)
-        print(
-            "...,.,.,.,.,.,.,.,",
-            self.rewarder.competition_leader_mapping,
-            self.rewarder.scores,
-        )
         self.winners_mapping = WinnersMapping(
             competition_leader_map=self.rewarder.competition_leader_mapping,
             hotkey_score_map=self.rewarder.scores,
@@ -100,8 +88,6 @@ class Validator(BaseValidatorNeuron):
             for hotkey in self.metagraph.hotkeys
         ]
         self.save_state()
-        print(".....................Updated rewarder config:")
-        print(self.winners_mapping)
 
     def save_state(self):
         """Saves the state of the validator to a file."""
