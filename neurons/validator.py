@@ -47,15 +47,9 @@ class Validator(BaseValidatorNeuron):
 
     async def concurrent_forward(self):
         coroutines = [
-            self.run_test_function(),
             self.competition_loop_tick(self.competition_scheduler),
         ]
         await asyncio.gather(*coroutines)
-
-    async def run_test_function(self):
-        print("Running test function")
-        await asyncio.sleep(5)
-        print("Test function done")
 
     async def competition_loop_tick(
         self, scheduler_config: dict[str, CompetitionManager]
