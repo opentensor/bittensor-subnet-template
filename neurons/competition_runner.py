@@ -7,6 +7,7 @@ from datetime import datetime, timezone, timedelta
 import bittensor as bt
 from typing import List, Tuple, Dict
 from cancer_ai.validator.rewarder import Rewarder, WinnersMapping, CompetitionLeader
+import wandb
 
 # from cancer_ai.utils.config import config
 
@@ -43,7 +44,7 @@ class CompetitionRunLog(BaseModel):
         """Check if competition was executed in last minutes"""
         now_time = datetime.now(timezone.utc)
         for run in self.runs:
-            if competition_id and run.competition_id != competition_id:
+            if run.competition_id != competition_id:
                 continue
             if run.end_time and (now_time - run.end_time).seconds < last_minutes * 60:
                 return True
@@ -75,14 +76,13 @@ def config_for_scheduler(
                 competition_cfg["dataset_hf_repo_type"],
                 test_mode=test_mode,
             )
-
     return scheduler_config
 
 
 async def run_competitions_tick(
-    competition_times: CompetitionSchedulerConfig,
+    competition_scheduler: CompetitionSchedulerConfig,
     run_log: CompetitionRunLog,
-) -> Tuple[str, str] | None:
+) -> Tuple[str, str] | Tuple[None, None]:
     """Checks if time is right and launches competition, returns winning hotkey and Competition ID. Should be run each minute."""
 
     # getting current time
@@ -95,15 +95,13 @@ async def run_competitions_tick(
         check_time = (
             datetime.combine(datetime.today(), now_time) - timedelta(minutes=i)
         ).time()
-
-        # bt.logging.debug(f"Checking competitions at {check_time}")
-        if competition_manager := competition_times.get(check_time):
-            bt.logging.debug(
-                f"Found competition {competition_manager.competition_id} at {check_time}"
-            )
-        else:
+        competition_manager = competition_scheduler.get(check_time)
+        if not competition_manager:
             continue
 
+        bt.logging.debug(
+            f"Found competition {competition_manager.competition_id} at {check_time}"
+        )
         if run_log.was_competition_already_executed(
             competition_id=competition_manager.competition_id, last_minutes=MINUTES_BACK
         ):
@@ -113,6 +111,7 @@ async def run_competitions_tick(
             continue
 
         bt.logging.info(f"Running {competition_manager.competition_id} at {now_time}")
+
         run_log.add_run(
             CompetitionRun(
                 competition_id=competition_manager.competition_id,
@@ -121,7 +120,6 @@ async def run_competitions_tick(
         )
         winning_evaluation_hotkey = await competition_manager.evaluate()
         run_log.finish_run(competition_manager.competition_id)
-        # TODO log last run to WANDB
         return (
             winning_evaluation_hotkey,
             competition_manager.competition_id,
@@ -131,6 +129,7 @@ async def run_competitions_tick(
         f"Did not find any competitions to run for past {MINUTES_BACK} minutes"
     )
     await asyncio.sleep(60)
+    return (None, None)
 
 
 async def competition_loop_not_used(
