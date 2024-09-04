@@ -24,6 +24,7 @@
 - [👨‍👨‍👦‍👦 Team Composition](#-team-composition)
 - [🛣️ Roadmap](#roadmap)
 - [✅ Pre requirments](#-pre-requirments)
+- [📊 SETUP WandB (HIGHLY RECOMMENDED - VALIDATORS PLEASE READ)](#setup-wandb-highly-recommended---validators-please-read)
 - [👍 Running Validator](#-running-validator)
 - [⛏️ Running Miner](#-running-miner)
 - [🚀 Get invloved](#-get-involved)
