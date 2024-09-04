@@ -17,6 +17,7 @@
 - [💰 Tokenomy & Economy](#-tokenomy--economy)
 - [👨‍👨‍👦‍👦 Team Composition](#-team-composition)
 - [🛣️ Roadmap](#roadmap)
+- [✅ PRE REQUIRMENTS](#pre-prerequirments)
 - [👍 Running Validator](#-running-validator)
 - [⛏️ Running Miner](#-running-miner)
 - [🚀 Get invloved](#-get-involved)
@@ -164,6 +165,10 @@ Given the complexity of creating a state-of-the-art roleplay LLM, we plan to div
 - [ ] Optimize skin cancer detection models to create one mixture-of-experts model which will run on mobile devices
 - [ ] Start the process for certifying models - FDA approval
 - [ ] Make competitions for breast cancer
+# **✅ PRE REQUIRMENTS 
+To install BITTENSOR and set up a wallet follow instructions in this link:
+
+[PRE REQUIRMENTS](DOCS/prerequirments.md)
 
 # **📊 SETUP WandB (HIGHLY RECOMMENDED - VALIDATORS PLEASE READ)**
 # **👍 RUNNING VALIDATOR**
