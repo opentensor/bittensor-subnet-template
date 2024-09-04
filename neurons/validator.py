@@ -19,10 +19,13 @@
 
 
 import time
-import bittensor as bt
 import asyncio
 import os
+import traceback
+
+import bittensor as bt
 import numpy as np
+import wandb
 
 from cancer_ai.validator.rewarder import WinnersMapping, Rewarder, Score
 from cancer_ai.base.base_validator import BaseValidatorNeuron
@@ -47,26 +50,51 @@ class Validator(BaseValidatorNeuron):
 
     async def concurrent_forward(self):
         coroutines = [
-            self.competition_loop_tick(self.competition_scheduler),
+            self.competition_loop_tick(),
         ]
         await asyncio.gather(*coroutines)
 
-    async def competition_loop_tick(
-        self, scheduler_config: dict[str, CompetitionManager]
-    ):
+    async def competition_loop_tick(self):
 
         bt.logging.debug("Run log", self.run_log)
-        competition_result = await run_competitions_tick(scheduler_config, self.run_log)
-
-        if not competition_result:
+        try:
+            winning_hotkey, competition_id = await run_competitions_tick(
+                self.competition_scheduler, self.run_log
+            )
+        except Exception as e:
+            formatted_traceback = traceback.format_exc()
+            bt.logging.error(f"Error running competition: {formatted_traceback}")
+            wandb.init(project="competition_id", group="competition_evaluation")
+            wandb.log(
+                {
+                    "winning_evaluation_hotkey": "",
+                    "run_time": "",
+                    "validator_id": self.wallet.hotkey.ss58_address,
+                    "errors": str(formatted_traceback),
+                }
+            )
+            wandb.finish()
             return
 
-        bt.logging.debug(f"Competition result: {competition_result}")
+        if not winning_hotkey:
+            return
 
-        winning_evaluation_hotkey, competition_id = competition_result
+        wandb.init(project=competition_id, group="competition_evaluation")
+        wandb.log(
+            {
+                "winning_hotkey": winning_hotkey,
+                "run_time": self.run_log.runs[-1].end_time
+                - self.run_log.runs[-1].start_time,
+                "validator_id": self.wallet.hotkey.ss58_address,
+                "errors": "",
+            }
+        )
+        wandb.finish()
+
+        bt.logging.info(f"Competition result for {competition_id}: {winning_hotkey}")
 
         # update the scores
-        await self.rewarder.update_scores(winning_evaluation_hotkey, competition_id)
+        await self.rewarder.update_scores(winning_hotkey, competition_id)
         self.winners_mapping = WinnersMapping(
             competition_leader_map=self.rewarder.competition_leader_mapping,
             hotkey_score_map=self.rewarder.scores,
@@ -83,7 +111,6 @@ class Validator(BaseValidatorNeuron):
         ]
         self.save_state()
 
-        await asyncio.sleep(60)
 
     def save_state(self):
         """Saves the state of the validator to a file."""

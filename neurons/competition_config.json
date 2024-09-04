@@ -3,7 +3,7 @@
         "competition_id": "melanoma-1",
         "category": "skin",
         "evaluation_times": [
-            "23:42"
+            "14:11"
         ],
         "dataset_hf_repo": "safescanai/test_dataset",
         "dataset_hf_filename": "skin_melanoma.zip",
@@ -13,7 +13,7 @@
         "competition_id": "melanoma-testnet",
         "category": "skin",
         "evaluation_times": [
-            "23:44"
+            "13:53"
         ],
         "dataset_hf_repo": "safescanai/test_dataset",
         "dataset_hf_filename": "skin_melanoma.zip",

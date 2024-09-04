@@ -88,7 +88,7 @@ class CompetitionManager(SerializableManager):
     def log_results_to_wandb(
         self, hotkey: str, evaluation_result: ModelEvaluationResult
     ) -> None:
-        wandb.init(project=self.config.wandb_project_name)
+        wandb.init(project=self.competition_id, group="model_evaluation")
         wandb.log(
             {
                 "hotkey": hotkey,
@@ -106,14 +106,7 @@ class CompetitionManager(SerializableManager):
         )
 
         wandb.finish()
-        bt.logging.info("Logged results to wandb")
-        bt.logging.info("Hotkey: ", hotkey)
-        bt.logging.info("Tested entries: ", evaluation_result.tested_entries)
-        bt.logging.info("Model test run time: ", evaluation_result.run_time_s)
-        bt.logging.info("Accuracy: ", evaluation_result.accuracy)
-        bt.logging.info("Precision: ", evaluation_result.precision)
-        bt.logging.info("Recall: ", evaluation_result.recall)
-        bt.logging.info("roc_auc: ", evaluation_result.roc_auc)
+        bt.logging.info("Results: ", evaluation_result)
 
     def get_state(self):
         return {
