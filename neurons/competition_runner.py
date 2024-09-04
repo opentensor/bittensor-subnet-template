@@ -44,7 +44,7 @@ class CompetitionRunLog(BaseModel):
         """Check if competition was executed in last minutes"""
         now_time = datetime.now(timezone.utc)
         for run in self.runs:
-            if competition_id and run.competition_id != competition_id:
+            if run.competition_id != competition_id:
                 continue
             if run.end_time and (now_time - run.end_time).seconds < last_minutes * 60:
                 return True
@@ -76,7 +76,6 @@ def config_for_scheduler(
                 competition_cfg["dataset_hf_repo_type"],
                 test_mode=test_mode,
             )
-
     return scheduler_config
 
 
@@ -98,7 +97,7 @@ async def run_competitions_tick(
         ).time()
         competition_manager = competition_scheduler.get(check_time)
         if not competition_manager:
-            return (None, None)
+            continue
 
         bt.logging.debug(
             f"Found competition {competition_manager.competition_id} at {check_time}"
@@ -112,7 +111,6 @@ async def run_competitions_tick(
             continue
 
         bt.logging.info(f"Running {competition_manager.competition_id} at {now_time}")
-        
 
         run_log.add_run(
             CompetitionRun(

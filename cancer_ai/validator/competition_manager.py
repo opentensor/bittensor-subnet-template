@@ -28,6 +28,7 @@ load_dotenv()
 COMPETITION_HANDLER_MAPPING = {
     "melanoma-1": MelanomaCompetitionHandler,
     "melanoma-testnet": MelanomaCompetitionHandler,
+    "melanoma-7": MelanomaCompetitionHandler,
 }
 
 
@@ -88,7 +89,7 @@ class CompetitionManager(SerializableManager):
     def log_results_to_wandb(
         self, hotkey: str, evaluation_result: ModelEvaluationResult
     ) -> None:
-        wandb.init(project=self.competition_id, group="model_evaluation")
+        wandb.init(reinit=True, project=self.competition_id, group="model_evaluation")
         wandb.log(
             {
                 "hotkey": hotkey,
@@ -210,7 +211,7 @@ class CompetitionManager(SerializableManager):
                 y_test, y_pred, run_time_s
             )
             self.results.append((hotkey, model_result))
-            # self.log_results_to_wandb(hotkey, model_result)
+            self.log_results_to_wandb(hotkey, model_result)
 
         winning_hotkey = sorted(
             self.results, key=lambda x: x[1].accuracy, reverse=True

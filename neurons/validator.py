@@ -61,10 +61,12 @@ class Validator(BaseValidatorNeuron):
             winning_hotkey, competition_id = await run_competitions_tick(
                 self.competition_scheduler, self.run_log
             )
-        except Exception as e:
+        except Exception:
             formatted_traceback = traceback.format_exc()
             bt.logging.error(f"Error running competition: {formatted_traceback}")
-            wandb.init(project="competition_id", group="competition_evaluation")
+            wandb.init(
+                reinit=True, project="competition_id", group="competition_evaluation"
+            )
             wandb.log(
                 {
                     "winning_evaluation_hotkey": "",
@@ -79,12 +81,14 @@ class Validator(BaseValidatorNeuron):
         if not winning_hotkey:
             return
 
-        wandb.init(project=competition_id, group="competition_evaluation")
+        wandb.init(reinit=True, project=competition_id, group="competition_evaluation")
+        run_time_s = (
+            self.run_log.runs[-1].end_time - self.run_log.runs[-1].start_time
+        ).seconds
         wandb.log(
             {
                 "winning_hotkey": winning_hotkey,
-                "run_time": self.run_log.runs[-1].end_time
-                - self.run_log.runs[-1].start_time,
+                "run_time_s": run_time_s,
                 "validator_id": self.wallet.hotkey.ss58_address,
                 "errors": "",
             }
@@ -110,7 +114,6 @@ class Validator(BaseValidatorNeuron):
             for hotkey in self.metagraph.hotkeys
         ]
         self.save_state()
-
 
     def save_state(self):
         """Saves the state of the validator to a file."""
