@@ -246,13 +246,14 @@ echo %WANDB_API_KEY%
 
 
 # **👍 RUNNING VALIDATOR**
+To run a validator follow instructions in this link:
 
-...
+[RUNNING VALIDATOR](DOCS/miner.md)
 
 # **⛏️ RUNNING MINER**
 To run a miner follow instructions in this link:
 
-[RUNNING MINER](DOCS/miner.md)
+[RUNNING MINER](DOCS/validator.md)
 
 # **🚀 GET INVOLVED**
 
