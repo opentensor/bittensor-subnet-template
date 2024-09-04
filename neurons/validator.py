@@ -83,7 +83,7 @@ class Validator(BaseValidatorNeuron):
         ]
         self.save_state()
 
-        asyncio.sleep(60)
+        await asyncio.sleep(60)
 
     def save_state(self):
         """Saves the state of the validator to a file."""
