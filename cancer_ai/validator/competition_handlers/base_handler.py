@@ -1,18 +1,22 @@
+from typing import Any
 from abc import abstractmethod
 
-from dataclasses import dataclass
+from numpy import ndarray
+from pydantic import BaseModel
 
-@dataclass
-class ModelEvaluationResult:
+class ModelEvaluationResult(BaseModel):
     accuracy: float
     precision: float
     recall: float
-    confusion_matrix: any
-    fpr: any
-    tpr: any
+    confusion_matrix: ndarray
+    fpr: ndarray
+    tpr: ndarray
     roc_auc: float
     run_time_s: float
     tested_entries: int
+
+    class Config:
+        arbitrary_types_allowed = True
 
 class BaseCompetitionHandler:
     """

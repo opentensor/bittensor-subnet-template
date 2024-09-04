@@ -159,15 +159,21 @@ def process_weights_for_netuid(
     non_zero_weight_idx = np.argwhere(weights > 0).squeeze()
     non_zero_weight_uids = uids[non_zero_weight_idx]
     non_zero_weights = weights[non_zero_weight_idx]
+
+    if not isinstance(non_zero_weights, np.ndarray):
+        non_zero_weights = np.array(non_zero_weights)
+        bittensor.logging.debug("Converting non_zero_weights to numpy array")
+
     if non_zero_weights.size == 0 or metagraph.n < min_allowed_weights:
         bittensor.logging.warning("No non-zero weights returning all ones.")
         final_weights = np.ones(metagraph.n) / metagraph.n
         bittensor.logging.debug("final_weights", final_weights)
         return np.arange(len(final_weights)), final_weights
 
+
     elif non_zero_weights.size < min_allowed_weights:
         bittensor.logging.warning(
-            "No non-zero weights less then min allowed weight, returning all ones."
+            "No non-zero weights less than min allowed weight, returning all ones."
         )
         weights = (
                 np.ones(metagraph.n) * 1e-5
@@ -182,9 +188,7 @@ def process_weights_for_netuid(
     bittensor.logging.debug("non_zero_weights", non_zero_weights)
 
     # Compute the exclude quantile and find the weights in the lowest quantile
-    max_exclude = max(0, len(non_zero_weights) - min_allowed_weights) / len(
-        non_zero_weights
-    )
+    max_exclude = max(0, non_zero_weights.size - min_allowed_weights) / non_zero_weights.size
     exclude_quantile = min([quantile, max_exclude])
     lowest_quantile = np.quantile(non_zero_weights, exclude_quantile)
     bittensor.logging.debug("max_exclude", max_exclude)

@@ -1,7 +1,6 @@
 import pytest
 from datetime import datetime, timedelta
-from pydantic import BaseModel
-from .rewarder import CompetitionLeader, Score, RewarderConfig, Rewarder
+from .rewarder import CompetitionLeader, Score, WinnersMapping, Rewarder
 
 def test_update_scores_single_competitor():
     # Set up initial data for a single competitor
@@ -14,9 +13,9 @@ def test_update_scores_single_competitor():
     }
 
     # Set up the configuration with a single competition and a single competitor
-    rewarder_config = RewarderConfig(
-        competitionID_to_leader_hotkey_map=competition_leaders,
-        hotkey_to_score_map=scores
+    rewarder_config = WinnersMapping(
+        competition_leader_map=competition_leaders,
+        hotkey_score_map=scores
     )
 
     rewarder = Rewarder(rewarder_config)
@@ -48,9 +47,9 @@ def test_update_scores_multiple_competitors_no_reduction():
     }
 
     # Set up the configuration with multiple competitions and multiple competitors
-    rewarder_config = RewarderConfig(
-        competitionID_to_leader_hotkey_map=competition_leaders,
-        hotkey_to_score_map=scores
+    rewarder_config = WinnersMapping(
+        competition_leader_map=competition_leaders,
+        hotkey_score_map=scores
     )
 
     rewarder = Rewarder(rewarder_config)
@@ -73,10 +72,10 @@ def test_update_scores_multiple_competitors_no_reduction():
 def test_update_scores_multiple_competitors_with_some_reduced_shares():
     # Set up initial data for multiple competitors
     competition_leaders = {
-        "competition1": CompetitionLeader(hotkey="competitor1", leader_since=datetime.now() - timedelta(days=14 + 3 * 7)),
-        "competition2": CompetitionLeader(hotkey="competitor2", leader_since=datetime.now() - timedelta(days=14 + 6 * 7)),
-        "competition3": CompetitionLeader(hotkey="competitor3", leader_since=datetime.now() - timedelta(days=14)),
-        "competition4": CompetitionLeader(hotkey="competitor4", leader_since=datetime.now() - timedelta(days=14)),
+        "competition1": CompetitionLeader(hotkey="competitor1", leader_since=datetime.now() - timedelta(days=30 + 3 * 7)),
+        "competition2": CompetitionLeader(hotkey="competitor2", leader_since=datetime.now() - timedelta(days=30 + 6 * 7)),
+        "competition3": CompetitionLeader(hotkey="competitor3", leader_since=datetime.now() - timedelta(days=30)),
+        "competition4": CompetitionLeader(hotkey="competitor4", leader_since=datetime.now() - timedelta(days=30)),
     }
 
     scores = {
@@ -87,9 +86,9 @@ def test_update_scores_multiple_competitors_with_some_reduced_shares():
     }
 
     # Set up the configuration with multiple competitions and multiple competitors
-    rewarder_config = RewarderConfig(
-        competitionID_to_leader_hotkey_map=competition_leaders,
-        hotkey_to_score_map=scores
+    rewarder_config = WinnersMapping(
+        competition_leader_map=competition_leaders,
+        hotkey_score_map=scores
     )
 
     rewarder = Rewarder(rewarder_config)
@@ -124,9 +123,9 @@ def test_update_scores_multiple_competitors_with_some_reduced_shares():
 def test_update_scores_all_competitors_with_reduced_shares():
     # Set up initial data for multiple competitors
     competition_leaders = {
-        "competition1": CompetitionLeader(hotkey="competitor1", leader_since=datetime.now() - timedelta(days=14 + 3 * 7)),
-        "competition2": CompetitionLeader(hotkey="competitor2", leader_since=datetime.now() - timedelta(days=14 + 6 * 7)),
-        "competition3": CompetitionLeader(hotkey="competitor3", leader_since=datetime.now() - timedelta(days=14 + 9 * 7))
+        "competition1": CompetitionLeader(hotkey="competitor1", leader_since=datetime.now() - timedelta(days=30 + 3 * 7)),
+        "competition2": CompetitionLeader(hotkey="competitor2", leader_since=datetime.now() - timedelta(days=30 + 6 * 7)),
+        "competition3": CompetitionLeader(hotkey="competitor3", leader_since=datetime.now() - timedelta(days=30 + 9 * 7))
     }
 
     scores = {
@@ -136,9 +135,9 @@ def test_update_scores_all_competitors_with_reduced_shares():
     }
 
     # Set up the configuration with multiple competitions and multiple competitors
-    rewarder_config = RewarderConfig(
-        competitionID_to_leader_hotkey_map=competition_leaders,
-        hotkey_to_score_map=scores
+    rewarder_config = WinnersMapping(
+        competition_leader_map=competition_leaders,
+        hotkey_score_map=scores
     )
 
     rewarder = Rewarder(rewarder_config)
@@ -171,10 +170,10 @@ def test_update_scores_all_competitors_with_reduced_shares():
 def test_update_scores_more_competitions_then_competitors():
     # Set up initial data for multiple competitors
     competition_leaders = {
-        "competition1": CompetitionLeader(hotkey="competitor1", leader_since=datetime.now() - timedelta(days=14 + 3 * 7)),
-        "competition2": CompetitionLeader(hotkey="competitor2", leader_since=datetime.now() - timedelta(days=14)),
-        "competition3": CompetitionLeader(hotkey="competitor1", leader_since=datetime.now() - timedelta(days=14)),
-        "competition4": CompetitionLeader(hotkey="competitor3", leader_since=datetime.now() - timedelta(days=14)),
+        "competition1": CompetitionLeader(hotkey="competitor1", leader_since=datetime.now() - timedelta(days=30 + 3 * 7)),
+        "competition2": CompetitionLeader(hotkey="competitor2", leader_since=datetime.now() - timedelta(days=30)),
+        "competition3": CompetitionLeader(hotkey="competitor1", leader_since=datetime.now() - timedelta(days=30)),
+        "competition4": CompetitionLeader(hotkey="competitor3", leader_since=datetime.now() - timedelta(days=30)),
     }
 
     scores = {
@@ -184,9 +183,9 @@ def test_update_scores_more_competitions_then_competitors():
     }
 
     # Set up the configuration with multiple competitions and multiple competitors
-    rewarder_config = RewarderConfig(
-        competitionID_to_leader_hotkey_map=competition_leaders,
-        hotkey_to_score_map=scores
+    rewarder_config = WinnersMapping(
+        competition_leader_map=competition_leaders,
+        hotkey_score_map=scores
     )
 
     rewarder = Rewarder(rewarder_config)
@@ -219,12 +218,12 @@ def test_update_scores_more_competitions_then_competitors():
 def test_update_scores_6_competitions_3_competitors():
     # Set up initial data for multiple competitors
     competition_leaders = {
-        "competition1": CompetitionLeader(hotkey="competitor1", leader_since=datetime.now() - timedelta(days=14 + 3 * 7)),
-        "competition2": CompetitionLeader(hotkey="competitor2", leader_since=datetime.now() - timedelta(days=14 + 6 * 7)),
-        "competition3": CompetitionLeader(hotkey="competitor3", leader_since=datetime.now() - timedelta(days=14 + 9 * 7)),
-        "competition4": CompetitionLeader(hotkey="competitor4", leader_since=datetime.now() - timedelta(days=14)),
-        "competition5": CompetitionLeader(hotkey="competitor1", leader_since=datetime.now() - timedelta(days=14)),
-        "competition6": CompetitionLeader(hotkey="competitor2", leader_since=datetime.now() - timedelta(days=14 + 3 * 7)),
+        "competition1": CompetitionLeader(hotkey="competitor1", leader_since=datetime.now() - timedelta(days=30 + 3 * 7)),
+        "competition2": CompetitionLeader(hotkey="competitor2", leader_since=datetime.now() - timedelta(days=30 + 6 * 7)),
+        "competition3": CompetitionLeader(hotkey="competitor3", leader_since=datetime.now() - timedelta(days=30 + 9 * 7)),
+        "competition4": CompetitionLeader(hotkey="competitor4", leader_since=datetime.now() - timedelta(days=30)),
+        "competition5": CompetitionLeader(hotkey="competitor1", leader_since=datetime.now() - timedelta(days=30)),
+        "competition6": CompetitionLeader(hotkey="competitor2", leader_since=datetime.now() - timedelta(days=30 + 3 * 7)),
     }
 
     scores = {
@@ -235,9 +234,9 @@ def test_update_scores_6_competitions_3_competitors():
     }
 
     # Set up the configuration with multiple competitions and multiple competitors
-    rewarder_config = RewarderConfig(
-        competitionID_to_leader_hotkey_map=competition_leaders,
-        hotkey_to_score_map=scores
+    rewarder_config = WinnersMapping(
+        competition_leader_map=competition_leaders,
+        hotkey_score_map=scores
     )
 
     rewarder = Rewarder(rewarder_config)

@@ -14,7 +14,7 @@ from cancer_ai.validator.model_run_manager import ModelRunManager, ModelInfo
 from cancer_ai.validator.dataset_manager import DatasetManager
 from cancer_ai.validator.competition_manager import COMPETITION_HANDLER_MAPPING
 
-from cancer_ai.base.miner import BaseNeuron
+from cancer_ai.base.base_miner import BaseNeuron
 from cancer_ai.chain_models_store import ChainMinerModel, ChainModelMetadataStore
 from cancer_ai.utils.config import path_config, add_miner_args
 
@@ -42,8 +42,8 @@ class MinerManagerCLI:
         hf_api = HfApi()
         hf_login(token=self.config.hf_token)
 
-        hf_model_path = f"{self.config.competition_id}-{self.config.hf_model_name}"
-        hf_code_path = f"{self.config.competition_id}-{self.config.hf_model_name}"
+        hf_model_path = f"{self.config.competition.id}-{self.config.hf_model_name}"
+        hf_code_path = f"{self.config.competition.id}-{self.config.hf_model_name}"
 
         path = hf_api.upload_file(
             path_or_fileobj=self.config.model_path,
@@ -81,6 +81,7 @@ class MinerManagerCLI:
         )
         dataset_manager = DatasetManager(
             self.config,
+            self.config.competition.id,
             "safescanai/test_dataset",
             "skin_melanoma.zip",
             "dataset",
@@ -89,7 +90,7 @@ class MinerManagerCLI:
 
         X_test, y_test = await dataset_manager.get_data()
 
-        competition_handler = COMPETITION_HANDLER_MAPPING[self.config.competition_id](
+        competition_handler = COMPETITION_HANDLER_MAPPING[self.config.competition.id](
             X_test=X_test, y_test=y_test
         )
 
@@ -99,7 +100,7 @@ class MinerManagerCLI:
         y_pred = await run_manager.run(X_test)
         run_time_s = time.time() - start_time
         model_result = competition_handler.get_model_result(y_test, y_pred, run_time_s)
-        bt.logging.info(model_result)
+        bt.logging.info(f"\n {model_result}\n")
         if self.config.clean_after_run:
             dataset_manager.delete_dataset()
 
@@ -160,7 +161,7 @@ class MinerManagerCLI:
             hf_repo_id=self.config.hf_repo_id,
             hf_model_filename=self.config.hf_model_name,
             hf_code_filename=self.config.hf_code_filename,
-            competition_id=self.config.competition_id,
+            competition_id=self.config.competition.id,
             hf_repo_type=self.config.hf_repo_type,
         )
         await self.metadata_store.store_model_metadata(model_id)
