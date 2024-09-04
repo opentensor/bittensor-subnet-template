@@ -23,6 +23,7 @@
 - [💰 Tokenomy & Economy](#-tokenomy--economy)
 - [👨‍👨‍👦‍👦 Team Composition](#-team-composition)
 - [🛣️ Roadmap](#roadmap)
+- [📊 SETUP WandB (HIGHLY RECOMMENDED - VALIDATORS PLEASE READ](#-SETUP-WandB-(HIGHLY-RECOMMENDED-VALIDATORS-PLEASE-READ)
 - [👍 Running Validator](#-running-validator)
 - [⛏️ Running Miner](#-running-miner)
 - [🚀 Get invloved](#-get-involved)
