@@ -17,7 +17,7 @@
 - [💰 Tokenomy & Economy](#-tokenomy--economy)
 - [👨‍👨‍👦‍👦 Team Composition](#-team-composition)
 - [🛣️ Roadmap](#roadmap)
-- [✅ PRE REQUIRMENTS](#pre-prerequirments)
+- [✅ Pre requirments](#-pre-requirments)
 - [👍 Running Validator](#-running-validator)
 - [⛏️ Running Miner](#-running-miner)
 - [🚀 Get invloved](#-get-involved)
