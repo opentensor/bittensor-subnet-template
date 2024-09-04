@@ -1,3 +1,21 @@
+"""
+The script was based on the original script from the Pretraining Subnet repository.
+
+This script runs a validator process and automatically updates it when a new version is released.
+Command-line arguments will be forwarded to validator (`neurons/validator.py`), so you can pass
+them like this:
+    python3 scripts/start_validator.py --wallet.name=my-wallet
+Auto-updates are enabled by default and will make sure that the latest version is always running
+by pulling the latest version from git and upgrading python packages. This is done periodically.
+Local changes may prevent the update, but they will be preserved.
+
+The script will use the same virtual environment as the one used to run it. If you want to run
+validator within virtual environment, run this auto-update script from the virtual environment.
+
+Pm2 is required for this script. This script will start a pm2 process using the name provided by
+the --pm2_name argument.
+"""
+
 import argparse
 import logging
 import subprocess
@@ -176,11 +194,11 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--wallet.name", default="validator", help="Name of the wallet."
+        "--wallet.name", default="", help="Name of the wallet."
     )
 
     parser.add_argument(
-        "--wallet.hotkey", default="default", help="Name of the hotkey."
+        "--wallet.hotkey", default="", help="Name of the hotkey."
     )
 
     parser.add_argument(
