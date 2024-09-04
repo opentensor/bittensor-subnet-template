@@ -1,3 +1,22 @@
+"""
+The script was based on the original script from the Pretraining Subnet repository.
+https://github.com/macrocosm-os/pretraining/blob/main/scripts/start_validator.py
+
+This script runs a validator process and automatically updates it when a new version is released.
+Command-line arguments will be forwarded to validator (`neurons/validator.py`), so you can pass
+them like this:
+    python3 scripts/start_validator.py --wallet.name=my-wallet
+Auto-updates are enabled by default and will make sure that the latest version is always running
+by pulling the latest version from git and upgrading python packages. This is done periodically.
+Local changes may prevent the update, but they will be preserved.
+
+The script will use the same virtual environment as the one used to run it. If you want to run
+validator within virtual environment, run this auto-update script from the virtual environment.
+
+Pm2 is required for this script. This script will start a pm2 process using the name provided by
+the --pm2_name argument.
+"""
+
 import argparse
 import logging
 import subprocess
@@ -11,7 +30,7 @@ from argparse import Namespace
 from pathlib import Path
 
 log = logging.getLogger(__name__)
-UPDATES_CHECK_TIME = timedelta(seconds=30)
+UPDATES_CHECK_TIME = timedelta(minutes=5)
 CURRENT_WORKING_DIR = Path(__file__).parent.parent
 
 ECOSYSTEM_CONFIG_PATH = CURRENT_WORKING_DIR / "ecosystem.config.js"  # Path to the pm2 ecosystem config file
@@ -117,7 +136,7 @@ def upgrade_packages() -> None:
         log.error("Failed to upgrade packages, proceeding anyway. %s", exc)
 
 
-def main(pm2_name: str, args_namespace: Namespace) -> None:
+def main(pm2_name: str, args_namespace: Namespace, extra_args: List[str]) -> None:
     """
     Run the validator process and automatically update it when a new version is released.
     This will check for updates every `UPDATES_CHECK_TIME` and update the validator
@@ -130,6 +149,8 @@ def main(pm2_name: str, args_namespace: Namespace) -> None:
             args_list.append(f"--{key}")
             if not isinstance(value, bool):
                 args_list.append(str(value))
+
+    args_list.extend(extra_args)
 
     validator = start_validator_process(pm2_name, args_list)
     current_version = latest_version = get_version()
@@ -196,4 +217,4 @@ if __name__ == "__main__":
     )
 
     flags, extra_args = parser.parse_known_args()
-    main(flags.pm2_name, flags)
+    main(flags.pm2_name, flags, extra_args)
