@@ -24,7 +24,7 @@ def log_time(func):
         result = await func(*args, **kwargs)
         end_time = time.time()
         module_name = func.__module__
-        bt.logging.debug(f"'{module_name}.{func.__name__}'  took {end_time - start_time:.4f}s")
+        bt.logging.trace(f"'{module_name}.{func.__name__}'  took {end_time - start_time:.4f}s")
         return result
     return wrapper
 
