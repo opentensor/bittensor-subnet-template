@@ -4,7 +4,7 @@ This documentation provides an overview of the validator script, its functionali
 
 ## Overview
 
-The validator script is designed to run a validator process and automatically update it whenever a new version is released. This script was adapted from the original script in the Pretraining Subnet repository.
+The validator script is designed to run a validator process and automatically update it whenever a new version is released. This script was adapted from the [original script](https://github.com/macrocosm-os/pretraining/blob/main/scripts/start_validator.py) in the Pretraining Subnet repository.
 
 Key features of the script include:
 - **Automatic Updates**: The script checks for updates periodically and ensures that the latest version of the validator is running by pulling the latest code from the repository and upgrading necessary Python packages.

@@ -1,5 +1,6 @@
 """
 The script was based on the original script from the Pretraining Subnet repository.
+https://github.com/macrocosm-os/pretraining/blob/main/scripts/start_validator.py
 
 This script runs a validator process and automatically updates it when a new version is released.
 Command-line arguments will be forwarded to validator (`neurons/validator.py`), so you can pass
