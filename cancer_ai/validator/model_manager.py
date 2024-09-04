@@ -52,7 +52,7 @@ class ModelManager(SerializableManager):
             model_info.hf_model_filename,
             cache_dir=self.config.models.model_dir,
             repo_type=model_info.hf_repo_type,
-            token=self.config.hf_token,
+            token=self.config.hf_token if hasattr(self.config, "hf_token") else None,
         )
 
     def add_model(

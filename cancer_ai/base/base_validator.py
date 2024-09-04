@@ -17,6 +17,7 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from abc import abstractmethod
 
 import copy
 import numpy as np
@@ -35,6 +36,12 @@ from .utils.weight_utils import (
 )
 from ..mock import MockDendrite
 from ..utils.config import add_validator_args
+
+from neurons.competition_runner import (
+    CompetitionRunLog,
+)
+
+from cancer_ai.validator.rewarder import WinnersMapping
 
 
 class BaseValidatorNeuron(BaseNeuron):
@@ -65,7 +72,11 @@ class BaseValidatorNeuron(BaseNeuron):
         # Set up initial scoring weights for validation
         bt.logging.info("Building validation weights.")
         self.scores = np.zeros(self.metagraph.n, dtype=np.float32)
-
+        self.run_log = CompetitionRunLog(runs=[])
+        self.winners_mapping = WinnersMapping(
+            competition_leader_map={}, hotkey_score_map={}
+        )
+        self.load_state()
         # Init sync with the network. Updates the metagraph.
         self.sync()
 
@@ -106,6 +117,10 @@ class BaseValidatorNeuron(BaseNeuron):
         except Exception as e:
             bt.logging.error(f"Failed to create Axon initialize with exception: {e}")
             pass
+
+    @abstractmethod
+    def concurrent_forward(self):
+        pass
 
     def run(self):
         """
@@ -311,7 +326,7 @@ class BaseValidatorNeuron(BaseNeuron):
             self.config.neuron.full_path + "/state.npz",
             scores=self.scores,
             hotkeys=self.hotkeys,
-            rewarder_config = self.rewarder_config,
+            rewarder_config=self.rewarder_config,
         )
 
     def load_state(self):

@@ -17,7 +17,12 @@ class DatasetManagerException(Exception):
 
 class DatasetManager(SerializableManager):
     def __init__(
-        self, config, competition_id: str, hf_repo_id: str, hf_filename: str, hf_repo_type: str
+        self,
+        config,
+        competition_id: str,
+        hf_repo_id: str,
+        hf_filename: str,
+        hf_repo_type: str,
     ) -> None:
         """
         Initializes a new instance of the DatasetManager class.
@@ -32,15 +37,13 @@ class DatasetManager(SerializableManager):
             None
         """
         self.config = config
-        
+
         self.hf_repo_id = hf_repo_id
         self.hf_filename = hf_filename
         self.hf_repo_type = hf_repo_type
         self.competition_id = competition_id
         self.local_compressed_path = ""
-        self.local_extracted_dir = Path(
-            self.config.models.dataset_dir, competition_id
-        )
+        self.local_extracted_dir = Path(self.config.models.dataset_dir, competition_id)
         self.data: Tuple[List, List] = ()
         self.handler = None
 
@@ -54,13 +57,13 @@ class DatasetManager(SerializableManager):
     async def download_dataset(self):
         if not os.path.exists(self.local_extracted_dir):
             os.makedirs(self.local_extracted_dir)
-        
+
         self.local_compressed_path = HfApi().hf_hub_download(
             self.hf_repo_id,
             self.hf_filename,
             cache_dir=Path(self.config.models.dataset_dir),
             repo_type=self.hf_repo_type,
-            token=self.config.hf_token,
+            token=self.config.hf_token if hasattr(self.config, "hf_token") else None,
         )
 
     def delete_dataset(self) -> None:
@@ -93,7 +96,9 @@ class DatasetManager(SerializableManager):
     def set_dataset_handler(self) -> None:
         """Detect dataset type and set handler"""
         if not self.local_compressed_path:
-            raise DatasetManagerException(f"Dataset '{self.config.competition.id}' not downloaded")
+            raise DatasetManagerException(
+                f"Dataset '{self.config.competition.id}' not downloaded"
+            )
         # is csv in directory
         if os.path.exists(Path(self.local_extracted_dir, "labels.csv")):
             self.handler = DatasetImagesCSV(
@@ -118,5 +123,7 @@ class DatasetManager(SerializableManager):
     async def get_data(self) -> Tuple[List, List]:
         """Get data from dataset handler"""
         if not self.data:
-            raise DatasetManagerException(f"Dataset '{self.competition_id}' not initalized ")
+            raise DatasetManagerException(
+                f"Dataset '{self.competition_id}' not initalized "
+            )
         return self.data

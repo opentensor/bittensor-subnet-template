@@ -132,13 +132,10 @@ def add_args(cls, parser):
 def add_miner_args(cls, parser):
     """Add miner specific arguments to the parser."""
 
-    
-
     parser.add_argument(
         "--hf_repo_id",
         type=str,
         help="Hugging Face model repository ID",
-        
     )
 
     parser.add_argument(
@@ -166,7 +163,7 @@ def add_miner_args(cls, parser):
         "--model_path",
         type=str,
         help="Path to ONNX model, used for evaluation",
-    )    
+    )
 
     parser.add_argument(
         "--clean_after_run",
@@ -181,7 +178,6 @@ def add_miner_args(cls, parser):
         help="Path to code directory",
         default=".",
     )
-
 
 
 def add_common_args(cls, parser):
@@ -218,8 +214,6 @@ def add_common_args(cls, parser):
         help="Path with competition configuration .",
         default="./neurons/competition_config.json",
     )
-
-
 
 
 def add_validator_args(cls, parser):
@@ -274,7 +268,7 @@ def add_validator_args(cls, parser):
         # Note: the validator needs to serve an Axon with their IP or they may
         #   be blacklisted by the firewall of serving peers on the network.
         help="Set this flag to not attempt to serve an Axon.",
-        default=False,
+        default=True,
     )
 
     parser.add_argument(
@@ -299,12 +293,7 @@ def add_validator_args(cls, parser):
     )
 
 
-    
-    
-
-
-
-def path_config(cls):
+def path_config(cls=None):
     """
     Returns the configuration object specific to this miner or validator after adding relevant arguments.
     """
@@ -316,5 +305,6 @@ def path_config(cls):
     bt.logging.add_args(parser)
     bt.axon.add_args(parser)
     add_common_args(cls, parser)
-    cls.add_args(parser)
+    if cls:
+        cls.add_args(parser)
     return bt.config(parser)
