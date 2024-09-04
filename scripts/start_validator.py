@@ -29,7 +29,7 @@ from argparse import Namespace
 from pathlib import Path
 
 log = logging.getLogger(__name__)
-UPDATES_CHECK_TIME = timedelta(seconds=30)
+UPDATES_CHECK_TIME = timedelta(minutes=5)
 CURRENT_WORKING_DIR = Path(__file__).parent.parent
 
 ECOSYSTEM_CONFIG_PATH = CURRENT_WORKING_DIR / "ecosystem.config.js"  # Path to the pm2 ecosystem config file
@@ -135,7 +135,7 @@ def upgrade_packages() -> None:
         log.error("Failed to upgrade packages, proceeding anyway. %s", exc)
 
 
-def main(pm2_name: str, args_namespace: Namespace) -> None:
+def main(pm2_name: str, args_namespace: Namespace, extra_args: List[str]) -> None:
     """
     Run the validator process and automatically update it when a new version is released.
     This will check for updates every `UPDATES_CHECK_TIME` and update the validator
@@ -148,6 +148,8 @@ def main(pm2_name: str, args_namespace: Namespace) -> None:
             args_list.append(f"--{key}")
             if not isinstance(value, bool):
                 args_list.append(str(value))
+
+    args_list.extend(extra_args)
 
     validator = start_validator_process(pm2_name, args_list)
     current_version = latest_version = get_version()
@@ -194,11 +196,11 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--wallet.name", default="", help="Name of the wallet."
+        "--wallet.name", default="validator", help="Name of the wallet."
     )
 
     parser.add_argument(
-        "--wallet.hotkey", default="", help="Name of the hotkey."
+        "--wallet.hotkey", default="default", help="Name of the hotkey."
     )
 
     parser.add_argument(
@@ -214,4 +216,4 @@ if __name__ == "__main__":
     )
 
     flags, extra_args = parser.parse_known_args()
-    main(flags.pm2_name, flags)
+    main(flags.pm2_name, flags, extra_args)
