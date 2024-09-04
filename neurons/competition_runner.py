@@ -130,6 +130,7 @@ async def run_competitions_tick(
     bt.logging.debug(
         f"Did not find any competitions to run for past {MINUTES_BACK} minutes"
     )
+    asyncio.sleep(60)
 
 
 async def competition_loop_not_used(

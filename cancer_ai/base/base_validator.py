@@ -77,7 +77,6 @@ class BaseValidatorNeuron(BaseNeuron):
             competition_leader_map={}, hotkey_score_map={}
         )
         self.load_state()
-
         # Init sync with the network. Updates the metagraph.
         self.sync()
 
