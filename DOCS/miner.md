@@ -78,6 +78,12 @@ python neurons/miner.py \
     --hf_model_name <MODEL NAME WITH EXTENSION> \
     --hf_repo_id <HF REPO ID > \
     --hf_token <HF API TOKEN> \
+    --competition_id <COMPETITION ID> \
+    --model_path <NAME OF FILE WITH EXTENSION> \
+    --code_directory <CODE DIRECTORY WITHOUT DATASETS> \
+    --hf_model_name <MODEL NAME WITH EXTENSION> \
+    --hf_repo_id <HF REPO ID > \
+    --hf_token <HF API TOKEN> \
     --logging.debug
 ```
 
@@ -90,6 +96,12 @@ To submit a model to validators, use the following command:
 ```
 python neurons/miner.py \
     --action submit \
+    --model_path <NAME OF FILE WITH EXTENSION> \
+    --competition_id <COMPETITION ID> \
+    --hf_code_filename "melanoma-1-piwo.zip" \
+    --hf_model_name <MODEL NAME WITH EXTENSION> \
+    --hf_repo_id <HF REPO ID> \
+    --hf_repo_type model \
     --model_path <NAME OF FILE WITH EXTENSION> \
     --competition_id <COMPETITION ID> \
     --hf_code_filename "melanoma-1-piwo.zip" \
