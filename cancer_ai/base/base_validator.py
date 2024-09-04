@@ -17,6 +17,7 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+from abc import abstractmethod
 
 import copy
 import numpy as np
@@ -28,13 +29,19 @@ import bittensor as bt
 from typing import List, Union
 from traceback import print_exception
 
-from ..base.neuron import BaseNeuron
-from ..base.utils.weight_utils import (
+from .neuron import BaseNeuron
+from .utils.weight_utils import (
     process_weights_for_netuid,
     convert_weights_and_uids_for_emit,
-)  # TODO: Replace when bittensor switches to numpy
+)
 from ..mock import MockDendrite
 from ..utils.config import add_validator_args
+
+from neurons.competition_runner import (
+    CompetitionRunLog,
+)
+
+from cancer_ai.validator.rewarder import WinnersMapping
 
 
 class BaseValidatorNeuron(BaseNeuron):
@@ -65,7 +72,11 @@ class BaseValidatorNeuron(BaseNeuron):
         # Set up initial scoring weights for validation
         bt.logging.info("Building validation weights.")
         self.scores = np.zeros(self.metagraph.n, dtype=np.float32)
-
+        self.run_log = CompetitionRunLog(runs=[])
+        self.winners_mapping = WinnersMapping(
+            competition_leader_map={}, hotkey_score_map={}
+        )
+        self.load_state()
         # Init sync with the network. Updates the metagraph.
         self.sync()
 
@@ -107,11 +118,9 @@ class BaseValidatorNeuron(BaseNeuron):
             bt.logging.error(f"Failed to create Axon initialize with exception: {e}")
             pass
 
-    async def concurrent_forward(self):
-        coroutines = [
-            self.forward() for _ in range(self.config.neuron.num_concurrent_forwards)
-        ]
-        await asyncio.gather(*coroutines)
+    @abstractmethod
+    def concurrent_forward(self):
+        pass
 
     def run(self):
         """
@@ -141,8 +150,6 @@ class BaseValidatorNeuron(BaseNeuron):
         # This loop maintains the validator's operations until intentionally stopped.
         try:
             while True:
-                bt.logging.info(f"step({self.step}) block({self.block})")
-
                 # Run multiple forwards concurrently.
                 self.loop.run_until_complete(self.concurrent_forward())
 
@@ -152,9 +159,7 @@ class BaseValidatorNeuron(BaseNeuron):
 
                 # Sync metagraph and potentially set weights.
                 self.sync()
-
                 self.step += 1
-
         # If someone intentionally stops the validator, it'll safely terminate operations.
         except KeyboardInterrupt:
             self.axon.stop()
@@ -312,51 +317,6 @@ class BaseValidatorNeuron(BaseNeuron):
         # Update the hotkeys.
         self.hotkeys = copy.deepcopy(self.metagraph.hotkeys)
 
-    def update_scores(self, rewards: np.ndarray, uids: List[int]):
-        """Performs exponential moving average on the scores based on the rewards received from the miners."""
-
-        # Check if rewards contains NaN values.
-        if np.isnan(rewards).any():
-            bt.logging.warning(f"NaN values detected in rewards: {rewards}")
-            # Replace any NaN values in rewards with 0.
-            rewards = np.nan_to_num(rewards, nan=0)
-
-        # Ensure rewards is a numpy array.
-        rewards = np.asarray(rewards)
-
-        # Check if `uids` is already a numpy array and copy it to avoid the warning.
-        if isinstance(uids, np.ndarray):
-            uids_array = uids.copy()
-        else:
-            uids_array = np.array(uids)
-
-        # Handle edge case: If either rewards or uids_array is empty.
-        if rewards.size == 0 or uids_array.size == 0:
-            bt.logging.info(f"rewards: {rewards}, uids_array: {uids_array}")
-            bt.logging.warning(
-                "Either rewards or uids_array is empty. No updates will be performed."
-            )
-            return
-
-        # Check if sizes of rewards and uids_array match.
-        if rewards.size != uids_array.size:
-            raise ValueError(
-                f"Shape mismatch: rewards array of shape {rewards.shape} "
-                f"cannot be broadcast to uids array of shape {uids_array.shape}"
-            )
-
-        # Compute forward pass rewards, assumes uids are mutually exclusive.
-        # shape: [ metagraph.n ]
-        scattered_rewards: np.ndarray = np.zeros_like(self.scores)
-        scattered_rewards[uids_array] = rewards
-        bt.logging.debug(f"Scattered rewards: {rewards}")
-
-        # Update scores with rewards produced by this step.
-        # shape: [ metagraph.n ]
-        alpha: float = self.config.neuron.moving_average_alpha
-        self.scores: np.ndarray = alpha * scattered_rewards + (1 - alpha) * self.scores
-        bt.logging.debug(f"Updated moving avg scores: {self.scores}")
-
     def save_state(self):
         """Saves the state of the validator to a file."""
         bt.logging.info("Saving validator state.")
@@ -364,9 +324,9 @@ class BaseValidatorNeuron(BaseNeuron):
         # Save the state of the validator to file.
         np.savez(
             self.config.neuron.full_path + "/state.npz",
-            step=self.step,
             scores=self.scores,
             hotkeys=self.hotkeys,
+            rewarder_config=self.rewarder_config,
         )
 
     def load_state(self):
@@ -375,6 +335,6 @@ class BaseValidatorNeuron(BaseNeuron):
 
         # Load the state of the validator from file.
         state = np.load(self.config.neuron.full_path + "/state.npz")
-        self.step = state["step"]
         self.scores = state["scores"]
         self.hotkeys = state["hotkeys"]
+        self.rewarder_config = state["rewarder_config"]

@@ -52,7 +52,7 @@ def check_config(cls, config: "bt.Config"):
             config.neuron.name,
         )
     )
-    print("full path:", full_path)
+    print("Log path:", full_path)
     config.neuron.full_path = os.path.expanduser(full_path)
     if not os.path.exists(config.neuron.full_path):
         os.makedirs(config.neuron.full_path, exist_ok=True)
@@ -131,76 +131,118 @@ def add_args(cls, parser):
 
 def add_miner_args(cls, parser):
     """Add miner specific arguments to the parser."""
-
     parser.add_argument(
-        "--neuron.name",
+        "--competition_id",
         type=str,
-        help="Trials for this neuron go in neuron.root / (wallet_cold - wallet_hot) / neuron.name. ",
-        default="miner",
+        help="Competition ID",
     )
 
     parser.add_argument(
-        "--blacklist.force_validator_permit",
-        action="store_true",
-        help="If set, we will force incoming requests to have a permit.",
-        default=False,
-    )
-
-    parser.add_argument(
-        "--blacklist.allow_non_registered",
-        action="store_true",
-        help="If set, miners will accept queries from non registered entities. (Dangerous!)",
-        default=False,
-    )
-
-    parser.add_argument(
-        "--wandb.project_name",
-        type=str,
-        default="template-miners",
-        help="Wandb project to log to.",
-    )
-
-    parser.add_argument(
-        "--wandb.entity",
-        type=str,
-        default="opentensor-dev",
-        help="Wandb entity to log to.",
-    )
-
-    parser.add_argument(
-        "--competition.entity",
-        type=str,
-        default="opentensor-dev",
-        help="Wandb entity to log to.",
-    )
-
-    parser.add_argument(
-        "--models.load_model_dir",
+        "--model_dir",
         type=str,
         help="Path for for loading the starting model related to a training run.",
         default="./models",
     )
 
     parser.add_argument(
-        "--models.namespace",
+        "--hf_repo_id",
         type=str,
-        help="Namespace where the model can be found.",
-        default="mock-namespace",
+        help="Hugging Face model repository ID",
     )
 
     parser.add_argument(
-        "--models.model_name",
+        "--hf_model_name",
         type=str,
-        help="Name of the model to push to hugging face.",
-        default="mock-name",
+        help="Filename of the model to push to hugging face.",
+    )
+    parser.add_argument(
+        "--hf_code_filename",
+        type=str,
+        help="Filename of the code zip  to push to hugging face.",
+    )
+    parser.add_argument(
+        "--hf_repo_type",
+        type=str,
+        help="Type of hugging face repository.",
     )
 
     parser.add_argument(
-        "--models.epoch_checkpoint",
-        type=int,
-        help="The epoch number to submit as your checkpoint to evaluate e.g. 10",
-        default=10,
+        "--action",
+        choices=["submit", "evaluate", "upload"],
     )
+
+    parser.add_argument(
+        "--model_path",
+        "--model_path",
+        type=str,
+        help="Path to ONNX model, used for evaluation",
+    )
+
+    parser.add_argument(
+        "--dataset_dir",
+        type=str,
+        help="Path for storing datasets.",
+        default="./datasets",
+    )
+
+    parser.add_argument(
+        "--hf_token",
+        type=str,
+        help="Hugging Face API token",
+        default="",
+    )
+
+    parser.add_argument(
+        "--clean_after_run",
+        action="store_true",
+        help="Whether to clean up (dataset, temporary files) after running",
+        default=False,
+    )
+
+    parser.add_argument(
+        "--code_directory",
+        "--code_directory",
+        type=str,
+        help="Path to code directory",
+        default=".",
+    )
+
+
+def add_common_args(cls, parser):
+    """Add validator and miner specific arguments to the parser."""
+    parser.add_argument(
+        "--hf_token",
+        type=str,
+        help="Hugging Face API token",
+        default="",
+    )
+    parser.add_argument(
+        "--competition.id",
+        type=str,
+        help="Path for storing competition participants models .",
+    )
+
+    parser.add_argument(
+        "--models.model_dir",
+        type=str,
+        help="Path for storing competition participants models .",
+        default="/tmp/models",
+    )
+
+    parser.add_argument(
+        "--models.dataset_dir",
+        type=str,
+        help="Path for storing datasets.",
+        default="/tmp/datasets",
+    )
+
+    parser.add_argument(
+        "--competition.config_path",
+        type=str,
+        help="Path with competition configuration .",
+        default="./neurons/competition_config.json",
+    )
+
 
 def add_validator_args(cls, parser):
     """Add validator specific arguments to the parser."""
@@ -254,7 +296,7 @@ def add_validator_args(cls, parser):
         # Note: the validator needs to serve an Axon with their IP or they may
         #   be blacklisted by the firewall of serving peers on the network.
         help="Set this flag to not attempt to serve an Axon.",
-        default=False,
+        default=True,
     )
 
     parser.add_argument(
@@ -265,33 +307,21 @@ def add_validator_args(cls, parser):
     )
 
     parser.add_argument(
-        "--wandb.project_name",
+        "--wandb_project_name",
         type=str,
         help="The name of the project where you are sending the new run.",
         default="template-validators",
     )
 
     parser.add_argument(
-        "--wandb.entity",
+        "--wandb_entity",
         type=str,
         help="The name of the project where you are sending the new run.",
         default="opentensor-dev",
     )
-    parser.add_argument(
-        "--models.model_dir",
-        type=str,
-        help="Path for storing competition participants models .",
-        default="./models",
-    )
-    parser.add_argument(
-        "--models.dataset_dir",
-        type=str,
-        help="Path for storing datasets.",
-        default="./datasets",
-    )
 
 
-def path_config(cls):
+def path_config(cls=None):
     """
     Returns the configuration object specific to this miner or validator after adding relevant arguments.
     """
@@ -302,5 +332,7 @@ def path_config(cls):
     bt.subtensor.add_args(parser)
     bt.logging.add_args(parser)
     bt.axon.add_args(parser)
-    cls.add_args(parser)
+    add_common_args(cls, parser)
+    if cls:
+        cls.add_args(parser)
     return bt.config(parser)

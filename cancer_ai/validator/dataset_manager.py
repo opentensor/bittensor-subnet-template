@@ -17,7 +17,12 @@ class DatasetManagerException(Exception):
 
 class DatasetManager(SerializableManager):
     def __init__(
-        self, config, competition_id: str, hf_repo_id: str, hf_filename: str, hf_repo_type: str
+        self,
+        config,
+        competition_id: str,
+        hf_repo_id: str,
+        hf_filename: str,
+        hf_repo_type: str,
     ) -> None:
         """
         Initializes a new instance of the DatasetManager class.
@@ -32,15 +37,13 @@ class DatasetManager(SerializableManager):
             None
         """
         self.config = config
-        self.competition_id = competition_id
+
         self.hf_repo_id = hf_repo_id
         self.hf_filename = hf_filename
         self.hf_repo_type = hf_repo_type
+        self.competition_id = competition_id
         self.local_compressed_path = ""
-        print(self.config)
-        self.local_extracted_dir = Path(
-            self.config.dataset_dir, self.competition_id
-        )
+        self.local_extracted_dir = Path(self.config.models.dataset_dir, competition_id)
         self.data: Tuple[List, List] = ()
         self.handler = None
 
@@ -54,12 +57,13 @@ class DatasetManager(SerializableManager):
     async def download_dataset(self):
         if not os.path.exists(self.local_extracted_dir):
             os.makedirs(self.local_extracted_dir)
-        
+
         self.local_compressed_path = HfApi().hf_hub_download(
             self.hf_repo_id,
             self.hf_filename,
-            cache_dir=Path(self.config.dataset_dir),
+            cache_dir=Path(self.config.models.dataset_dir),
             repo_type=self.hf_repo_type,
+            token=self.config.hf_token if hasattr(self.config, "hf_token") else None,
         )
 
     def delete_dataset(self) -> None:
@@ -68,7 +72,7 @@ class DatasetManager(SerializableManager):
         bt.logging.info("Deleting dataset: ")
 
         try:
-            shutil.rmtree(self.local_compressed_path)
+            shutil.rmtree(self.local_extracted_dir)
             bt.logging.info("Dataset deleted")
         except OSError as e:
             bt.logging.error(f"Failed to delete dataset from disk: {e}")
@@ -78,22 +82,23 @@ class DatasetManager(SerializableManager):
         """Unzip dataset"""
 
         self.local_extracted_dir = Path(
-            self.config.dataset_dir, self.competition_id
+            self.config.models.dataset_dir, self.competition_id
         )
 
         bt.logging.debug(f"Dataset extracted to: { self.local_compressed_path}")
         os.system(f"rm -R {self.local_extracted_dir}")
-        print(f"unzip {self.local_compressed_path} -d {self.local_extracted_dir}")
+        # TODO add error handling
         out, err = await run_command(
             f"unzip {self.local_compressed_path} -d {self.local_extracted_dir}"
         )
-        print(err)
-        print("Dataset unzipped")
+        bt.logging.info("Dataset unzipped")
 
     def set_dataset_handler(self) -> None:
         """Detect dataset type and set handler"""
         if not self.local_compressed_path:
-            raise DatasetManagerException(f"Dataset '{self.competition_id}' not downloaded")
+            raise DatasetManagerException(
+                f"Dataset '{self.config.competition.id}' not downloaded"
+            )
         # is csv in directory
         if os.path.exists(Path(self.local_extracted_dir, "labels.csv")):
             self.handler = DatasetImagesCSV(
@@ -102,12 +107,10 @@ class DatasetManager(SerializableManager):
                 Path(self.local_extracted_dir, "labels.csv"),
             )
         else:
-            #print("Files in dataset: ", os.listdir(self.local_extracted_dir))
             raise NotImplementedError("Dataset handler not implemented")
 
     async def prepare_dataset(self) -> None:
         """Download dataset, unzip and set dataset handler"""
-        bt.logging.info(f"Preparing dataset '{self.competition_id}'")
         bt.logging.info(f"Downloading dataset '{self.competition_id}'")
         await self.download_dataset()
         bt.logging.info(f"Unzipping dataset '{self.competition_id}'")
@@ -120,5 +123,7 @@ class DatasetManager(SerializableManager):
     async def get_data(self) -> Tuple[List, List]:
         """Get data from dataset handler"""
         if not self.data:
-            raise DatasetManagerException(f"Dataset '{self.competition_id}' not initalized ")
+            raise DatasetManagerException(
+                f"Dataset '{self.competition_id}' not initalized "
+            )
         return self.data

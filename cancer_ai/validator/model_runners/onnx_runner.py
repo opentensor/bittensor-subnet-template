@@ -2,7 +2,7 @@ from . import BaseRunnerHandler
 from typing import List
 
 class OnnxRunnerHandler(BaseRunnerHandler):
-    def run(self, X_test: List) -> List:
+    async def run(self, X_test: List) -> List:
         import onnxruntime
         import numpy as np
 
