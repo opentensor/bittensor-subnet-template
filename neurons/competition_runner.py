@@ -38,7 +38,7 @@ class CompetitionRunLog(BaseModel):
                 run.end_time = datetime.now(timezone.utc)
 
     def was_competition_already_executed(
-        self, last_minutes: int = 5, competition_id: str
+        self, competition_id: str, last_minutes: int = 15
     ):
         """Check if competition was executed in last minutes"""
         now_time = datetime.now(timezone.utc)
@@ -105,7 +105,7 @@ async def run_competitions_tick(
             continue
 
         if run_log.was_competition_already_executed(
-            competition_id=competition_manager.competition_id
+            competition_id=competition_manager.competition_id, last_minutes=MINUTES_BACK
         ):
             bt.logging.info(
                 f"Competition {competition_manager.competition_id} already executed, skipping"
