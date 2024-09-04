@@ -8,6 +8,12 @@
 [![Discord Chat](https://img.shields.io/discord/308323056592486420.svg)]([https://discord.gg/bittensor](https://discord.com/channels/1259812760280236122/1262383307832823809))
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
 
+[www.SAFE-SCAN.ai](https://www.safe-scan.ai)   &nbsp;&nbsp;&nbsp;&nbsp;  [www.SKIN-SCAN.ai](https://www.skin-scan.ai)   &nbsp;&nbsp;&nbsp;&nbsp;  [Follow us on X](https://x.com/SAFESCAN_AI)
+
+
+# **📋 TABLE OF CONTENT**
+
+
 - [👋 Introduction](#-introduction)
 - [⚙️ Features](#features)
 - [👁️ Vision](#vision)
@@ -112,7 +118,7 @@ However, brand recognition is just the beginning. Our marketing strategy will fo
 Our tokenomics are uniquely designed to drive research and development of new algorithms while also supporting real-life applications.
 **Competitions** Safe Scan organizes ongoing competitions focused on cancer detection using machine learning, providing a structured environment for participants to develop and test their models.
 
-You can find comprehensive details about competition scheduling, dataset release, model submission, evaluation, configuration, and development tools here: [LINK]
+You can find comprehensive details about competition scheduling, dataset release, model submission, evaluation, configuration, and development tools here: [COMPETITION README](DOCS/COMPETITIONS.md)
 
 **Incentives**: The winner of each competition receives the entire reward pool for that specific competition. The reward pool is determined by the total emission allocated for miners, divided by the number of competitions being held.
 
@@ -171,6 +177,73 @@ To install BITTENSOR and set up a wallet follow instructions in this link:
 [PRE REQUIRMENTS](DOCS/prerequirments.md)
 
 # **📊 SETUP WandB (HIGHLY RECOMMENDED - VALIDATORS PLEASE READ)**
+
+WandB is a valuable tool for tracking and visualizing machine learning experiments, and it helps log and monitor key metrics for miners and validators.
+
+Here’s a quick guide to setting up your WandB
+
+## **Instaliation**
+To get started with WandB, you need to install the WandB Python package.
+
+```
+pip install wandb
+```
+
+## **Obtaining API key**
+
+1. Log into your **Weights & Biases** account in a browser.
+2. Go to user settings and scroll down to **API keys** section.
+3. Copy your API key to procede with next steps.
+
+## **Setting up the API key**
+
+After obtaining your API key, you need to set it up in your environment so that WandB can authenticate your account.
+
+1. Log into WANDB by running following command in your terminal:
+```
+wandb login
+```
+2. Enter your API key and press <kbd>Enter</kbd>
+
+## **Set API Key as Environment Variable (OPTIONAL)**
+If you prefer not to log in every time, you can set your API key as an environment variable.
+
+### **Linux**
+
+To set the WANDB_API_KEY environment variable permanently on Linux, you’ll need to add it to your .bashrc (or .bash_profile, .profile, depending on your distribution and shell).
+```
+echo 'export WANDB_API_KEY=your_api_key' >> ~/.bashrc
+source ~/.bashrc
+```
+Replace your_api_key with API key copied from Weights & Biases
+
+**Verification**
+
+```
+echo $WANDB_API_KEY
+```
+
+### Windows
+
+To set it permanently (system-wide), use the following steps:
+
+ - Open Environment Variables Dialog:
+
+    - Right-click on This PC or Computer on the Desktop or in File Explorer and select Properties.
+    - Click on Advanced system settings.
+    - In the System Properties window, click on the Environment Variables button.
+- Add New System Variable:
+
+    - In the Environment Variables window, click on New under the System variables section.
+    - Set the Variable name to WANDB_API_KEY and Variable value to your API key.
+    - Click OK to close all dialogs.
+
+**Verification**
+```
+echo %WANDB_API_KEY%
+```
+
+
 # **👍 RUNNING VALIDATOR**
 
 ...
@@ -182,7 +255,7 @@ To run a miner follow instructions in this link:
 
 # **🚀 GET INVOLVED**
 
-1. Visit our [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/safe-scan-ai/cancer-ai-3) to explore the code behind SAFE SCAN.
+1. Visit our [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/safe-scan-ai/cancer-ai) to explore the code behind SAFE SCAN.
 
 2. Join our [![Discord](https://img.shields.io/discord/308323056592486420.svg)](https://discord.com/channels/1259812760280236122/1262383307832823809) to stay updated and engage with the team.
 
