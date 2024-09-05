@@ -24,6 +24,7 @@
 - [👨‍👨‍👦‍👦 Team Composition](#-team-composition)
 - [🛣️ Roadmap](#roadmap)
 - [✅ Pre requirments](#-pre-requirments)
+- [📊 SETUP WandB (HIGHLY RECOMMENDED - VALIDATORS PLEASE READ)](#setup-wandb-highly-recommended---validators-please-read)
 - [👍 Running Validator](#-running-validator)
 - [⛏️ Running Miner](#-running-miner)
 - [🚀 Get invloved](#-get-involved)
@@ -171,10 +172,10 @@ Given the complexity of creating a state-of-the-art roleplay LLM, we plan to div
 - [ ] Optimize skin cancer detection models to create one mixture-of-experts model which will run on mobile devices
 - [ ] Start the process for certifying models - FDA approval
 - [ ] Make competitions for breast cancer
-# **✅ PRE REQUIRMENTS 
+# **✅ PRE REQUIRMENTS**
 To install BITTENSOR and set up a wallet follow instructions in this link:
 
-[PRE REQUIRMENTS](DOCS/prerequirments.md)
+[PRE REQUIRMENTS](DOCS/prerequirements.md)
 
 # **📊 SETUP WandB (HIGHLY RECOMMENDED - VALIDATORS PLEASE READ)**
 
@@ -245,8 +246,9 @@ echo %WANDB_API_KEY%
 
 
 # **👍 RUNNING VALIDATOR**
+To run a validator follow instructions in this link:
 
-...
+[RUNNING VALIDATOR](DOCS/validator.md)
 
 # **⛏️ RUNNING MINER**
 To run a miner follow instructions in this link:
