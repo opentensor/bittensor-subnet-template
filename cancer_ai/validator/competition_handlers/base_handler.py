@@ -4,6 +4,7 @@ from abc import abstractmethod
 from numpy import ndarray
 from pydantic import BaseModel
 
+
 class ModelEvaluationResult(BaseModel):
     accuracy: float
     precision: float
@@ -18,6 +19,7 @@ class ModelEvaluationResult(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
+
 class BaseCompetitionHandler:
     """
     Base class for handling different competition types.
@@ -25,13 +27,9 @@ class BaseCompetitionHandler:
     This class initializes the config and competition_id attributes.
     """
 
-    def __init__(self, X_test, y_test) -> None:
+    def __init__(self, X_test: list, y_test: list) -> None:
         """
         Initializes the BaseCompetitionHandler object.
-
-        Args:
-            X_test (list): List of test images.
-            y_test (list): List of test labels.
         """
         self.X_test = X_test
         self.y_test = y_test

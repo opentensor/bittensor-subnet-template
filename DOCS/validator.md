@@ -20,7 +20,9 @@
 
 ## Installation 
 
-- install `unzip` command
+- install `unzip` and `zip` commands 
+
+`sudo apt install zip unzip`
 
 - create virtualenv
 
@@ -44,5 +46,36 @@ Prerequirements
 
 Main command
 
+```bash
+python neurons/validator.py \
+    --netuid <NETUID> \
+    --wallet.name <WALLET NAME> \
+    --wallet.hotkey <WALLET HOTKEY NAME> \
+    --subtensor.network <test|finney> \
+    --logging.debug
+```
 
-python neurons/validator.py --netuid 163 --subtensor.network test --wallet.name validator_testnet --wallet.hotkey hotkey1 --logging.debug
+Example for testnet 
+
+```bash
+python neurons/validator.py \
+    --netuid 163 \
+    --subtensor.network test \
+    --wallet.name validator_testnet \
+    --wallet.hotkey hotkey1 \
+    --logging.debug
+```
+
+
+You can also run validator using auto-restart script, which does the following:
+    - detects changes from git  
+    - automatically pulls new code or configuration
+    - installs new packages if required
+    - restarts validator process
+
+You can  use the same configuration switches as above, with one extra command - `--pm2_name`
+
+```bash
+python scripts/start_validator.py --pm2_name <PROCESS NAME>
+```
+

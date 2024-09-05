@@ -52,11 +52,7 @@ class DatasetImagesCSV(BaseDatasetHandler):
         """
         await self.sync_training_data()
         pred_x = [
-            Image.open(
-                str(
-                    Path(self.dataset_path, entry.relative_path).resolve(),
-                ),
-            )
+            Path(self.dataset_path, entry.relative_path).resolve()
             for entry in self.entries
         ]
         pred_y = [entry.is_melanoma for entry in self.entries]

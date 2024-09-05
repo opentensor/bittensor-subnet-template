@@ -55,8 +55,6 @@ class Validator(BaseValidatorNeuron):
         await asyncio.gather(*coroutines)
 
     async def competition_loop_tick(self):
-
-        bt.logging.debug("Run log", self.run_log)
         try:
             winning_hotkey, competition_id = await run_competitions_tick(
                 self.competition_scheduler, self.run_log

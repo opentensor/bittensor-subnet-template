@@ -94,7 +94,7 @@ class MinerManagerCLI:
             X_test=X_test, y_test=y_test
         )
 
-        X_test, y_test = competition_handler.preprocess_data()
+        y_test = competition_handler.preprocess_data()
 
         start_time = time.time()
         y_pred = await run_manager.run(X_test)

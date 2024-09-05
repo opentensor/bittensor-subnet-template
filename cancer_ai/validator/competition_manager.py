@@ -86,6 +86,9 @@ class CompetitionManager(SerializableManager):
         self.chain_miner_models = {}
         self.test_mode = test_mode
 
+    def __repr__(self) -> str:
+        return f"CompetitionManager<{self.competition_id}>"
+
     def log_results_to_wandb(
         self, hotkey: str, evaluation_result: ModelEvaluationResult
     ) -> None:
@@ -193,7 +196,7 @@ class CompetitionManager(SerializableManager):
         else:
             await self.sync_chain_miners()
 
-        X_test, y_test = competition_handler.preprocess_data()
+        y_test = competition_handler.prepare_y_pred(y_test)
         # bt.logging.info("Ground truth: ", y_test)
         for hotkey in self.model_manager.hotkey_store:
             bt.logging.info("Evaluating hotkey: ", hotkey)
