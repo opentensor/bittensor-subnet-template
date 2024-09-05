@@ -173,7 +173,6 @@ def add_miner_args(cls, parser):
 
     parser.add_argument(
         "--model_path",
-        "--model_path",
         type=str,
         help="Path to ONNX model, used for evaluation",
     )
@@ -184,7 +183,6 @@ def add_miner_args(cls, parser):
         help="Path for storing datasets.",
         default="./datasets",
     )
-
 
     parser.add_argument(
         "--clean_after_run",

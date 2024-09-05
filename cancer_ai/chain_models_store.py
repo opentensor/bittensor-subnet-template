@@ -11,16 +11,14 @@ class ChainMinerModel(BaseModel):
     """Uniquely identifies a trained model"""
 
     competition_id: Optional[str] = Field(description="The competition id")
-
-    block: Optional[str] = Field(
-        description="Block on which this model was claimed on the chain."
-    )
-
     hf_repo_id: Optional[str] = Field(description="Hugging Face repository id.")
-    hf_filename: Optional[str] = Field(description="Hugging Face model filename.")
+    hf_model_filename: Optional[str] = Field(description="Hugging Face model filename.")
     hf_repo_type: Optional[str] = Field(description="Hugging Face repository type.")
     hf_code_filename: Optional[str] = Field(
         description="Hugging Face code zip filename."
+    )
+    block: Optional[str] = Field(
+        description="Block on which this model was claimed on the chain."
     )
 
     class Config:

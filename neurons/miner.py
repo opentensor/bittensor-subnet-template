@@ -26,14 +26,13 @@ class MinerManagerCLI:
         base_config = copy.deepcopy(config or BaseNeuron.config())
         self.config = path_config(self)
         self.config.merge(base_config)
+        self.config.logging.debug = True
         BaseNeuron.check_config(self.config)
         bt.logging.set_config(config=self.config.logging)
-        bt.logging.info(self.config)
 
     @classmethod
     def add_args(cls, parser: argparse.ArgumentParser):
         """Method for injecting miner arguments to the parser."""
-        print("add")
         add_miner_args(cls, parser)
 
     async def upload_to_hf(self) -> None:
@@ -42,8 +41,8 @@ class MinerManagerCLI:
         hf_api = HfApi()
         hf_login(token=self.config.hf_token)
 
-        hf_model_path = f"{self.config.competition.id}-{self.config.hf_model_name}"
-        hf_code_path = f"{self.config.competition.id}-{self.config.hf_model_name}"
+        hf_model_path = f"{self.config.competition.id}-{self.config.hf_model_name}.onnx"
+        hf_code_path = f"{self.config.competition.id}-{self.config.hf_model_name}.zip"
 
         path = hf_api.upload_file(
             path_or_fileobj=self.config.model_path,
@@ -54,7 +53,7 @@ class MinerManagerCLI:
         )
         bt.logging.info("Uploading code to Hugging Face.")
         path = hf_api.upload_file(
-            path_or_fileobj=f"{self.code_zip_path}",
+            path_or_fileobj=self.code_zip_path,
             path_in_repo=hf_code_path,
             repo_id=self.config.hf_repo_id,
             repo_type="model",
@@ -83,7 +82,7 @@ class MinerManagerCLI:
             self.config,
             self.config.competition.id,
             "safescanai/test_dataset",
-            "skin_melanoma.zip",
+            "test_dataset.zip",
             "dataset",
         )
         await dataset_manager.prepare_dataset()
@@ -94,13 +93,17 @@ class MinerManagerCLI:
             X_test=X_test, y_test=y_test
         )
 
-        y_test = competition_handler.preprocess_data()
+        y_test = competition_handler.prepare_y_pred(y_test)
 
         start_time = time.time()
         y_pred = await run_manager.run(X_test)
         run_time_s = time.time() - start_time
+        
+        # print(y_pred)
         model_result = competition_handler.get_model_result(y_test, y_pred, run_time_s)
-        bt.logging.info(f"\n {model_result}\n")
+        bt.logging.info(
+            f"Evalutaion results:\n{model_result.model_dump_json(indent=4)}"
+        )
         if self.config.clean_after_run:
             dataset_manager.delete_dataset()
 
@@ -110,6 +113,10 @@ class MinerManagerCLI:
         out, err = await run_command(
             f"zip  -r {code_zip_path} {self.config.code_directory}/*"
         )
+        if err:
+            "Error zipping code"
+            bt.logging.error(err)
+            return
         bt.logging.info(f"Code zip path: {code_zip_path}")
         self.code_zip_path = code_zip_path
 
@@ -158,11 +165,12 @@ class MinerManagerCLI:
 
         # Push model metadata to chain
         model_id = ChainMinerModel(
+            competition_id=self.config.competition.id,
             hf_repo_id=self.config.hf_repo_id,
             hf_model_filename=self.config.hf_model_name,
-            hf_code_filename=self.config.hf_code_filename,
-            competition_id=self.config.competition.id,
             hf_repo_type=self.config.hf_repo_type,
+            hf_code_filename=self.config.hf_code_filename,
+            block=None,
         )
         await self.metadata_store.store_model_metadata(model_id)
         bt.logging.success(

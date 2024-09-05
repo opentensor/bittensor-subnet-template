@@ -2,7 +2,7 @@ from typing import Any
 from abc import abstractmethod
 
 from numpy import ndarray
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer
 
 
 class ModelEvaluationResult(BaseModel):
@@ -15,6 +15,10 @@ class ModelEvaluationResult(BaseModel):
     roc_auc: float
     run_time_s: float
     tested_entries: int
+
+    @field_serializer("confusion_matrix", "fpr", "tpr")
+    def serialize_numpy(self, value: Any) -> Any:
+        return value.tolist()
 
     class Config:
         arbitrary_types_allowed = True

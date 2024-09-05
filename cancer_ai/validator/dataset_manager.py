@@ -72,7 +72,12 @@ class DatasetManager(SerializableManager):
         bt.logging.info("Deleting dataset: ")
 
         try:
-            shutil.rmtree(self.local_extracted_dir)
+            if not os.access(self.config.models.dataset_dir, os.W_OK):
+                bt.logging.error(f"No write permissions for: {self.local_extracted_dir}")
+                return
+
+            # Optional: Check if any files are open or being used.
+            shutil.rmtree(self.config.models.dataset_dir)
             bt.logging.info("Dataset deleted")
         except OSError as e:
             bt.logging.error(f"Failed to delete dataset from disk: {e}")
