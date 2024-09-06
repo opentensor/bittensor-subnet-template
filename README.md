@@ -176,113 +176,6 @@ You can use a subnet API to the registry by doing the following:
 1. Make the query given the subnet specific API
 
 
-See a simplified example for subnet 21 (`FileTao` storage) below. See `examples/subnet21.py` file for a full implementation example to follow:
-
-```python
-
-# Subnet 21 Interface Example
-
-class StoreUserAPI(SubnetsAPI):
-    def __init__(self, wallet: "bt.wallet"):
-        super().__init__(wallet)
-        self.netuid = 21
-
-    def prepare_synapse(
-        self,
-        data: bytes,
-        encrypt=False,
-        ttl=60 * 60 * 24 * 30,
-        encoding="utf-8",
-    ) -> StoreUser:
-        data = bytes(data, encoding) if isinstance(data, str) else data
-        encrypted_data, encryption_payload = (
-            encrypt_data(data, self.wallet) if encrypt else (data, "{}")
-        )
-        expected_cid = generate_cid_string(encrypted_data)
-        encoded_data = base64.b64encode(encrypted_data)
-
-        synapse = StoreUser(
-            encrypted_data=encoded_data,
-            encryption_payload=encryption_payload,
-            ttl=ttl,
-        )
-
-        return synapse
-
-    def process_responses(
-        self, responses: List[Union["bt.Synapse", Any]]
-    ) -> str:
-        for response in responses:
-            if response.dendrite.status_code != 200:
-                continue
-            stored_cid = (
-                response.data_hash.decode("utf-8")
-                if isinstance(response.data_hash, bytes)
-                else response.data_hash
-            )
-            bt.logging.debug("received data CID: {}".format(stored_cid))
-            break
-
-        return stored_cid
-
-
-class RetrieveUserAPI(SubnetsAPI):
-    def __init__(self, wallet: "bt.wallet"):
-        super().__init__(wallet)
-        self.netuid = 21
-
-    def prepare_synapse(self, cid: str) -> RetrieveUser:
-        synapse = RetrieveUser(data_hash=cid)
-        return synapse
-
-    def process_responses(self, responses: List[Union["bt.Synapse", Any]]) -> bytes:
-        success = False
-        decrypted_data = b""
-        for response in responses:
-            if response.dendrite.status_code != 200:
-                continue
-            decrypted_data = decrypt_data_with_private_key(
-                encrypted_data,
-                response.encryption_payload,
-                bytes(self.wallet.coldkey.private_key.hex(), "utf-8"),
-            )
-        return data
-```
- 
-Example usage of the `FileTao` interface, which can serve as an example for other subnets.
-
-```python
-# import the bespoke subnet API
-from storage import StoreUserAPI, RetrieveUserAPI
-
-wallet = bt.wallet(wallet="default", hotkey="default") # the wallet used for querying
-metagraph = bt.metagraph(netuid=21)  # metagraph of the subnet desired
-query_axons = metagraph.axons... # define custom logic to retrieve desired axons (e.g. validator set, specific miners, etc)
-
-# Store the data on subnet 21
-bt.logging.info(f"Initiating store_handler: {store_handler}")
-cid = await StoreUserAPI(
-      axons=query_axons, # the axons you wish to query
-      # Below: Parameters passed to `prepare_synapse` for this API subclass
-      data=b"Hello Bittensor!",
-      encrypt=False,
-      ttl=60 * 60 * 24 * 30, 
-      encoding="utf-8",
-      uid=None,
-)
-# The Content Identifier that corresponds to the stored data
-print(cid)
-> "bafkreifv6hp4o6bllj2nkdtzbq6uh7iia6bgqgd3aallvfhagym2s757v4
-
-# Now retrieve data from SN21 (storage)
-data = await RetrieveUserAPI(
-  axons=query_axons, # axons desired to query
-  cid=cid, # the content identifier to fetch the data
-)
-print(data)
-> b"Hello Bittensor!"
-```
-
 
 # Subnet Links
 In order to see real-world examples of subnets in-action, see the `subnet_links.py` document or access them from inside the `template` package by:
@@ -302,7 +195,7 @@ template.SUBNET_LINKS
 This repository is licensed under the MIT License.
 ```text
 # The MIT License (MIT)
-# Copyright © 2023 Yuma Rao
+# Copyright © 2024 Opentensor Foundation
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
