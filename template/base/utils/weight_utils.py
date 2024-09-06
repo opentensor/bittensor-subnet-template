@@ -133,7 +133,7 @@ def process_weights_for_netuid(
     Union[ndarray[Any, dtype[floating[Any]]], ndarray[Any, dtype[complexfloating[Any, Any]]]], Any]], tuple[
     ndarray[Any, dtype[Any]], ndarray], tuple[Any, ndarray]]:
     bittensor.logging.debug("process_weights_for_netuid()")
-    bittensor.logging.debug("weights", weights)
+    bittensor.logging.debug("weights", *weights)
     bittensor.logging.debug("netuid", netuid)
     bittensor.logging.debug("subtensor", subtensor)
     bittensor.logging.debug("metagraph", metagraph)
