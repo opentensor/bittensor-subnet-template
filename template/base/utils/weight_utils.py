@@ -7,9 +7,7 @@ U32_MAX = 4294967295
 U16_MAX = 65535
 
 
-def normalize_max_weight(
-        x: np.ndarray, limit: float = 0.1
-) -> np.ndarray:
+def normalize_max_weight(x: np.ndarray, limit: float = 0.1) -> np.ndarray:
     r"""Normalizes the numpy array x so that sum(x) = 1 and the max value is not greater than the limit.
     Args:
         x (:obj:`np.ndarray`):
@@ -44,7 +42,7 @@ def normalize_max_weight(
 
         # Determine the cutoff based on the index
         cutoff_scale = (limit * cumsum[n_values - 1] - epsilon) / (
-                1 - (limit * (len(estimation) - n_values))
+            1 - (limit * (len(estimation) - n_values))
         )
         cutoff = cutoff_scale * values.sum()
 
@@ -57,7 +55,7 @@ def normalize_max_weight(
 
 
 def convert_weights_and_uids_for_emit(
-        uids: np.ndarray, weights: np.ndarray
+    uids: np.ndarray, weights: np.ndarray
 ) -> Tuple[List[int], List[int]]:
     r"""Converts weights into integer u32 representation that sum to MAX_INT_WEIGHT.
     Args:
@@ -105,7 +103,9 @@ def convert_weights_and_uids_for_emit(
         weights = [
             float(value) / max_weight for value in weights
         ]  # max-upscale values (max_weight = 1).
-        bittensor.logging.debug(f"setting on chain max: {max_weight} and weights: {weights}")
+        bittensor.logging.debug(
+            f"setting on chain max: {max_weight} and weights: {weights}"
+        )
 
     weight_vals = []
     weight_uids = []
@@ -123,15 +123,26 @@ def convert_weights_and_uids_for_emit(
 
 
 def process_weights_for_netuid(
-        uids,
-        weights: np.ndarray,
-        netuid: int,
-        subtensor: "bittensor.subtensor",
-        metagraph: "bittensor.metagraph" = None,
-        exclude_quantile: int = 0,
-) -> Union[tuple[ndarray[Any, dtype[Any]], Union[
-    Union[ndarray[Any, dtype[floating[Any]]], ndarray[Any, dtype[complexfloating[Any, Any]]]], Any]], tuple[
-    ndarray[Any, dtype[Any]], ndarray], tuple[Any, ndarray]]:
+    uids,
+    weights: np.ndarray,
+    netuid: int,
+    subtensor: "bittensor.subtensor",
+    metagraph: "bittensor.metagraph" = None,
+    exclude_quantile: int = 0,
+) -> Union[
+    tuple[
+        ndarray[Any, dtype[Any]],
+        Union[
+            Union[
+                ndarray[Any, dtype[floating[Any]]],
+                ndarray[Any, dtype[complexfloating[Any, Any]]],
+            ],
+            Any,
+        ],
+    ],
+    tuple[ndarray[Any, dtype[Any]], ndarray],
+    tuple[Any, ndarray],
+]:
     bittensor.logging.debug("process_weights_for_netuid()")
     bittensor.logging.debug("weights", *weights)
     bittensor.logging.debug("netuid", netuid)
@@ -169,14 +180,10 @@ def process_weights_for_netuid(
         bittensor.logging.warning(
             "No non-zero weights less then min allowed weight, returning all ones."
         )
-        weights = (
-                np.ones(metagraph.n) * 1e-5
-        )  # creating minimum even non-zero weights
+        weights = np.ones(metagraph.n) * 1e-5  # creating minimum even non-zero weights
         weights[non_zero_weight_idx] += non_zero_weights
         bittensor.logging.debug("final_weights", weights)
-        normalized_weights = normalize_max_weight(
-            x=weights, limit=max_weight_limit
-        )
+        normalized_weights = normalize_max_weight(x=weights, limit=max_weight_limit)
         return np.arange(len(normalized_weights)), normalized_weights
 
     bittensor.logging.debug("non_zero_weights", non_zero_weights)
