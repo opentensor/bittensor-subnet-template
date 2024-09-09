@@ -28,7 +28,6 @@ from template.utils.config import add_miner_args
 
 from typing import Union
 
-
 class BaseMinerNeuron(BaseNeuron):
     """
     Base class for Bittensor miners.
@@ -54,10 +53,7 @@ class BaseMinerNeuron(BaseNeuron):
                 "You are allowing non-registered entities to send requests to your miner. This is a security risk."
             )
         # The axon handles request processing, allowing validators to send this miner requests.
-        self.axon = bt.axon(
-            wallet=self.wallet,
-            config=self.config() if callable(self.config) else self.config,
-        )
+        self.axon = bt.axon(wallet=self.wallet, config=self.config() if callable(self.config) else self.config)
 
         # Attach determiners which functions are called when servicing a request.
         bt.logging.info(f"Attaching forward function to miner axon.")

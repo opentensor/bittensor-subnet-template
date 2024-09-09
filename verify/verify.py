@@ -36,8 +36,6 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Verify a signature")
-    parser.add_argument(
-        "--file", help="The file containing the message and signature"
-    )
+    parser.add_argument("--file", help="The file containing the message and signature")
     args = parser.parse_args()
     main(args)
