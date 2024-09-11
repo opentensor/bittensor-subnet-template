@@ -27,7 +27,7 @@ Key features of the script include:
 - **zip and unzip**
 
 ### Wandb API key requirement
-- Contact us [https://discord.com/channels/1259812760280236122/1262734148020338780](on discord) to get Wandb API key
+- Contact us [on discord](https://discord.com/channels/1259812760280236122/1262734148020338780) to get Wandb API key
 - Put your key in .env.example file
 
 ## Installation and Setup

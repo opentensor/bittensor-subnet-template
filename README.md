@@ -24,7 +24,6 @@
 - [👨‍👨‍👦‍👦 Team Composition](#-team-composition)
 - [🛣️ Roadmap](#roadmap)
 - [✅ Pre requirments](#-pre-requirments)
-- [📊 SETUP WandB (HIGHLY RECOMMENDED - VALIDATORS PLEASE READ)](#setup-wandb-highly-recommended---validators-please-read)
 - [👍 Running Validator](#-running-validator)
 - [⛏️ Running Miner](#-running-miner)
 - [🚀 Get invloved](#-get-involved)
@@ -50,7 +49,7 @@ This repository contains subnet code to run on Bittensor network.
 
 ⚔️ Various cancer detection algorithm competitions
 
-📊 WandB Visualization Dashboard
+📊 Dashboard
 
 💻 Specialized software for detecting other types of cancer
 
@@ -176,73 +175,6 @@ Given the complexity of creating a state-of-the-art roleplay LLM, we plan to div
 To install BITTENSOR and set up a wallet follow instructions in this link:
 
 [PRE REQUIRMENTS](DOCS/prerequirements.md)
-
-# **📊 SETUP WandB (HIGHLY RECOMMENDED - VALIDATORS PLEASE READ)**
-
-WandB is a valuable tool for tracking and visualizing machine learning experiments, and it helps log and monitor key metrics for miners and validators.
-
-Here’s a quick guide to setting up your WandB
-
-## **Instaliation**
-To get started with WandB, you need to install the WandB Python package.
-
-```
-pip install wandb
-```
-
-## **Obtaining API key**
-
-1. Log into your **Weights & Biases** account in a browser.
-2. Go to user settings and scroll down to **API keys** section.
-3. Copy your API key to procede with next steps.
-
-## **Setting up the API key**
-
-After obtaining your API key, you need to set it up in your environment so that WandB can authenticate your account.
-
-1. Log into WANDB by running following command in your terminal:
-```
-wandb login
-```
-2. Enter your API key and press <kbd>Enter</kbd>
-
-## **Set API Key as Environment Variable (OPTIONAL)**
-If you prefer not to log in every time, you can set your API key as an environment variable.
-
-### **Linux**
-
-To set the WANDB_API_KEY environment variable permanently on Linux, you’ll need to add it to your .bashrc (or .bash_profile, .profile, depending on your distribution and shell).
-```
-echo 'export WANDB_API_KEY=your_api_key' >> ~/.bashrc
-source ~/.bashrc
-```
-Replace your_api_key with API key copied from Weights & Biases
-
-**Verification**
-
-```
-echo $WANDB_API_KEY
-```
-
-### Windows
-
-To set it permanently (system-wide), use the following steps:
-
- - Open Environment Variables Dialog:
-
-    - Right-click on This PC or Computer on the Desktop or in File Explorer and select Properties.
-    - Click on Advanced system settings.
-    - In the System Properties window, click on the Environment Variables button.
-- Add New System Variable:
-
-    - In the Environment Variables window, click on New under the System variables section.
-    - Set the Variable name to WANDB_API_KEY and Variable value to your API key.
-    - Click OK to close all dialogs.
-
-**Verification**
-```
-echo %WANDB_API_KEY%
-```
 
 
 # **👍 RUNNING VALIDATOR**
