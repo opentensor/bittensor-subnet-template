@@ -232,7 +232,7 @@ def add_common_args(cls, parser):
         "--competition.config_path",
         type=str,
         help="Path with competition configuration .",
-        default="./neurons/competition_config.json",
+        default="./config/competition_config.json",
     )
 
 
@@ -310,6 +310,13 @@ def add_validator_args(cls, parser):
         type=str,
         help="The name of the project where you are sending the new run.",
         default="opentensor-dev",
+    )
+
+    parser.add_argument(
+        "--test_mode",
+        action="store_true",
+        help="Test(net) mode",
+        default=False,
     )
 
 

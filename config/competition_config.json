@@ -1,0 +1,13 @@
+[
+    {
+        "competition_id": "melanoma-1",
+        "category": "skin",
+        "evaluation_times": [
+            "10:00",
+            "22:00"
+        ],
+        "dataset_hf_repo": "safescanai/melanoma-competition",
+        "dataset_hf_filename": "melanoma-1-dataset.zip",
+        "dataset_hf_repo_type": "dataset"
+    }
+]

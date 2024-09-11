@@ -18,10 +18,35 @@ The evaluation will be calculaded on following metrics with described weights.
 
 | **Metric**  | **Description**                                       | **Weight** |
 |-------------|-------------------------------------------------------|------------|
-| **F-beta**  | Prioritizes recall, with a high beta to emphasize it. | 0.50       |
-| **Recall**  | Measures the ability to correctly identify positives. | 0.20       |
-| **AUC**     | Evaluates the model's ability to distinguish classes. | 0.15       |
-| **Accuracy**| Measures the overall correctness of predictions.      | 0.15       |
+| **F-beta**  | Prioritizes recall, with a high beta to emphasize it. $\beta = 2$ | 0.60       |
+| **Accuracy**| Measures the overall correctness of predictions.      | 0.30       |
+| **AUC**     | Evaluates the model's ability to distinguish classes. | 0.10       |
+
+### Mathematical Formulas
+
+1. **F-beta Score $F\_\beta\$**
+
+   
+   $$F_\beta = \left(1 + \beta^2\right) \cdot \frac{\text{Precision} \cdot \text{Recall}}{\left(\beta^2 \cdot \text{Precision}\right) + \text{Recall}}$$
+   
+
+   Where:
+   - **$\beta$** is the weight of recall in the combined score
+   - in our case $\beta = 2$ for higher recall importance
+
+2. **Accuracy**
+
+   $$\text{Accuracy} = \frac{\text{True Positives} + \text{True Negatives}}{\text{Total Number of Samples}}$$
+
+3. **Area Under the Curve (AUC)**
+
+   AUC is the area under the Receiver Operating Characteristic (ROC) curve. It is calculated using the trapezoidal rule:
+
+   $$\text{AUC} = \int_0^1 \text{TPR} \, d(\text{FPR})$$
+
+   Where:
+   - **TPR** = True Positive Rate
+   - **FPR** = False Positive Rate
 
 
 ## Model Inputs and Outputs
@@ -40,6 +65,6 @@ The evaluation will be calculaded on following metrics with described weights.
 ## Rules and Guidelines
 
 - **Timeline**:
- - every day competition will be run one or more times a day. Timings are defined in [competition_config.json](neurons/competition_config.json)
+ - every day competition will be run one or more times a day. Timings are defined in [competition_config.json](config/competition_config.json)
  - couple of minutes before start of competition, new part of dataset will be published for testing.
 - Results of competition will be available on the dashboard

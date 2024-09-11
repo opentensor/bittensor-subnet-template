@@ -2,6 +2,7 @@ import functools
 import multiprocessing
 from typing import Any
 
+
 def run_in_subprocess(func: functools.partial, ttl: int) -> Any:
     """Runs the provided function on a subprocess with 'ttl' seconds to complete.
 

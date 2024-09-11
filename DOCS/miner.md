@@ -42,6 +42,31 @@ Key features of the script include:
     pip install -r requirements.txt
     ```
 
+## Registering miner on the subnet
+
+If you haven't yet created a miner wallet and registered on our subnet here is the set of commands to run:
+
+Create a miner coldkey:
+
+```
+btcli wallet new_coldkey --wallet.name miner
+```
+
+Create a hotkey for the miner:
+```
+btcli wallet new_hotkey --wallet.name miner --wallet.hotkey default
+```
+
+Register miner on the CancerAI subnet:
+```
+btcli subnet recycle_register --netuid <Cancer AI subnet id> --subtensor.network finney --wallet.name miner --wallet.hotkey default
+```
+
+Check that your key was registered:
+```
+btcli wallet overview --wallet.name miner 
+```
+
 ## Usage
 
 ### Prerequisites
@@ -75,7 +100,7 @@ Command line argument explanation
 
 - `--action` - action to perform , choices are "upload", "evaluate", "submit"
 - `--model_path` - local path of ONNX model
-- `--competition.id` - ID of competition. List of current competitions are in [competition_config.json](neurons/competition_config.json)
+- `--competition.id` - ID of competition. List of current competitions are in [competition_config.json](config/competition_config.json)
 - `--clean-after-run` - it will delete dataset after evaluating the model
 
 ### Upload to HuggingFace
@@ -86,9 +111,9 @@ To upload to HuggingFace, use the following command:
 
 ```bash
 python neurons/miner.py \
-    --action upload \ 
+    --action upload \
     --competition.id <COMPETITION ID> \
-    --model_path <NAME OF FILE WITH EXTENSION> \ 
+    --model_path <NAME OF FILE WITH EXTENSION> \
     --code_directory <CODE DIRECTORY WITHOUT DATASETS> \
     --hf_model_name <MODEL NAME WITH EXTENSION> \
     --hf_repo_id <HF REPO ID > \
@@ -112,10 +137,9 @@ To submit a model to validators, use the following command:
 ```
 python neurons/miner.py \
     --action submit \
-    --model_path <NAME OF FILE WITH EXTENSION> \
     --competition.id <COMPETITION ID> \
-    --hf_code_filename "melanoma-1-piwo.zip" \
-    --hf_model_name <MODEL NAME WITH EXTENSION> \
+    --hf_code_filename <HF FILE NAME WITH EXTENSION> \
+    --hf_model_name <HF MODEL NAME WITH EXTENSION> \
     --hf_repo_id <HF REPO ID> \
     --hf_repo_type model \
     --wallet.name <WALLET NAME> \

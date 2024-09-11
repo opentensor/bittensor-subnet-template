@@ -33,7 +33,7 @@ log = logging.getLogger(__name__)
 UPDATES_CHECK_TIME = timedelta(minutes=5)
 CURRENT_WORKING_DIR = Path(__file__).parent.parent
 
-ECOSYSTEM_CONFIG_PATH = CURRENT_WORKING_DIR / "ecosystem.config.js"  # Path to the pm2 ecosystem config file
+ECOSYSTEM_CONFIG_PATH = CURRENT_WORKING_DIR / "config" / "ecosystem.config.js"  # Path to the pm2 ecosystem config file
 
 def get_version() -> str:
     """Extract the version as current git commit hash"""
@@ -205,11 +205,11 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--subtensor.network", default="test", help="Name of the network."
+        "--subtensor.network", default="finney", help="Name of the network."
     )
 
     parser.add_argument(
-        "--netuid", default="163", help="Netuid of the network."
+        "--netuid", default="46", help="Netuid of the network."
     )
 
     parser.add_argument(

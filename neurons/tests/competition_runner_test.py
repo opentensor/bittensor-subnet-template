@@ -1,8 +1,8 @@
-import time
 import asyncio
 import json
 from types import SimpleNamespace
 from typing import List, Dict
+import pytest
 
 import bittensor as bt
 
@@ -12,7 +12,9 @@ from cancer_ai.validator.rewarder import CompetitionWinnersStore, Rewarder
 from cancer_ai.base.base_miner import BaseNeuron
 from cancer_ai.utils.config import path_config
 from cancer_ai.mock import MockSubtensor
-from cancer_ai.validator.exceptions import ModelRunException
+
+
+COMPETITION_FILEPATH = "config/competition_config_testnet.json"
 
 # TODO integrate with bt config
 test_config = SimpleNamespace(
@@ -29,28 +31,28 @@ test_config = SimpleNamespace(
                 "dataset_dir": "/tmp/datasets",
             }
         ),
-        "hf_token": "HF_TOKEN"
+        "hf_token": "HF_TOKEN",
     }
 )
 
-main_competitions_cfg = json.load(open("config/competition_config_testnet.json", "r"))
+main_competitions_cfg = json.load(open(COMPETITION_FILEPATH, "r"))
 
 
-async def run_all_competitions(
-    path_config: str,
+async def run_competitions(
+    config: str,
     subtensor: bt.subtensor,
     hotkeys: List[str],
     competitions_cfg: List[dict],
-) -> None:
-    """Run all competitions, for debug purposes"""
+) -> Dict[str, str]:
+    """Run all competitions, return the winning hotkey for each competition"""
+    results = {}
     for competition_cfg in competitions_cfg:
         bt.logging.info("Starting competition: ", competition_cfg)
 
         competition_manager = CompetitionManager(
-            path_config,
+            config,
             subtensor,
             hotkeys,
-            "WALIDATOR",
             {},
             competition_cfg["competition_id"],
             competition_cfg["category"],
@@ -59,9 +61,13 @@ async def run_all_competitions(
             competition_cfg["dataset_hf_repo_type"],
             test_mode=True,
         )
+        results[competition_cfg["competition_id"]] = (
+            await competition_manager.evaluate()
+        )
 
-        
         bt.logging.info(await competition_manager.evaluate())
+
+    return results
 
 
 def config_for_scheduler(subtensor: bt.subtensor) -> Dict[str, CompetitionManager]:
@@ -70,10 +76,9 @@ def config_for_scheduler(subtensor: bt.subtensor) -> Dict[str, CompetitionManage
     for competition_cfg in main_competitions_cfg:
         for competition_time in competition_cfg["evaluation_time"]:
             time_arranged_competitions[competition_time] = CompetitionManager(
-                {}, 
+                {},
                 subtensor,
                 [],
-                "WALIDATOR",
                 {},
                 competition_cfg["competition_id"],
                 competition_cfg["category"],
@@ -111,6 +116,12 @@ async def competition_loop():
         await asyncio.sleep(10)
 
 
+@pytest.fixture
+def competition_config():
+    with open(COMPETITION_FILEPATH, "r") as f:
+        return json.load(f)
+
+
 if __name__ == "__main__":
     config = BaseNeuron.config()
     bt.logging.set_config(config=config)
@@ -121,7 +132,5 @@ if __name__ == "__main__":
     bt.logging.set_config(config=config.logging)
     bt.logging.info(config)
     asyncio.run(
-        run_all_competitions(
-            test_config, MockSubtensor("123"), [], main_competitions_cfg
-        )
+        run_competitions(test_config, MockSubtensor("123"), [], main_competitions_cfg)
     )

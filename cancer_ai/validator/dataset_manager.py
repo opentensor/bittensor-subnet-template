@@ -9,11 +9,7 @@ import bittensor as bt
 from .manager import SerializableManager
 from .utils import run_command, log_time
 from .dataset_handlers.image_csv import DatasetImagesCSV
-
-
-class DatasetManagerException(Exception):
-    pass
-
+from .exceptions import DatasetManagerException
 
 class DatasetManager(SerializableManager):
     def __init__(

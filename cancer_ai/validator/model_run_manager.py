@@ -1,3 +1,4 @@
+import bittensor as bt
 from typing import List
 
 from .manager import SerializableManager
@@ -6,6 +7,7 @@ from .utils import detect_model_format, ModelType
 from .model_runners.pytorch_runner import PytorchRunnerHandler
 from .model_runners.tensorflow_runner import TensorflowRunnerHandler
 from .model_runners.onnx_runner import OnnxRunnerHandler
+from .exceptions import ModelRunException
 
 
 MODEL_TYPE_HANDLERS = {
@@ -13,6 +15,7 @@ MODEL_TYPE_HANDLERS = {
     ModelType.TENSORFLOW_SAVEDMODEL: TensorflowRunnerHandler,
     ModelType.ONNX: OnnxRunnerHandler,
 }
+
 
 
 class ModelRunManager(SerializableManager):
@@ -32,7 +35,13 @@ class ModelRunManager(SerializableManager):
         
         model_type = detect_model_format(self.model.file_path)
         # initializing ml model handler object
-        model_handler = MODEL_TYPE_HANDLERS[model_type]
+        
+        model_handler = MODEL_TYPE_HANDLERS.get(model_type)
+        if model_handler == None: 
+            bt.logging.error (f"Unknown model format {self.model.hf_repo_id} {self.model.hf_repo_id}")
+            raise ModelRunException("Unknown model format")
+
+        
         self.handler = model_handler(self.config, self.model.file_path)
 
     async def run(self, pred_x: List) -> List:

@@ -1,6 +1,7 @@
 import asyncio
 import copy
 import time
+import os
 
 import bittensor as bt
 from dotenv import load_dotenv
@@ -15,7 +16,7 @@ from cancer_ai.validator.dataset_manager import DatasetManager
 from cancer_ai.validator.competition_manager import COMPETITION_HANDLER_MAPPING
 
 from cancer_ai.base.base_miner import BaseNeuron
-from cancer_ai.chain_models_store import ChainMinerModel, ChainModelMetadataStore
+from cancer_ai.chain_models_store import ChainMinerModel, ChainModelMetadata
 from cancer_ai.utils.config import path_config, add_miner_args
 
 
@@ -65,6 +66,9 @@ class MinerManagerCLI:
     @staticmethod
     def is_onnx_model(model_path: str) -> bool:
         """Checks if model is an ONNX model."""
+        if not os.path.exists(model_path):
+            bt.logging.error("Model file does not exist")
+            return False
         try:
             onnx.checker.check_model(model_path)
         except onnx.checker.ValidationError as e:
@@ -138,8 +142,8 @@ class MinerManagerCLI:
                 f" Please register the hotkey using `btcli subnets register` before trying again"
             )
             exit()
-        self.metadata_store = ChainModelMetadataStore(
-            subtensor=self.subtensor, subnet_uid=self.config.netuid, wallet=self.wallet
+        self.metadata_store = ChainModelMetadata(
+            subtensor=self.subtensor, netuid=self.config.netuid, wallet=self.wallet
         )
 
         if not huggingface_hub.file_exists(
@@ -179,10 +183,10 @@ class MinerManagerCLI:
 
     async def main(self) -> None:
         # bt.logging(config=self.config)
-        if not self.config.model_path:
+        if self.config.action != "submit" and not self.config.model_path:
             bt.logging.error("Missing --model-path argument")
             return
-        if not MinerManagerCLI.is_onnx_model(self.config.model_path):
+        if self.config.action != "submit" and not MinerManagerCLI.is_onnx_model(self.config.model_path):
             bt.logging.error("Provided model with is not in ONNX format")
             return
 
