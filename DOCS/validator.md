@@ -7,6 +7,7 @@ This documentation provides an overview of the validator script, its functionali
 The validator script is designed to run a validator process and automatically update it whenever a new version is released. This script was adapted from the [original script](https://github.com/macrocosm-os/pretraining/blob/main/scripts/start_validator.py) in the Pretraining Subnet repository.
 
 Key features of the script include:
+
 - **Automatic Updates**: The script checks for updates periodically and ensures that the latest version of the validator is running by pulling the latest code from the repository and upgrading necessary Python packages.
 - **Command-Line Argument Compatibility**: The script now properly handles custom command-line arguments and forwards them to the validator (`neurons/validator.py`).
 - **Virtual Environment Support**: The script runs within the same virtual environment that it is executed in, ensuring compatibility and ease of use.
@@ -16,17 +17,18 @@ Key features of the script include:
 
 ### Server requirements
 
- - 64GB of RAM
- - storage: 500GB, extendable
- - GPU - nVidia RTX, 12GB VRAM (will work without GPU, but slower)
+- 64GB of RAM
+- storage: 500GB, extendable
+- GPU - nVidia RTX, 12GB VRAM (will work without GPU, but slower)
 
 ### System requirements
 
-- **Python 3.10 and virtualenv **: The script is written in Python and requires Python 3.10 to run.
+- **Python 3.10 and virtualenv**: The script is written in Python and requires Python 3.10 to run.
 - **PM2**: PM2 must be installed and available on your system. It is used to manage the validator process.
 - **zip and unzip**
 
 ### Wandb API key requirement
+
 - Contact us [on discord](https://discord.com/channels/1259812760280236122/1262734148020338780) to get Wandb API key
 - Put your key in .env.example file
 
@@ -41,18 +43,20 @@ Key features of the script include:
 ```
 
 3. **Set Up Virtual Environment**: If you wish to run the script within a virtual environment, create and activate the environment before running the script:
+
 ```
     python3 -m venv venv
     source venv/bin/activate  # On Windows use `venv\Scripts\activate`
 ```
 
 4. **Install Required Python Packages**: Install any required Python packages listed in requirements.txt:
+
 ```
 pip install -r requirements.txt
 ```
 
-
 ## Usage
+
 To run the validator script, use the following command:
 
 ```bash
@@ -69,7 +73,6 @@ python3 scripts/start_validator.py --wallet.name=my-wallet --wallet.hotkey=my-ho
 - `--netuid`: Specifies the Netuid of the network. Default is `"46"`.
 - `--logging.debug`: Enables debug logging if set to `1`. Default is `1`.
 
-
 ## How It Works
 
 1. **Start Validator Process**: The script starts the validator process using PM2, based on the provided PM2 process name.
@@ -81,3 +84,40 @@ python3 scripts/start_validator.py --wallet.name=my-wallet --wallet.hotkey=my-ho
 
 - **Local Changes**: If you have made local changes to the codebase, the auto-update feature will attempt to preserve them. However, conflicts might require manual resolution.
 - **Environment**: The script uses the environment from which it is executed, so ensure all necessary environment variables and dependencies are correctly configured.
+
+# TLDR Installation script from fresh Ubuntu 24.04
+
+```bash
+# from root
+apt install software-properties-common -y
+add-apt-repository ppa:deadsnakes/ppa
+apt update
+apt install python3.10 python3.10-venv python3.10-dev python3-pip unzip
+apt install python3-virtualenv git nodejs npm
+
+npm install pm2 -g
+
+adduser cancerai
+su cancerai
+cd
+
+git clone https://github.com/safe-scan-ai/cancer-ai
+cd cancer-ai
+
+virtualenv --python=3.10 venv
+source venv/bin/activate
+pip install -U setuptools
+pip install -r requirements.txt
+
+export PYTHONPATH="${PYTHONPATH}:./"
+
+# import keys
+
+cp .env.example .env
+
+# add wandb API key
+
+# example for testnet
+python3 scripts/start_validator.py --wallet.name=validator-staked --wallet.hotkey=default --subtensor.network test --logging.debug 1 --netuid 163
+
+```
