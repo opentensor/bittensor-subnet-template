@@ -18,10 +18,13 @@ def check_uid_availability(
     # Filter non serving axons.
     if not metagraph.axons[uid].is_serving:
         return False
+    
     # Filter validator permit > 1024 stake.
-    if metagraph.validator_permit[uid]:
-        if metagraph.S[uid] > vpermit_tao_limit:
-            return False
+    # Commenting this out to allow dual-mining
+    # if metagraph.validator_permit[uid]:
+    #     if metagraph.S[uid] > vpermit_tao_limit:
+    #         return False
+    
     # Available otherwise.
     return True
 
