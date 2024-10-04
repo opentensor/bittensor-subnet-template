@@ -22,9 +22,12 @@ import argparse
 import bittensor as bt
 from .logging import setup_events_logger
 
+
 def is_cuda_available():
     try:
-        output = subprocess.check_output(["nvidia-smi", "-L"], stderr=subprocess.STDOUT)
+        output = subprocess.check_output(
+            ["nvidia-smi", "-L"], stderr=subprocess.STDOUT
+        )
         if "NVIDIA" in output.decode("utf-8"):
             return "cuda"
     except Exception:
@@ -36,6 +39,7 @@ def is_cuda_available():
     except Exception:
         pass
     return "cpu"
+
 
 def check_config(cls, config: "bt.Config"):
     r"""Checks/validates the config namespace object."""
