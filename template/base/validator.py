@@ -104,12 +104,15 @@ class BaseValidatorNeuron(BaseNeuron):
                 pass
 
         except Exception as e:
-            bt.logging.error(f"Failed to create Axon initialize with exception: {e}")
+            bt.logging.error(
+                f"Failed to create Axon initialize with exception: {e}"
+            )
             pass
 
     async def concurrent_forward(self):
         coroutines = [
-            self.forward() for _ in range(self.config.neuron.num_concurrent_forwards)
+            self.forward()
+            for _ in range(self.config.neuron.num_concurrent_forwards)
         ]
         await asyncio.gather(*coroutines)
 
@@ -164,7 +167,9 @@ class BaseValidatorNeuron(BaseNeuron):
         # In case of unforeseen errors, the validator will log the error and continue operations.
         except Exception as err:
             bt.logging.error(f"Error during validation: {str(err)}")
-            bt.logging.debug(str(print_exception(type(err), err, err.__traceback__)))
+            bt.logging.debug(
+                str(print_exception(type(err), err, err.__traceback__))
+            )
 
     def run_in_background_thread(self):
         """
@@ -354,7 +359,9 @@ class BaseValidatorNeuron(BaseNeuron):
         # Update scores with rewards produced by this step.
         # shape: [ metagraph.n ]
         alpha: float = self.config.neuron.moving_average_alpha
-        self.scores: np.ndarray = alpha * scattered_rewards + (1 - alpha) * self.scores
+        self.scores: np.ndarray = (
+            alpha * scattered_rewards + (1 - alpha) * self.scores
+        )
         bt.logging.debug(f"Updated moving avg scores: {self.scores}")
 
     def save_state(self):
