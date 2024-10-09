@@ -1,6 +1,5 @@
-from substrateinterface import Keypair
-from os import getenv, environ
 from datetime import datetime
+
 import bittensor
 
 # Hardcode or set the environment variable WALLET_PASS to the password for the wallet
@@ -14,14 +13,15 @@ def main(args):
     timestamp = datetime.now()
     timezone = timestamp.astimezone().tzname()
 
-    message = f"On {timestamp} {timezone} {args.message}"
+    # ensure compatiblity with polkadotjs messages, as polkadotjs always wraps message
+    message = "<Bytes>" + f"On {timestamp} {timezone} {args.message}" + "</Bytes>"
     signature = keypair.sign(data=message)
 
     file_contents = f"{message}\n\tSigned by: {keypair.ss58_address}\n\tSignature: {signature.hex()}"
     print(file_contents)
     open("message_and_signature.txt", "w").write(file_contents)
 
-    print(f"Signature generated and saved to message_and_signature.txt")
+    print("Signature generated and saved to message_and_signature.txt")
 
 
 if __name__ == "__main__":

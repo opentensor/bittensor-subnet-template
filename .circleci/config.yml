@@ -40,7 +40,7 @@ jobs:
           name: Black format check
           command: |
             . env/bin/activate
-            black --line-length 79 --exclude '(env|venv|.eggs)' --check .
+            black --line-length 79 --exclude '(env|venv|.eggs|.git)' --check .
 
   pylint:
     resource_class: small

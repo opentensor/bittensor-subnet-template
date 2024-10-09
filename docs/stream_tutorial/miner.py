@@ -32,7 +32,11 @@ class StreamMiner(ABC):
         bt.logging.set_config(config=self.config.logging)
 
         # Wallet holds cryptographic information, ensuring secure transactions and communication.
-        self.wallet = wallet or bt.wallet(config=self.config)
+        self.wallet = wallet or bt.wallet(
+            name=self.config.wallet.name,
+            path=self.config.wallet.path,
+            hotkey=self.config.wallet.hotkey,
+        )
         bt.logging.info(f"Wallet {self.wallet}")
 
         # subtensor manages the blockchain connection, facilitating interaction with the Bittensor blockchain.
