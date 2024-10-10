@@ -14,7 +14,9 @@ def main(args):
     timezone = timestamp.astimezone().tzname()
 
     # ensure compatiblity with polkadotjs messages, as polkadotjs always wraps message
-    message = "<Bytes>" + f"On {timestamp} {timezone} {args.message}" + "</Bytes>"
+    message = (
+        "<Bytes>" + f"On {timestamp} {timezone} {args.message}" + "</Bytes>"
+    )
     signature = keypair.sign(data=message)
 
     file_contents = f"{message}\n\tSigned by: {keypair.ss58_address}\n\tSignature: {signature.hex()}"

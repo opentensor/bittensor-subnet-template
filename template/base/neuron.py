@@ -88,11 +88,7 @@ class BaseNeuron(ABC):
                 self.config.netuid, subtensor=self.subtensor
             )
         else:
-            self.wallet = bt.wallet(
-                name=self.config.wallet.name,
-                path=self.config.wallet.path,
-                hotkey=self.config.wallet.hotkey,
-            )
+            self.wallet = bt.wallet(config=self.config)
             self.subtensor = bt.subtensor(config=self.config)
             self.metagraph = self.subtensor.metagraph(self.config.netuid)
 
