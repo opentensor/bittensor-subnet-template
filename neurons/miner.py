@@ -28,6 +28,21 @@ import template
 from template.base.miner import BaseMinerNeuron
 
 
+# extract it to another file
+def load_model():
+    pass
+
+
+# extract it to another file
+def prepare_input_data():
+    pass
+
+
+# extract it to another file
+def predict():
+    pass
+
+
 class Miner(BaseMinerNeuron):
     """
     Your miner neuron class. You should use this class to define your miner's behavior. In particular, you should replace the forward function with your own logic. You may also want to override the blacklist and priority functions according to your needs.
@@ -59,7 +74,12 @@ class Miner(BaseMinerNeuron):
         the miner's intended operation. This method demonstrates a basic transformation of input data.
         """
         # TODO(developer): Replace with actual implementation logic.
-        synapse.dummy_output = synapse.dummy_input * 2
+        timestamp = synapse.timestamp
+        model = load_model(self.model_dir)
+        shape = model.input_shape
+        input_data = prepare_input_data(timestamp, shape) # currently write the variables as fixed
+        prediction = predict(timestamp, input_data, model) # currently, let's just focus on predict one ticker
+        synapse.prediction = prediction
         return synapse
 
     async def blacklist(
