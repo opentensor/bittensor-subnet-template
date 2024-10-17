@@ -79,7 +79,7 @@ These steps initialize your local subtensor chain in development mode. These com
 Build the binary with the faucet feature enabled:
 
 ```bash
-cargo build -p node-subtensor --profile production --features pow-faucet
+cargo build -p node-subtensor --profile dev --features pow-faucet
 ```
 
 **NOTE**: The `--features pow-faucet` option in the above is required if we want to use the command `btcli wallet faucet` [See the below Mint tokens step](#8-mint-tokens-from-faucet).
@@ -87,7 +87,7 @@ cargo build -p node-subtensor --profile production --features pow-faucet
 Next, run the localnet script and turn off the attempt to build the binary (as we have already done this above):
 
 ```bash
-BUILD_BINARY=0 ./scripts/localnet.sh 
+BUILD_BINARY=0 ./scripts/localnet.sh False
 ```
 
 **NOTE**: Watch for any build or initialization outputs in this step. If you are building the project for the first time, this step will take a while to finish building, depending on your hardware.

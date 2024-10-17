@@ -55,7 +55,7 @@ class Dummy(bt.Synapse):
     timestamp: str
 
     # Optional request output, filled by receiving axon.
-    prediction: typing.Optional[float]
+    # prediction: typing.Optional[float]
 
     def deserialize(self) -> int:
         """
@@ -73,4 +73,4 @@ class Dummy(bt.Synapse):
         >>> dummy_instance.deserialize()
         5
         """
-        return self.prediction
+        return "prediction"
