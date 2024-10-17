@@ -87,7 +87,7 @@ cargo build -p node-subtensor --profile production --features pow-faucet
 Next, run the localnet script and turn off the attempt to build the binary (as we have already done this above):
 
 ```bash
-BUILD_BINARY=0 ./scripts/localnet.sh 
+BUILD_BINARY=0 ./scripts/localnet.sh False
 ```
 
 **NOTE**: Watch for any build or initialization outputs in this step. If you are building the project for the first time, this step will take a while to finish building, depending on your hardware.
@@ -172,6 +172,12 @@ You will see:
 
 ```bash
 >> Balance: τ0.000000000 ➡ τ100.000000000
+```
+
+Mint tokens for the miner:
+
+```bash
+btcli wallet faucet --wallet.name miner --subtensor.chain_endpoint ws://127.0.0.1:9946 
 ```
 
 ## 9. Create a subnet
