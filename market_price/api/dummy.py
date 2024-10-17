@@ -19,7 +19,7 @@
 
 import bittensor as bt
 from typing import List, Optional, Union, Any, Dict
-from template.protocol import Dummy
+from market_price.protocol import MarketPriceSynapse
 from bittensor.subnets import SubnetsAPI
 
 
@@ -29,7 +29,7 @@ class DummyAPI(SubnetsAPI):
         self.netuid = 33
         self.name = "dummy"
 
-    def prepare_synapse(self, dummy_input: int) -> Dummy:
+    def prepare_synapse(self, dummy_input: int) -> MarketPriceSynapse:
         synapse.dummy_input = dummy_input
         return synapse
 
