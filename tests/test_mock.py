@@ -1,8 +1,8 @@
 import pytest
 import asyncio
 import bittensor as bt
-from prompting.mock import MockDendrite, MockMetagraph, MockSubtensor
-from prompting.protocol import PromptingSynapse
+from market_price.mock import MockDendrite, MockMetagraph, MockSubtensor
+from market_price.protocol import MarketPriceSynapse
 
 
 @pytest.mark.parametrize("netuid", [1, 2, 3])
@@ -69,7 +69,7 @@ def test_mock_dendrite_timings(timeout, min_time, max_time, n):
     async def run():
         return await mock_dendrite(
             axons,
-            synapse=PromptingSynapse(
+            synapse=MarketPriceSynapse(
                 roles=["user"], messages=["What is the capital of France?"]
             ),
             timeout=timeout,
