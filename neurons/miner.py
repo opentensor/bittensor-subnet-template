@@ -42,6 +42,11 @@ class Miner(BaseMinerNeuron):
 
         # TODO(developer): Anything specific to your use case you can do here
 
+    def predict(self, timestamp):
+        # model = load_model
+        # prediction = model(timestamp)
+        return 3000.0
+
     async def forward(
         self, synapse: template.protocol.Dummy
     ) -> template.protocol.Dummy:
@@ -59,7 +64,8 @@ class Miner(BaseMinerNeuron):
         the miner's intended operation. This method demonstrates a basic transformation of input data.
         """
         # TODO(developer): Replace with actual implementation logic.
-        synapse.dummy_output = synapse.dummy_input * 2
+        timestamp = synapse.timestamp
+        synapse.prediction = self.predict(timestamp)
         return synapse
 
     async def blacklist(
