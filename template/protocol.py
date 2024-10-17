@@ -19,6 +19,7 @@
 
 import typing
 import bittensor as bt
+import pydantic
 
 # TODO(developer): Rewrite with your protocol definition.
 
@@ -53,9 +54,12 @@ class Dummy(bt.Synapse):
 
     # Required request input, filled by sending dendrite caller.
     timestamp: str
-
     # Optional request output, filled by receiving axon.
-    # prediction: typing.Optional[float]
+    prediction: typing.Optional[float] = pydantic.Field(
+        default=None,
+        title="Prediction",
+        description="Prediction"
+    )
 
     def deserialize(self) -> int:
         """
@@ -73,4 +77,4 @@ class Dummy(bt.Synapse):
         >>> dummy_instance.deserialize()
         5
         """
-        return "prediction"
+        return self.prediction

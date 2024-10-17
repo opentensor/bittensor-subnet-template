@@ -57,6 +57,9 @@ class Miner(BaseMinerNeuron):
 
         # TODO(developer): Anything specific to your use case you can do here
 
+    def predict():
+        return 3000
+
     async def forward(
         self, synapse: template.protocol.Dummy
     ) -> template.protocol.Dummy:
@@ -73,13 +76,22 @@ class Miner(BaseMinerNeuron):
         The 'forward' function is a placeholder and should be overridden with logic that is appropriate for
         the miner's intended operation. This method demonstrates a basic transformation of input data.
         """
+        # bt.logging.info(
+        #     f"Received prediction request from: {synapse.dendrite.hotkey} for timestamp: {synapse.timestamp}"
+        # )
+
         # TODO(developer): Replace with actual implementation logic.
         timestamp = synapse.timestamp
-        model = load_model(self.model_dir)
-        shape = model.input_shape
-        input_data = prepare_input_data(timestamp, shape) # currently write the variables as fixed
-        prediction = predict(timestamp, input_data, model) # currently, let's just focus on predict one ticker
-        synapse.prediction = prediction
+        print(timestamp)
+        # model = load_model(self.model_dir)
+        # shape = model.input_shape
+        # input_data = prepare_input_data(timestamp, shape) # currently write the variables as fixed
+        synapse.prediction = predict()
+
+        bt.logging.info(
+            f"Predicted price: {synapse.prediction}"
+        )
+
         return synapse
 
     async def blacklist(
@@ -183,6 +195,9 @@ class Miner(BaseMinerNeuron):
             f"Prioritizing {synapse.dendrite.hotkey} with value: {priority}"
         )
         return priority
+
+    def save_state(self):
+        pass
 
 
 # This is the main function, which runs the miner.

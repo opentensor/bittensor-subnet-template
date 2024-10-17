@@ -39,6 +39,10 @@ async def forward(self):
     # get_random_uids is an example method, but you can replace it with your own.
     miner_uids = get_random_uids(self, k=self.config.neuron.sample_size)
 
+    print("testing!!!")
+    for uid in miner_uids:
+        print(self.metagraph.axons[uid])
+
     # The dendrite client queries the network.
     responses = await self.dendrite(
         # Send the query to selected miner axons in the network.
