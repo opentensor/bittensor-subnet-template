@@ -163,3 +163,7 @@ testing/
 
 # Editors
 .vscode/settings.json
+
+# model related
+trained_model.keras
+model/docs
