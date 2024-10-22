@@ -169,11 +169,13 @@ class BaseNeuron(ABC):
         )  # don't set weights if you're a miner
 
     def save_state(self):
-        bt.logging.warning(
-            "save_state() not implemented for this neuron. You can implement this function to save model checkpoints or other useful data."
-        )
+        pass
+        # bt.logging.warning(
+        #     "save_state() not implemented for this neuron. You can implement this function to save model checkpoints or other useful data."
+        # )
 
     def load_state(self):
-        bt.logging.warning(
-            "load_state() not implemented for this neuron. You can implement this function to load model checkpoints or other useful data."
-        )
+        pass
+        # bt.logging.warning(
+        #     "load_state() not implemented for this neuron. You can implement this function to load model checkpoints or other useful data."
+        # )
