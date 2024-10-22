@@ -5,4 +5,4 @@ pytest>=8
 torch>=2
 numpy>=1
 setuptools>=68
-git+https://github.com/opentensor/bittensor.git@8217c6e698c2a845e34ef93fe9a3779efa4debab#egg=bittensor
+git+https://github.com/opentensor/bittensor.git@ca653c34c833edf591d917b9d78c6123ec07ca6e#egg=bittensor
