@@ -19,6 +19,8 @@
 
 
 import copy
+import time
+
 import numpy as np
 import asyncio
 import argparse
@@ -285,6 +287,7 @@ class BaseValidatorNeuron(BaseNeuron):
                 bt.logging.info("set_weights on chain successfully!")
             else:
                 bt.logging.error("set_weights failed", msg)
+            time.sleep(12) # sleep for at least one block after submitting weights.
         else:
             bt.logging.info(f"curr block is {curr_block}, waiting for 30 blocks to set weights")
 
