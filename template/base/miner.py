@@ -108,6 +108,15 @@ class BaseMinerNeuron(BaseNeuron):
         self.axon.serve(netuid=self.config.netuid, subtensor=self.subtensor)
 
         # Start  starts the miner's axon, making it active on the network.
+        log_level = "trace" if bt.logging.__trace_on__ else "critical"
+        fast_config = uvicorn.Config(
+            self.axon.app,
+            host="0.0.0.0",
+            port=self.config.axon.port,
+            log_level=log_level,
+            loop="asyncio"
+        )
+        self.axon.fast_server = FastAPIThreadedServer(config=fast_config)
         self.axon.start()
 
         bt.logging.info(f"Miner starting at block: {self.block}")
