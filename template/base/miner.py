@@ -73,8 +73,30 @@ class BaseMinerNeuron(BaseNeuron):
         self.is_running: bool = False
         self.thread: Union[threading.Thread, None] = None
         self.lock = asyncio.Lock()
+        self.thread_lock = threading.Lock()
+        self.exception = None
+
+    def get_exception(self):
+        with self.thread_lock:
+            return self.exception
+
+    def set_exception(self, ex):
+        with self.thread_lock:
+            self.exception = ex
+            self.is_running = False
 
     def run(self):
+        """
+        Entrypoint of worker thread. Provides try/except in order to prevent uncaught exceptions.
+        """
+        try:
+            self.run_unsafe()
+        except Exception as e:
+            bt.logging.error("Exception caught in worker thread")
+            bt.logging.error(traceback.format_exc())
+            self.set_exception(e)
+
+    def run_unsafe(self):
         """
         Initiates and manages the main loop for the miner on the Bittensor network. The main loop handles graceful shutdown on keyboard interrupts and logs unforeseen errors.
 
@@ -109,6 +131,14 @@ class BaseMinerNeuron(BaseNeuron):
 
         # Start  starts the miner's axon, making it active on the network.
         self.axon.start()
+        t0 = time.time()
+        while time.time() - t0 < 1 and not self.axon.is_running():
+            time.sleep(0.1)
+        if not self.axon.is_running():
+            e = self.axon.exception
+            if e:
+                raise e
+            raise Exception("Failed to start axon for unknown reason")
 
         bt.logging.info(f"Miner starting at block: {self.block}")
 
@@ -119,6 +149,16 @@ class BaseMinerNeuron(BaseNeuron):
                     self.block - self.metagraph.last_update[self.uid]
                     < self.config.neuron.epoch_length
                 ):
+                    if not self.axon.is_running():
+                        # we may be faster than the exception is being set
+                        ts = time.time()
+                        while time.time() - ts < 3 and not self.axon.exception:
+                            time.sleep(0.1)
+                        e = self.axon.exception
+                        if e:
+                            raise e
+                        else:
+                            raise Exception("axon died without exception")
                     # Wait before checking again.
                     time.sleep(1)
 
