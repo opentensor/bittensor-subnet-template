@@ -66,6 +66,9 @@ class BaseValidatorNeuron(BaseNeuron):
         bt.logging.info("Building validation weights.")
         self.scores = np.zeros(self.metagraph.n, dtype=np.float32)
 
+        # Load the state of the validator from file.
+        self.load_state()
+
         # Init sync with the network. Updates the metagraph.
         self.sync()
 
@@ -382,6 +385,13 @@ class BaseValidatorNeuron(BaseNeuron):
 
         # Load the state of the validator from file.
         state = np.load(self.config.neuron.full_path + "/state.npz")
-        self.step = state["step"]
-        self.scores = state["scores"]
-        self.hotkeys = state["hotkeys"]
+        if "step" in state:
+            self.step = state["step"]
+            self.scores = state["scores"]
+            self.hotkeys = state["hotkeys"]
+        else:
+            # Set up initial scoring weights for validation
+            bt.logging.info("Building validation weights.")
+            self.step = 0
+            self.scores = np.zeros(self.metagraph.n, dtype=np.float32)
+            self.hotkeys = copy.deepcopy(self.metagraph.hotkeys)
