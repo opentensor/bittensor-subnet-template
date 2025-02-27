@@ -309,7 +309,7 @@ python neurons/validator.py --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1
 
 ## 14. Set weights for your subnet
 
-Register a validator on the root subnet and boost to set weights for your subnet. This is a necessary step to ensure that the subnet is able to receive emmissions.
+Register a validator on the root subnet and boost to set weights for your subnet. This is a necessary step to ensure that the subnet is able to receive emissions.
 
 ### Register your validator on the root subnet
 
