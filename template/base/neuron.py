@@ -110,7 +110,6 @@ class BaseNeuron(ABC):
 
         self._last_updated_block = self.metagraph.last_update[self.uid]
 
-
     @abstractmethod
     async def forward(self, synapse: bt.Synapse) -> bt.Synapse:
         ...
@@ -133,7 +132,6 @@ class BaseNeuron(ABC):
         if self.should_set_weights():
             self.set_weights()
             self._last_updated_block = self.block
-
 
         # Always save state.
         self.save_state()
@@ -182,4 +180,3 @@ class BaseNeuron(ABC):
         bt.logging.trace(
             "load_state() not implemented for this neuron. You can implement this function to load model checkpoints or other useful data."
         )
-
