@@ -1,3 +1,10 @@
+> [!IMPORTANT]
+> **This repository is archived and no longer maintained.**
+>
+> This template targets the legacy Bittensor SDK (v10) and its `Axon`/`Dendrite`/`Synapse` networking stack, which was removed in Bittensor 11. It will not work with current releases.
+>
+> To build a subnet against Bittensor 11, see the [migration guide](https://bittensor.com/docs/migration) and the [signed requests guide](https://bittensor.com/docs/guides/signed-requests) for the replacement identity layer.
+
 <div align="center">
 
 # **Bittensor Subnet Template** <!-- omit in toc -->
