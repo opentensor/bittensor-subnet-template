@@ -79,7 +79,7 @@ These steps initialize your local subtensor chain in development mode. These com
 Build the binary with the faucet feature enabled:
 
 ```bash
-cargo build -p node-subtensor --profile production --features pow-faucet
+cargo build -p node-subtensor --profile release --features pow-faucet
 ```
 
 **NOTE**: The `--features pow-faucet` option in the above is required if we want to use the command `btcli wallet faucet` [See the below Mint tokens step](#8-mint-tokens-from-faucet).
