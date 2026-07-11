@@ -53,31 +53,31 @@ The validator and miner will be registered to the subnet created by the owner. T
 Create a coldkey for your owner wallet:
 
 ```bash
-btcli wallet new_coldkey --wallet.name owner
+btcli wallet new-coldkey --wallet-name owner
 ```
 
 Create a coldkey and hotkey for your miner wallet:
 
 ```bash
-btcli wallet new_coldkey --wallet.name miner
+btcli wallet new-coldkey --wallet-name miner
 ```
 
 and
 
 ```bash
-btcli wallet new_hotkey --wallet.name miner --wallet.hotkey default
+btcli wallet new-hotkey --wallet-name miner --hotkey default
 ```
 
 Create a coldkey and hotkey for your validator wallet:
 
 ```bash
-btcli wallet new_coldkey --wallet.name validator
+btcli wallet new-coldkey --wallet-name validator
 ```
 
 and
 
 ```bash
-btcli wallet new_hotkey --wallet.name validator --wallet.hotkey default
+btcli wallet new-hotkey --wallet-name validator --hotkey default
 ```
 
 ## 3. Get the price of subnet creation
@@ -87,7 +87,7 @@ Creating subnets on the testnet is competitive. The cost is determined by the ra
 By default you must have at least 100 testnet TAO in your owner wallet to create a subnet. However, the exact amount will fluctuate based on demand. The below command shows how to get the current price of creating a subnet.
 
 ```bash
-btcli subnet lock_cost --subtensor.network test
+btcli subnets burn-cost --network test
 ```
 
 The above command will show:
@@ -109,18 +109,11 @@ The below command shows how to purchase a slot.
 **NOTE**: Slots cost TAO to lock. You will get this TAO back when the subnet is deregistered.
 
 ```bash
-btcli subnet create --subtensor.network test 
+btcli subnets create --network test --wallet-name owner
 ```
 
-Enter the owner wallet name which gives permissions to the coldkey:
-
-```bash
->> Enter wallet name (default): owner # Enter your owner wallet name
->> Enter password to unlock key: # Enter your wallet password.
->> Register subnet? [y/n]: <y/n> # Select yes (y)
->> ⠇ 📡 Registering subnet...
-✅ Registered subnetwork with netuid: 1 # Your subnet netuid will show here, save this for later.
-```
+Follow the prompts to unlock your owner wallet and confirm the registration.
+When successful, the command will return your subnet netuid. Save it for later.
 
 ## 6. Register keys
 
@@ -129,36 +122,18 @@ This step registers your subnet validator and subnet miner keys to the subnet, g
 Register your miner key to the subnet:
 
 ```bash
-btcli subnet register --netuid 13 --subtensor.network test --wallet.name miner --wallet.hotkey default
+btcli subnets register --netuid <NETUID> --network test --wallet-name miner --hotkey default
 ```
 
-Follow the below prompts:
-
-```bash
->> Enter netuid [1] (1): # Enter netuid 1 to specify the subnet you just created.
->> Continue Registration?
-  hotkey:     ...
-  coldkey:    ...
-  network:    finney [y/n]: # Select yes (y)
->> ✅ Registered
-```
+Follow the prompts to confirm the registration.
 
 Next, register your validator key to the subnet:
 
 ```bash
-btcli subnet register --netuid 13 --subtensor.network test --wallet.name validator --wallet.hotkey default
+btcli subnets register --netuid <NETUID> --network test --wallet-name validator --hotkey default
 ```
 
-Follow the prompts:
-
-```bash
->> Enter netuid [1] (1): # Enter netuid 1 to specify the subnet you just created.
->> Continue Registration?
-  hotkey:     ...
-  coldkey:    ...
-  network:    finney [y/n]: # Select yes (y)
->> ✅ Registered
-```
+Follow the prompts to confirm the registration.
 
 ## 7. Check that your keys have been registered
 
@@ -167,7 +142,7 @@ This step returns information about your registered keys.
 Check that your validator key has been registered:
 
 ```bash
-btcli wallet overview --wallet.name validator --subtensor.network test
+btcli wallet overview --wallet-name validator --network test
 ```
 
 The above command will display the below:
@@ -183,7 +158,7 @@ miner    default  0      True   0.00000  0.00000  0.00000    0.00000    0.00000 
 Check that your miner has been registered:
 
 ```bash
-btcli wallet overview --wallet.name miner --subtensor.network test
+btcli wallet overview --wallet-name miner --network test
 ```
 
 The above command will display the below:
@@ -201,7 +176,7 @@ miner    default  1      True   0.00000  0.00000  0.00000    0.00000    0.00000 
 Run the subnet miner:
 
 ```bash
-python neurons/miner.py --netuid 1 --subtensor.network test --wallet.name miner --wallet.hotkey default --logging.debug
+python neurons/miner.py --netuid <NETUID> --subtensor.network test --wallet.name miner --wallet.hotkey default --logging.debug
 ```
 
 You will see the below terminal output:
@@ -213,7 +188,7 @@ You will see the below terminal output:
 Next, run the subnet validator:
 
 ```bash
-python neurons/validator.py --netuid 1 --subtensor.network test --wallet.name validator --wallet.hotkey default --logging.debug
+python neurons/validator.py --netuid <NETUID> --subtensor.network test --wallet.name validator --wallet.hotkey default --logging.debug
 ```
 
 You will see the below terminal output:
@@ -223,18 +198,18 @@ You will see the below terminal output:
 ```
 
 
-## 9. Get emissions flowing
+## 9. Start emissions
 
-Register to the root network using the `btcli`:
+Before starting emissions, check that the subnet can start:
 
 ```bash
-btcli root register --subtensor.network test
+btcli subnets check-start --netuid <NETUID> --network test
 ```
 
-Then set your weights for the subnet:
+If the check passes, start emissions:
 
 ```bash
-btcli root weights --subtensor.network test
+btcli subnets start --netuid <NETUID> --network test
 ```
 
 ## 10. Stopping your nodes
