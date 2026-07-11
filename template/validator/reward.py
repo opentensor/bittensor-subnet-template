@@ -17,39 +17,44 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 import numpy as np
-from typing import List
+from typing import Dict, List
 import bittensor as bt
 
 
-def reward(query: int, response: int) -> float:
+def reward(task: Dict[str, str], response_payload: Dict[str, str]) -> float:
     """
-    Reward the miner response to the dummy request. This method returns a reward
-    value for the miner, which is used to update the miner's score.
+    Reward the miner response to the inference request. This method returns a
+    reward value for the miner, which is used to update the miner's score.
 
     Returns:
     - float: The reward value for the miner.
     """
-    bt.logging.info(
-        f"In rewards, query val: {query}, response val: {response}, rewards val: {1.0 if response == query * 2 else 0}"
+    expected = task["expected"].strip().lower()
+    normalized_response = (
+        response_payload.get("response", "").strip().lower()
     )
-    return 1.0 if response == query * 2 else 0
+    bt.logging.info(
+        "In rewards, task id: "
+        f"{task['id']}, response: {normalized_response}, expected: {expected}"
+    )
+    return 1.0 if normalized_response == expected else 0.0
 
 
 def get_rewards(
     self,
-    query: int,
-    responses: List[float],
+    task: Dict[str, str],
+    responses: List[Dict[str, str]],
 ) -> np.ndarray:
     """
-    Returns an array of rewards for the given query and responses.
+    Returns an array of rewards for the given task and responses.
 
     Args:
-    - query (int): The query sent to the miner.
-    - responses (List[float]): A list of responses from the miner.
+    - task (Dict[str, str]): The task sent to the miner, including the expected answer.
+    - responses (List[Dict[str, str]]): A list of miner payloads.
 
     Returns:
     - np.ndarray: An array of rewards for the given query and responses.
     """
     # Get all the reward results by iteratively calling your reward() function.
 
-    return np.array([reward(query, response) for response in responses])
+    return np.array([reward(task, response) for response in responses])

@@ -26,6 +26,7 @@
   - [Before you proceed](#before-you-proceed)
   - [Install](#install)
 - [Writing your own incentive mechanism](#writing-your-own-incentive-mechanism)
+- [Running this subnet (validator + miner)](#running-this-subnet-validator--miner)
 - [Writing your own subnet API](#writing-your-own-subnet-api)
 - [Subnet Links](#subnet-links)
 - [License](#license)
@@ -54,6 +55,10 @@ Each subnet consists of:
 - Subnet miners and subnet validators.
 - A protocol using which the subnet miners and subnet validators interact with one another. This protocol is part of the incentive mechanism.
 - The Bittensor API using which the subnet miners and subnet validators interact with Bittensor's onchain consensus engine [Yuma Consensus](https://bittensor.com/documentation/validating/yuma-consensus). The Yuma Consensus is designed to drive these actors: subnet validators and subnet miners, into agreement on who is creating value and what that value is worth. 
+
+### This subnet: Inference-as-a-Service
+
+This subnet is designed for model inference. Validators send prompts, miners return responses, and validators score responses against expected outputs. Miners can choose any model they want to run (including fine-tuned variants) and report the model name back to validators. By default, miners use placeholder responses, but you can replace the miner logic with a real model or inference service. The incentive mechanism rewards correct responses and can be extended to include latency or quality metrics.
 
 This starter template is split into three primary files. To write your own incentive mechanism, you should edit these files. These files are:
 1. `template/protocol.py`: Contains the definition of the protocol used by subnet miners and subnet validators.
@@ -93,6 +98,8 @@ As described in [Quickstarter template](#quickstarter-template) section above, w
 - `neurons/validator.py`: This script defines the validator's behavior, i.e., how the validator requests information from the miners and determines the scores.
 - `template/forward.py`: Contains the definition of the validator's forward pass.
 - `template/reward.py`: Contains the definition of how validators reward miner responses.
+- `template/validator/forward.py`: Contains the definition of the validator's forward pass.
+- `template/validator/reward.py`: Contains the definition of how validators reward miner responses.
 
 In addition to the above files, you should also update the following files:
 - `README.md`: This file contains the documentation for your project. Update this file to reflect your project's documentation.
@@ -104,6 +111,33 @@ In addition to the above files, you should also update the following files:
 __Note__
 The `template` directory should also be renamed to your project name.
 ---
+
+## Running this subnet (validator + miner)
+
+Follow the full local/testnet/mainnet setup instructions in the docs linked above. Once your wallets are created and registered, you can run a validator and miner for this inference subnet.
+
+### Run a miner
+
+```bash
+python neurons/miner.py --netuid <NETUID> --wallet.name miner --wallet.hotkey default --logging.debug
+```
+
+Optional: report the model you are running. This is not enforced but helps validators understand miner behavior:
+
+```bash
+export MINER_MODEL_NAME="my-llama3-8b-finetune"
+python neurons/miner.py --netuid <NETUID> --wallet.name miner --wallet.hotkey default --logging.debug
+```
+
+### Run a validator
+
+```bash
+python neurons/validator.py --netuid <NETUID> --wallet.name validator --wallet.hotkey default --logging.debug
+```
+
+### How scoring works
+
+Validators sample inference tasks, send prompts to miners, and compare responses to expected outputs. Correct responses receive higher rewards. You can expand this logic in `template/validator/reward.py` to include latency, safety checks, or more complex grading.
 
 # Writing your own subnet API
 To leverage the abstract `SubnetsAPI` in Bittensor, you can implement a standardized interface. This interface is used to interact with the Bittensor network and can be used by a client to interact with the subnet through its exposed axons.
@@ -130,91 +164,3 @@ class SubnetsAPI(ABC):
     @abstractmethod
     def prepare_synapse(self, *args, **kwargs) -> Any:
         """
-        Prepare the synapse-specific payload.
-        """
-        ...
-
-    @abstractmethod
-    def process_responses(self, responses: List[Union["bt.Synapse", Any]]) -> Any:
-        """
-        Process the responses from the network.
-        """
-        ...
-
-```
-
-
-Here is a toy example:
-
-```python
-from bittensor.subnets import SubnetsAPI
-from MySubnet import MySynapse
-
-class MySynapseAPI(SubnetsAPI):
-    def __init__(self, wallet: "bt.wallet"):
-        super().__init__(wallet)
-        self.netuid = 99
-
-    def prepare_synapse(self, prompt: str) -> MySynapse:
-        # Do any preparatory work to fill the synapse
-        data = do_prompt_injection(prompt)
-
-        # Fill the synapse for transit
-        synapse = StoreUser(
-            messages=[data],
-        )
-        # Send it along
-        return synapse
-
-    def process_responses(self, responses: List[Union["bt.Synapse", Any]]) -> str:
-        # Look through the responses for information required by your application
-        for response in responses:
-            if response.dendrite.status_code != 200:
-                continue
-            # potentially apply post processing
-            result_data = postprocess_data_from_response(response)
-        # return data to the client
-        return result_data
-```
-
-You can use a subnet API to the registry by doing the following:
-1. Download and install the specific repo you want
-1. Import the appropriate API handler from bespoke subnets
-1. Make the query given the subnet specific API
-
-
-
-# Subnet Links
-In order to see real-world examples of subnets in-action, see the `subnet_links.py` document or access them from inside the `template` package by:
-```python
-import template
-template.SUBNET_LINKS
-[{'name': 'sn0', 'url': ''},
- {'name': 'sn1', 'url': 'https://github.com/opentensor/prompting/'},
- {'name': 'sn2', 'url': 'https://github.com/bittranslateio/bittranslate/'},
- {'name': 'sn3', 'url': 'https://github.com/gitphantomman/scraping_subnet/'},
- {'name': 'sn4', 'url': 'https://github.com/manifold-inc/targon/'},
-...
-]
-```
-
-## License
-This repository is licensed under the MIT License.
-```text
-# The MIT License (MIT)
-# Copyright © 2024 Opentensor Foundation
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
-# documentation files (the “Software”), to deal in the Software without restriction, including without limitation
-# the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
-# and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in all copies or substantial portions of
-# the Software.
-
-# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-# THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-# DEALINGS IN THE SOFTWARE.
-```
