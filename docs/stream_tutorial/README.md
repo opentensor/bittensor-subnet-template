@@ -96,7 +96,7 @@ class MyStreamingSynapse(bt.StreamingSynapse):
         return self.completion
 
     # implement your `process_streaming_response` logic to actually yield objects to the streamer
-    # this effectively defines the async generator that you'll recieve on the client side
+    # this effectively defines the async generator that you'll receive on the client side
     async def process_streaming_response(self, response: MyStreamingSynapse):
         # this is an example of how you might process a streaming response
         # iterate over the response content and yield each line
