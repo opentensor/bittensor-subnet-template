@@ -18,7 +18,6 @@
 # DEALINGS IN THE SOFTWARE.
 
 
-import copy
 import numpy as np
 import asyncio
 import argparse
@@ -53,7 +52,9 @@ class BaseValidatorNeuron(BaseNeuron):
         super().__init__(config=config)
 
         # Save a copy of the hotkeys to local memory.
-        self.hotkeys = copy.deepcopy(self.metagraph.hotkeys)
+        # Note: list() creates a shallow copy which is sufficient for a list of strings.
+        # ⚠️ DO NOT use copy.deepcopy() on metagraph attributes - it can cause memory leaks.
+        self.hotkeys = list(self.metagraph.hotkeys)
 
         # Dendrite lets us send messages to other nodes (axons) in the network.
         if self.config.mock:
@@ -284,17 +285,29 @@ class BaseValidatorNeuron(BaseNeuron):
             bt.logging.error("set_weights failed", msg)
 
     def resync_metagraph(self):
-        """Resyncs the metagraph and updates the hotkeys and moving averages based on the new metagraph."""
+        """Resyncs the metagraph and updates the hotkeys and moving averages based on the new metagraph.
+
+        ⚠️ MEMORY LEAK WARNING: Never use copy.deepcopy() on metagraph objects!
+
+        copy.deepcopy(metagraph) triggers scalecodec type registration which leaks ~50MB per call.
+        This causes validators to OOM after several hours of operation. Instead:
+        - To compare axons: use list(metagraph.axons) to create a shallow copy
+        - To compare hotkeys: use list(metagraph.hotkeys)
+        - To compare stakes: use metagraph.S.copy()
+
+        The metagraph.sync() method updates the existing metagraph object in-place, which is safe.
+        """
         bt.logging.info("resync_metagraph()")
 
-        # Copies state of metagraph before syncing.
-        previous_metagraph = copy.deepcopy(self.metagraph)
+        # Store previous axons for comparison (shallow copy - no memory leak).
+        # ⚠️ DO NOT use copy.deepcopy(self.metagraph) - it leaks ~50MB per call!
+        previous_axons = list(self.metagraph.axons)
 
-        # Sync the metagraph.
+        # Sync the metagraph (updates in-place, safe).
         self.metagraph.sync(subtensor=self.subtensor)
 
         # Check if the metagraph axon info has changed.
-        if previous_metagraph.axons == self.metagraph.axons:
+        if previous_axons == list(self.metagraph.axons):
             return
 
         bt.logging.info(
@@ -313,8 +326,9 @@ class BaseValidatorNeuron(BaseNeuron):
             new_scores[:copy_len] = self.scores[:copy_len]
             self.scores = new_scores
 
-        # Update the hotkeys.
-        self.hotkeys = copy.deepcopy(self.metagraph.hotkeys)
+        # Update the hotkeys (shallow copy is sufficient - hotkeys is a list of strings).
+        # ⚠️ DO NOT use copy.deepcopy() - it's unnecessary and can cause memory issues.
+        self.hotkeys = list(self.metagraph.hotkeys)
 
     def update_scores(self, rewards: np.ndarray, uids: List[int]):
         """Performs exponential moving average on the scores based on the rewards received from the miners."""

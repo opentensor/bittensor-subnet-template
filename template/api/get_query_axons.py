@@ -100,25 +100,36 @@ async def get_query_api_nodes(dendrite, metagraph, n=0.1, timeout=3):
 
 
 async def get_query_api_axons(
-    wallet, metagraph=None, n=0.1, timeout=3, uids=None
+    wallet, netuid: int, metagraph=None, subtensor=None, n=0.1, timeout=3, uids=None
 ):
     """
     Retrieves the axons of query API nodes based on their availability and stake.
 
     Args:
         wallet (bittensor.wallet): The wallet instance to use for querying nodes.
+        netuid (int): The network UID of the subnet to query. Required parameter.
         metagraph (bittensor.metagraph, optional): The metagraph instance containing network information.
+            If not provided, one will be created using the netuid and subtensor.
+        subtensor (bittensor.subtensor, optional): The subtensor instance for network connection.
+            If not provided and metagraph is None, a new subtensor will be created.
         n (float, optional): The fraction of top nodes to consider based on stake. Defaults to 0.1.
         timeout (int, optional): The timeout in seconds for pinging nodes. Defaults to 3.
         uids (Union[List[int], int], optional): The specific UID(s) of the API node(s) to query. Defaults to None.
 
     Returns:
         list: A list of axon objects for the available API nodes.
+
+    ⚠️ MEMORY LEAK WARNING: If calling this function repeatedly, always pass a pre-created
+    metagraph and subtensor instance. Creating new metagraph/subtensor objects in a loop
+    causes memory leaks due to scalecodec type registration.
     """
     dendrite = bt.dendrite(wallet=wallet)
 
     if metagraph is None:
-        metagraph = bt.metagraph(netuid=21)
+        # Note: For repeated calls, prefer passing a pre-created metagraph to avoid memory leaks.
+        if subtensor is None:
+            subtensor = bt.subtensor()
+        metagraph = subtensor.metagraph(netuid=netuid)
 
     if uids is not None:
         query_uids = [uids] if isinstance(uids, int) else uids
