@@ -87,13 +87,13 @@ Creating subnets on the testnet is competitive. The cost is determined by the ra
 By default you must have at least 100 testnet TAO in your owner wallet to create a subnet. However, the exact amount will fluctuate based on demand. The below command shows how to get the current price of creating a subnet.
 
 ```bash
-btcli subnet lock_cost --subtensor.network test
+btcli subnet burn-cost --network test
 ```
 
 The above command will show:
 
 ```bash
->> Subnet lock cost: τ100.000000000
+>> Subnet burn cost: τ100.000000000
 ```
 
 ## 4. (Optional) Get faucet tokens
